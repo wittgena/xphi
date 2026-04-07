@@ -5,7 +5,7 @@ from pathlib import Path
 from bridge.interface.pir import PsiEvent
 from bridge.interface.topos import IPhaseAtor, IPhaseField
 from bridge.interface.bus import AsyncEventBus
-from bridge.plane.emitter import get_logger
+from surface.plane.emitter import get_logger
 from manifold.contract.registry import ator_contract
 
 log = get_logger("gitops.emitter")

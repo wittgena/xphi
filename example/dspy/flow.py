@@ -1,6 +1,6 @@
-# exam.dspy.flow
+# example.dspy.flow
 import dspy
-from bridge.plane.emitter import get_logger
+from surface.plane.emitter import get_logger
 from bridge.client.llama import LLMClient
 
 log = get_logger("dspy.flow")

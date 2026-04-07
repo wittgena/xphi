@@ -1,4 +1,4 @@
-# exam.hands.phi
+# example.hands.phi
 ## @focus: OpenHands Autopoietic Execution Loop
 PHI = {
     ## 1. 위상 관측 (Φ_probe): 라이브 서버 표면에서 OpenAPI 계약(Contract) 동기화

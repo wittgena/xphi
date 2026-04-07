@@ -1,4 +1,4 @@
-# exam.dspy.exam
+# example.dspy.exam
 from pydantic import BaseModel
 
 

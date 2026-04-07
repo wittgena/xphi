@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Tuple, List, Any
 from manifold.parser.md import MdAstParser
 from manifold.block.parser import BlockExtractor
-from bridge.plane.emitter import get_logger
+from surface.plane.emitter import get_logger
 
 log = get_logger("flow.validator")
 

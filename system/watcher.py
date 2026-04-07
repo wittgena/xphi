@@ -5,7 +5,7 @@ import json
 from typing import Optional, List
 from bridge.interface.pir import PsiCarrier, PsiEvent
 from bridge.interface.topos import IPhaseField, ICriticalDetector, ISystemRegime, IPhaseAtor
-from bridge.plane.emitter import get_emitter
+from surface.plane.emitter import get_emitter
 from manifold.contract.registry import discover_modules, watcher_contract, regime_contract
 from rhythm.cont import LoopCarrier
 from bridge.executor.dynamics import DynamicsExecutor

@@ -1,4 +1,4 @@
-# exam.residue.mem
+# example.residue.mem
 """
 @flow: Ψ → Xe → ∂Φ(boundary) → τ(accumulation) → rupture → inversion → residue → Φ'
 @phase: residue is crystallized trace of rupture (Φ′ seed)

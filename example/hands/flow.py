@@ -1,4 +1,4 @@
-# exam.hands.flow
+# example.hands.flow
 """
 @flow: Φ(config) → Ψ₀(genesis) → Ψᵢ(injection) → Ψ(execution) → Φ′(observation)
 @focus: Autopoietic loop closure, live contract probing, topological degradation
@@ -10,7 +10,7 @@ import time
 import json
 import httpx
 from contextlib import contextmanager
-from bridge.plane.emitter import get_logger
+from surface.plane.emitter import get_logger
 
 SERVER_CMD = [sys.executable, "-m", "openhands.agent_server"]
 BASE_URL = "http://0.0.0.0:8000"

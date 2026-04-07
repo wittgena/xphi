@@ -1,4 +1,4 @@
-# exam.dspy.rlm
+# example.dspy.rlm
 """
 Recursive Language Model (RLM) module for DSPy.
 
