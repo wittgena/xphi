@@ -10,8 +10,8 @@ from collections import defaultdict, Counter
 from gensim import corpora, models
 from plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path
-from topos.code.bound.interface import TopicMap, TopicMetadata, PhaseSpace, CoreModuleInfo
-from manifold.parser.topos import ToposAstParser
+from bridge.interface.code import TopicMap, TopicMetadata, PhaseSpace, CoreModuleInfo
+from block.parser.topos import ToposAstParser
 
 log = get_logger("code.topic")
 

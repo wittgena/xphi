@@ -9,7 +9,7 @@ from bridge.executor.base import BaseExecutor
 from bridge.interface.pir import PsiType
 from anchor.log import get_logger
 from anchor.resolver import resolve_path
-from topos.signature.model import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep
+from anchor.model.signature import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep
 
 log = get_logger("signature.dock")
 ROCKS_PATH = resolve_path("cache") / "signature.rocks"

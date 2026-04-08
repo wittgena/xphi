@@ -1,12 +1,13 @@
-# topos.signature.trace.viewer
+# topos.signature.inspector
 import json
 from rocksdict import Rdict, Options
-from topos.signature.dock import ROCKS_PATH
 from anchor.log import get_logger
+from anchor.resolver import resolve_path
 
-log = get_logger("trace.viewer")
+log = get_logger("signature.inspector")
+ROCKS_PATH = resolve_path("cache") / "signature.rocks"
 
-class BasisInspector:
+class SignatureInspector:
     def __init__(self, path=ROCKS_PATH):
         # 읽기 전용 옵션 (실행 중인 엔진과 충돌 방지)
         self.db = Rdict(str(path))
@@ -52,7 +53,7 @@ class BasisInspector:
         self.db.close()
 
 if __name__ == "__main__":
-    inspector = BasisInspector()
+    inspector = SignatureInspector()
     try:
         # agent_alpha 모듈의 물리적 흔적 조사
         inspector.inspect("agent_alpha", limit=5)

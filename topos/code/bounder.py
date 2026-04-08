@@ -1,4 +1,4 @@
-# topos.code.bound.tracer
+# reflect.topos.bounder 
 """
 @flow:
 Ψ(target)
@@ -14,7 +14,7 @@ import inspect
 import sys
 from typing import Callable, Any, Dict, List, Optional
 
-class BoundaryReflector:
+class TraceReflector:
     """@flow: access → ∂Φ trace"""
     def __init__(self, trace_log: List[str], path: str = "root"):
         self._trace_log = trace_log
@@ -48,7 +48,7 @@ class RuptureSnapshot:
             tb = tb.tb_next
         return snapshot
 
-class BoundTracer:
+class ToposBounder:
     """@flow: Φ → ∂Φ → rupture → echoes"""
     @staticmethod
     def strike(target: Callable) -> Dict[str, Any]:
@@ -67,7 +67,7 @@ class BoundTracer:
         try:
             args, kwargs = [], {}
             for name, param in sig.parameters.items():
-                reflector = BoundaryReflector(access_log, path=f"param({name})")
+                reflector = TraceReflector(access_log, path=f"param({name})")
                 if param.kind == inspect.Parameter.KEYWORD_ONLY:
                     kwargs[name] = reflector
                 else:

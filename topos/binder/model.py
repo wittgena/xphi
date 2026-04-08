@@ -1,11 +1,11 @@
 # topos.model.binder
 """
-@role: Class-based Boundary-driven Theoria Binder
+@role: Class-based Boundary-driven Model Binder
 @semantics:
 - Entity-Component-System (ECS) inspired architecture
 - BoundarySensor: Detects ∂Φ
-- TheoriaManifold: Maintains Φ nodes and edge coupling
-- TheoriaBinder: Orchestrates the field formation
+- ModelManifold: Maintains Φ nodes and edge coupling
+- ModelBinder: Orchestrates the field formation
 """
 import json
 import sys
@@ -63,7 +63,7 @@ class BoundarySensor:
                 candidates.append((cur_word, meta["group"]))
         return candidates
 
-class TheoriaManifold:
+class ModelManifold:
     """추출된 Φ 노드와 이들 간의 결합(Edge)을 관리하는 데이터 필드"""
     
     def __init__(self):
@@ -90,17 +90,17 @@ class TheoriaManifold:
         """다양한 경계 속성을 가진 불변 노드 식별"""
         return [n for n, b_counts in self.node_boundaries.items() if len(b_counts) >= threshold]
 
-class TheoriaBinder:
+class ModelBinder:
     """문서 집합을 순회하며 위상 필드를 구축하고 투영(Projection)을 생성하는 오케스트레이터"""
 
     def __init__(self):
         self.sensor = BoundarySensor()
-        self.manifold = TheoriaManifold()
+        self.manifold = ModelManifold()
         self.theoria_root = find_current_self() / 'theoria'
         self.output_path = resolve_path("xor") / "bound" / "theoria.manifold.json"
 
     def execute(self):
-        log.info(f"Binding Theoria Field from: {self.theoria_root}")
+        log.info(f"Binding Model Field from: {self.theoria_root}")
         
         files = list(self.theoria_root.rglob("*.md"))
         for path in tqdm(files, desc="Processing Documents"):
@@ -150,9 +150,9 @@ class TheoriaBinder:
         with open(self.output_path, "w", encoding="utf-8") as f:
             json.dump(projection, f, ensure_ascii=False, indent=2)
             
-        log.info(f"Theoria Manifold Projection completed: {self.output_path}")
+        log.info(f"Model Manifold Projection completed: {self.output_path}")
 
-        print("## [Theoria Binder] Manifold Projection Summary")
+        print("## [Model Binder] Manifold Projection Summary")
         print(f"- Global Invariants (불변량): {len(invariants)}개")
         if invariants:
             print(f"  └ {', '.join(invariants[:10])}" + ("..." if len(invariants)>10 else ""))
@@ -162,8 +162,8 @@ class TheoriaBinder:
             print(f"  {i}. {node_data['id']} (Intensity: {node_data['intensity']})")
         
         print(f"\n- Topological Edges: {len(edges_data)}개 결합 감지")
-        log.info(f"Theoria Manifold Projection completed: {self.output_path}")
+        log.info(f"Model Manifold Projection completed: {self.output_path}")
 
 if __name__ == "__main__":
-    binder = TheoriaBinder()
+    binder = ModelBinder()
     binder.execute()

@@ -23,7 +23,7 @@ from redis import Redis
 from plane.emitter import get_emitter
 from plane.node.runtime import NodeRuntime
 
-class ReaperExecutor:
+class Reaper:
     """
     @role: Φ′ executor (cleanup operator)
     @flow: Ψ -> mode select -> {strike | force | clean} -> process termination
@@ -151,7 +151,7 @@ async def main():
     """
     log = get_emitter("reaper.launcher", phase="BOOT")
     redis_conn = Redis(host=os.getenv("REDIS_HOST", "localhost"), decode_responses=True)
-    reaper_executor = ReaperExecutor(redis_conn)
+    reaper_executor = Reaper(redis_conn)
     node = NodeRuntime(executor=reaper_executor)
     log.info("Reaper Node is now online. Monitoring for cleanup commands...")
     await node.start()

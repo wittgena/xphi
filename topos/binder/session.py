@@ -5,10 +5,10 @@
 import json
 from pathlib import Path
 from typing import Optional, Dict
-from topos.code.bound.interface import TopicMap
-from topos.code.bound.tracer import BoundTracer
-from topos.code.chain.inspect import ProjectMapper, ImportLens, IntegrityChecker
-from topos.code.chain.ext import ExtRegistry
+from bridge.interface.code import TopicMap
+from anchor.model.ext import ExtRegistry
+from topos.code.bounder import CodeBounder 
+from topos.code.inspect import ProjectMapper, ImportLens, IntegrityChecker
 
 class FieldActivator:
     """[Phase 1] 환경 설정 및 위상 지도 로드 담당"""
@@ -96,9 +96,7 @@ class ToposBinderSession:
         self.topic_map = FieldActivator.activate(self.target_path)
 
         # 2. 스캔 실행 (CodeBinder)
-        # (CodeBinder는 기존 로직 그대로 유지된다고 가정)
-        from topos.code.binder import CodeBinder 
-        self.binder = CodeBinder(topic_map=self.topic_map)
+        self.binder = CodeBounder(topic_map=self.topic_map)
         self.binder.run_strategic_scan(self.target_path)
 
         # 3. 계층 저장 (Storage)

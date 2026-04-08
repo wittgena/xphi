@@ -14,7 +14,7 @@ from typing import List, Optional, Generator
 import redis
 from plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path
-from reflect.xphi.runtime import XphiRuntime
+from anchor.xphi.runtime import XphiRuntime
 from bridge.client.stream import StreamClient
 from bridge.client.surface import RedisSurface, ResilientSurfaceClient
 
