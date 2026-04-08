@@ -7,7 +7,7 @@ import hashlib
 import sys
 from rocksdict import Rdict, Options
 from typing import List
-from interface.pir import PsiType
+from contract.interface.pir import PsiType
 from plane.emitter import get_logger
 from bridge.executor.base import BaseExecutor
 from plane.node.runtime import NodeRuntime

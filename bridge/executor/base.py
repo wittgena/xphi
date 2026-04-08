@@ -4,8 +4,8 @@ import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol
-from interface.pir import PsiType, PsiEvent
-from interface.topos import IPhaseField, IBoundExecutor
+from contract.interface.pir import PsiType, PsiEvent
+from contract.interface.topos import IPhaseField, IBoundExecutor
 from plane.emitter import get_emitter
 
 class BaseExecutor(ABC):

@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Tuple
 from plane.emitter import get_logger
 from flow.ator import AtorFlow, FlowState
 from contract.proto.col import get_proto
-from interface.pir import (
+from contract.interface.pir import (
     AnchorFlow, 
     PhaseInterpreter, 
     PhaseField, 
