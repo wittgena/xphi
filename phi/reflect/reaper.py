@@ -1,4 +1,4 @@
-# reflect.executor.reaper
+# phi.reflect.reaper
 """
 @desc: orphan process collector via echo-resonance
 

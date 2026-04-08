@@ -1,7 +1,7 @@
 # topos.signature.inspector
 import json
 from rocksdict import Rdict, Options
-from anchor.log import get_logger
+from plane.log import get_logger
 from anchor.resolver import resolve_path
 
 log = get_logger("signature.inspector")

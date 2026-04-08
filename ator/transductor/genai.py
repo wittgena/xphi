@@ -3,7 +3,7 @@ import json
 import asyncio
 import inspect
 from typing import Any
-from anchor.log import get_logger
+from plane.log import get_logger
 from flow.ator import AtorFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import ator_contract, discover_modules
 from anchor.resolver import find_current_self

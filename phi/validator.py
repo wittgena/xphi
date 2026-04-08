@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 from flow.ator import AtorFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import ator_contract
-from anchor.log import get_logger
+from plane.log import get_logger
 
 log = get_logger('phi.validator')
 

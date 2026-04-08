@@ -4,7 +4,7 @@ import re
 from typing import Any, Dict
 from flow.ator import AtorFlow, Transduction
 from contract.registry import ator_contract
-from anchor.log import get_logger
+from plane.log import get_logger
 
 log = get_logger('transductor.http')
 

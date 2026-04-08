@@ -1,4 +1,4 @@
-# reflect.xor
+# phi.reflect.xor
 """@desc: Bound → Resolver → Surface orchestration for xphi (Echolocation Routing)"""
 import os
 import sys
@@ -14,7 +14,7 @@ from typing import List, Optional, Generator
 import redis
 from plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path
-from anchor.xphi.runtime import XphiRuntime
+from surface.xphi.runtime import XphiRuntime
 from bridge.client.stream import StreamClient
 from bridge.client.surface import RedisSurface, ResilientSurfaceClient
 

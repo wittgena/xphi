@@ -10,7 +10,7 @@ from contract.registry import registry, ator_contract
 from plane.node.runtime import NodeRuntime
 from bridge.ator.runtime import AtorRuntime
 from phi.bootstrap import bootstrap
-from anchor.log import get_logger
+from plane.log import get_logger
 from anchor.resolver import find_current_self
 
 log = logging.getLogger("script.generator")

@@ -6,8 +6,8 @@ import random
 from rocksdict import Rdict, Options
 from typing import List, Dict, Any, Optional
 from bridge.executor.base import BaseExecutor
-from bridge.interface.pir import PsiType
-from anchor.log import get_logger
+from anchor.interface.pir import PsiType
+from plane.log import get_logger
 from anchor.resolver import resolve_path
 from anchor.model.signature import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep
 

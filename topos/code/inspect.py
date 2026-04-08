@@ -1,4 +1,4 @@
-# topos.code.chain.inspect
+# topos.code.inspect
 import os
 import ast
 import importlib.util

@@ -4,7 +4,7 @@ from typing import Dict, Any, List, Tuple
 from plane.emitter import get_logger
 from flow.ator import AtorFlow, FlowState
 from contract.proto.col import get_proto
-from bridge.interface.pir import (
+from anchor.interface.pir import (
     AnchorFlow, 
     PhaseInterpreter, 
     PhaseField, 
@@ -12,7 +12,7 @@ from bridge.interface.pir import (
     CarrierType
 )
 from plane.node.runtime import NodeRuntime
-from anchor.node0 import enter_node0
+from phi.state.node0 import enter_node0
 
 log = get_logger("ator.runtime")
 
