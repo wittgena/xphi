@@ -5,8 +5,8 @@
 import json
 from pathlib import Path
 from typing import Optional, Dict
-from anchor.interface.code import TopicMap
-from anchor.model.ext import ExtRegistry
+from interface.code import TopicMap
+from model.ext import ExtRegistry
 from topos.code.bounder import CodeBounder 
 from topos.code.inspect import ProjectMapper, ImportLens, IntegrityChecker
 

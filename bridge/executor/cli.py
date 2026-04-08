@@ -4,11 +4,11 @@ import uuid
 from dataclasses import asdict
 from typing import Callable, Any
 from bridge.executor.base import BaseExecutor
-from anchor.interface.pir import PsiEvent, PsiCarrier
+from interface.pir import PsiEvent, PsiCarrier
 from plane.node.runtime import NodeRuntime
 from plane.emitter import get_logger
-from anchor.model.result import TaskSummaryEvent, TaskDetailRecord
-from anchor.interface.event import next_id
+from model.result import TaskSummaryEvent, TaskDetailRecord
+from interface.event import next_id
 
 log = get_logger("executor.cli")
 

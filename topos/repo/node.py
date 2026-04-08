@@ -11,8 +11,8 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from anchor.resolver import resolve_path
-from anchor.interface.event import next_id
-from anchor.model.commit import RepoCommitModel, AnchorCommitModel
+from interface.event import next_id
+from model.commit import RepoCommitModel, AnchorCommitModel
 
 DEFAULT_ID = "0000000"
 META_ROOT = resolve_path('io') / 'meta'

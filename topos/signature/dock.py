@@ -6,10 +6,10 @@ import random
 from rocksdict import Rdict, Options
 from typing import List, Dict, Any, Optional
 from bridge.executor.base import BaseExecutor
-from anchor.interface.pir import PsiType
+from interface.pir import PsiType
 from plane.log import get_logger
 from anchor.resolver import resolve_path
-from anchor.model.signature import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep
+from model.signature import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep
 
 log = get_logger("signature.dock")
 ROCKS_PATH = resolve_path("cache") / "signature.rocks"

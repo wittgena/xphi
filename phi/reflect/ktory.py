@@ -16,7 +16,7 @@ import redis
 from anchor.resolver import find_current_self, resolve_path
 from plane.emitter import get_logger
 from surface.xphi.runtime import XphiRuntime
-from anchor.model.block import Contract
+from model.block import Contract
 from bridge.client.stream import StreamClient
 from bridge.client.surface import RedisSurface, ResilientSurfaceClient
 
