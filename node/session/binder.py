@@ -5,8 +5,8 @@
 import json
 from pathlib import Path
 from typing import Optional, Dict
-from contract.interface.code import TopicMap
-from model.ext import ExtRegistry
+from model.code.topic import TopicMap
+from model.code.ext import ExtRegistry
 from block.code.bounder import CodeBounder 
 from block.code.inspect import ProjectMapper, ImportLens, IntegrityChecker
 

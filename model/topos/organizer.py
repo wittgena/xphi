@@ -1,4 +1,4 @@
-# bridge.topos.organizer
+# model.topos.organizer
 import time
 import asyncio
 import redis.asyncio as redis_async

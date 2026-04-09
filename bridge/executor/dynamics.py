@@ -4,7 +4,7 @@ import asyncio
 import math
 import random
 from typing import List, Dict, Optional, Any, Type, Callable
-from contract.interface.pir import PsiCarrier, PsiEvent
+from bridge.pir import PsiCarrier, PsiEvent
 from bridge.executor.base import BaseExecutor
 
 class DynamicsExecutor(BaseExecutor):

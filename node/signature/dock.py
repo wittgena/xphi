@@ -6,7 +6,7 @@ import random
 from rocksdict import Rdict, Options
 from typing import List, Dict, Any, Optional
 from bridge.executor.base import BaseExecutor
-from contract.interface.pir import PsiType
+from bridge.pir import PsiType
 from plane.log import get_logger
 from anchor.resolver import resolve_path
 from model.signature import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep

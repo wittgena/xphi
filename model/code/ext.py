@@ -1,4 +1,4 @@
-# model.ext
+# model.code.ext
 import json
 from typing import Any, Callable, Dict, Optional, Union
 from pydantic import BaseModel, Field, ConfigDict

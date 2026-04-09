@@ -1,4 +1,4 @@
-# node.code.inspect
+# block.code.inspect
 import os
 import ast
 import importlib.util

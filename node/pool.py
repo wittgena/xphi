@@ -7,7 +7,7 @@ import random
 import json
 from typing import Optional, Any
 from plane.emitter import get_logger
-from contract.interface.pir import PsiEvent
+from bridge.pir import PsiEvent
 from flow.topos import ToposFlow
 
 log = get_logger("node.pool")

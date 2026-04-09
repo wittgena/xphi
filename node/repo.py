@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from anchor.resolver import resolve_path
-from contract.interface.event import next_id
+from model.event import next_id
 from model.commit import RepoCommitModel, AnchorCommitModel
 
 DEFAULT_ID = "0000000"

@@ -107,10 +107,10 @@ tasks.named<ProcessResources>("processResources") {
 // 3. 빌드 완료 후 JAR 파일을 bound/anchor/lib로 복사하는 태스크
 val copyJarToAnchor = tasks.register<Copy>("copyJarToAnchor") {
     group = "distribution"
-    description = "Copies the generated bootJar to bound/anchor/cache/lib"
+    description = "Copies the generated bootJar to anchor/io/lib"
 
     if (anchorDir != null) {
-        val targetLibDir = File(anchorDir, "cache/lib")
+        val targetLibDir = File(anchorDir, "io/lib")
 
         // bootJar 결과물을 소스로 지정
         from(tasks.named("bootJar"))

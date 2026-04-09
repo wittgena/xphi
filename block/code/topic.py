@@ -1,4 +1,4 @@
-# node.code.topic
+# block.code.topic
 """@role: Phase Space (Topic) Clustering Engine for Code Topology (Bound Interface Integrated)"""
 import sys
 import json
@@ -10,7 +10,7 @@ from collections import defaultdict, Counter
 from gensim import corpora, models
 from plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path
-from contract.interface.code import TopicMap, TopicMetadata, PhaseSpace, CoreModuleInfo
+from model.code.topic import TopicMap, TopicMetadata, PhaseSpace, CoreModuleInfo
 from block.parser.topos import ToposAstParser
 
 log = get_logger("code.topic")
