@@ -1,4 +1,4 @@
-# align.imports
+# node.code.imports
 import os
 import difflib
 import argparse

@@ -1,0 +1,47 @@
+spring:
+  redis:
+    host: localhost
+    port: 6379
+
+logging:
+  level:
+    # 핵심 로직 로그 (사용자 패키지)
+    subst: DEBUG
+    # Spring WebFlux 요청 매핑 확인
+    org.springframework.web.reactive: DEBUG
+    # HTTP 요청/응답 헤더 및 바디(일부) 확인
+    org.springframework.http.server.reactive: DEBUG
+    # Netty 서버 통신 확인
+    reactor.netty.http.server: DEBUG
+
+server:
+  port: 8079
+  # Netty Access Log 활성화 (호출 시간, 상태 코드, IP 등 출력)
+  netty:
+    accesslog: true
+
+subst:
+  xor:
+    index:
+      path: "/Users/wittgena/Library/CloudStorage/Dropbox/xor/index"
+      analyzer: "standard"
+      ramBufferMB: 128
+      openMode: "CREATE"
+      blockSchema:
+        identityFields:
+          - block_id
+          - file_path
+        keywordFields:
+          - block_type
+          - section_path
+          - block_dir
+          - symbol
+        textFields:
+          - content
+    search:
+      defaultField: "content"
+      topK: 20
+    blocks:
+      root: '/Users/wittgena/Library/CloudStorage/Dropbox/xor/blocks'
+      includeSubDirs: true
+      fileExtension: ".json"

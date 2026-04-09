@@ -1,4 +1,4 @@
-# model.topos.binder
+# model.topos.bundler
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:

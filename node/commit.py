@@ -1,4 +1,4 @@
-# align.commit
+# node.commit
 import argparse
 import sys
 import subprocess
