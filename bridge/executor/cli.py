@@ -1,6 +1,7 @@
 # bridge.executor.cli
 import asyncio
 import uuid
+import json
 from dataclasses import asdict
 from typing import Callable, Any
 from bridge.executor.base import BaseExecutor
@@ -31,6 +32,17 @@ class _GenericCliExecutor(BaseExecutor):
         
         try:
             raw_result = self.task_instance.run() or {}
+
+            if self.node and self.node.redis:
+                ## Redis에 상세 기록 (기존 로직)
+                await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
+                
+                ## 발화자에게 응답 (Response Channel이 있을 경우)
+                response_channel = psi.context.get("response_channel")
+                if response_channel:
+                    await self.node.redis.publish(response_channel, summary_event.to_json())
+                    self.log.info(f"[exec] Reflection published to {response_channel}")
+
             detail_record = TaskDetailRecord(
                 task_id=task_id,
                 command=command,
@@ -121,29 +133,99 @@ class CliTaskAdapter:
             }
 
 async def _async_run_in_node(task_instance, command_name: str, payload: dict):
-    completion_signal = asyncio.Event()
+    ## 1. Redis 사전 연결 및 스웜 감지
+    from plane.node.sensor import REDIS_URL
+    import redis.asyncio as redis_async
+    r = redis_async.from_url(REDIS_URL, decode_responses=True)
     
+    ## 하트비트가 있는 노드가 하나라도 있는지 확인
+    # active_node_keys = await r.keys("runtime:heartbeat:*")
+    active_node_keys = await r.keys("runtime:active")
+    
+    if active_node_keys:
+        ## [CASE A] Proxy 모드: 사건 발화 후 결과 구독
+        task_id = f"task-{uuid.uuid4().hex[:8]}"
+        response_channel = f"res:{task_id}"
+        
+        ## 사건 생성 (글로벌 큐 주입용)
+        trigger_event = PsiEvent(
+            event_id=task_id,
+            source_id=f"{command_name}:proxy",
+            scope="GLOBAL",
+            carrier=PsiCarrier(kind="COMMAND", tag=command_name.lower(), payload=payload),
+            context={"response_channel": response_channel} # 응답 경로 주입
+        )
+        
+        ## 큐에 주입 (누가 잡을지 모름)
+        await r.lpush("runtime:queue", trigger_event.to_json())
+        
+        ## 결과 대기 (PubSub)
+        pubsub = r.pubsub()
+        await pubsub.subscribe(response_channel)
+        log.info(f"[CLI] Event emitted to swarm. Waiting for response on {response_channel}...")
+        
+        try:
+            async for msg in pubsub.listen():
+                if msg["type"] == "message":
+                    # 결과 출력 후 종료
+                    # (간소화를 위해 TaskSummaryEvent 복원 로직 필요)
+                    print(f"\n[Swarm Result] Received from captured node.")
+                    print(msg["data"]) 
+                    break
+        finally:
+            await pubsub.unsubscribe(response_channel)
+            await r.close()
+        return
+
+    ## [CASE B] Mutation 모드: 스스로 노드가 되어 상주 시작
+    log.info("[CLI] No active nodes. Mutating into Ambient Node...")
+    completion_signal = asyncio.Event()
     executor = _GenericCliExecutor(task_instance, completion_signal)
     node = NodeRuntime(executor=executor)
     executor.node = node
     
     node_task = asyncio.create_task(node.start())
-    await asyncio.sleep(0.1) # Boot buffer
+    await asyncio.sleep(0.1) 
 
+    ## 최초 작업 트리거 (자신의 큐가 아닌 글로벌 큐로 던져서 스스로 낚아채게 함)
     trigger_event = PsiEvent(
-        event_id=f"{command_name}-cli",
+        event_id=f"{command_name}-init",
+        source_id=f"{command_name}:initial",
         parent_id=None,
-        source_id=f"{command_name}:cli",
-        scope="LOCAL",
         tick=1,
-        carrier=PsiCarrier(kind="COMMAND", tag=command_name.lower(), payload=payload),
-        context={"phase": "ex.cli"}
+        scope="GLOBAL",
+        carrier=PsiCarrier(kind="COMMAND", tag=command_name.lower(), payload=payload)
     )
+    await r.lpush("runtime:queue", trigger_event.to_json())
+    await r.close()
+
+    ## 노드가 30초 유휴 후 종료될 때까지 대기
+    await node_task
+
+# async def _async_run_in_node(task_instance, command_name: str, payload: dict):
+#     completion_signal = asyncio.Event()
     
-    await getattr(node, 'bus').publish(trigger_event)
-    await completion_signal.wait()
-    if hasattr(node, 'shutdown'):
-        await node.shutdown()
+#     executor = _GenericCliExecutor(task_instance, completion_signal)
+#     node = NodeRuntime(executor=executor)
+#     executor.node = node
+    
+#     node_task = asyncio.create_task(node.start())
+#     await asyncio.sleep(0.1) # Boot buffer
+
+#     trigger_event = PsiEvent(
+#         event_id=f"{command_name}-cli",
+#         parent_id=None,
+#         source_id=f"{command_name}:cli",
+#         scope="LOCAL",
+#         tick=1,
+#         carrier=PsiCarrier(kind="COMMAND", tag=command_name.lower(), payload=payload),
+#         context={"phase": "ex.cli"}
+#     )
+    
+#     await getattr(node, 'bus').publish(trigger_event)
+#     await completion_signal.wait()
+#     if hasattr(node, 'shutdown'):
+#         await node.shutdown()
 
 def execute_cli_task(task_instance, command_name: str = "run", payload: dict = None):
     """@topos.entry: external trigger → Ψ injection"""

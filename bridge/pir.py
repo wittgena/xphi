@@ -16,7 +16,8 @@
 """
 import __future__
 import time
-from dataclasses import dataclass, field
+import json
+from dataclasses import dataclass, field, asdict
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from enum import Enum
 from model.event import LogEvent
@@ -88,5 +89,15 @@ class PsiEvent:
     def kind(self) -> str:
         """kind 위임"""
         return self.carrier.kind
+    
+    def to_json(self) -> str:
+        """객체를 JSON 문자열로 변환 (Surface 투영용)"""
+        return json.dumps(asdict(self))
+
+    @classmethod
+    def from_json(cls, json_str: str):
+        """JSON 문자열을 객체로 복원 (Capture용)"""
+        data = json.loads(json_str)
+        return cls(**data)
 
 PsiType = Union[PsiCarrier, PsiEvent]
