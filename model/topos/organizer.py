@@ -6,9 +6,9 @@ from typing import Dict, Any
 from plane.emitter import get_logger
 from plane.node.runtime import NodeRuntime
 from flow.topos import ToposFlow, FlowState
-from plane.node.pool import DistributedNodePool
+from node.pool import DistributedNodePool
 from contract.proto.col import get_proto
-from topos.runtime import ToposRuntime, LinkerNode, InversionNode, ToposNode, ToposSpec, TransRule, NodeType
+from model.topos.runtime import ToposRuntime, LinkerNode, InversionNode, ToposNode, ToposSpec, TransRule, NodeType
 
 log = get_logger("topos.organizer")
 

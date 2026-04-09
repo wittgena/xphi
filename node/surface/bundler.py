@@ -1,4 +1,4 @@
-# node.topos.bundler
+# node.surface.bundler
 # @py.start
 import os
 import sys
@@ -7,20 +7,20 @@ import asyncio
 import argparse
 import fnmatch
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, List, Tuple, Dict, Any
+from typing import Generic, TypeVar, List, Tuple, Dict, Any, Optional
 from pathlib import Path
 from collections import defaultdict
 from plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path, get_invoker
 from block.parser.py import PyDotMdParser 
 from bridge.executor.cli import execute_cli_task, CliTaskAdapter
-from flow.surface.compiler import SurfaceCompiler
+from flow.surface.projector import SurfaceProjector
 
-log = get_logger("align.modeler")
+log = get_logger("surfae.bundler")
 
 DELIMITER = "---"
 
-class ModelAligner(SurfaceCompiler[Path, Tuple[str, str], Dict[str, str]]):
+class SurfaceBundler(SurfaceProjector[Path, Optional[Dict[str, Any]], Tuple[str, str], Dict[str, str]]):
     def __init__(self, target_dir: str):
         try:
             self.self_root = find_current_self()
@@ -95,7 +95,6 @@ class ModelAligner(SurfaceCompiler[Path, Tuple[str, str], Dict[str, str]]):
         parts = rel.parts[:-1]
         return "root" if not parts else ".".join(parts[:level])
 
-    # [추가됨] MdDocument AST 트리를 순회하며 마크다운 텍스트로 렌더링하는 재귀 함수
     def _render_md_node(self, node: Any) -> str:
         node_type = type(node).__name__
         if node_type == "MdDocument":
@@ -114,15 +113,18 @@ class ModelAligner(SurfaceCompiler[Path, Tuple[str, str], Dict[str, str]]):
             return f"```{node.lang}\n{content}```\n\n"
         return ""
 
+    def select(self, topos: List[Path], context: Optional[Dict[str, Any]] = None) -> List[Path]:
+        return [p for p in topos if p.is_file() and not self._should_exclude(p)]
+
     def scan(self) -> List[Path]:
         return list(self.merge_root.rglob("*"))
 
     def filter(self, topos: List[Path]) -> List[Path]:
         return [p for p in topos if p.is_file() and not self._should_exclude(p)]
 
-    def project(self, skeleton: List[Path]) -> List[Tuple[str, str]]:
+    def project(self, subgraph: List[Path], context: Optional[Dict[str, Any]] = None) -> List[Tuple[str, str]]:
         representations = []
-        for path in skeleton:
+        for path in subgraph:
             try:
                 key = self._get_group_key(path)
                 
@@ -164,15 +166,15 @@ class ModelAligner(SurfaceCompiler[Path, Tuple[str, str], Dict[str, str]]):
                 
         return representations
 
-    def assemble(self, representations: List[Tuple[str, str]]) -> Dict[str, str]:
+    def assemble(self, representations: List[Tuple[str, str]], context: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
         groups = defaultdict(list)
         for key, text in representations:
             groups[key].append(text)
         return {key: "\n".join(texts) for key, texts in groups.items()}
 
-    def emit(self, projection: Dict[str, str]) -> None:
+    def emit(self, surface: Dict[str, str], context: Optional[Dict[str, Any]] = None) -> None:
         self.emit_root.mkdir(parents=True, exist_ok=True)
-        for key, content in projection.items():
+        for key, content in surface.items():
             out_path = self.emit_root / f"{key}.md"
             try:
                 out_path.write_text(content, encoding="utf-8")
@@ -186,9 +188,9 @@ def main():
     args = parser.parse_args()
     
     invoker_path = os.path.abspath(__file__)
-    module_name = __name__ if __name__ != "__main__" else "anchor.modeler"
+    module_name = __name__ if __name__ != "__main__" else "surface.bundler"
 
-    compiler = ModelAligner(target_dir=args.dir)
+    compiler = SurfaceBundler(target_dir=args.dir)
     task = CliTaskAdapter(compiler.compile)
 
     invoker, command = get_invoker(Path(__file__))
@@ -196,5 +198,5 @@ def main():
     execute_cli_task(task_instance=task, command_name=module_name, payload=payload)
 
 if __name__ == "__main__":
-    log.info(f"[AUG] anchor model compiler :: sys.argv = {sys.argv}")
+    log.info(f"[AUG] node model surface bundler :: sys.argv = {sys.argv}")
     main()

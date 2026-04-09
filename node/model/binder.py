@@ -1,4 +1,4 @@
-# node.topos.binder
+# node.model.binder
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:
@@ -15,13 +15,14 @@ from konlpy.tag import Mecab
 from tqdm import tqdm
 from plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path
+from node.model.schema import ToposGraph, ToposNode, ToposRelation
 
-log = get_logger("topos.binder")
+log = get_logger("model.binder")
 
-class BoundarySensor:
+class BoundSensor:
     """∂Φ(Boundary) 감지 및 Φ seed 추출을 담당하는 센서 계층"""
     
-    # [고정] 위상적 경계 정의 사상
+    ## axis.map 
     BOUND_MAP = {
         "적": {"group": "structural", "pos": "XSN", "group_desc": "phi_x 구조 귀속자 - 개념 고정 / 안정화"},
         "의": {"group": "possessive", "pos": "JKG", "group_desc": "dPhi 경계 귀속 - 소속 / 종속 구조"},
@@ -90,14 +91,14 @@ class ModelManifold:
         """다양한 경계 속성을 가진 불변 노드 식별"""
         return [n for n, b_counts in self.node_boundaries.items() if len(b_counts) >= threshold]
 
-class ToposBinder:
+class ModelBinder:
     """모델을 순회하며 위상 필드를 구축하고 투영(Projection)을 생성하는 오케스트레이터"""
 
     def __init__(self):
-        self.sensor = BoundarySensor()
+        self.sensor = BoundSensor()
         self.manifold = ModelManifold()
         self.model_root = resolve_path('model')
-        self.output_path = resolve_path("xor") / "bound" / "topos.model.json"
+        self.output_path = resolve_path("xor") / "node" / "model.bound.json"
 
     def execute(self):
         log.info(f"Binding Model Field from: {self.model_root}")
@@ -120,50 +121,39 @@ class ToposBinder:
         self._project()
 
     def _project(self, top_k=100):
-        """현재 매니폴드 상태를 JSON으로 투영"""
         invariants = self.manifold.get_invariants()
         top_seeds = [n for n, _ in self.manifold.node_intensity.most_common(top_k)]
         
-        nodes_data = []
+        # 1. 모델 클래스 기반 노드 초기화
+        nodes_dict = {}
         for seed in top_seeds:
-            nodes_data.append({
-                "id": seed,
-                "intensity": self.manifold.node_intensity[seed],
-                "is_invariant": seed in invariants,
-                "boundary_attributes": dict(self.manifold.node_boundaries[seed]),
-                "support_manifold": sorted(list(self.manifold.node_support[seed]))[:3]
-            })
+            nodes_dict[seed] = ToposNode(
+                id=seed,
+                intensity=self.manifold.node_intensity[seed],
+                is_invariant=(seed in invariants),
+                boundaries=dict(self.manifold.node_boundaries[seed]),
+                support_manifold=sorted(list(self.manifold.node_support[seed]))[:3]
+            )
 
-        edges_data = []
+        # 2. 엣지 데이터를 모델 클래스로 주입
         for (u, v), weight in self.manifold.edge_field.items():
             if weight >= 2 and u in top_seeds and v in top_seeds:
-                edges_data.append({"source": u, "target": v, "strength": weight})
+                nodes_dict[u].relations.append(ToposRelation(target=v, strength=weight))
+                nodes_dict[v].relations.append(ToposRelation(target=u, strength=weight))
 
-        projection = {
-            "metadata": {"type": "topos.network", "version": "2.0"},
-            "invariants": invariants,
-            "nodes": nodes_data,
-            "edges": edges_data
-        }
+        # 3. 최종 그래프 객체 생성
+        topos_graph = ToposGraph(
+            invariants=invariants,
+            nodes=nodes_dict
+        )
 
+        # 4. JSON 투영 (to_dict 활용)
         self.output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.output_path, "w", encoding="utf-8") as f:
-            json.dump(projection, f, ensure_ascii=False, indent=2)
+            json.dump(topos_graph.to_dict(), f, ensure_ascii=False, indent=2)
             
         log.info(f"Model Manifold Projection completed: {self.output_path}")
 
-        print("## [Model Binder] Manifold Projection Summary")
-        print(f"- Global Invariants (불변량): {len(invariants)}개")
-        if invariants:
-            print(f"  └ {', '.join(invariants[:10])}" + ("..." if len(invariants)>10 else ""))
-        
-        print(f"\n- Top Active Nodes (위상 밀도 상위 5):")
-        for i, node_data in enumerate(nodes_data[:5], 1):
-            print(f"  {i}. {node_data['id']} (Intensity: {node_data['intensity']})")
-        
-        print(f"\n- Topological Edges: {len(edges_data)}개 결합 감지")
-        log.info(f"Model Manifold Projection completed: {self.output_path}")
-
 if __name__ == "__main__":
-    binder = ToposBinder()
+    binder = ModelBinder()
     binder.execute()

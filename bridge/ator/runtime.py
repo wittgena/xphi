@@ -4,13 +4,8 @@ from typing import Dict, Any, List, Tuple
 from plane.emitter import get_logger
 from flow.ator import AtorFlow, FlowState
 from contract.proto.col import get_proto
-from bridge.pir import (
-    AnchorFlow, 
-    PhaseInterpreter, 
-    PhaseField, 
-    PsiCarrier, 
-    CarrierType
-)
+from bridge.pir import PhaseField, PsiCarrier, CarrierType
+from bridge.interpreter import AnchorFlow, PhaseInterpreter
 from plane.node.runtime import NodeRuntime
 from phi.state.node0 import enter_node0
 

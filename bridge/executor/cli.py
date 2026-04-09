@@ -18,7 +18,7 @@ class _GenericCliExecutor(BaseExecutor):
         super().__init__()
         self.task_instance = task_instance
         self.completion_signal = completion_signal
-        self.node = None  # NodeRuntime 인스턴스 지연 바인딩용
+        self.node = None
 
     async def execute(self, psi) -> list:
         ## @topos.input: Ψ (incoming command signal)
@@ -31,7 +31,6 @@ class _GenericCliExecutor(BaseExecutor):
         
         try:
             raw_result = self.task_instance.run() or {}
-            ## @topos.materialize: Φ → artifact (structured residue)
             detail_record = TaskDetailRecord(
                 task_id=task_id,
                 command=command,
@@ -78,28 +77,8 @@ class _GenericCliExecutor(BaseExecutor):
             self.completion_signal.set()
         return []
 
-# def _project_to_stdout(summary_event: TaskSummaryEvent):
-#     """@topos.boundary: Ψ → local surface projection (stdout)"""
-#     try:
-#         print(f"[{summary_event.status}] {summary_event.command}")
-#         print(f"- {summary_event.summary}")
-#         print(f"- detail_key: {summary_event.detail_key}")
-#     except Exception:
-#         pass
-
-# def _project_to_stdout(summary_event: TaskSummaryEvent):
-#     """@topos.boundary: Ψ → local surface projection (stdout)"""
-#     try:
-#         print(f"\n[{summary_event.status}] {summary_event.command}")
-#         print(f"{summary_event.summary}")
-#         print(f"detail_key: {summary_event.detail_key}")
-#         details = summary_event.summary  # 기본 fallback
-#         payload = getattr(summary_event, "summary", None)
-#     except Exception:
-#         pass
-
 def _project_to_stdout(summary_event: TaskSummaryEvent):
-    """@topos.boundary: Ψ → local surface projection (stdout)"""
+    """@topos.bound: Ψ → local surface projection (stdout)"""
     try:
         print(f"\n[{summary_event.status}] {summary_event.command}")
         print(f"{summary_event.summary}")
@@ -107,10 +86,10 @@ def _project_to_stdout(summary_event: TaskSummaryEvent):
 
         details = getattr(summary_event, "details", None)
         if isinstance(details, dict):
-            print("\n--- grouped result ---")
+            print("\n## grouped result")
             for k, v in details.items():
                 print(f"\n[{k}] ({len(v)})")
-                for item in v[:5]:  # 과도 출력 방지
+                for item in v[:5]:
                     print(f" - {item.get('namespace')}")
 
     except Exception:
@@ -152,13 +131,13 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
     await asyncio.sleep(0.1) # Boot buffer
 
     trigger_event = PsiEvent(
-        event_id=f"cli-{command_name}",
+        event_id=f"{command_name}-cli",
         parent_id=None,
-        source_id=f"cli.{command_name}",
+        source_id=f"{command_name}:cli",
         scope="LOCAL",
         tick=1,
-        carrier=PsiCarrier(kind="COMMAND", tag=command_name.upper(), payload=payload),
-        context={"phase": "cli_execution"}
+        carrier=PsiCarrier(kind="COMMAND", tag=command_name.lower(), payload=payload),
+        context={"phase": "ex.cli"}
     )
     
     await getattr(node, 'bus').publish(trigger_event)

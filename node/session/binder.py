@@ -1,24 +1,57 @@
 # node.session.binder
-"""
-@flow: Scanner -> Tracer -> Registry -> Schema -> Interface
-"""
+"""@flow: Scanner -> Tracer -> Registry -> Schema -> Interface"""
+import sys
 import json
+import argparse
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from model.code.topic import TopicMap
 from model.code.ext import ExtRegistry
 from block.code.bounder import CodeBounder 
-from block.code.inspect import ProjectMapper, ImportLens, IntegrityChecker
+from anchor.resolver import find_current_self, resolve_path, get_invoker
+from bridge.executor.cli import execute_cli_task, CliTaskAdapter
+
+XOR_ROOT = resolve_path('xor')
+
+class ProjectMapper:
+    """프로젝트의 위상과 경로를 관리합니다."""
+    @staticmethod
+    def setup_workspace(target_path: Path):
+        """임포트가 가능하도록 최상위 경로를 sys.path에 등록합니다."""
+        base_dir = str(target_path if target_path.is_dir() else target_path.parent)
+        if base_dir not in sys.path:
+            sys.path.insert(0, base_dir)
+        return base_dir
+
+    @staticmethod
+    def collect_python_files(target_path: Path) -> List[Path]:
+        """분석 대상 파일들을 수집합니다."""
+        if target_path.is_file():
+            return [target_path]
+        return list(target_path.rglob("*.py"))
 
 class FieldActivator:
-    """[Phase 1] 환경 설정 및 위상 지도 로드 담당"""
+    """[Phase 1] 환경 설정 및 위상 지도 로드 (자동화 적용)"""
     @staticmethod
     def activate(target_path: Path) -> Optional[TopicMap]:
         print(f"[Binder:Session] Field Activation: {target_path}")
         ProjectMapper.setup_workspace(target_path)
         
         repo_name = target_path.name
-        topic_json = Path(f"xor/bound/{repo_name}.code.topic.json")
+        topic_json = XOR_ROOT / "bound" / f"{repo_name}.code.topic.json"
+        
+        # [NEW] 지도가 없으면 block.code.topic을 동적으로 호출하여 생성
+        if not topic_json.exists():
+            print(f"[*] TopicMap missing for '{repo_name}'. Triggering Topology Scanner...")
+            try:
+                from block.code.topic import run_clustering_for_repo
+                run_clustering_for_repo(repo_name)
+            except ImportError as e:
+                print(f"[!] Failed to import Topic Engine: {e}")
+                return None
+            except Exception as e:
+                print(f"[!] Topic clustering execution failed: {e}")
+                return None
         
         if topic_json.exists():
             try:
@@ -35,7 +68,7 @@ class StratifiedStorage:
         self.repo_name = repo_name
         self.hypotheses = hypotheses
         self.topic_map = topic_map
-        self.output_dir = Path("xor") / "bound" / repo_name
+        self.output_dir = XOR_ROOT / "bound" / repo_name
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def save_all(self):
@@ -52,8 +85,8 @@ class StratifiedStorage:
             json.dump(index, f, indent=2, ensure_ascii=False)
 
     def _save_gold_bounds(self):
-        gold = {k: v.model_dump() for k, v in self.hypotheses.items() if v.status == "Deep_Boundary_Mapped"}
-        with open(self.output_dir / "gold_bounds.json", "w", encoding="utf-8") as f:
+        gold = {k: v.model_dump() for k, v in self.hypotheses.items() if v.status == "deep.bound.map"}
+        with open(self.output_dir / "gold.bounds.json", "w", encoding="utf-8") as f:
             json.dump(gold, f, indent=2, ensure_ascii=False)
 
     def _save_phase_shards(self):
@@ -72,54 +105,56 @@ class EmergenceReporter:
     @staticmethod
     def report(repo_name: str, hypotheses: Dict, output_path: Path):
         total = len(hypotheses)
-        gold = len([v for v in hypotheses.values() if v.status == "Deep_Boundary_Mapped"])
+        gold = len([v for v in hypotheses.values() if v.status == "deep.bound.map"])
         rate = (gold / total * 100) if total > 0 else 0
 
-        print("\n" + "="*60)
-        print(f"💡 [Emergence] Structural Evolution: {repo_name.upper()}")
-        print("-" * 60)
+        print(f"## [Emergence] Structural Evolution: {repo_name.upper()}")
         print(f"- Total Hypotheses : {total}")
         print(f"- Gold Bounds      : {gold} ({rate:.1f}%)")
         print(f"- Storage Path     : {output_path.absolute()}")
-        print("=" * 60)
 
 class SessionBinder:
-    """[Orchestrator] Binder 실행의 전체 생명주기 관리"""
     def __init__(self, target_str: str):
         self.target_path = Path(target_str).resolve()
         self.repo_name = self.target_path.name
         self.topic_map = None
         self.binder = None
 
-    def start(self):
-        # 1. 활성화 (Activator)
+    def run(self, **kwargs):
         self.topic_map = FieldActivator.activate(self.target_path)
+        if not self.topic_map:
+            print("[!] Analysis aborted due to missing TopicMap.")
+            return {"status": "fail", "reason": "Missing TopicMap"}
 
-        # 2. 스캔 실행 (CodeBinder)
         self.binder = CodeBounder(topic_map=self.topic_map)
         self.binder.run_strategic_scan(self.target_path)
 
-        # 3. 계층 저장 (Storage)
-        storage = StratifiedStorage(
-            self.repo_name, 
-            self.binder.registry._hypotheses, 
-            self.topic_map
-        )
+        storage = StratifiedStorage(self.repo_name, self.binder.registry._hypotheses, self.topic_map)
         output_path = storage.save_all()
+        EmergenceReporter.report(self.repo_name, self.binder.registry._hypotheses, output_path)
+        return {
+            "status": "success",
+            "repo_name": self.repo_name,
+            "hypotheses_count": len(self.binder.registry._hypotheses),
+            "storage_path": str(output_path)
+        }
 
-        # 4. 결과 보고 (Reporter)
-        EmergenceReporter.report(
-            self.repo_name, 
-            self.binder.registry._hypotheses, 
-            output_path
-        )
+def main():
+    parser = argparse.ArgumentParser(description="Code Topology Binder Session")
+    parser.add_argument("--dir", type=str, default=".", help="Target directory")
+    args, _ = parser.parse_known_args()
 
-# 최종 진입점
-def run(target_str: str):
-    session = SessionBinder(target_str)
-    session.start()
+    session = SessionBinder(args.dir)
+    adapted_task = CliTaskAdapter(session.run)
+    invoker, command = get_invoker(Path(__file__))
+    payload = {
+        "_context": {
+            "invoker": str(invoker), 
+            "command": command, 
+            "cli_args": sys.argv[1:]
+        }
+    }
+    execute_cli_task(task_instance=adapted_task, command_name="session.binder", payload=payload)
 
 if __name__ == "__main__":
-    import sys
-    target = sys.argv[1] if len(sys.argv) > 1 else "."
-    run(target)
+    main()
