@@ -22,7 +22,6 @@ class _GenericCliExecutor(BaseExecutor):
         self.node = None
 
     async def execute(self, psi) -> list:
-        ## @topos.input: Ψ (incoming command signal)
         command = psi.carrier.tag if hasattr(psi, 'carrier') else "CLI_TASK"
         snowflake_id = next_id()
         task_id = f"task-{snowflake_id}"
@@ -31,18 +30,10 @@ class _GenericCliExecutor(BaseExecutor):
         self.log.info(f"[exec] Executing CLI task: {command} ({task_id})")
         
         try:
+            # 1. 태스크 실행
             raw_result = self.task_instance.run() or {}
 
-            if self.node and self.node.redis:
-                ## Redis에 상세 기록 (기존 로직)
-                await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
-                
-                ## 발화자에게 응답 (Response Channel이 있을 경우)
-                response_channel = psi.context.get("response_channel")
-                if response_channel:
-                    await self.node.redis.publish(response_channel, summary_event.to_json())
-                    self.log.info(f"[exec] Reflection published to {response_channel}")
-
+            # 2. 결과 레코드 생성 (저장하기 전에 먼저 생성!)
             detail_record = TaskDetailRecord(
                 task_id=task_id,
                 command=command,
@@ -52,11 +43,7 @@ class _GenericCliExecutor(BaseExecutor):
                 details=raw_result.get("details", {})
             )
 
-            if self.node and self.node.redis:
-                await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
-                await self.node.redis.set(latest_pointer_key, detail_key, ex=3600)
-                self.log.info(f"[exec] Detailed artifacts saved -> Redis[{detail_key}]")
-
+            # 3. 요약 이벤트 생성
             summary_event = TaskSummaryEvent(
                 task_id=task_id,
                 command=command,
@@ -64,8 +51,25 @@ class _GenericCliExecutor(BaseExecutor):
                 summary=raw_result.get("summary", f"Task {command} completed."),
                 detail_key=detail_key
             )
+
+            # 4. Redis 저장 및 공명(Reflection) 발행
+            if self.node and self.node.redis:
+                # 상세 기록 저장
+                await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
+                await self.node.redis.set(latest_pointer_key, detail_key, ex=3600)
+                
+                # 발화자(Proxy)에게 응답 전송
+                response_channel = psi.context.get("response_channel")
+                if response_channel:
+                    await self.node.redis.publish(response_channel, summary_event.to_json())
+                    self.log.info(f"[exec] Reflection published to {response_channel}")
+                
+                self.log.info(f"[exec] Detailed artifacts saved -> Redis[{detail_key}]")
+
+            # 5. 로컬 출력
             _project_to_stdout(summary_event)
             
+            # 6. 내부 버스용 결과 이벤트 발행
             result_carrier = PsiCarrier(
                 kind="RESULT", 
                 tag=command, 
@@ -83,11 +87,90 @@ class _GenericCliExecutor(BaseExecutor):
 
             if self.node and getattr(self.node, 'bus', None):
                 await self.node.bus.publish(result_event)
+
         except Exception as e:
             self.log.error(f"[exec] Task Failed: {e}")
+            # 에러 추적을 위해 스택트레이스를 찍어보고 싶다면 아래 주석 해제
+            # import traceback; traceback.print_exc()
         finally:
             self.completion_signal.set()
         return []
+
+# class _GenericCliExecutor(BaseExecutor):
+#     """bound(transduction) - external CLI → internal Ψ execution"""
+#     def __init__(self, task_instance, completion_signal: asyncio.Event):
+#         super().__init__()
+#         self.task_instance = task_instance
+#         self.completion_signal = completion_signal
+#         self.node = None
+
+#     async def execute(self, psi) -> list:
+#         ## @topos.input: Ψ (incoming command signal)
+#         command = psi.carrier.tag if hasattr(psi, 'carrier') else "CLI_TASK"
+#         snowflake_id = next_id()
+#         task_id = f"task-{snowflake_id}"
+#         detail_key = f"{command.lower()}:cli:{snowflake_id}"
+#         latest_pointer_key = f"{command.lower()}:cli:latest"
+#         self.log.info(f"[exec] Executing CLI task: {command} ({task_id})")
+        
+#         try:
+#             raw_result = self.task_instance.run() or {}
+
+#             if self.node and self.node.redis:
+#                 ## Redis에 상세 기록 (기존 로직)
+#                 await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
+                
+#                 ## 발화자에게 응답 (Response Channel이 있을 경우)
+#                 response_channel = psi.context.get("response_channel")
+#                 if response_channel:
+#                     await self.node.redis.publish(response_channel, summary_event.to_json())
+#                     self.log.info(f"[exec] Reflection published to {response_channel}")
+
+#             detail_record = TaskDetailRecord(
+#                 task_id=task_id,
+#                 command=command,
+#                 status=raw_result.get("status", "SUCCESS"),
+#                 artifacts=raw_result.get("artifacts", {}),
+#                 metrics=raw_result.get("metrics", {}),
+#                 details=raw_result.get("details", {})
+#             )
+
+#             if self.node and self.node.redis:
+#                 await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
+#                 await self.node.redis.set(latest_pointer_key, detail_key, ex=3600)
+#                 self.log.info(f"[exec] Detailed artifacts saved -> Redis[{detail_key}]")
+
+#             summary_event = TaskSummaryEvent(
+#                 task_id=task_id,
+#                 command=command,
+#                 status=detail_record.status,
+#                 summary=raw_result.get("summary", f"Task {command} completed."),
+#                 detail_key=detail_key
+#             )
+#             _project_to_stdout(summary_event)
+            
+#             result_carrier = PsiCarrier(
+#                 kind="RESULT", 
+#                 tag=command, 
+#                 payload=asdict(summary_event),
+#             )
+            
+#             result_event = PsiEvent(
+#                 event_id=f"res-{task_id}",
+#                 parent_id=getattr(psi, 'event_id', None),
+#                 source_id="cli.executor",
+#                 scope="GLOBAL",
+#                 tick=1,
+#                 carrier=result_carrier
+#             )
+
+#             if self.node and getattr(self.node, 'bus', None):
+#                 await self.node.bus.publish(result_event)
+#         except Exception as e:
+#             self.log.error(f"[exec] Task Failed: {e}")
+#         finally:
+#             self.completion_signal.set()
+#         return []
 
 def _project_to_stdout(summary_event: TaskSummaryEvent):
     """@topos.bound: Ψ → local surface projection (stdout)"""
