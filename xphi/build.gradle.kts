@@ -45,20 +45,17 @@ fun findAnchorDirectory(): File? {
 val anchorDir = findAnchorDirectory()
 val boundJsonFile = anchorDir?.let { File(it, "bound.json") }
 
-var around = tasks.register("around") {
+var resolver = tasks.register("resolver") {
     group = "verification"
-    description = "around.py 스크립트를 실행하여 로그를 출력"
+    description = "resolver.py 스크립트를 실행하여 로그를 출력"
 
     doLast {
-        val scriptFile = anchorDir?.let { File(it, "around.py") }
+        val scriptFile = anchorDir?.let { File(it, "resolver.py") }
 
         if (scriptFile != null && scriptFile.exists()) {
             logger.lifecycle(">> [Python Exec] Running: ${scriptFile.absolutePath}")
-
-            // 파이썬 실행
             exec {
                 commandLine("python3", scriptFile.absolutePath, "--around")
-                // 표준 출력 및 에러를 터미널(stdout)로 직접 보냄
                 standardOutput = System.`out`
                 errorOutput = System.`err`
             }
@@ -132,7 +129,7 @@ val copyJarToAnchor = tasks.register<Copy>("copyJarToAnchor") {
 // bootJar 실행 후 자동으로 복사 태스크 실행
 tasks.named("bootJar") {
     finalizedBy(copyJarToAnchor)
-    finalizedBy(around)
+    finalizedBy(resolver)
 }
 
 tasks.withType<Test> {

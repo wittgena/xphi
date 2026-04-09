@@ -1,169 +1,200 @@
-# model.topos.bundler
-"""
-@role: Class-based Boundary-driven Model Binder
-@semantics:
-- Entity-Component-System (ECS) inspired architecture
-- BoundarySensor: Detects ∂Φ
-- ModelManifold: Maintains Φ nodes and edge coupling
-- ModelBinder: Orchestrates the field formation
-"""
-import json
+# model.topos.model
+# @py.start
+import os
 import sys
+import re
+import asyncio
+import argparse
+import fnmatch
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar, List, Tuple, Dict, Any
 from pathlib import Path
-from collections import defaultdict, Counter
-from konlpy.tag import Mecab
-from tqdm import tqdm
+from collections import defaultdict
 from plane.emitter import get_logger
-from anchor.resolver import find_current_self, resolve_path
+from anchor.resolver import find_current_self, resolve_path, get_invoker
+from block.parser.py import PyDotMdParser 
+from bridge.executor.cli import execute_cli_task, CliTaskAdapter
+from flow.surface.compiler import SurfaceCompiler
 
-log = get_logger("topos.binder")
+log = get_logger("align.modeler")
 
-class BoundarySensor:
-    """∂Φ(Boundary) 감지 및 Φ seed 추출을 담당하는 센서 계층"""
-    
-    # [고정] 위상적 경계 정의 사상
-    BOUND_MAP = {
-        "적": {"group": "structural", "pos": "XSN", "group_desc": "phi_x 구조 귀속자 - 개념 고정 / 안정화"},
-        "의": {"group": "possessive", "pos": "JKG", "group_desc": "dPhi 경계 귀속 - 소속 / 종속 구조"},
-        "을": {"group": "objective", "pos": "JKO", "group_desc": "psi_i 작용 대상 - 의미 흐름 목적지"},
-        "를": {"group": "objective", "pos": "JKO", "group_desc": "psi_i 작용 대상 - 의미 흐름 목적지"},
-        "이": {"group": "subject", "pos": "JKS", "group_desc": "psi_i 발생원 - 작용 주체"},
-        "가": {"group": "subject", "pos": "JKS", "group_desc": "psi_i 발생원 - 작용 주체"},
-        "은": {"group": "topic", "pos": "JX", "group_desc": "위상 attractor - 문맥 중심점"},
-        "는": {"group": "topic", "pos": "JX", "group_desc": "위상 attractor - 문맥 중심점"},
-        "에서": {"group": "ablative", "pos": "JKB", "group_desc": "출발 경계 (from)"},
-        "에": {"group": "locative", "pos": "JKB", "group_desc": "위치 고정점 (at / in)"},
-        "으로": {"group": "directional", "pos": "JKB", "group_desc": "방향 유도 (to / toward)"},
-        "로": {"group": "directional", "pos": "JKB", "group_desc": "방향 유도 (to / toward)"},
-        "와": {"group": "instrumental", "pos": "JC", "group_desc": "수단 / 매개 / 동반"},
-        "과": {"group": "instrumental", "pos": "JC", "group_desc": "수단 / 매개 / 동반"},
-        "로써": {"group": "instrumental", "pos": "JKB", "group_desc": "수단 / 매개 / 동반"},
-        "까지": {"group": "terminative", "pos": "JX", "group_desc": "종착점 (endpoint)"},
-        "부터": {"group": "originative", "pos": "JX", "group_desc": "시작점 (source)"},
-    }
+DELIMITER = "---"
 
-    def __init__(self, dic_path="/opt/homebrew/lib/mecab/dic/mecab-ko-dic"):
+class ModelAligner(SurfaceCompiler[Path, Tuple[str, str], Dict[str, str]]):
+    def __init__(self, target_dir: str):
         try:
-            self.mecab = Mecab(dic_path)
+            self.self_root = find_current_self()
+            self.model_root = resolve_path('cache')
         except Exception as e:
-            log.warn(f"Mecab load failed: {e}")
-            self.mecab = None
+            log.error(f"[error] 기준면(.self)을 찾을 수 없음: {e}")
+            sys.exit(1)
 
-    def sense(self, text):
-        """텍스트에서 (phi_seed, boundary_group) 쌍을 추출"""
-        if not self.mecab: return []
-        tokens = self.mecab.pos(text)
-        candidates = []
-        for i in range(len(tokens) - 1):
-            cur_word, cur_tag = tokens[i]
-            next_word, next_tag = tokens[i+1]
-            meta = self.BOUND_MAP.get(next_word)
-            if cur_tag.startswith("NN") and meta and next_tag == meta["pos"]:
-                normalized_node = cur_word.strip().lower()
-                candidates.append((cur_word, meta["group"]))
-        return candidates
+        self.merge_root = self.self_root / target_dir
+        path_name = f"model_{target_dir}" if target_dir not in ['.', '/', './'] else 'self'
+        self.emit_root = self.model_root / path_name
 
-class ModelManifold:
-    """추출된 Φ 노드와 이들 간의 결합(Edge)을 관리하는 데이터 필드"""
-    
-    def __init__(self):
-        self.node_intensity = Counter()
-        self.node_support = defaultdict(set)
-        self.node_boundaries = defaultdict(Counter)
-        self.edge_field = Counter()
+        if not self.merge_root.exists():
+            log.info(f"[error] 입력 경로 없음: {self.merge_root}")
+            sys.exit(1)
 
-    def bind(self, seed, b_group, doc_path):
-        """노드를 매니폴드에 결속"""
-        self.node_intensity[seed] += 1
-        self.node_support[seed].add(doc_path)
-        self.node_boundaries[seed][b_group] += 1
+        self.ignore_patterns = self._load_gitignore_patterns()
+        log.info(f"[merge.from] {self.merge_root}")
+        log.info(f"[emit.to] {self.emit_root}")
 
-    def couple(self, nodes):
-        """노드들 간의 위상적 결합(Edge) 형성"""
-        sorted_nodes = sorted(list(nodes))
-        for i in range(len(sorted_nodes)):
-            for j in range(i + 1, len(sorted_nodes)):
-                edge = tuple(sorted([sorted_nodes[i], sorted_nodes[j]]))
-                self.edge_field[edge] += 1
+    def _load_gitignore_patterns(self) -> List[str]:
+        patterns = [
+            "*.jar", "*.class", "*.log", "*.pyc", "*.exe", "build/**", "gradle/**", "gradlew", "gradlew.bat",
+            "__pycache__/**", ".venv/**", ".idea/**", ".git/**", ".DS_Store", "node_modules/**", ".tab"
+        ]
+        for gitignore_path in [self.merge_root / ".gitignore", Path.home() / ".gitignore"]:
+            if gitignore_path.exists():
+                with open(gitignore_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#"):
+                            patterns.append(line)
+                break
+        log.info(f"[IGNORE] 적용된 패턴 수: {len(patterns)}")
+        return patterns
 
-    def get_invariants(self, threshold=7):
-        """다양한 경계 속성을 가진 불변 노드 식별"""
-        return [n for n, b_counts in self.node_boundaries.items() if len(b_counts) >= threshold]
+    def _is_binary_file(self, path: Path, sample_size: int = 1024) -> bool:
+        if path.suffix == '.md': return False
+        try:
+            with path.open("rb") as f:
+                chunk = f.read(sample_size)
+                if b'\0' in chunk: return True
+                text_ratio = sum(32 <= b <= 126 or b in (9, 10, 13) for b in chunk) / max(len(chunk), 1)
+                return text_ratio < 0.8
+        except Exception as e:
+            log.error(f"[BINARY CHECK ERROR] {path}: {e}")
+            return True # 오류 시 보수적으로 제외
 
-class ToposBinder:
-    """모델을 순회하며 위상 필드를 구축하고 투영(Projection)을 생성하는 오케스트레이터"""
+    def _should_exclude(self, path: Path) -> bool:
+        rel_path = str(path.relative_to(self.merge_root))
+        rel_path_obj = path.relative_to(self.merge_root)
 
-    def __init__(self):
-        self.sensor = BoundarySensor()
-        self.manifold = ModelManifold()
-        self.model_root = resolve_path('model')
-        self.output_path = resolve_path("xor") / "bound" / "topos.model.json"
+        for pattern in self.ignore_patterns:
+            if pattern.endswith("/**") and rel_path_obj.match(pattern): return True
+            elif pattern.endswith("/") and rel_path.startswith(pattern): return True
+            elif fnmatch.fnmatch(rel_path, pattern) or fnmatch.fnmatch(path.name, pattern): return True
 
-    def execute(self):
-        log.info(f"Binding Model Field from: {self.model_root}")
-        
-        files = list(self.model_root.rglob("*.md"))
-        for path in tqdm(files, desc="Processing Documents"):
+        if any(p.startswith(".") for p in rel_path_obj.parts): return True
+        if self._is_binary_file(path): return True
+        return False
+
+    def _extract_title(self, content: str, fallback: str, prefix="@phase") -> str:
+        lines = content.splitlines()
+        for line in lines:
+            if re.match(r"^#\s+\S", line): return f"## {prefix}: {line.lstrip('#').strip()}"
+        for line in lines:
+            if re.match(r"^##\s+\S", line): return f"## {prefix}: {line.lstrip('#').strip()}"
+        return f"## @file: {Path(fallback).stem.replace('_', ' ')}"
+
+    def _get_group_key(self, md_path: Path, level: int = 1) -> str:
+        rel = md_path.relative_to(self.merge_root)
+        parts = rel.parts[:-1]
+        return "root" if not parts else ".".join(parts[:level])
+
+    # [추가됨] MdDocument AST 트리를 순회하며 마크다운 텍스트로 렌더링하는 재귀 함수
+    def _render_md_node(self, node: Any) -> str:
+        node_type = type(node).__name__
+        if node_type == "MdDocument":
+            return "".join(self._render_md_node(sec) for sec in getattr(node, 'sections', []))
+        elif node_type == "MdSection":
+            res = [f"{'#' * node.level} {node.title}\n\n"]
+            for child in getattr(node, 'children', []):
+                res.append(self._render_md_node(child))
+            for sub in getattr(node, 'subsections', []):
+                res.append(self._render_md_node(sub))
+            return "".join(res)
+        elif node_type == "Paragraph":
+            return f"{node.text}\n\n"
+        elif node_type == "CodeBlock":
+            content = node.content if node.content.endswith('\n') else node.content + '\n'
+            return f"```{node.lang}\n{content}```\n\n"
+        return ""
+
+    def scan(self) -> List[Path]:
+        return list(self.merge_root.rglob("*"))
+
+    def filter(self, topos: List[Path]) -> List[Path]:
+        return [p for p in topos if p.is_file() and not self._should_exclude(p)]
+
+    def project(self, skeleton: List[Path]) -> List[Tuple[str, str]]:
+        representations = []
+        for path in skeleton:
             try:
-                text = path.read_text(encoding="utf-8")
-                candidates = self.sensor.sense(text)
+                key = self._get_group_key(path)
                 
-                doc_nodes = set()
-                for seed, b_group in candidates:
-                    self.manifold.bind(seed, b_group, str(path))
-                    doc_nodes.add(seed)
+                if path.suffix == ".py":
+                    try:
+                        # [수정됨] 객체 지향 Parser 활용
+                        parser = PyDotMdParser(path)
+                        doc = parser.parse()
+                        
+                        root = getattr(doc, 'sections', [])[0]
+                        
+                        # Fallback 트리거를 위한 필수 요소 검증 (desc와 코드 블록 유무)
+                        has_desc = any(sub.title == "@desc" for sub in getattr(root, 'subsections', []))
+                        has_script = any(
+                            sub.title == "py.script" and any(type(c).__name__ == "CodeBlock" and c.content.strip() for c in getattr(sub, 'children', []))
+                            for sub in getattr(root, 'subsections', [])
+                        )
+
+                        if not has_desc or not has_script:
+                            raise ValueError("dotmd 요소 부족 (fallback 발생)")
+
+                        # AST를 마크다운 문자열로 렌더링
+                        content = self._render_md_node(doc).strip()
+                        
+                    except Exception as e:
+                        ## Fallback: Plain python code
+                        log.debug(f"[FALLBACK] {path.name}: {e}")
+                        content = f"```python\n{path.read_text(encoding='utf-8', errors='replace')}\n```"
+                else:
+                    ## 일반 텍스트
+                    content = path.read_text(encoding="utf-8", errors="replace").strip()
+
+                title_line = self._extract_title(content, path.name)
+                final_block = f"{DELIMITER} {title_line}\n\n{content}\n"
+                representations.append((key, final_block))
                 
-                self.manifold.couple(doc_nodes)
             except Exception as e:
-                log.error(f"Error in {path.name}: {e}")
+                log.error(f"[PROJECT ERROR] {path}: {e}")
+                
+        return representations
 
-        self._project()
+    def assemble(self, representations: List[Tuple[str, str]]) -> Dict[str, str]:
+        groups = defaultdict(list)
+        for key, text in representations:
+            groups[key].append(text)
+        return {key: "\n".join(texts) for key, texts in groups.items()}
 
-    def _project(self, top_k=100):
-        """현재 매니폴드 상태를 JSON으로 투영"""
-        invariants = self.manifold.get_invariants()
-        top_seeds = [n for n, _ in self.manifold.node_intensity.most_common(top_k)]
-        
-        nodes_data = []
-        for seed in top_seeds:
-            nodes_data.append({
-                "id": seed,
-                "intensity": self.manifold.node_intensity[seed],
-                "is_invariant": seed in invariants,
-                "boundary_attributes": dict(self.manifold.node_boundaries[seed]),
-                "support_manifold": sorted(list(self.manifold.node_support[seed]))[:3]
-            })
+    def emit(self, projection: Dict[str, str]) -> None:
+        self.emit_root.mkdir(parents=True, exist_ok=True)
+        for key, content in projection.items():
+            out_path = self.emit_root / f"{key}.md"
+            try:
+                out_path.write_text(content, encoding="utf-8")
+                log.info(f"[WRITE] → {out_path}")
+            except Exception as e:
+                log.error(f"[WRITE ERROR] {out_path}: {e}")
 
-        edges_data = []
-        for (u, v), weight in self.manifold.edge_field.items():
-            if weight >= 2 and u in top_seeds and v in top_seeds:
-                edges_data.append({"source": u, "target": v, "strength": weight})
+def main():
+    parser = argparse.ArgumentParser(description="Compile project topos into a grouped markdown.")
+    parser.add_argument("--dir", type=str, required=True, help="Target input path. E.g., flow/dev")
+    args = parser.parse_args()
+    
+    invoker_path = os.path.abspath(__file__)
+    module_name = __name__ if __name__ != "__main__" else "anchor.modeler"
 
-        projection = {
-            "metadata": {"type": "topos.network", "version": "2.0"},
-            "invariants": invariants,
-            "nodes": nodes_data,
-            "edges": edges_data
-        }
+    compiler = ModelAligner(target_dir=args.dir)
+    task = CliTaskAdapter(compiler.compile)
 
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(self.output_path, "w", encoding="utf-8") as f:
-            json.dump(projection, f, ensure_ascii=False, indent=2)
-            
-        log.info(f"Model Manifold Projection completed: {self.output_path}")
-
-        print("## [Model Binder] Manifold Projection Summary")
-        print(f"- Global Invariants (불변량): {len(invariants)}개")
-        if invariants:
-            print(f"  └ {', '.join(invariants[:10])}" + ("..." if len(invariants)>10 else ""))
-        
-        print(f"\n- Top Active Nodes (위상 밀도 상위 5):")
-        for i, node_data in enumerate(nodes_data[:5], 1):
-            print(f"  {i}. {node_data['id']} (Intensity: {node_data['intensity']})")
-        
-        print(f"\n- Topological Edges: {len(edges_data)}개 결합 감지")
-        log.info(f"Model Manifold Projection completed: {self.output_path}")
+    invoker, command = get_invoker(Path(__file__))
+    payload={"_context": {"invoker": str(invoker), "command": command, "cli_args": sys.argv[1:]}}
+    execute_cli_task(task_instance=task, command_name=module_name, payload=payload)
 
 if __name__ == "__main__":
-    binder = ToposBinder()
-    binder.execute()
+    log.info(f"[AUG] anchor model compiler :: sys.argv = {sys.argv}")
+    main()

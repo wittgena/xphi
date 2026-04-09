@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Optional, Dict
 from contract.interface.code import TopicMap
 from model.ext import ExtRegistry
-from node.code.bounder import CodeBounder 
-from node.code.inspect import ProjectMapper, ImportLens, IntegrityChecker
+from block.code.bounder import CodeBounder 
+from block.code.inspect import ProjectMapper, ImportLens, IntegrityChecker
 
 class FieldActivator:
     """[Phase 1] 환경 설정 및 위상 지도 로드 담당"""
