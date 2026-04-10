@@ -4,6 +4,7 @@ import sys
 import uuid
 import json
 import asyncio
+import argparse
 import subprocess
 from pathlib import Path
 import redis.asyncio as redis_async
@@ -20,6 +21,11 @@ from bridge.executor.base import BaseExecutor
 from anchor.resolver import get_invoker
 
 log = get_logger("executor.cli")
+
+def parse_local(argv):
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--local", action="store_true")
+    return parser.parse_known_args(argv)
 
 def dispatch_cli(command_name: str, entry_func: Callable, file_path: str):
     """CLI 엔트리포인트의 공통 배관 로직을 처리하는 유니버설 디스패처"""

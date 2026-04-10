@@ -9,7 +9,7 @@ from node.scanner import NodeScanner, NodeCommit
 from plane.emitter import get_emitter
 from anchor.resolver import find_current_self, get_invoker
 from contract.registry import cli_contract
-from bridge.executor.cli import execute_cli_task, CliTaskAdapter
+from bridge.executor.cli import execute_cli_task, CliTaskAdapter, parse_local, dispatch_cli
 
 log = get_emitter("node.commit", mode="SLIM")
 
@@ -95,8 +95,11 @@ def entry_task(args):
 
 @cli_contract(name="node.commit", recept=[])
 def main():
-    from bridge.executor.cli import dispatch_cli
-    dispatch_cli("node.commit", entry_task, __file__)
+    bound_args, remain = parse_local(sys.argv[1:])
+    if bound_args.local:
+        entry_task(remain).run()
+    else:
+        dispatch_cli("node.commit", entry_task, __file__)
 
 if __name__ == "__main__":
     main()

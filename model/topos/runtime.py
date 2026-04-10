@@ -5,7 +5,7 @@ import logging
 from typing import List, Tuple, Any, Optional, Dict
 from dataclasses import field
 from plane.emitter import get_logger
-from contract.proto.col import proto, get_proto, Proto
+from bridge.proto.col import proto, get_proto, Proto
 from flow.topos import ToposFlow, FlowState
 
 log = get_logger("topos.runtime")
