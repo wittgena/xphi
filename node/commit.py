@@ -4,19 +4,17 @@ import sys
 import subprocess
 from typing import List
 from pathlib import Path
-from plane.emitter import get_emitter
-from anchor.resolver import find_current_self, get_invoker
 from node.repo import NodeRepo, NodeAnchor, align_commit_protocol
 from node.scanner import NodeScanner, NodeCommit
+from plane.emitter import get_emitter
+from anchor.resolver import find_current_self, get_invoker
+from contract.registry import cli_contract
 from bridge.executor.cli import execute_cli_task, CliTaskAdapter
 
-log = get_emitter("align.commit", mode="SLIM")
+log = get_emitter("node.commit", mode="SLIM")
 
 def git_commit_runner(path: Path, message: str, apply: bool) -> str:
-    """
-    @role: Physical State Finalizer
-    실제 Git 저장소의 상태를 확정하고 결과 해시를 반환함
-    """
+    """@role: Physical State Finalizer - 실제 Git 저장소의 상태를 확정하고 결과 해시를 반환함"""
     if not apply:
         return "dry-run-id"
         
@@ -86,23 +84,19 @@ class CommitAligner:
             apply=self.apply
         )
 
-def main():
+def entry_task(args):
     parser = argparse.ArgumentParser(description="Era-based Alignment Orchestrator")
     parser.add_argument("-m", "--message", required=True, help="Commit message")
     parser.add_argument("--apply", action="store_true", help="Actually execute state closure")
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     aligner = CommitAligner(apply=args.apply, message=args.message)
-    adapted_task = CliTaskAdapter(aligner.run)
-    invoker, command = get_invoker(Path(__file__))
-    payload = {
-        "_context": {
-            "invoker": str(invoker), 
-            "command": command, 
-            "cli_args": sys.argv[1:]
-        }
-    }
-    execute_cli_task(task_instance=adapted_task, command_name=command, payload=payload)
+    return CliTaskAdapter(aligner.run)
+
+@cli_contract(name="node.commit", recept=[])
+def main():
+    from bridge.executor.cli import dispatch_cli
+    dispatch_cli("node.commit", entry_task, __file__)
 
 if __name__ == "__main__":
     main()

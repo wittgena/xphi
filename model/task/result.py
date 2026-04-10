@@ -16,6 +16,18 @@ class TaskSummaryEvent:
     status: str           # "SUCCESS", "FAILED", "PARTIAL"
     summary: str          # 간단한 한 줄 요약
     detail_key: str       # Redis에서 상세 데이터를 찾기 위한 키
+    details: dict[str, Any]
+
+    def to_json(self) -> str:
+        """객체를 JSON 문자열로 변환 (Surface 투영용)"""
+        return json.dumps(asdict(self))
+
+    @classmethod
+    def from_json(cls, json_str: str):
+        """JSON 문자열을 객체로 복원 (Capture용)"""
+        data = json.loads(json_str)
+        return cls(**data)
+
 
 @dataclass
 class TaskDetailRecord:
@@ -40,6 +52,13 @@ class TaskDetailRecord:
 
     details: Dict[str, Any] = field(default_factory=dict)
     timestamp: float = field(default_factory=time.time)
-
+    
     def to_json(self) -> str:
-        return json.dumps(asdict(self), ensure_ascii=False)
+        """객체를 JSON 문자열로 변환 (Surface 투영용)"""
+        return json.dumps(asdict(self))
+
+    @classmethod
+    def from_json(cls, json_str: str):
+        """JSON 문자열을 객체로 복원 (Capture용)"""
+        data = json.loads(json_str)
+        return cls(**data)

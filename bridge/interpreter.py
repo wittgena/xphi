@@ -1,4 +1,4 @@
-# bridge.pir
+# bridge.interpreter
 """
 @desc: Phase Interference Reflection (PIR)
 
@@ -103,8 +103,8 @@ class PhaseInterpreter:
     def process(self, carrier: PsiCarrier) -> dict:
         """@return: Dispatcher가 기대하는 딕셔너리 구조로 반환"""
         ## 필드 검증 (Gating)
-        if carrier.target_field != self.current_field:
-            return {"action": "INTERFERENCE:FIELD_MISMATCH", "phase": self.phase}
+        # if carrier.target_field != self.current_field:
+        #     return {"action": "INTERFERENCE:FIELD_MISMATCH", "phase": self.phase}
 
         ## 경계 해석 (Resolve)
         symbol = self._resolve_symbol(carrier.tag)
@@ -118,7 +118,7 @@ class PhaseInterpreter:
 
         ## 레거시 시스템(Dispatcher/Actuator)이 이해할 수 있는 딕셔너리 반환
         return {
-            "psi": carrier.symbol(),
+            "psi": carrier.symbol,
             "action": action,
             "phase": self.phase,
             "version": getattr(self.anchor, 'version', 0),

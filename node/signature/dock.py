@@ -72,12 +72,10 @@ class DocksExecutor(BaseExecutor):
         self.trace_buffer: List[ExTrajectory] = []
 
     async def execute(self, psi: PsiType) -> List[PsiType]:
-        symbol = psi.symbol() if callable(getattr(psi, "symbol", None)) else psi.symbol
         current_lineage = getattr(psi, "_lineage", [self.phi.module_id])
-
         step = TraceStep(
             module_id=self.phi.module_id,
-            inputs={"payload": symbol},
+            inputs={"payload": psi.symbol},
             outputs={"res": "processed"}
         )
         

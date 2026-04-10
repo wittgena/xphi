@@ -49,6 +49,7 @@ class PsiCarrier:
     carrier_type: Optional[CarrierType] = CarrierType.FIXED
     target_field: Optional[PhaseField] = PhaseField.LOCAL
 
+    @property
     def symbol(self) -> str:
         """boundary routing symbol (∂Φ input)"""
         return f"{self.kind}:{self.tag}"
@@ -78,7 +79,12 @@ class PsiEvent:
     @property
     def symbol(self) -> str:
         """라우팅 심볼 위임"""
-        return self.carrier.symbol()
+        return self.carrier.symbol
+
+    # @property
+    # def target_field(self):
+    #     """계층을 건너뛰는 접근을 위한 위상 브릿지"""
+    #     return self.carrier.target_field if self.carrier else None
 
     @property
     def tag(self) -> str:

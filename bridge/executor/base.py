@@ -21,7 +21,7 @@ class SequentialExecutor(BaseExecutor):
     """@phase.executor.sequential: ψ → {ψ} (identity / no fan-out)"""
 
     async def execute(self, psi: PsiType) -> List[PsiType]:
-        self.log.info(f"[exec] sequential ψ={psi.symbol()}")
+        self.log.info(f"[exec] sequential ψ={psi.symbol}")
         return [psi]
 
 class ParallelExecutor(BaseExecutor):
@@ -33,7 +33,7 @@ class ParallelExecutor(BaseExecutor):
 
     async def execute(self, psi: PsiType) -> List[PsiType]:
         """worker_fn: ψ → List[ψ]"""
-        self.log.info(f"[exec] parallel start ψ={psi.symbol()}")
+        self.log.info(f"[exec] parallel start ψ={psi.symbol}")
 
         ## fan-out 정의 (예: payload 기준 분해)
         tasks = await self._split(psi)

@@ -48,7 +48,7 @@ class ResidueExecutor(BaseExecutor):
         self.pressure: float = 0.0
 
     async def execute(self, psi: PsiType) -> List[PsiType]:
-        block_data = json.loads(psi.symbol())
+        block_data = json.loads(psi.symbol)
         self.buffer.append(block_data)
 
         if len(self.buffer) < self.batch_size:

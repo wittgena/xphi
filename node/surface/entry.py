@@ -216,9 +216,7 @@ class SurfaceEntryOrchestrator:
         renderer = BoundRenderer(self.outdir)
         return renderer.project_file(self.fixed_graph_path, execution_context)
 
-
-@cli_contract(name="surface.entry", args=["--entry", "self"], tags=["surface"], recept=["node.model.binder"])
-def main():
+def entry_task(args):
     parser = argparse.ArgumentParser(description="Contextual Boundary Projection (Φ′ + Context → Ψ → Φs)")
     parser.add_argument("--entry", required=True, help="Entry node ID (e.g., 특정 개념어나 클래스명)")
     parser.add_argument("--dir", default=None, help="Target model directory (지정 안 하면 전체 model 스캔)")
@@ -226,10 +224,8 @@ def main():
     parser.add_argument("--depth", type=int, default=1, help="Graph expansion depth (기본: 1)")
     parser.add_argument("--relations", nargs='+', default=["coupled"], help="Relation types to follow")
     parser.add_argument("--outdir", default=".", help="Directory to save the projected markdown")
-    
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
-    ## Orchestrator 객체 생성
     orchestrator = SurfaceEntryOrchestrator(
         entry=args.entry,
         target_dir=args.dir,
@@ -238,16 +234,12 @@ def main():
         relations=args.relations,
         outdir=args.outdir
     )
+    return CliTaskAdapter(orchestrator.execute)
 
-    ## Bridge Executor 패턴 연동
-    module_name = __name__ if __name__ != "__main__" else "surface.entry"
-    task = CliTaskAdapter(orchestrator.execute)
-    
-    invoker, command = get_invoker(Path(__file__))
-    payload = {"_context": {"invoker": str(invoker), "command": command, "cli_args": sys.argv[1:]}}
-    
-    execute_cli_task(task_instance=task, command_name=module_name, payload=payload)
+@cli_contract(name="surface.entry", recept=["model.binder"])
+def main():
+    from bridge.executor.cli import dispatch_cli
+    dispatch_cli("surface.entry", entry_task, __file__)
 
 if __name__ == "__main__":
-    log.info(f"[AUG] node model surface entry :: sys.argv = {sys.argv}")
     main()
