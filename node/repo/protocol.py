@@ -1,4 +1,4 @@
-# node.repo
+# node.repo.protocol
 """
 @align.commit: lineage inscription over execution results
 @node: execution-capable self (not tied to repo)
@@ -17,7 +17,7 @@ from model.commit import RepoCommitModel, AnchorCommitModel
 DEFAULT_ID = "0000000"
 META_ROOT = resolve_path('io') / 'meta'
 
-class NodeRepo:
+class RepoNode:
     """@role: execution unit + lineage inscription node"""
     def __init__(self, name: str, path: str, runner: Callable):
         self.name = name
@@ -43,7 +43,7 @@ class NodeRepo:
         print(f"  └─ [{self.name}] Inscribed. State: {new_commit_id}")
         return new_commit_id
 
-class NodeAnchor(NodeRepo):
+class AnchorNode(RepoNode):
     """@role: boundary (synchronization frame) + era manager"""
     ERA_DEPTH = 3
 
@@ -93,7 +93,7 @@ class NodeAnchor(NodeRepo):
                 json.dump({"history": full_history}, f, indent=2)
         return super().local_commit(anchor_id, parent_anchor_id, self_parent_state, message, apply)
 
-def align_commit_protocol(repos: List[NodeRepo], anchor: NodeAnchor, message: str, apply: bool = False):
+def anchor_commit_protocol(repos: List[RepoNode], anchor: AnchorNode, message: str, apply: bool = False):
     """@protocol: era-based alignment cycle over execution results"""
     print(f"--- Era-based Alignment Cycle Initiated ({'APPLY' if apply else 'DRY-RUN'}) ---")
     

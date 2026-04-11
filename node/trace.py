@@ -1,4 +1,4 @@
-# plane.node.trace
+# node.trace
 import asyncio
 from typing import Tuple, List, Dict, Any
 from flow.topos import ToposFlow, FlowState

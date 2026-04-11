@@ -1,4 +1,4 @@
-# phi.reflect.xor
+# surface.reflect.xor
 """@desc: Bound → Resolver → Surface orchestration for xphi (Echolocation Routing)"""
 import os
 import sys

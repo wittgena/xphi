@@ -1,4 +1,4 @@
-# model.topos.organizer
+# node.topos.organizer
 import time
 import asyncio
 import redis.asyncio as redis_async
@@ -8,7 +8,7 @@ from plane.node.runtime import NodeRuntime
 from flow.topos import ToposFlow, FlowState
 from node.pool import DistributedNodePool
 from bridge.proto.col import get_proto
-from model.topos.runtime import ToposRuntime, LinkerNode, InversionNode, ToposNode, ToposSpec, TransRule, NodeType
+from node.topos.runtime import ToposRuntime, LinkerNode, InversionNode, ToposNode, ToposSpec, TransRule, NodeType
 
 log = get_logger("topos.organizer")
 

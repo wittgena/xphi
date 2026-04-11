@@ -1,4 +1,4 @@
-# node.model.binder
+# node.model.lang
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:
@@ -15,15 +15,15 @@ from konlpy.tag import Mecab
 from tqdm import tqdm
 from plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path
-from node.model.schema import ToposGraph, ToposNode, ToposRelation
+from node.model.topos import ToposGraph, ToposNode, ToposRelation
 
-log = get_logger("model.binder")
+log = get_logger("model.lang")
 
-class BoundSensor:
-    """∂Φ(Boundary) 감지 및 Φ seed 추출을 담당하는 센서 계층"""
+class PosSensor:
+    """∂Φ(Bound) 감지 및 Φ seed 추출을 담당하는 센서 계층"""
     
     ## axis.map 
-    BOUND_MAP = {
+    POS_MAP = {
         "적": {"group": "structural", "pos": "XSN", "group_desc": "phi_x 구조 귀속자 - 개념 고정 / 안정화"},
         "의": {"group": "possessive", "pos": "JKG", "group_desc": "dPhi 경계 귀속 - 소속 / 종속 구조"},
         "을": {"group": "objective", "pos": "JKO", "group_desc": "psi_i 작용 대상 - 의미 흐름 목적지"},
@@ -58,13 +58,13 @@ class BoundSensor:
         for i in range(len(tokens) - 1):
             cur_word, cur_tag = tokens[i]
             next_word, next_tag = tokens[i+1]
-            meta = self.BOUND_MAP.get(next_word)
+            meta = self.POS_MAP.get(next_word)
             if cur_tag.startswith("NN") and meta and next_tag == meta["pos"]:
                 normalized_node = cur_word.strip().lower()
                 candidates.append((cur_word, meta["group"]))
         return candidates
 
-class ModelManifold:
+class LangManifold:
     """추출된 Φ 노드와 이들 간의 결합(Edge)을 관리하는 데이터 필드"""
     
     def __init__(self):
@@ -91,12 +91,12 @@ class ModelManifold:
         """다양한 경계 속성을 가진 불변 노드 식별"""
         return [n for n, b_counts in self.node_boundaries.items() if len(b_counts) >= threshold]
 
-class ModelBinder:
+class LangBinder:
     """모델을 순회하며 위상 필드를 구축하고 투영(Projection)을 생성하는 오케스트레이터"""
 
     def __init__(self):
-        self.sensor = BoundSensor()
-        self.manifold = ModelManifold()
+        self.sensor = PosSensor()
+        self.manifold = LangManifold()
         self.model_root = resolve_path('model')
         self.output_path = resolve_path("xor") / "node" / "model.bound.json"
 
@@ -155,5 +155,5 @@ class ModelBinder:
         log.info(f"Model Manifold Projection completed: {self.output_path}")
 
 if __name__ == "__main__":
-    binder = ModelBinder()
+    binder = LangBinder()
     binder.execute()

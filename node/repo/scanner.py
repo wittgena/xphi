@@ -1,4 +1,4 @@
-# node.scanner 
+# node.repo.scanner
 """
 @topos: global self-topology collapse operator
 @flow: Φ_total → Φ′_self → Φₓ(anchor)

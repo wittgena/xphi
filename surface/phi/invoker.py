@@ -1,4 +1,4 @@
-# surface.phix.invoker
+# surface.phi.invoker
 """
 @phase:
 Ψ (event ingress via Redis)

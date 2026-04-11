@@ -1,4 +1,4 @@
-# node.model.schema
+# node.model.topos
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Set, Optional
 

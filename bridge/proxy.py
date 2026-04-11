@@ -1,4 +1,4 @@
-# node.pool
+# bridge.proxy 
 import time
 import uuid
 import asyncio
@@ -10,7 +10,7 @@ from plane.emitter import get_logger
 from bridge.pir import PsiEvent
 from flow.topos import ToposFlow
 
-log = get_logger("node.pool")
+log = get_logger("bridge.proxy")
 
 class RemoteNodeProxy:
     def __init__(self, role: str, target_node_id: str, runtime, main_loop: asyncio.AbstractEventLoop):

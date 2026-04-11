@@ -1,4 +1,4 @@
-# node.session.binder
+# node.model.session
 """@flow: Scanner -> Tracer -> Registry -> Schema -> Interface"""
 import sys
 import json
@@ -9,7 +9,7 @@ from model.code.topic import TopicMap
 from model.code.ext import ExtRegistry
 from block.code.bounder import CodeBounder 
 from anchor.resolver import find_current_self, resolve_path, get_invoker
-from bridge.executor.cli import execute_cli_task, CliTaskAdapter
+from contract.executor.cli import execute_cli_task, CliTaskAdapter
 
 XOR_ROOT = resolve_path('xor')
 

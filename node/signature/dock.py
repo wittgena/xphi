@@ -5,7 +5,7 @@ import time
 import random
 from rocksdict import Rdict, Options
 from typing import List, Dict, Any, Optional
-from bridge.executor.base import BaseExecutor
+from contract.executor.base import BaseExecutor
 from bridge.pir import PsiType
 from plane.log import get_logger
 from anchor.resolver import resolve_path

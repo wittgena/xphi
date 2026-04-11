@@ -1,4 +1,4 @@
-# phi.reflect.ktory
+# surface.reflect.ktory
 import sys
 import os
 import re

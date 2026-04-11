@@ -1,4 +1,4 @@
-# model.topos.dissolve
+# node.topos.dissolve
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
 
