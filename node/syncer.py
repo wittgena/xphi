@@ -4,11 +4,11 @@ import sys
 import subprocess
 from typing import List, Callable, Any
 from pathlib import Path
-from node.repo.protocol import RepoNode, AnchorNode, anchor_commit_protocol
-from node.repo.scanner import NodeScanner, NodeCommit
 from plane.emitter import get_emitter
 from anchor.resolver import find_current_self, get_invoker
+from node.repo.scanner import NodeScanner, NodeCommit
 from contract.registry import cli_contract
+from bridge.proto.repo import RepoNode, AnchorNode, anchor_commit_protocol, git_commit_runner
 from contract.executor.cli import execute_cli_task, CliTaskAdapter, parse_local, dispatch_cli
 
 log = get_emitter("node.syncer", mode="SLIM")

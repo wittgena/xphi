@@ -1,8 +1,8 @@
-# node.trace
+# node.tracer
 import asyncio
 from typing import Tuple, List, Dict, Any
 from flow.topos import ToposFlow, FlowState
-from model.topos.runtime import (
+from node.topos.runtime import (
     Inversion,
     ToposSpec,
     NodeType,
@@ -12,7 +12,7 @@ from model.topos.runtime import (
 )
 from plane.log import get_logger
 
-log = get_logger("node.trace")
+log = get_logger("node.tracer")
 
 def print_topos(node: ToposNode, indent=0):
     marker = "[CORE]" if node.kind == NodeType.CORE else "[VIRT]"
