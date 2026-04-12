@@ -1,4 +1,4 @@
-# node.topos.runtime
+# topos.runtime
 import asyncio
 import enum 
 import logging
@@ -6,7 +6,7 @@ from typing import List, Tuple, Any, Optional, Dict
 from dataclasses import field
 from plane.emitter import get_logger
 from bridge.proto.col import proto, get_proto, Proto
-from flow.topos import ToposFlow, FlowState
+from topos.bound import ToposFlow, FlowState
 
 log = get_logger("topos.runtime")
 

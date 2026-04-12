@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import uuid
 from bridge.pir import PsiCarrier
 from bridge.interpreter import PhaseInterpreter, AnchoredIR, AnchorFlow
-from plane.log import get_logger
+from plane.emitter import get_logger
 
 log = get_logger("anchor.node0")
 

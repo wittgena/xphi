@@ -1,6 +1,6 @@
-# bridge.topos
+# topos.bound
 """
-@phase.topos
+@phase
 - ψ: event signal resonance around
 - Φ: shared field state where tension accumulates
 - ∂Φ: observers aligning drift and detecting rupture
@@ -9,12 +9,30 @@
 @flow: ψ → ator interaction → Φ drift → ∂Φ detection → rupture → new Φ regime
 """
 from __future__ import annotations
-from typing import List, Optional
+import uuid 
+from typing import Tuple, List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol
 from bridge.pir import PsiEvent
-from flow.event import EventAligner, EventRouter, EventDisperser
+from bound.event import EventAligner, EventRouter, EventDisperser
+
+class ToposFlow:
+    def __init__(self, payload=None, id=None, aspect=None, root=None):
+        self.payload = payload
+        self.id = id or str(uuid.uuid4())
+        self.aspect = aspect or "default"
+        self.root = root or self.id
+
+    def __post_init__(self):
+        if not self.id:
+            self.id = str(uuid.uuid4())[:6]
+
+class FlowState:
+    """coupling of ψ and Φ during runtime traversal"""
+    def __init__(self, flow: ToposFlow, state: Dict[str, Any]):
+        self.flow = flow
+        self.state = state
 
 class IPhaseField(ABC):
     """Φ-field: shared phase space where system tension accumulates"""
@@ -24,10 +42,6 @@ class IPhaseField(ABC):
     def evolve(self, dt: float) -> None: pass
     @abstractmethod
     def compute_gradient(self) -> Dict[str, float]: pass
-    # @abstractmethod
-    # def update_node_state(self, node_id: str, new_state: str) -> None: pass
-    # @abstractmethod
-    # def set_tension(self, node_id: str, tension: float) -> None: pass
 
 class IPhaseAtor(ABC):
     """ψ↔Φ interface node"""
@@ -90,12 +104,7 @@ class ISystemRegime(ABC):
         pass
 
 class ToposEventBus(IEventBus, EventRouter[PsiEvent, IPhaseField, str]):
-    """
-    ψ topos router.
-
-    Routes events through the ator network using
-    field-aware routing rules derived from Φ.
-    """
+    """ψ topos router - Routes events through the ator network using field-aware routing rules derived from Φ"""
     def dispatch(self, task: PsiEvent) -> List[IPhaseAtor]:
         pass
 

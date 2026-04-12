@@ -1,10 +1,10 @@
-# model.signature
+# topos.signature.model 
 import json
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Set
-from plane.log import get_logger
+from plane.emitter import get_logger
 
-log = get_logger("model.signature")
+log = get_logger("signature.model")
 
 @dataclass
 class TraceStep:

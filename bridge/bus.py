@@ -2,7 +2,7 @@
 import asyncio
 from typing import Dict, Any, List, Optional
 from bridge.pir import PsiEvent
-from bridge.topos import IPhaseAtor, IPhaseField, IEventBus
+from topos.bound import IPhaseAtor, IPhaseField, IEventBus
 from plane.emitter import get_emitter
 
 class AsyncEventBus(IEventBus):

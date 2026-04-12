@@ -1,4 +1,4 @@
-# node.model.session
+# model.repo.session
 """@flow: Scanner -> Tracer -> Registry -> Schema -> Interface"""
 import sys
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional, Dict, List
 from model.code.topic import TopicMap
 from model.code.ext import ExtRegistry
-from block.code.bounder import CodeBounder 
+from contract.block.code.bounder import CodeBounder 
 from anchor.resolver import find_current_self, resolve_path, get_invoker
 from contract.executor.cli import execute_cli_task, CliTaskAdapter
 
@@ -44,7 +44,7 @@ class FieldActivator:
         if not topic_json.exists():
             print(f"[*] TopicMap missing for '{repo_name}'. Triggering Topology Scanner...")
             try:
-                from block.code.topic import run_clustering_for_repo
+                from contract.block.code.topic import run_clustering_for_repo
                 run_clustering_for_repo(repo_name)
             except ImportError as e:
                 print(f"[!] Failed to import Topic Engine: {e}")

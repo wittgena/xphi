@@ -1,4 +1,4 @@
-# node.signature.dock
+# topos.signature.dock
 import asyncio
 import json
 import time
@@ -7,12 +7,12 @@ from rocksdict import Rdict, Options
 from typing import List, Dict, Any, Optional
 from contract.executor.base import BaseExecutor
 from bridge.pir import PsiType
-from plane.log import get_logger
+from bound.plane.emitter import get_logger
 from anchor.resolver import resolve_path
-from model.signature import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep
+from topos.signature.model import SignatureBound, TrajectoryXor, ExTrajectory, TraceStep
 
 log = get_logger("signature.dock")
-ROCKS_PATH = resolve_path("cache") / "signature.rocks"
+ROCKS_PATH = resolve_path("topos") / "signature.rocks"
 
 class PressureProbe:
     def __init__(self, threshold: float = 0.8):

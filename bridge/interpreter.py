@@ -72,7 +72,6 @@ class AnchorFlow:
         """유입된 심볼(Event source)을 처리 방식(Action)으로 매핑 - 이분법적 라우팅만 수행"""
         resonance_map: Dict[str, str] = {}
         for bound in boundaries:
-            ## @ex: 'node.model.binder'가 들어오면 'RESONANCE:SPAWN' 처리
             resonance_map[bound] = "RESONANCE:SPAWN"
         
         ## 경계에 없는 것은 모두 무시(Interference)

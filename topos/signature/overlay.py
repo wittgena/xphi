@@ -1,4 +1,4 @@
-# node.signature.overlay
+# topos.signature.overlay
 import sys
 import json
 import random
@@ -8,9 +8,9 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Set
-from plane.log import get_logger
+from bound.plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path, load_bound
-from surface.reflect.xor import Xor
+from system.reflect.xor import Xor
 
 log = get_logger("signature.overlay")
 

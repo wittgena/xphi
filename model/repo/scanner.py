@@ -1,4 +1,4 @@
-# node.repo.scanner
+# model.repo.scanner
 """
 @topos: global self-topology collapse operator
 @flow: Φ_total → Φ′_self → Φₓ(anchor)
@@ -9,9 +9,9 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
-from plane.emitter import get_emitter
+from bound.plane.emitter import get_emitter
 
-log = get_emitter("node.scanner", mode="SLIM")
+log = get_emitter("repo.scanner", mode="SLIM")
 
 class NodeCommit:
     """@topos.role: local Φ fragment (sub-topology unit)"""

@@ -1,11 +1,11 @@
-# node.signature.inspector
+# topos.signature.inspector
 import json
 from rocksdict import Rdict, Options
-from plane.log import get_logger
+from bound.plane.emitter import get_logger
 from anchor.resolver import resolve_path
 
 log = get_logger("signature.inspector")
-ROCKS_PATH = resolve_path("cache") / "signature.rocks"
+ROCKS_PATH = resolve_path("topos") / "signature.rocks"
 
 class SignatureInspector:
     def __init__(self, path=ROCKS_PATH):

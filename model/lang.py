@@ -1,4 +1,4 @@
-# node.model.lang
+# model.lang
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:
@@ -13,9 +13,9 @@ from pathlib import Path
 from collections import defaultdict, Counter
 from konlpy.tag import Mecab
 from tqdm import tqdm
-from plane.emitter import get_logger
+from bound.plane.emitter import get_logger
 from anchor.resolver import find_current_self, resolve_path
-from node.model.topos import ToposGraph, ToposNode, ToposRelation
+from topos.model import ToposGraph, ToposNode, ToposRelation
 
 log = get_logger("model.lang")
 

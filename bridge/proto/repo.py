@@ -11,7 +11,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from model.event import next_id
-from model.commit import RepoCommitModel, AnchorCommitModel
+from model.repo.commit import RepoCommit, AnchorCommit
 from anchor.resolver import resolve_path
 
 DEFAULT_ID = "0000000"
@@ -52,7 +52,7 @@ class RepoNode:
 
     def local_commit(self, anchor_id: str, parent_anchor_id: Optional[str], parent_commit_id: str, message: str, apply: bool = False) -> str:
         """현재 세대의 계보를 모델링하여 각인함"""
-        model = RepoCommitModel(
+        model = RepoCommit(
             anchor_id=anchor_id,
             parent_anchor_id=parent_anchor_id or DEFAULT_ID,
             parent_commit_id=parent_commit_id
@@ -102,7 +102,7 @@ class AnchorNode(RepoNode):
         """AnchorCommitModel을 사용하여 시대를 고정"""
         history = self.load_history()
         self_parent_state = self.resolve(self.name)
-        model = AnchorCommitModel(
+        model = AnchorCommit(
             anchor_id=anchor_id,
             parent_anchor_id=parent_anchor_id or DEFAULT_ID,
             parent_commit_id=self_parent_state,

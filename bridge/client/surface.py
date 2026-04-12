@@ -14,11 +14,11 @@ import traceback
 import sys
 import os
 import redis
-from plane.emitter import get_logger
+from bound.plane.emitter import get_logger
 
-log = get_logger("client.surface")
+log = get_logger("client.system")
 
-class RedisSurface:
+class RedisClient:
     """Surface listener & Echolocator"""
     def __init__(self, host: str, port: int):
         self.host = host
@@ -70,7 +70,7 @@ class RedisSurface:
         pubsub.close()
         return active_url
 
-class ResilientSurfaceClient:
+class SystemClient:
     """
     Bound <-> Resolver <-> Surface 통신을 조율하는 기본 클라이언트.
     동적 위상 라우팅(Echolocation) 및 런타임 자가 치유(Self-healing)를 담당합니다.
@@ -171,18 +171,3 @@ class ResilientSurfaceClient:
         except Exception as e:
             log.error(f"[{self.source_name}] Unexpected stream anomaly: {e}")
             raise
-
-    # def request(self, query_path: str = "", data: bytes = None, method: str = "GET", headers: dict = None, is_json: bool = True) -> Generator:
-    #     """외부에서 호출할 수 있는 공용 인터페이스. 실행 전 반드시 위상을 확보합니다."""
-    #     full_url = f"{self.ensure_boundary()}{query_path}"
-    #     req_headers = headers or {}
-    #     req = urllib.request.Request(full_url, data=data, method=method, headers=req_headers)
-        
-    #     try:
-    #         yield from self.stream.stream(req, is_json=is_json)
-    #     except Exception as e:
-    #         log.error(f"[{self.source_name}] Stream anomaly detected: {e}. Realigning boundary...")
-    #         self._current_endpoint = None 
-    #         full_url = f"{self.ensure_boundary()}{query_path}"
-    #         req = urllib.request.Request(full_url, data=data, method=method, headers=req_headers)
-    #         yield from self.stream.stream(req, is_json=is_json)

@@ -1,11 +1,11 @@
-# model.commit
+# model.repo.commit
 from dataclasses import dataclass, asdict, field
 from typing import Dict
 import json
 
 
 @dataclass
-class RepoCommitModel:
+class RepoCommit:
     """
     @role: local node lineage inscription
     @commit: (parent_anchor_id, parent_commit_id)
@@ -25,7 +25,7 @@ class RepoCommitModel:
 
 
 @dataclass
-class AnchorCommitModel:
+class AnchorCommit:
     """
     @role: global boundary + alignment surface
     @anchor_commit: (parent_anchor_id, parent_commit_id) + alignment partition (repos / lag_repos)
