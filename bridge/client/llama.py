@@ -3,7 +3,7 @@ import os
 import time
 import subprocess
 import requests
-from plane.emitter import get_logger
+from bound.plane.emitter import get_logger
 
 log = get_logger('client.llama')
 

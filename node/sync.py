@@ -1,4 +1,4 @@
-# node.syncer
+# node.sync
 import argparse
 import sys
 import subprocess
@@ -8,7 +8,7 @@ from bound.plane.emitter import get_emitter
 from anchor.resolver import find_current_self, get_invoker
 from model.repo.scanner import NodeScanner, NodeCommit
 from contract.registry import cli_contract
-from bridge.proto.repo import RepoNode, AnchorNode, anchor_commit_protocol, git_commit_runner
+from model.repo.proto import RepoNode, AnchorNode, anchor_commit_protocol, git_commit_runner
 from contract.executor.cli import execute_cli_task, CliTaskAdapter, parse_local, dispatch_cli
 
 log = get_emitter("node.syncer", mode="SLIM")
