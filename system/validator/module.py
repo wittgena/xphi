@@ -9,13 +9,13 @@ import re
 import argparse
 from pathlib import Path
 from typing import Dict, Tuple, List, Any
-from plane.emitter import get_logger
+from bound.emitter import get_emitter
 from contract.registry import cli_contract
 from contract.block.parser.md import MdAstParser
 from contract.block.extractor import BlockExtractor
-from receptor.validator.promql import MarkdownConfigExtractor, PromQLValidator, LoopTopologyValidator
+from system.validator.promql import MarkdownConfigExtractor, PromQLValidator, LoopTopologyValidator
 
-log = get_logger("validator.module")
+log = get_emitter("validator.module")
 
 class SystemInvariantsValidator:
     """

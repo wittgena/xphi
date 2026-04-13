@@ -11,9 +11,9 @@ from pathlib import Path
 from typing import Dict, Tuple, List, Any
 from contract.block.parser.md import MdAstParser 
 from contract.block.extractor import BlockExtractor
-from plane.emitter import get_logger
+from bound.emitter import get_emitter
 
-log = get_logger("validator.compose")
+log = get_emitter("validator.compose")
 
 class SelfExtractor:
     """@phase: Φ(surface) - MD 문서에서 메타데이터와 Orchestration 블록을 추출"""

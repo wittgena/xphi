@@ -3,9 +3,9 @@ import os
 import time
 import subprocess
 import requests
-from bound.emitter import get_logger
+from bound.emitter import get_emitter
 
-log = get_logger('client.llama')
+log = get_emitter('client.llama')
 
 ## GLOBAL CONFIG
 MODEL_HF = os.getenv("LLAMA_MODEL_HF", "ggml-org/gemma-3-1b-it-GGUF")

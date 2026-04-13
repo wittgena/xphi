@@ -12,7 +12,7 @@ import os
 from dataclasses import dataclass, field
 from typing import List, Optional, Generator
 from pathlib import Path
-from plane.emitter import get_logger
+from bound.emitter import get_logger
 
 log = get_logger("client.stream")
 

@@ -14,9 +14,9 @@ import traceback
 import sys
 import os
 import redis
-from bound.emitter import get_logger
+from bound.emitter import get_emitter
 
-log = get_logger("client.system")
+log = get_emitter("client.system")
 
 class RedisClient:
     """Surface listener & Echolocator"""
@@ -70,7 +70,7 @@ class RedisClient:
         pubsub.close()
         return active_url
 
-class SystemClient:
+class SurfaceClient:
     """
     Bound <-> Resolver <-> Surface 통신을 조율하는 기본 클라이언트.
     동적 위상 라우팅(Echolocation) 및 런타임 자가 치유(Self-healing)를 담당합니다.

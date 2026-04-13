@@ -6,8 +6,8 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import Dict, Tuple
-from bridge.pir import PsiCarrier
-from plane.emitter import get_logger
+from bridge.psi import PsiCarrier
+from bound.emitter import get_logger
 
 log = get_logger("ext.trace.delta")
 

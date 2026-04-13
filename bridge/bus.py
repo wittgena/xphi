@@ -1,9 +1,9 @@
 # bridge.bus
 import asyncio
 from typing import Dict, Any, List, Optional
-from bridge.pir import PsiEvent
-from flow.phase import IPhaseAtor, IPhaseField, IEventBus
-from plane.emitter import get_emitter
+from bridge.psi import PsiEvent
+from bound.interface import IPhaseAtor, IPhaseField, IEventBus
+from bound.emitter import get_emitter
 
 class AsyncEventBus(IEventBus):
     """@desc: Actor isolation + bounded fan-out"""

@@ -1,10 +1,10 @@
 # system.emitter.scale
 import asyncio
 from kubernetes_asyncio import client, config
-from bridge.pir import PsiEvent
-from flow.phase import IPhaseAtor, IPhaseField
+from bridge.psi import PsiEvent
+from bound.interface import IPhaseAtor, IPhaseField
 from bridge.bus import AsyncEventBus
-from plane.emitter import get_logger
+from bound.emitter import get_logger
 from contract.registry import ator_contract
 
 log = get_logger("scale.emitter")
