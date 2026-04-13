@@ -9,7 +9,7 @@ import redis.asyncio as redis_async
 from bridge.pir import PsiEvent, PsiCarrier
 from bridge.interpreter import PhaseInterpreter, AnchorFlow
 from bridge.bus import AsyncEventBus
-from topos.bound import IPhaseAtor, IPhaseField
+from flow.phase import IPhaseAtor, IPhaseField
 from bound.sink import RedisSink
 from bound.emitter import get_emitter
 from node.sensor import sense_once, REDIS_URL

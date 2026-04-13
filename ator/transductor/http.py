@@ -2,7 +2,7 @@
 import httpx
 import re
 from typing import Any, Dict
-from proto.flow import FlowFlow, Transduction
+from arch.proto.flow import FlowFlow, Transduction
 from contract.registry import ator_contract
 from plane.emitter import get_logger
 

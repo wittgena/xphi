@@ -8,7 +8,7 @@ import json
 from typing import Optional, Any
 from plane.emitter import get_logger
 from bridge.pir import PsiEvent
-from topos.bound import ToposFlow
+from flow.phase import ToposFlow
 
 log = get_logger("bridge.proxy")
 

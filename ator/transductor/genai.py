@@ -4,7 +4,7 @@ import asyncio
 import inspect
 from typing import Any
 from plane.emitter import get_logger
-from proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import ator_contract, discover_modules
 from anchor.resolver import find_current_self
 from node.runtime import NodeRuntime

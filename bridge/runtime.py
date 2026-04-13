@@ -1,8 +1,8 @@
-# ator.bridge.runtime
+# bridge.runtime
 import asyncio
 from typing import Dict, Any, List, Tuple
 from plane.emitter import get_logger
-from proto.flow import ProtoFlow, FlowState
+from arch.proto.flow import ProtoFlow, FlowState
 from contract.protocol import get_proto
 from bridge.pir import PhaseField, PsiCarrier, CarrierType
 from bridge.interpreter import AnchorFlow, PhaseInterpreter
