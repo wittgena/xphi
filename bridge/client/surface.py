@@ -14,7 +14,7 @@ import traceback
 import sys
 import os
 import redis
-from bound.plane.emitter import get_logger
+from bound.emitter import get_logger
 
 log = get_logger("client.system")
 

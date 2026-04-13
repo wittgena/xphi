@@ -21,7 +21,7 @@ from enum import Enum
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from dataclasses import dataclass, field, asdict
 from model.event import LogEvent
-from bound.plane.emitter import get_emitter
+from bound.emitter import get_emitter
 
 log = get_emitter("interface.pir")
 

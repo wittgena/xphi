@@ -1,7 +1,7 @@
 # bridge.local.lm
 import dspy
 from bridge.client.llama import LLMClient
-from bound.plane.emitter import get_emitter
+from bound.emitter import get_emitter
 
 log = get_emitter("local.lm")
 
