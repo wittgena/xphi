@@ -1,4 +1,4 @@
-# system.reflect.reaper
+# bridge.reflect.reaper
 """
 @desc: orphan process collector via echo-resonance
 

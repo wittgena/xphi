@@ -1,4 +1,4 @@
-# model.surface.xphi.flow
+# contract.xphi.flow
 ## @phase: Φ_declared
 XPHI = {
     ## 1. Ψ_probe: 계약 관측

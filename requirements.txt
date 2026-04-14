@@ -28,4 +28,5 @@ prometheus_client
 kubernetes
 kubernetes_asyncio
 bcc
-openhands-ai
+openhands-sdk==1.17.0
+openhands-tools=1.17.0

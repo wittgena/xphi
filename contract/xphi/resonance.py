@@ -1,4 +1,4 @@
-# model.surface.xphi.resonance
+# contract.xphi.resonance
 XPHI = {
     ## 0. entry (control plane, not HTTP)
     "contract_judgment": {

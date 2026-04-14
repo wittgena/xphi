@@ -1,4 +1,4 @@
-# topos.signature.inspector
+# model.signature.inspector
 import json
 from rocksdict import Rdict, Options
 from bound.emitter import get_emitter

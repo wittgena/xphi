@@ -1,4 +1,4 @@
-# watcher.sensor.kuramoto
+# system.kernel.kuramoto
 import math
 import random
 from typing import List, Dict, Optional, Any

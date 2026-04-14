@@ -1,4 +1,4 @@
-# model.surface.xphi.judgment
+# contract.xphi.judgment
 XPHI={
     "gen_ator": {
         "type": "ator",

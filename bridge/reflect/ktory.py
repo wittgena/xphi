@@ -1,4 +1,4 @@
-# system.reflect.ktory
+# bridge.reflect.ktory
 import sys
 import os
 import re

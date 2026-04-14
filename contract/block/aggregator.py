@@ -1,3 +1,4 @@
+# contract.block.aggregator
 import sys
 import json
 import argparse

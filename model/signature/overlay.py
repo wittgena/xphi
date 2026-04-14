@@ -1,4 +1,4 @@
-# topos.signature.overlay
+# model.signature.overlay
 import sys
 import json
 import random

@@ -1,4 +1,4 @@
-# system.reflect.sensor
+# bridge.reflect.sensor
 """
 @desc: Lazy-binding environment observer; resolves local topology and binds external IO surfaces
 @flow: sense -> resolve -> select -> bind → emit

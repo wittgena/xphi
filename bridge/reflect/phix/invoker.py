@@ -1,4 +1,4 @@
-# system.reflect.phix.invoker
+# bridge.reflect.phix.invoker
 """
 @phase:
 Ψ (event ingress via Redis)

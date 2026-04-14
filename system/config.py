@@ -1,4 +1,4 @@
-# watcher.sensor.config
+# system.config
 import math
 import json
 from dataclasses import dataclass, asdict

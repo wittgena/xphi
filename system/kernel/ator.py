@@ -1,4 +1,4 @@
-# watcher.sensor.ator
+# system.kernel.ator
 import math
 import random
 from typing import List, Dict, Optional, Any

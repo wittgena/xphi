@@ -1,4 +1,4 @@
-# bridge.pir
+# bridge.psi
 """
 @flow:
 Ψ (carrier)
