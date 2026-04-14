@@ -179,7 +179,7 @@ class SensorBootstrap:
             "observed_at": datetime.now().isoformat()
         }
 
-@cli_contract(name="sensor_ready", args=["--dir", "meta"], tags=["bootstrap", "sensor"])
+@cli_contract(name="sensor_ready", args=["--repo", "meta"], tags=["bootstrap", "sensor"])
 def main():
     sensors = [SpaceSensor(), RuntimeSensor(), PythonSensor(), InfraSensor()]
     boot = SensorBootstrap(scanner=ToposScanner(sensors), cloud=CloudBinder(), binder=SystemBinder())

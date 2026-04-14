@@ -92,7 +92,6 @@ class FoldJudger:
                 cli_args = target["args"]
                 
                 # 기존 하드코딩 명령어를 동적으로 완벽히 복원
-                # ex: [sys.executable, "-m", "meta.surface.project.linker", "--dir", "meta"]
                 cmd = [sys.executable, "-m", module_fqn] + cli_args
                 cmd_str = " ".join(cmd)
                 

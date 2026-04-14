@@ -56,13 +56,13 @@ def main():
     args = sys.argv[1:]
     if not args:
         print("Usage:")
-        print("  python -m manifold.block.parser --dir <root>")
+        print("  python -m manifold.block.parser --repo <root>")
         sys.exit(1)
 
-    if "--dir" in args:
-        idx = args.index("--dir")
+    if "--repo" in args:
+        idx = args.index("--repo")
         if idx + 1 >= len(args):
-            print("Error: --dir requires a path")
+            print("Error: --repo requires a repo name")
             sys.exit(1)
 
         root = SELF_ROOT / Path(args[idx + 1])

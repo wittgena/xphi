@@ -114,8 +114,8 @@ class EmergenceReporter:
         print(f"- Storage Path     : {output_path.absolute()}")
 
 class SessionBinder:
-    def __init__(self, target_str: str):
-        self.target_path = Path(target_str).resolve()
+    def __init__(self, target_repo: str):
+        self.target_path = Path(target_repo).resolve()
         self.repo_name = self.target_path.name
         self.topic_map = None
         self.binder = None
@@ -141,10 +141,10 @@ class SessionBinder:
 
 def main():
     parser = argparse.ArgumentParser(description="Code Topology Binder Session")
-    parser.add_argument("--dir", type=str, default=".", help="Target directory")
+    parser.add_argument("--repo", type=str, default=".", help="Target directory")
     args, _ = parser.parse_known_args()
 
-    session = SessionBinder(args.dir)
+    session = SessionBinder(args.repo)
     adapted_task = CliTaskAdapter(session.run)
     invoker, command = get_invoker(Path(__file__))
     payload = {

@@ -184,7 +184,7 @@ def main():
     parser = argparse.ArgumentParser(
         description="Execution Emission runner for reconst.ktast.fact.model"
     )
-    parser.add_argument("--dir", required=True, help="Base directory to scan")
+    parser.add_argument("--repo", required=True, help="Base directory to scan")
     args = parser.parse_args()
 
     tools = [
@@ -193,7 +193,7 @@ def main():
     ]
 
     runner = EmissionRunner(tools)
-    facts = runner.run(args.dir)
+    facts = runner.run(args.repo)
     dump_facts(facts)
 
 if __name__ == "__main__":

@@ -22,7 +22,7 @@ log = get_emitter("model.bundler")
 DELIMITER = "---"
 
 class ModelBundler(SurfaceProjector[Path, Optional[Dict[str, Any]], Tuple[str, str], Dict[str, str]]):
-    def __init__(self, target_dir: str):
+    def __init__(self, target_repo: str):
         try:
             self.self_root = find_current_self()
             self.io_root = resolve_path('io')
@@ -30,8 +30,8 @@ class ModelBundler(SurfaceProjector[Path, Optional[Dict[str, Any]], Tuple[str, s
             log.error(f"[error] 기준면(.self)을 찾을 수 없음: {e}")
             sys.exit(1)
 
-        self.merge_root = self.self_root / target_dir
-        self.emit_root = self.io_root / "model" / f"{target_dir}"
+        self.merge_root = self.self_root / target_repo
+        self.emit_root = self.io_root / "model" / f"{target_repo}"
 
         if not self.merge_root.exists():
             log.info(f"[error] 입력 경로 없음: {self.merge_root}")
@@ -184,9 +184,9 @@ class ModelBundler(SurfaceProjector[Path, Optional[Dict[str, Any]], Tuple[str, s
 
 def entry_task(args):
     parser = argparse.ArgumentParser(description="Compile project topos into a grouped markdown.")
-    parser.add_argument("--dir", type=str, required=True, help="Target input path. E.g., flow/dev")
+    parser.add_argument("--repo", type=str, required=True, help="Target input path. E.g., flow/dev")
     args = parser.parse_args(args)
-    compiler = ModelBundler(target_dir=args.dir)
+    compiler = ModelBundler(target_repo=args.repo)
     return CliTaskAdapter(compiler.compile)
 
 @cli_contract(name="surface.bundler", recept=[])

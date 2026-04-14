@@ -25,13 +25,13 @@ class SystemInvariantsValidator:
         self.parser_cls = MdAstParser
         self.extractor = BlockExtractor()
 
-    def run_validation(self, target_dir: str) -> bool:
+    def run_validation(self, target_repo: str) -> bool:
         """지정된 디렉토리 내의 설계 문서(.md)들을 스캔하여 정합성 검증"""
-        target_path = Path(target_dir)
+        target_path = Path(target_repo)
         md_files = list(target_path.rglob("*.md"))
         
         if not md_files:
-            log.warning(f"[Φ:skip] No markdown files found in {target_dir}")
+            log.warning(f"[Φ:skip] No markdown files found in {target_repo}")
             return True
 
         all_valid = True
@@ -67,17 +67,16 @@ class SystemInvariantsValidator:
 
 @cli_contract(
     name="invariants_verified",
-    args=["--dir", "meta/docs"],
+    args=["--repo", "meta"],
     tags=["bootstrap", "invariants_verified"] # 부트스트랩 최종 단계 태그
 )
 def main():
     parser = argparse.ArgumentParser(description="System Invariants Validator")
-    parser.add_argument("--dir", type=str, default=".", help="Target directory for .md files")
+    parser.add_argument("--repo", type=str, default=".", help="Target directory for .md files")
     args, _ = parser.parse_known_args()
 
     validator = SystemInvariantsValidator()
-    success = validator.run_validation(args.dir)
-
+    success = validator.run_validation(args.repo)
     if not success:
         log.error("[fatal] System invariant verification failed.")
         sys.exit(1)
