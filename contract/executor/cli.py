@@ -12,7 +12,7 @@ from pathlib import Path
 from bridge.psi import PsiEvent, PsiCarrier
 from model.event import next_id, LogEvent
 from dataclasses import asdict
-from node.sensor import REDIS_URL
+from phase.node.sensor import REDIS_URL
 from bound.plane import surface
 from bound.emitter import get_emitter, flow_scope
 from bound.resolver import get_invoker

@@ -9,11 +9,6 @@
   -> ∂Φ (process boundary identification)
   -> termination actuation
   -> residue (system stabilization)
-
-@modes:
-- strike: selective ∂Φ cut (responsive nodes only)
-- force: blind sweep (pattern-based pkill)
-- clean: strike → force (progressive closure)
 """
 import asyncio
 import json
@@ -21,7 +16,7 @@ import urllib.parse
 import os
 from redis import Redis
 from bound.emitter import get_emitter
-from node.runtime import NodeRuntime
+from phase.node.runtime import NodeRuntime
 
 class Reaper:
     """

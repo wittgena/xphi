@@ -3,10 +3,10 @@ import time
 import asyncio
 import redis.asyncio as redis_async
 from typing import Dict, Any
-from bound.emitter import get_emitter
-from node.runtime import NodeRuntime
 from phase.flow import PhaseFlow, FlowState
-from node.proxy import DistributedNodePool
+from bound.emitter import get_emitter
+from phase.node.proxy import DistributedNodePool
+from phase.node.runtime import NodeRuntime
 from contract.protocol import get_proto
 from model.topos.flow import LinkerNode, InversionNode, PhaseNode, ToposSpec, TransRule, NodeType
 from model.topos.runtime import ToposRuntime
