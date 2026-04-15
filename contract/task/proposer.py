@@ -24,9 +24,7 @@ log = get_logger('task.proposer')
 BOOTSTRAP_REGISTRY = defaultdict(list)
 
 def bootstrap_contract(group: str, args: List[str] = None):
-    """
-    해당 모듈이 속한 위상 그룹과, python -m 실행 시 필요한 CLI 인자를 등록합니다.
-    """
+    """해당 모듈이 속한 위상 그룹과, python -m 실행 시 필요한 CLI 인자를 등록합니다."""
     def decorator(func: Callable):
         # 함수 자체가 아니라, 함수가 속한 '모듈 이름'을 저장합니다.
         BOOTSTRAP_REGISTRY[group].append({
