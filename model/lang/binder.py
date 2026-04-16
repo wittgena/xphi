@@ -1,4 +1,4 @@
-# receptor.lang.binder
+# model.lang.binder
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:

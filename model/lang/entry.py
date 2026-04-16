@@ -1,4 +1,4 @@
-# receptor.lang.entry
+# model.lang.entry
 import os
 import sys
 import json

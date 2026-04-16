@@ -6,7 +6,7 @@ import math
 import random
 from typing import List, Dict, Optional, Any, Type, Callable
 from bridge.psi import PsiCarrier, PsiEvent
-from system.builder import SystemBuilder
+from sphere.builder import SphereBuilder
 from contract.executor.base import BaseExecutor
 
 class PhaseField(type(BaseExecutor)):
@@ -109,6 +109,6 @@ class DynamicsExecutor(BaseExecutor):
 
     async def execute(self, psi: PsiEvent) -> List[PsiEvent]:
         if self.system is None:
-            self.system = SystemBuilder.build(self.config)
+            self.system = SphereBuilder.build(self.config)
             
         return await self.system.process_step(psi)

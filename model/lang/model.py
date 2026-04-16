@@ -1,4 +1,4 @@
-# receptor.lang.model
+# model.lang.model
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
 
