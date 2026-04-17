@@ -5,7 +5,7 @@ import inspect
 from typing import Any
 from bound.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
-from contract.registry import ator_contract, discover_modules
+from contract.registry import contract, discover_modules
 from bound.resolver import find_current_self
 from phase.node.runtime import NodeRuntime
 from phi.runtime import PhiRuntime
@@ -15,7 +15,7 @@ from bound.resolver import resolve_path
 
 log = get_logger("trans.genai")
 
-@ator_contract("genai.transductor")
+@contract.ator("genai.transductor")
 class TransGenai(Transduction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

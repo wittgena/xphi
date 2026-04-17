@@ -1,6 +1,7 @@
 # contract.registry
 import sys
 import importlib
+from types import SimpleNamespace
 from typing import Any, Dict, List, Set, Type, Protocol, runtime_checkable, FrozenSet, Callable, Optional, Mapping
 from pathlib import Path
 from dataclasses import dataclass
@@ -151,3 +152,12 @@ def discover_modules(root: Path):
         except Exception as e:
             print(f"[Registry] Failed to load {py_file}: {e}")
     
+contract = SimpleNamespace(
+    cli=cli_contract,
+    kernel=kernel_contract,
+    field=field_contract,
+    watcher=watcher_contract,
+    regime=regime_contract,
+    ator=ator_contract,
+    node=manifold_node
+)

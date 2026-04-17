@@ -4,12 +4,12 @@ import inspect
 from pathlib import Path
 from typing import Any, Dict
 from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
-from contract.registry import ator_contract
+from contract.registry import contract
 from bound.emitter import get_logger
 
 log = get_logger('resonance.validator')
 
-@ator_contract("resonance.validator")
+@contract.ator("resonance.validator")
 class ResonanceValidator(Resonance):
     """
     @role: 위상 정합성 검사기 (Topology Harmony Validator)

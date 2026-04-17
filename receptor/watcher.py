@@ -6,14 +6,14 @@ from typing import Optional, List
 from bridge.psi import PsiCarrier, PsiEvent
 from bound.interface import IPhaseField, ICriticalDetector, ISystemRegime, IPhaseAtor
 from bound.emitter import get_emitter
-from contract.registry import discover_modules, watcher_contract, regime_contract
+from contract.registry import discover_modules, contract 
 from contract.executor.dynamics import LoopCarrier, DynamicsExecutor
 from phase.node.runtime import NodeRuntime
 from bound.resolver import find_current_self
 
 log = get_emitter("receptor.watcher", phase="BOOT")
 
-@watcher_contract("receptor.watcher")
+@contract.watcher("receptor.watcher")
 class ReceptorWatcher(ICriticalDetector):
     """
     @role: ∂Φ 임계 감시자
@@ -50,7 +50,7 @@ class ReceptorWatcher(ICriticalDetector):
                 )
         return None
 
-@regime_contract("scale.regime")
+@contract.regime("scale.regime")
 class ScaleRegime(ISystemRegime):
     """
     @role: 위상 전이 체제

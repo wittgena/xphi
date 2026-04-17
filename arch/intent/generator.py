@@ -7,7 +7,7 @@ from typing import Dict, Any
 from pathlib import Path
 from bound.emitter import get_emitter
 from bridge.thch import ThCh, topos_folding_scope
-from bridge.local.lm import LocalLM
+from bridge.client.local.lm import LocalLM
 from bound.resolver import resolve_path
 from bound.emitter import get_emitter
 from xe.residue.store import ResidueStore, ResidueSnapshot

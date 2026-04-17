@@ -7,7 +7,7 @@ import ast
 from typing import Any, Dict, List, Tuple
 from bound.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
-from contract.registry import ator_contract, discover_modules, registry
+from contract.registry import contract, discover_modules, registry
 from phase.node.runtime import NodeRuntime
 from phi.runtime import PhiRuntime
 from bound.resolver import find_current_self, resolve_path
@@ -22,7 +22,7 @@ PAYLOAD = {
   }
 }
 
-@ator_contract("trans.folder")
+@contract.ator("trans.folder")
 class TransFolder(Transduction):
     def __init__(self):
       self.manifold = None

@@ -3,7 +3,7 @@ import httpx
 import re
 from typing import Any, Dict
 from arch.proto.flow import ProtoFlow, Transduction
-from contract.registry import ator_contract
+from contract.registry import contract
 from bound.emitter import get_logger
 
 log = get_logger('transductor.http')
@@ -27,7 +27,7 @@ class HttpBaseTransductor(Transduction):
         return method, raw_path, path
 
 
-@ator_contract("http.post.transfer")
+@contract.ator("http.post.transfer")
 class HttpPostTransfer(HttpBaseTransductor):
     """@flow: 대상 시스템에 자극(Ψ)을 주입하여 상태 전이를 유도"""
     def _project(self, flow: ProtoFlow, ator_node: Any) -> dict:
@@ -76,7 +76,7 @@ class HttpPostTransfer(HttpBaseTransductor):
                 "last_failed_method": "post"
             }
 
-@ator_contract("http.get.transfer")
+@contract.ator("http.get.transfer")
 class HttpGetTransfer(HttpBaseTransductor):
     """@flow: 대상 시스템의 변화된 상태(Φ′)를 관측"""
     def _project(self, flow: ProtoFlow, ator_node: Any) -> dict:

@@ -166,7 +166,7 @@ class PhiRuntime:
                     next_steps = await node.run(ctx.flow, operator, ctx)
                 
                 # Flow Control 필터링 적용
-                controlled_steps = self._control_flow(next_steps, ctx)
+                controlled_steps = self._control_flow(next_steps, ctx, node_name)
                 for nxt_node, nxt_ctx in controlled_steps:
                     await self.engine.psi_queue.put((nxt_node, nxt_ctx))
 
@@ -177,8 +177,10 @@ class PhiRuntime:
                 log.error(f"Error during node execution: {e}", exc_info=True)
                 self.engine.psi_queue.task_done()
 
-    def _control_flow(self, next_steps, ctx):
+    def _control_flow(self, next_steps, ctx, current_node_name: str):
         controlled = []
+        current_node = self.nodes.get(current_node_name)
+        flow_rules = getattr(current_node, "spec", {}).get("flow", {}) if current_node else {}
         for nxt_node, nxt_ctx in next_steps:
             ## Φ closure
             if nxt_node == "END":
@@ -197,7 +199,19 @@ class PhiRuntime:
             ## ∂Φ interception → Node0
             if nxt_ctx.state.get("boundary"):
                 log.warning(f"[Boundary] Routing to Node0: {nxt_node}")
-                return self._route_to_boundary(nxt_ctx)
+                on_fracture_target = flow_rules.get("on_fracture")
+                
+                if on_fracture_target:
+                    log.warning(f"[Boundary] Fracture intercepted by @flow rule. Routing to: {on_fracture_target}")
+                    # 우회(Bypass) 처리되었으므로 위상 붕괴 상태 해소
+                    nxt_ctx.state.pop("boundary", None) 
+                    return [(on_fracture_target, nxt_ctx)]
+                else:
+                    # 명시된 복구 룰이 없으면 기본 붕괴 처리 (Node0)
+                    log.warning(f"[Boundary] No fracture rule. Routing to Node0: {nxt_node}")
+                    return self._route_to_boundary(nxt_ctx)
+                # return self._route_to_boundary(nxt_ctx)
+
             controlled.append((nxt_node, nxt_ctx))
         return controlled
 

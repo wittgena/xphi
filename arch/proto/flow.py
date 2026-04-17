@@ -53,7 +53,7 @@ class Transduction:
     @desc: 상위 레벨에서의 폐합(Closure) 연산자
     """
     def transduce(self, flow: ProtoFlow, ator_node: Any) -> ProtoFlow:
-        log.debug(f"----> Current Instance Type: {type(self)} <----")
+        log.debug(f"## Current Instance Type: {type(self)}")
         projected_payload = self._project(flow, ator_node)
         return self._close(projected_payload, flow, ator_node)
 
