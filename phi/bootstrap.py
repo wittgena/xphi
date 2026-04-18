@@ -9,14 +9,14 @@ from typing import Any, Dict, List, Tuple
 from bound.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from contract.registry import contract, discover_modules, registry
-from phi.transcript import PhiTranscript
+from phi.transcript import PhiTranscript, MdPhiTranscript
 from phi.runtime import PhiRuntime
 from phase.node.runtime import NodeRuntime
 from bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_logger("phi.bootstrap")
 SELF_ROOT = find_current_self()
-REPOS = load_bound(SELF_ROOT).get('around', None) or ["meta", "phase", "xe"]
+REPOS = load_bound(SELF_ROOT).get('around', None)
 
 ## @phase: Φ_declared
 XPHI = {
@@ -80,61 +80,24 @@ async def bootstrap(
     redis_url: str = "redis://localhost:6379",
     repos: List[str] = REPOS
 ) -> Tuple[NodeRuntime, PhiRuntime, str]:
-    log.info(">>> Launching Complex Phase-Field Task via Transcript...")
-
-    ## manifold discovery (Φ basis expansion)
-    discover_modules(find_current_self())
-
-    ## execution substrate (Φ field host)
-    base_node = NodeRuntime(redis_url=redis_url, executor=None)
-
-    ## @emit: initial Ψ (bootstrap signal)
-    bootstrap_flow = ProtoFlow(payload=topology_path, aspect="bootstrap")
-
-    ## @transcription + translation
-    transcript = PhiTranscript(base_node)
-    final_flow = transcript.transduce(bootstrap_flow, ator_node=transcript)
-    runtime_nodes = final_flow.payload
-
-    ## @anchor_selection: select first stable binding site in Φ (start codon semantics)
-    entry_node = next(iter(final_flow.payload))
-
-    ## @runtime_binding: Φ → execution engine
-    flow_controller = PhiRuntime(
-        entry=entry_node,
-        nodes=runtime_nodes,
-        runtime_node=base_node
-    )
-    flow_controller.attach()
-    return base_node, flow_controller, entry_node
-
-async def bootstrap_md(
-    topology_path: str, # 이제 이 값은 .md 파일의 경로가 됨
-    redis_url: str = "redis://localhost:6379",
-    repos: List[str] = REPOS
-) -> Tuple[NodeRuntime, PhiRuntime, str]:
-    log.info(">>> Launching Complex Phase-Field Task via MD Transcript...")
+    is_md = topology_path.lower().endswith('.md')
+    log_msg = "via MD Transcript" if is_md else "via Transcript"
+    log.info(f">>> Launching Complex Phase-Field Task {log_msg}...")
 
     discover_modules(find_current_self())
     base_node = NodeRuntime(redis_url=redis_url, executor=None)
-
-    # 1. 파일 경로를 Payload로 전달 (마크다운 파일)
     bootstrap_flow = ProtoFlow(payload=topology_path, aspect="bootstrap")
 
-    # 2. AST 파서가 아닌, 새로 만든 MD 파서 트랜스크립트 사용
-    transcript = MdPhiTranscript(base_node)
-    
-    # 3. 마크다운 추출(Reflection) + 런타임 노드 번역(Translation)
+    transcript_cls = MdPhiTranscript if is_md else PhiTranscript
+    transcript = transcript_cls(base_node)
+
     final_flow = transcript.transduce(bootstrap_flow, ator_node=transcript)
     runtime_nodes = final_flow.payload
 
-    # 이하 로직은 동일
     entry_node = next(iter(final_flow.payload))
     flow_controller = PhiRuntime(entry=entry_node, nodes=runtime_nodes, runtime_node=base_node)
     flow_controller.attach()
-    
     return base_node, flow_controller, entry_node
-
 
 async def main():
   topology_path = inspect.getsourcefile(lambda: None)

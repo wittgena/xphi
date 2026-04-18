@@ -13,7 +13,7 @@ from bridge.psi import PsiCarrier
 from phase.interpreter import PhaseInterpreter, AnchoredIR, AnchorFlow
 from bound.emitter import get_emitter
 
-log = get_emitter("anchor.node0")
+log = get_emitter("model.node0")
 
 class Node0State:
     """origin.point for phase cycles: Provides phase reset, recursive reflection, and safe signal reprocessing"""
