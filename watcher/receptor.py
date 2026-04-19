@@ -1,4 +1,4 @@
-# receptor.watcher
+# watcher.receptor
 from __future__ import annotations
 import json
 import asyncio
@@ -8,7 +8,7 @@ from bound.interface import IPhaseField, ICriticalDetector, ISystemRegime, IPhas
 from bound.emitter import get_emitter
 from contract.registry import discover_modules, contract 
 from contract.executor.dynamics import LoopCarrier, DynamicsExecutor
-from phase.node.runtime import NodeRuntime
+from node.runtime import NodeRuntime
 from bound.resolver import find_current_self
 
 log = get_emitter("receptor.watcher", phase="BOOT")

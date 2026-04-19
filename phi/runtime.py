@@ -1,12 +1,13 @@
 # phi.runtime
 import asyncio
+from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from bound.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState
 from contract.protocol import get_proto
 from bridge.psi import PhaseField, PsiCarrier, CarrierType
 from phase.interpreter import AnchorFlow, PhaseInterpreter
-from phase.node.runtime import NodeRuntime
+from node.runtime import NodeRuntime
 from model.node0 import enter_node0
 
 log = get_logger("phi.runtime")

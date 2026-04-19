@@ -7,7 +7,7 @@ from bound.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import contract, discover_modules
 from bound.resolver import find_current_self
-from phase.node.runtime import NodeRuntime
+from node.runtime import NodeRuntime
 from phi.runtime import PhiRuntime
 from phi.bootstrap import bootstrap 
 from bridge.client.local.llama import LLMClient

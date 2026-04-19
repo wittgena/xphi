@@ -5,6 +5,7 @@ import inspect
 import ast
 import re
 import yaml
+from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 from bound.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction

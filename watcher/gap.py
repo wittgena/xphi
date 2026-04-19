@@ -1,4 +1,4 @@
-# receptor.gap
+# watcher.gap
 """@flow: ψ → attempt → Φ → limit → cancel → inversion → ψ'"""
 import time
 import asyncio

@@ -1,5 +1,16 @@
 # arch.proto.flow
+"""
+@phase
+- ψ: event signal resonance around
+- Φ: shared field state where tension accumulates
+- ∂Φ: observers aligning drift and detecting rupture
+- Σ: dispersion / aggregation of macro-micro flows
+
+@flow: ψ → ator interaction → Φ drift → ∂Φ detection → rupture → new Φ regime
+"""
 import uuid
+import enum
+from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from bound.emitter import get_logger
 

@@ -11,7 +11,7 @@ from bound.resolver import find_current_self
 from contract.registry import registry, contract
 from phi.runtime import PhiRuntime
 from phi.bootstrap import bootstrap
-from phase.node.runtime import NodeRuntime
+from node.runtime import NodeRuntime
 
 log = logging.getLogger("phi.generator")
 
