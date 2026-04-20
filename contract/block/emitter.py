@@ -8,7 +8,7 @@ from typing import List, Optional, Union, Dict
 from bound.emitter import get_logger
 from bridge.reflect.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from bound.resolver import find_current_self, resolve_path
-from contract.block.extractor import BlockExtractor, extract_block_from_file
+from contract.block.extractor import extract_block_from_file, Block
 
 log = get_logger("block.emitter")
 
@@ -48,7 +48,7 @@ def process_file(path: Path, kt_contracts: dict = None):
 
     print(f"\n[BLOCK COUNT] {len(blocks)} :: {path}")
     for b in blocks:
-        print(f"{b['order_index']:03d} | {b['block_type']} | {b['section_path']}")
+        print(f"{b.order_index:03d} | {b.block_type} | {b.section_path}")
     
     save_blocks_json(blocks, path)
 

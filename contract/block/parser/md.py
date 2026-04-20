@@ -7,14 +7,28 @@ from contract.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Para
 
 ## Markdown → AST
 class MdAstParser:
-    def __init__(self, path: Union[str, Path]):
-        self.path = Path(path)
+    def __init__(self, source: str, is_file: bool = True):
+        """
+        :param source: 파일 경로(str) 또는 마크다운 텍스트 원문(str)
+        :param is_file: True면 source를 파일 경로로 인식, False면 메모리 상의 텍스트로 인식
+        """
+        self.is_file = is_file
+        if self.is_file:
+            self.path = Path(source)
+            self.raw_text = None
+        else:
+            self.path = Path("<memory_topology>")  # MdDocument 호환성을 위한 가상 Path
+            self.raw_text = source
 
     def parse(self) -> MdDocument:
-        if not self.path.exists():
-            raise FileNotFoundError(f"File not found: {self.path}")
+        # 파일/메모리 분기 처리
+        if self.is_file:
+            if not self.path.exists():
+                raise FileNotFoundError(f"File not found: {self.path}")
+            text = self.path.read_text(encoding="utf-8")
+        else:
+            text = self.raw_text
 
-        text = self.path.read_text(encoding="utf-8")
         lines = text.splitlines()
 
         root_sections: List[MdSection] = []

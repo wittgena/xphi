@@ -96,7 +96,16 @@ class MdPhiTranscript(BaseTranscript):
         ## registry.register_dynamic_component("ator", name, compiled_code)
         pass
 
-    def _reflect_source(self, file_path: str) -> Dict[str, Any]:
+    def _reflect_source(self, source: str, is_file: bool = True) -> Dict[str, Any]:
+        if is_file:
+            with open(source, "r", encoding="utf-8") as f:
+                md_content = f.read()
+        else:
+            md_content = source
+
+        doc = self.parser_cls(md_content).parse()
+        blocks = self.extractor.extract(doc)
+
         doc = self.parser_cls(file_path).parse()
         blocks = self.extractor.extract(doc)
         
