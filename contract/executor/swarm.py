@@ -14,7 +14,7 @@ from bound.plane import surface
 from bound.emitter import get_logger, flow_scope
 from contract.registry import registry
 from contract.executor.base import BaseExecutor
-from contract.executor.cli import _GenericCliExecutor
+from contract.cli.executor import _GenericCliExecutor
 
 log = get_logger("executor.cli")
 

@@ -1,4 +1,4 @@
-# contract.executor.cli
+# contract.cli.executor
 import os
 import sys
 import uuid
@@ -17,10 +17,10 @@ from bound.plane import surface
 from bound.emitter import get_emitter, flow_scope
 from bound.resolver import get_invoker
 from contract.registry import registry
-from contract.task.result import TaskSummaryEvent, TaskDetailRecord
+from contract.cli.result import TaskSummaryEvent, TaskDetailRecord
 from contract.executor.base import BaseExecutor
 
-log = get_emitter("executor.cli")
+log = get_emitter("cli.executor")
 
 def parse_local(argv):
     parser = argparse.ArgumentParser(add_help=False)
