@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from contract.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
+from contract.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 
 ## Markdown → AST
 class MdAstParser:
@@ -58,6 +58,7 @@ class MdAstParser:
                 title = heading_match.group(2).strip()
                 meta_tag = title.startswith("@")
                 new_section = MdSection(level, title, meta_tag)
+                new_section.children.append(Heading(level=level, content=title))
 
                 while section_stack and section_stack[-1].level >= level:
                     section_stack.pop()

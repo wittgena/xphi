@@ -1,4 +1,4 @@
-# model.repo.proto
+# model.repo.node
 """
 @align.commit: lineage inscription over execution results
 @node: execution-capable self (not tied to repo)
@@ -15,16 +15,16 @@ from model.repo.commit import RepoCommit, AnchorCommit
 from bound.resolver import resolve_path
 
 DEFAULT_ID = "0000000"
-META_ROOT = resolve_path('io') / 'meta'
+LINEAGE_ROOT = resolve_path('contract') / 'lineage'
 
 class RepoNode:
     """@role: execution unit + lineage inscription node"""
     def __init__(self, name: str, path: str, runner: Callable):
         self.name = name
         self.path = Path(path).expanduser().resolve()
-        self.meta_dir = META_ROOT
-        self.runner = runner ## CommitRunner
-        self.lineage_file = self.meta_dir / f"{self.name}.lineage.json"
+        self.lineage_dir = LINEAGE_ROOT
+        self.runner = runner
+        self.lineage_file = self.lineage_dir / f"{self.name}.lineage.json"
 
     def local_commit(self, anchor_id: str, parent_anchor_id: Optional[str], parent_commit_id: str, message: str, apply: bool = False) -> str:
         """현재 세대의 계보를 모델링하여 각인함"""
@@ -34,7 +34,7 @@ class RepoNode:
             parent_commit_id=parent_commit_id
         )
 
-        self.meta_dir.mkdir(parents=True, exist_ok=True)
+        self.lineage_dir.mkdir(parents=True, exist_ok=True)
         with open(self.lineage_file, "w") as f:
             f.write(model.to_json())
 
@@ -49,7 +49,7 @@ class AnchorNode(RepoNode):
 
     def __init__(self, name: str, path: str, runner: Callable):
         super().__init__(name, path, runner)
-        self.registry_file = self.meta_dir / f"{self.name}.registry.json"
+        self.registry_file = self.lineage_dir / f"{self.name}.registry.json"
 
     def load_history(self) -> List[Dict]:
         """registry에서 히스토리 추출"""
@@ -92,35 +92,3 @@ class AnchorNode(RepoNode):
             with open(self.registry_file, "w") as f:
                 json.dump({"history": full_history}, f, indent=2)
         return super().local_commit(anchor_id, parent_anchor_id, self_parent_state, message, apply)
-
-def anchor_commit_protocol(repos: List[RepoNode], anchor: AnchorNode, message: str, apply: bool = False):
-    """@protocol: era-based alignment cycle over execution results"""
-    print(f"--- Era-based Alignment Cycle Initiated ({'APPLY' if apply else 'DRY-RUN'}) ---")
-    
-    ## 히스토리에서 부모 앵커 식별
-    history = anchor.load_history()
-    last_snapshot = history[-1] if history else None
-    parent_anchor_id = last_snapshot["anchor_id"] if last_snapshot else DEFAULT_ID
-
-    new_anchor_id = next_id()
-
-    ## 이번 정렬에 참여한 노드들 실행
-    current_aligned_states = {}
-    for r in repos:
-        parent_state = anchor.resolve(r.name)
-        ## Runner를 통해 실제 해시 획득
-        current_aligned_states[r.name] = r.local_commit(new_anchor_id, parent_anchor_id, parent_state, message, apply)
-
-    ## lag_repos 계산
-    lag_repos = {}
-    if last_snapshot:
-        prev_total = {**last_snapshot.get("repos", {}), **last_snapshot.get("lag_repos", {})}
-        for name, last_hash in prev_total.items():
-            if name not in current_aligned_states and name != anchor.name:
-                lag_repos[name] = last_hash
-
-    ## 앵커 고정 (Self 포함)
-    final_anchor_hash = anchor.anchor_commit(
-        new_anchor_id, parent_anchor_id, current_aligned_states, lag_repos, message, apply
-    )
-    print(f"## Era Fixed: {new_anchor_id} (Aligned: {len(current_aligned_states)}, Lagged: {len(lag_repos)})")

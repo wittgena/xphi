@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from bound.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
-from contract.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
+from contract.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 from contract.block.parser.md import MdAstParser
 from contract.block.parser.py import PyAstParser
 from contract.block.parser.kt import KtAstParser 
@@ -57,15 +57,16 @@ class BlockExtractor:
                 if isinstance(node, Paragraph):
                     block_type = "paragraph"
                     content = node.text.strip()
-
                 elif isinstance(node, CodeBlock):
                     block_type = node.lang
                     content = node.content.strip()
-
                     # DSL name extraction
                     if content.startswith("@"):
                         first_line = content.splitlines()[0]
                         dsl_name = first_line.split()[0].strip("@")
+                elif isinstance(node, Heading):
+                    block_type = "heading"
+                    content = node.content.strip()
 
                 if content: 
                     # 딕셔너리 대신 Block 데이터 클래스 인스턴스 생성

@@ -17,6 +17,12 @@ class MdNode:
     pass
 
 @dataclass
+class Heading(MdNode):
+    level: int
+    content: str
+    type: str = "heading"  # SpecTranscript가 필터링하는 타입명
+
+@dataclass
 class Paragraph(MdNode):
     text: str
 

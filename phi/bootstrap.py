@@ -10,7 +10,8 @@ from typing import Any, Dict, List, Tuple
 from bound.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from contract.registry import contract, discover_modules, registry
-from phi.transcript import PhiTranscript, MdPhiTranscript
+from phi.transcript import PhiTranscript
+from phi.spec.transcript import SpecTranscript
 from phi.runtime import PhiRuntime
 from node.runtime import NodeRuntime
 from bound.resolver import find_current_self, resolve_path, load_bound
@@ -81,15 +82,15 @@ async def bootstrap(
     redis_url: str = "redis://localhost:6379",
     repos: List[str] = REPOS
 ) -> Tuple[NodeRuntime, PhiRuntime, str]:
-    is_md = topology_path.lower().endswith('.md')
-    log_msg = "via MD Transcript" if is_md else "via Transcript"
+    is_spec = topology_path.lower().endswith('.md')
+    log_msg = "via Spec Transcript" if is_spec else "via Transcript"
     log.info(f">>> Launching Complex Phase-Field Task {log_msg}...")
 
     discover_modules(find_current_self())
     base_node = NodeRuntime(redis_url=redis_url, executor=None)
     bootstrap_flow = ProtoFlow(payload=topology_path, aspect="bootstrap")
 
-    transcript_cls = MdPhiTranscript if is_md else PhiTranscript
+    transcript_cls = SpecTranscript if is_spec else PhiTranscript
     transcript = transcript_cls(base_node)
 
     final_flow = transcript.transduce(bootstrap_flow, ator_node=transcript)

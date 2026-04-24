@@ -9,14 +9,14 @@ from typing import Dict, Any, List, Optional
 from bridge.bus import AsyncEventBus
 from bound.interface import IPhaseAtor, IPhaseField, IEventBus
 from bridge.psi import PsiCarrier, PsiEvent
-from receptor.lens.trajectory import (
+from watcher.lens.trajectory import (
     Point, 
     ContinuousTrajectory,
     DefaultBoundLensStrategy,
     SlidingWindowStrategy,
     WindowProjector
 )
-from system.emitter.scale import ScaleEmitter
+from sphere.container.scale.emitter import ScaleEmitter
 from bound.emitter import get_emitter
 
 class ToposField(IPhaseField):

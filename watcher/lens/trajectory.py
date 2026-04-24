@@ -1,11 +1,11 @@
-# watcher.trajectory.lens
+# watcher.lens.trajectory
 import numpy as np
 import datetime
 import uuid
 from typing import List, Dict, Any, Callable
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from receptor.lens.metrics import (
+from watcher.lens.metrics import (
     trend_slope,
     acceleration,
     range_amplitude,

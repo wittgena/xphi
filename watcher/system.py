@@ -3,13 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import random
-from bridge.pir import PsiCarrier, PsiEvent
-from rhythm.field.cont import LoopCarrier
-from plane.emitter import get_emitter
-from anchor.resolver import find_current_self
-from phase.node.runtime import NodeRuntime
+from bridge.psi import PsiCarrier, PsiEvent
+from bound.emitter import get_emitter
+from bound.resolver import find_current_self
+from node.runtime import NodeRuntime
 from contract.registry import discover_modules
-from contract.executor.dynamics import DynamicsExecutor
+from contract.executor.dynamics import DynamicsExecutor, LoopCarrier
 
 async def main():
     discover_modules(find_current_self())
