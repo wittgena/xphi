@@ -17,30 +17,6 @@ from bound.resolver import resolve_path
 DEFAULT_ID = "0000000"
 META_ROOT = resolve_path('io') / 'meta'
 
-def git_commit_runner(path: Path, message: str, apply: bool) -> str:
-    """@role: Physical State Finalizer - 실제 Git 저장소의 상태를 확정하고 결과 해시를 반환"""
-    if not apply:
-        return "dry-run-id"
-        
-    try:
-        ## 변화 감지 (Dirty check)
-        status = subprocess.run(["git", "status", "--porcelain"], cwd=path, capture_output=True, text=True).stdout.strip()
-        if not status:
-            ## 변경 사항이 없으면 현재 HEAD 반환
-            res = subprocess.run(["git", "rev-parse", "HEAD"], cwd=path, capture_output=True, text=True)
-            return res.stdout.strip()
-
-        ## 물리적 집행 (Add & Commit)
-        subprocess.run(["git", "add", "-A"], cwd=path, check=True)
-        subprocess.run(["git", "commit", "-m", message], cwd=path, check=True)
-        
-        ## 결과 관측 (New Hash)
-        res = subprocess.run(["git", "rev-parse", "HEAD"], cwd=path, capture_output=True, text=True)
-        return res.stdout.strip()
-    except Exception as e:
-        log.error(f"Git execution failed at {path}: {e}")
-        return "0000000"
-
 class RepoNode:
     """@role: execution unit + lineage inscription node"""
     def __init__(self, name: str, path: str, runner: Callable):
