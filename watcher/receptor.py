@@ -11,10 +11,10 @@ from contract.executor.dynamics import LoopCarrier, DynamicsExecutor
 from node.runtime import NodeRuntime
 from bound.resolver import find_current_self
 
-log = get_emitter("receptor.watcher", phase="BOOT")
+log = get_emitter("watcher.receptor", phase="BOOT")
 
-@contract.watcher("receptor.watcher")
-class ReceptorWatcher(ICriticalDetector):
+@contract.watcher("watcher.receptor")
+class WatcherReceptor(ICriticalDetector):
     """
     @role: ∂Φ 임계 감시자
     @desc: Receptor가 주입한 Field의 텐션(CPU 등)을 평가하여 스케일링 임계점 돌파를 감지

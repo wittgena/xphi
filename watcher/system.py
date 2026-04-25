@@ -10,9 +10,10 @@ from node.runtime import NodeRuntime
 from contract.registry import discover_modules
 from contract.executor.dynamics import DynamicsExecutor, LoopCarrier
 
+log = get_emitter("watcher.system", phase="BOOT")
+
 async def main():
     discover_modules(find_current_self())
-    log = get_emitter("flow.system.attractor", phase="BOOT")
     redis_payload = """
     {
       "system_type": "TOPOLOGY_ATTRACTOR_MODEL",

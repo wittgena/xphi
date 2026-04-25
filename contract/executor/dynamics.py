@@ -1,70 +1,81 @@
-# contract.executor.dynamics
 from __future__ import annotations
-import uuid
 import asyncio
-import math
-import random
-from typing import List, Dict, Optional, Any, Type, Callable
-from bridge.psi import PsiCarrier, PsiEvent
-from sphere.builder import SphereBuilder
+# model.event에서 생성기 임포트 (가정)
+from model.event import next_id, next_phase_id, parse_id, parse_phase_id 
+from typing import List, Dict, Optional, Any
 from contract.executor.base import BaseExecutor
 
 class PhaseField(type(BaseExecutor)):
-    """@phase.bound: assigns unique ∂Φ to each Xe instance"""
+    """@phase.bound: 클래스 생성 시점에 고유한 Snowflake ID 부여"""
     def __new__(mcs, name, bases, namespace):
-        namespace['bound_id'] = f"bound.{uuid.uuid4().hex[:4]}"
+        # 4글자 해시 대신 Snowflake ID를 사용하여 글로벌 고유성 확보
+        namespace['bound_id'] = f"bound.{next_id()}"
         return super().__new__(mcs, name, bases, namespace)
 
 class XeCont(BaseExecutor, metaclass=PhaseField):
     """
     @entity: autonomous phase carrier
-    @flow: Ψ → ∂Φ.absorb → τ → {rupture | saturation} → inversion → rebind
+    @flow: Snowflake로 선후관계를, PhaseId로 상태 벡터를 기록
     """
     def __init__(self, bound, ex: str = "void", origin: str = "void"):
         super().__init__()
-        self.trace_id = f"base.{uuid.uuid4().hex[:6]}"
+        # trace_id를 Snowflake로 변경하여 시간순 정렬 가능하게 함
+        self.trace_id = next_id() 
+        self.phase_id = 0 # 현재 위상 상태 저장
         self.ex = ex
         self.origin = origin
         self.bound = bound
 
-    async def execute(self, psi: PsiType) -> List[PsiType]:
-        ## step.1: Ψ → ∂Φ
+    async def execute(self, psi: Any) -> List[Any]:
+        ## step.1: Ψ → ∂Φ (흡수 및 위상 업데이트)
         batch_payload = [{"payload": psi.symbol}]
         self.bound.absorb(batch_payload)
+        
+        # 현재 bound의 물리량으로부터 Phase ID 갱신
+        self.phase_id = next_phase_id(
+            topo=int(getattr(self.bound, 'topology', 0)), 
+            press=int(getattr(self.bound, 'pressure', 0))
+        )
 
         ## step.2: τ evaluation
         decision = self.bound.evaluate()
+        
         if decision == "DEPOSIT":
-            snap = self.bound.snapshot()
+            # Rupture(단절) 발생 시 Phase ID의 Epoch를 전환하여 계보를 분리
+            self.phase_id = next_phase_id(
+                topo=int(self.bound.topology), 
+                press=int(self.bound.pressure), 
+                rupture=True
+            )
+            
             self.bound.commit()
             ext_base = self._ext__()
-            log.signal(f"[Rupture] {self.trace_id} -> {ext_base.trace_id}")
+            
+            # 로그 출력 시에도 정렬 가능한 ID 사용
+            print(f"[Rupture] {self.trace_id} (Phase:{hex(self.phase_id)}) -> {ext_base.trace_id}")
 
             self.ex = ext_base.ex
             self.origin = ext_base.trace_id
         else:
-            log.info(f"[Saturation] pressure:{self.bound.pressure:.3f} ({self.trace_id})")
+            # Saturation(포화) 상태 로그
+            pass
 
-        ## step.3: Ψ identity 유지
+        ## step.3: ID 주입 (psi 이벤트에 현재의 Snowflake와 Phase 정보를 바인딩)
+        psi.event_id = next_id()
+        psi.phase_id = self.phase_id
         return [psi]
 
     def _ext__(self) -> 'XeCont':
-        overflowed_ex = f"overflow.{self.ex}"
-        inverted_state = f"inversion.{overflowed_ex}"
-        base_state = f"Base.bind({inverted_state})"
         return XeCont(
             bound=self.bound,
-            ex=base_state,
+            ex=f"Base.bind(inversion.overflow.{self.ex})",
             origin=self.trace_id
         )
-
-    def __repr__(self):
-        return f"<XeCont {self.bound_id} id:{self.trace_id}, mem='{self.ex}'>"
 
 class LoopCarrier(BaseExecutor):
     """
     @role: self-driven Ψ loop generator
-    @flow: Ψₙ → Xe → Ψₙ → emit Ψₙ₊₁ → ...
+    @flow: 각 Tick마다 Snowflake ID를 새로 생성하여 정밀한 순서 보장
     """
     def __init__(self, xe: XeCont, max_ticks: int = 100, interval: float = 0.1):
         super().__init__()
@@ -73,42 +84,24 @@ class LoopCarrier(BaseExecutor):
         self.max_ticks = max_ticks
         self.interval = interval
 
-    async def execute(self, psi: PsiType) -> List[PsiType]:
+    async def execute(self, psi: Any) -> List[Any]:
         out = []
-
-        ## Xe 처리
         xe_out = await self.xe.execute(psi)
         out.extend(xe_out)
 
-        ## 내부 loop 생성
         if self.tick < self.max_ticks:
             await asyncio.sleep(self.interval)
+            
+            # 다음 이벤트를 생성할 때 Snowflake와 현재 Xe의 Phase ID를 결합
             next_psi = psi.__class__(
-                event_id=f"tick-{self.tick + 1}",
+                event_id=next_id(), # Snowflake 기반 시간 순서
                 parent_id=getattr(psi, "event_id", None),
                 source_id="loop.carrier",
-                scope=getattr(psi, "scope", "GLOBAL"),
-                context=getattr(psi, "context", {}),
+                phase_id=self.xe.phase_id, # 현재 인과 상태 복제
                 tick=self.tick + 1,
-                carrier=getattr(psi, "carrier", None)
+                context=getattr(psi, "context", {})
             )
-
             out.append(next_psi)
             self.tick += 1
-        else:
-            log.info("[LoopCarrier] max_ticks reached")
-
-        return out
-
-class DynamicsExecutor(BaseExecutor):
-    """@role: WatcherSystem을 RuntimeNode의 Executor 인터페이스에 맞추는 어댑터"""
-    def __init__(self, config_dict: Dict[str, Any]):
-        super().__init__()
-        self.config = config_dict
-        self.system = None ## 지연 초기화 대상
-
-    async def execute(self, psi: PsiEvent) -> List[PsiEvent]:
-        if self.system is None:
-            self.system = SphereBuilder.build(self.config)
             
-        return await self.system.process_step(psi)
+        return out
