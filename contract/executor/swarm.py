@@ -10,11 +10,11 @@ from typing import Callable, Any
 from bridge.psi import PsiEvent, PsiCarrier
 from model.event import next_id, LogEvent
 from dataclasses import asdict
-from bound.plane import surface
-from bound.emitter import get_logger, flow_scope
+from watcher.plane import surface
+from flow.emitter import get_logger, flow_scope
 from contract.registry import registry
 from contract.executor.base import BaseExecutor
-from contract.cli.executor import _GenericCliExecutor
+from contract.executor.cli import _GenericCliExecutor
 
 log = get_logger("executor.cli")
 

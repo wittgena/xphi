@@ -1,13 +1,13 @@
-# arch.ator.generator
+# contract.ator.generator
 import asyncio
 import logging
 import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from arch.proto.flow import ProtoFlow, FlowState, Transduction, Align
-from bound.emitter import get_logger
+from contract.proto.flow import ProtoFlow, FlowState, Transduction, Align
+from flow.emitter import get_logger
 from dataclasses import dataclass, field
-from bound.resolver import find_current_self
+from anchor.resolver import find_current_self
 from contract.registry import registry, contract
 from phi.runtime import PhiRuntime
 from phi.bootstrap import bootstrap

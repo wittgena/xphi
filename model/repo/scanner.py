@@ -9,7 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
-from bound.emitter import get_emitter
+from flow.emitter import get_emitter
 
 log = get_emitter("repo.scanner", mode="SLIM")
 

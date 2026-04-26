@@ -1,15 +1,15 @@
-# arch.intent.generator
+# contract.intent.generator
 import dspy
 import sys
 import json
 import dspy
 from typing import Dict, Any
 from pathlib import Path
-from bound.emitter import get_emitter
+from flow.emitter import get_emitter
 from bridge.thch import ThCh, topos_folding_scope
 from bridge.client.local.lm import LocalLM
-from bound.resolver import resolve_path
-from bound.emitter import get_emitter
+from anchor.resolver import resolve_path
+from flow.emitter import get_emitter
 from xe.residue.store import ResidueStore, ResidueSnapshot
 from xe.surface.generator import SurfaceIntent, StructuralDissonance
 from arch.intent.signature import Signature

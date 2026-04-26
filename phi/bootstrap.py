@@ -7,14 +7,14 @@ import ast
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from bound.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState, Transduction
+from flow.emitter import get_logger
+from contract.proto.flow import ProtoFlow, FlowState, Transduction
 from contract.registry import contract, discover_modules, registry
 from phi.transcript import PhiTranscript
 from phi.spec.transcript import SpecTranscript
 from phi.runtime import PhiRuntime
 from node.runtime import NodeRuntime
-from bound.resolver import find_current_self, resolve_path, load_bound
+from anchor.resolver import find_current_self, resolve_path, load_bound
 
 log = get_logger("phi.bootstrap")
 SELF_ROOT = find_current_self()

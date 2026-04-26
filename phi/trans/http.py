@@ -2,9 +2,9 @@
 import httpx
 import re
 from typing import Any, Dict
-from arch.proto.flow import ProtoFlow, Transduction
+from contract.proto.flow import ProtoFlow, Transduction
 from contract.registry import contract
-from bound.emitter import get_logger
+from flow.emitter import get_logger
 
 log = get_logger('transductor.http')
 

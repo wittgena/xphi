@@ -1,3 +1,4 @@
+# watcher.gap
 """
 @topology: Void ⊗ Gradient → Attractor ⊧ Rupture → Inversion.
 @dynamics: Snowflake[Global] ⊗ Phase[Causal] ⊗ Tick[Local].

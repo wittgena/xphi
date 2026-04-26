@@ -1,4 +1,4 @@
-# contract.cli.result
+# contract.executor.result
 import time
 import uuid
 import json

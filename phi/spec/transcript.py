@@ -3,7 +3,7 @@ import re
 import yaml
 import os
 from typing import Any, Dict, List, Optional
-from bound.emitter import get_logger
+from flow.emitter import get_logger
 from contract.registry import contract
 from contract.block.parser.md import MdAstParser
 from contract.block.extractor import BlockExtractor

@@ -1,11 +1,11 @@
-# arch.ator.resonance
+# contract.ator.resonance
 import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from contract.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import contract
-from bound.emitter import get_logger
+from flow.emitter import get_logger
 
 log = get_logger('ator.resonance')
 

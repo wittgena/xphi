@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from bound.emitter import get_logger
-from bound.resolver import find_current_self, resolve_path
+from flow.emitter import get_logger
+from anchor.resolver import find_current_self, resolve_path
 from contract.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 from contract.block.parser.md import MdAstParser
 from contract.block.parser.py import PyAstParser

@@ -1,7 +1,7 @@
-# arch.proto.event
+# contract.proto.event
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Dict, Any, Optional
-from bound.emitter import get_emitter
+from flow.emitter import get_emitter
 
 log = get_emitter("phase.event")
 

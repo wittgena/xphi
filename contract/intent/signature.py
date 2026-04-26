@@ -1,4 +1,4 @@
-# arch.intent.signature
+# contract.intent.signature
 import ast
 import importlib
 import inspect

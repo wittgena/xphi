@@ -1,8 +1,8 @@
-# arch.intent.script.compiler
+# contract.intent.script.compiler
 import json
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any
-from bound.emitter import get_emitter
+from flow.emitter import get_emitter
 
 log = get_emitter("action.compiler")
 

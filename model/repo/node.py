@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from model.event import next_id
 from model.repo.commit import RepoCommit, AnchorCommit
-from bound.resolver import resolve_path
+from anchor.resolver import resolve_path
 
 DEFAULT_ID = "0000000"
 LINEAGE_ROOT = resolve_path('contract') / 'lineage'

@@ -5,12 +5,12 @@ import json
 import inspect
 import ast
 from typing import Any, Dict, List, Tuple
-from bound.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState, Transduction
+from flow.emitter import get_logger
+from contract.proto.flow import ProtoFlow, FlowState, Transduction
 from contract.registry import contract, discover_modules, registry
 from node.runtime import NodeRuntime
 from phi.runtime import PhiRuntime
-from bound.resolver import find_current_self, resolve_path
+from anchor.resolver import find_current_self, resolve_path
 
 log = get_logger("trans.folder")
 

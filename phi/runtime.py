@@ -2,8 +2,8 @@
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from bound.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState
+from flow.emitter import get_logger
+from contract.proto.flow import ProtoFlow, FlowState
 from contract.protocol import get_proto
 from bridge.psi import PhaseField, PsiCarrier, CarrierType
 from phase.interpreter import AnchorFlow, PhaseInterpreter

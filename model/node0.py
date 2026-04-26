@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import uuid
 from bridge.psi import PsiCarrier
 from phase.interpreter import PhaseInterpreter, AnchoredIR, AnchorFlow
-from bound.emitter import get_emitter
+from flow.emitter import get_emitter
 
 log = get_emitter("model.node0")
 

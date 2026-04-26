@@ -1,9 +1,9 @@
-# arch.intent.transition
+# contract.intent.transition
 """@flow: ResidueStore(rocks.db) → XeCrystallizer → ScriptCompiler(Φ') → ScriptProjector(Ψ)"""
 import json
 from typing import Dict, Any, List
 from xe.residue.store import ResidueStore, ResidueSnapshot
-from bound.emitter import get_logger
+from flow.emitter import get_logger
 from arch.intent.script.compiler import ScriptCompiler, ScriptProjector
 
 log = get_logger("action.transition")

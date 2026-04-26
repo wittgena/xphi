@@ -1,7 +1,7 @@
 # phi.monitor
 import functools
 import re
-from bound.emitter import get_logger
+from flow.emitter import get_logger
 
 log = get_logger("phi.monitor")
 

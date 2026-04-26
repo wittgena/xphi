@@ -3,15 +3,15 @@ import json
 import asyncio
 import inspect
 from typing import Any
-from bound.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from flow.emitter import get_logger
+from contract.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import contract, discover_modules
-from bound.resolver import find_current_self
+from anchor.resolver import find_current_self
 from node.runtime import NodeRuntime
 from phi.runtime import PhiRuntime
 from phi.bootstrap import bootstrap 
 from bridge.client.local.llama import LLMClient
-from bound.resolver import resolve_path
+from anchor.resolver import resolve_path
 
 log = get_logger("trans.genai")
 

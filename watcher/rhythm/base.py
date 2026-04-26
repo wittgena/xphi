@@ -1,7 +1,7 @@
-# field.loop.rhythm.base
+# watcher.rhythm.base
 import math
 import time
-from bound.plane import BoundPlane
+from watcher.plane import BoundPlane
 
 class Field:
     """

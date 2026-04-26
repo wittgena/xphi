@@ -7,8 +7,8 @@ import re
 import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
-from bound.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState, Transduction
+from flow.emitter import get_logger
+from contract.proto.flow import ProtoFlow, FlowState, Transduction
 from contract.registry import contract, registry
 from contract.block.parser.md import MdAstParser
 from contract.block.extractor import BlockExtractor

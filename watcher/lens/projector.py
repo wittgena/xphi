@@ -7,7 +7,7 @@ import datetime
 import time
 from typing import Dict, Any, List, Optional
 from bridge.bus import AsyncEventBus
-from bound.interface import IPhaseAtor, IPhaseField, IEventBus
+from sphere.interface import IPhaseAtor, IPhaseField, IEventBus
 from bridge.psi import PsiCarrier, PsiEvent
 from watcher.lens.trajectory import (
     Point, 
@@ -17,7 +17,7 @@ from watcher.lens.trajectory import (
     WindowProjector
 )
 from sphere.container.scale.emitter import ScaleEmitter
-from bound.emitter import get_emitter
+from flow.emitter import get_emitter
 
 class ToposField(IPhaseField):
     """

@@ -1,13 +1,13 @@
-# arch.ator.aligner
+# contract.ator.aligner
 import httpx
 import json
 import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from arch.proto.flow import ProtoFlow, FlowState, Align
+from contract.proto.flow import ProtoFlow, FlowState, Align
 from contract.registry import contract
-from bound.emitter import get_logger
+from flow.emitter import get_logger
 
 log = get_logger('ator.aligner')
 
