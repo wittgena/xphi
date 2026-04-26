@@ -16,9 +16,9 @@ from contract.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli
 from model.surface.projector import SurfaceProjector
 from contract.block.parser.py import PyDotMdParser 
 
-log = get_emitter("project.bundler")
+log = get_emitter("bundle.project")
 
-DELIMITER = "---"
+DELIMITER = "#####"
 
 class ProjectBundler(SurfaceProjector[Path, Optional[Dict[str, Any]], Tuple[str, str], Dict[str, str]]):
     def __init__(self, target_repo: str):
