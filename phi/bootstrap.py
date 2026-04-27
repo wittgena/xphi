@@ -14,7 +14,7 @@ from phi.transcript import PhiTranscript
 from phi.spec.transcript import SpecTranscript
 from phi.runtime import PhiRuntime
 from node.runtime import NodeRuntime
-from anchor.resolver import find_current_self, resolve_path, load_bound
+from bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_logger("phi.bootstrap")
 SELF_ROOT = find_current_self()

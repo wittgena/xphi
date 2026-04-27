@@ -7,7 +7,7 @@ from pathlib import Path
 from contract.proto.flow import ProtoFlow, FlowState, Transduction, Align
 from flow.emitter import get_logger
 from dataclasses import dataclass, field
-from anchor.resolver import find_current_self
+from bound.resolver import find_current_self
 from contract.registry import registry, contract
 from phi.runtime import PhiRuntime
 from phi.bootstrap import bootstrap

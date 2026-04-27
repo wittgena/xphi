@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any, Set
 from collections import defaultdict
-from anchor.resolver import find_current_self, resolve_path
+from bound.resolver import find_current_self, resolve_path
 from anchor.around import discover_repos
 from flow.emitter import get_emitter
 from contract.registry import contract

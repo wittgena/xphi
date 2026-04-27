@@ -7,7 +7,7 @@ import sys
 import asyncio
 from pathlib import Path
 from flow.emitter import get_logger
-from anchor.resolver import resolve_path, find_current_self
+from bound.resolver import resolve_path, find_current_self
 from contract.proto.flow import ProtoFlow, FlowState
 from phi.bootstrap import bootstrap
 

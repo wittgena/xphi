@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from flow.emitter import get_logger
 from bridge.reflect.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
-from anchor.resolver import find_current_self, resolve_path
+from bound.resolver import find_current_self, resolve_path
 from contract.block.extractor import extract_block_from_file, Block
 
 log = get_logger("block.emitter")

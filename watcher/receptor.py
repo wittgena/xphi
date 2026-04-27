@@ -9,7 +9,7 @@ from flow.emitter import get_emitter
 from contract.registry import discover_modules, contract 
 from contract.executor.dynamics import LoopCarrier, DynamicsExecutor
 from node.runtime import NodeRuntime
-from anchor.resolver import find_current_self
+from bound.resolver import find_current_self
 
 log = get_emitter("watcher.receptor", phase="BOOT")
 

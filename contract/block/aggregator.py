@@ -3,7 +3,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from anchor.resolver import resolve_path
+from bound.resolver import resolve_path
 from contract.block.emitter import main as emitter_main, get_logger
 
 log = get_logger("block.aggregator")

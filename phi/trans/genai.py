@@ -6,12 +6,12 @@ from typing import Any
 from flow.emitter import get_logger
 from contract.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import contract, discover_modules
-from anchor.resolver import find_current_self
+from bound.resolver import find_current_self
 from node.runtime import NodeRuntime
 from phi.runtime import PhiRuntime
 from phi.bootstrap import bootstrap 
 from bridge.client.local.llama import LLMClient
-from anchor.resolver import resolve_path
+from bound.resolver import resolve_path
 
 log = get_logger("trans.genai")
 

@@ -8,7 +8,7 @@ from pathlib import Path
 from flow.emitter import get_emitter
 from bridge.thch import ThCh, topos_folding_scope
 from bridge.client.local.lm import LocalLM
-from anchor.resolver import resolve_path
+from bound.resolver import resolve_path
 from flow.emitter import get_emitter
 from xe.residue.store import ResidueStore, ResidueSnapshot
 from xe.surface.generator import SurfaceIntent, StructuralDissonance

@@ -15,7 +15,7 @@ from dataclasses import asdict
 from node.sensor import REDIS_URL
 from watcher.plane import surface
 from flow.emitter import get_emitter, flow_scope
-from anchor.resolver import get_invoker
+from bound.resolver import get_invoker
 from contract.registry import registry
 from contract.executor.result import TaskSummaryEvent, TaskDetailRecord
 from contract.executor.base import BaseExecutor
