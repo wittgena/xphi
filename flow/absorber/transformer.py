@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from resonance.lang.model import LangModel, NodeData, EdgeData, LoopEdgeData, PhaseGraphSchema
+from work.lang.model import LangModel, NodeData, EdgeData, LoopEdgeData, PhaseGraphSchema
 
 class LogicTransformer:
     """
