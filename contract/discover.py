@@ -67,7 +67,7 @@ def discover_modules(
 
         ## @rule.B: AST 정적 분석을 통한 무거운/예제 모듈 사전 차단 (Zero Side-effect)
         if _contains_forbidden_imports(py_file, forbidden_set):
-            print(f"[Discover] Ignored (Forbidden dependency found): {py_file.name}")
+            print(f"[Discover] Ignored (heavy dependency found): {py_file.name}")
             continue
 
         ## @rule.C: 모듈 동적 로딩

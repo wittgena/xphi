@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Union
 
 @dataclass
-class GraphContext:
+class ContextGraph:
     """그래프 탐색 및 프로젝션에 사용되는 컨텍스트 모델"""
     entry: str
     focus: str = "CLI Observation"
