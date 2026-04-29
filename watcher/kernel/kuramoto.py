@@ -3,15 +3,21 @@ import math
 import random
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
-from sphere.interface import IDynamicsKernel
+from resonance.interface import IDynamicsKernel
 from sphere.config import KernelConfig
 from contract.registry import contract
 
 @contract.kernel("kuramoto")
 class KuramotoSensor(IDynamicsKernel):
     """Φ-evolution kernel: global phase coupling operator"""
-    def __init__(self, config: KernelConfig, **kwargs):
-        self.config = config
+    def __init__(self, **kwargs):
+        # 만약 kwargs에 이미 생성된 'config' 객체가 있다면 우선 사용하고, 
+        # 아니라면 kwargs 자체를 KernelConfig로 변환 (Duck Typing)
+        if "config" in kwargs and isinstance(kwargs["config"], KernelConfig):
+            self.config = kwargs["config"]
+        else:
+            # JSON params에서 넘어온 값들로 KernelConfig 인스턴스화
+            self.config = KernelConfig(**kwargs)
 
     def compute_step(self, states: Dict[str, Dict[str, Any]], dt: float) -> Dict[str, Dict[str, float]]:
         """dΦ/dt: distributed phase update"""

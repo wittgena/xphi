@@ -3,17 +3,22 @@ import math
 import random
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
-from sphere.interface import IDynamicsKernel
+from resonance.interface import IDynamicsKernel
 from sphere.config import KernelConfig
 from contract.registry import contract
 
 @contract.kernel("ator")
 class AtorSensor(IDynamicsKernel):
     """Φ-evolution kernel: Multi-Ator Cognitive Consensus & Clustering"""
-    def __init__(self, config: KernelConfig):
-        self.config = config
-        self.trust_radius = 1.0  # 이 반경 내의 의견만 수용 (Tolerance)
-        self.repulsion_factor = 0.2 # 반경 밖 의견에 대한 반발력
+    def __init__(self, **kwargs):
+        if "config" in kwargs and isinstance(kwargs["config"], KernelConfig):
+            self.config = kwargs["config"]
+        else:
+            self.config = KernelConfig(**kwargs)
+            
+        ## AtorSensor 전용 추가 파라미터도 kwargs에서 추출 (기본값 부여)
+        self.trust_radius = kwargs.get("trust_radius", 1.0)
+        self.repulsion_factor = kwargs.get("repulsion_factor", 0.2)
 
     def compute_step(self, states: Dict[str, Dict[str, Any]], dt: float) -> Dict[str, Dict[str, float]]:
         deltas = {}

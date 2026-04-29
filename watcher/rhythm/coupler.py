@@ -3,9 +3,9 @@ import time
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from watcher.plane import BoundPlane
 from bridge.psi import PsiType
-from sphere.interface import IEventBus
+from bound.plane import BoundPlane
+from resonance.interface import IEventBus
 
 class RhythmCoupler:
     def __init__(self, loop, redis, bus: Optional[IEventBus] = None):

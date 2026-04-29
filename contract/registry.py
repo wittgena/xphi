@@ -123,35 +123,6 @@ def ator_contract(name: str):
     def decorator(cls: Type): registry.register_component("ator", name, cls); return cls
     return decorator
 
-def discover_modules(root: Path):
-    """고정된 root를 기준으로 모듈을 탐색하여 일관된 FQN(Fully Qualified Name)을 생성"""
-
-    if not root.exists():
-        print(f"[Registry] Root path {root} does not exist.")
-        return
-
-    print(f"[Registry] Load registry")
-    ## root 자체를 sys.path에 추가 (예: .../meta 폴더를 path에 추가)
-    root_path_str = str(root.resolve())
-    if root_path_str not in sys.path:
-        sys.path.insert(0, root_path_str)
-        print(f"[Registry] Base path added: {root_path_str}")
-
-    ## root 내부의 모든 .py 파일을 재귀적으로 탐색
-    for py_file in root.rglob("*.py"):
-        if (py_file.name.startswith("_") and py_file.name != "__init__.py") or \
-           py_file.name in ("registry.py", "scanner.py"):
-            continue
-
-        try:
-            relative = py_file.relative_to(root)
-            module_path = ".".join(relative.with_suffix("").parts)
-            if module_path:
-                if module_path not in sys.modules:
-                    importlib.import_module(module_path)
-        except Exception as e:
-            print(f"[Registry] Failed to load {py_file}: {e}")
-    
 contract = SimpleNamespace(
     cli=cli_contract,
     kernel=kernel_contract,

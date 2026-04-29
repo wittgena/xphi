@@ -20,7 +20,7 @@ class XeCont(BaseExecutor, metaclass=PhaseField):
     """
     def __init__(self, bound, ex: str = "void", origin: str = "void"):
         super().__init__()
-        # trace_id를 Snowflake로 변경하여 시간순 정렬 가능하게 함
+        ## trace_id를 Snowflake로 변경하여 시간순 정렬 가능하게 함
         self.trace_id = next_id() 
         self.phase_id = 0 # 현재 위상 상태 저장
         self.ex = ex
@@ -52,9 +52,8 @@ class XeCont(BaseExecutor, metaclass=PhaseField):
             self.bound.commit()
             ext_base = self._ext__()
             
-            # 로그 출력 시에도 정렬 가능한 ID 사용
-            print(f"[Rupture] {self.trace_id} (Phase:{hex(self.phase_id)}) -> {ext_base.trace_id}")
-
+            ## 로그 출력 시에도 정렬 가능한 ID 사용
+            print(f"\n[Rupture] {self.trace_id} (Phase:{hex(self.phase_id)}) -> {ext_base.trace_id}")
             self.ex = ext_base.ex
             self.origin = ext_base.trace_id
         else:
@@ -87,30 +86,32 @@ class LoopCarrier(BaseExecutor):
 
     async def execute(self, psi: Any) -> List[Any]:
         out = []
+        ## 현재 틱(psi) 처리 (위상 장 흡수 및 평가)
         xe_out = await self.xe.execute(psi)
-        out.extend(xe_out)
+        out.extend(xe_out) ## 현재 결과는 Actuator로 보내서 Surface 업데이트
 
+        ## 다음 틱(Tick) 생성 및 재귀적 발행
         if self.tick < self.max_ticks:
             await asyncio.sleep(self.interval)
-            
-            # 다음 이벤트를 생성할 때 Snowflake와 현재 Xe의 Phase ID를 결합
             next_psi = psi.__class__(
-                event_id=next_id(), # Snowflake 기반 시간 순서
+                event_id=next_id(), 
                 parent_id=getattr(psi, "event_id", None),
                 source_id="loop.carrier",
-                phase_id=self.xe.phase_id, # 현재 인과 상태 복제
+                scope=getattr(psi, "scope", "GLOBAL"),
+                carrier=getattr(psi, "carrier", None),
+                phase_id=getattr(self.xe, 'phase_id', 0),
                 tick=self.tick + 1,
-                context=getattr(psi, "context", {})
+                context=getattr(psi, "context", {}).copy()
             )
-            out.append(next_psi)
-            self.tick += 1
             
+            ## 핵심 해결책: 리턴(out.append)하지 않고, Node의 Bus로 직접 밀어넣어 재순환시킴
+            if hasattr(self, "node") and self.node:
+                await self.node.bus.publish(next_psi)
+            else:
+                ## 폴백: 노드가 바인딩되지 않았다면 기존처럼 리턴 (테스트용)
+                out.append(next_psi) 
+            self.tick += 1
         return out
-
-from typing import Dict, Any, List
-from contract.registry import registry  # 전역 SSOT 레지스트리 임포트
-from contract.executor.base import BaseExecutor
-from contract.executor.dynamics import XeCont
 
 class SystemBuilder:
     """
@@ -119,17 +120,17 @@ class SystemBuilder:
     """
     @classmethod
     def build(cls, config: Dict[str, Any]) -> Any:
-        # 1. Registry를 통한 컴포넌트 자동 인스턴스화
-        # config에 있는 "type"과 "params"는 create_component가 자동으로 추출/병합해줍니다.
+        ## Registry를 통한 컴포넌트 자동 인스턴스화
+        ## config에 있는 "type"과 "params"는 create_component가 자동으로 추출/병합해줍니다.
         kernel = registry.create_component("kernel", config.get("kernel", {}))
         field = registry.create_component("field", config.get("field", {}))
         watcher = registry.create_component("watcher", config.get("watcher", {}))
         regime = registry.create_component("regime", config.get("regime", {}))
         
-        # Ator(노드 에이전트) 목록 생성
+        ## Ator(노드 에이전트) 목록 생성
         ators = []
         for ator_cfg in config.get("ators", []):
-            # config 내의 params 외에 id, initial_state 등 1뎁스 변수들을 kwargs로 주입
+            ## config 내의 params 외에 id, initial_state 등 1뎁스 변수들을 kwargs로 주입
             ator = registry.create_component(
                 "ator", 
                 ator_cfg, 
@@ -138,13 +139,13 @@ class SystemBuilder:
             )
             ators.append(ator)
 
-        # 2. 위상 공간(Topos Field)에 생성된 컴포넌트들을 바인딩 (의존성 주입)
+        ## 위상 공간(Topos Field)에 생성된 컴포넌트들을 바인딩 (의존성 주입)
         field.bind_kernel(kernel)
         field.bind_ators(ators)
         field.bind_watcher(watcher)
         field.bind_regime(regime)
 
-        # 3. XeCont가 다룰 수 있는 통합 Bound 객체(field) 반환
+        ## 3. XeCont가 다룰 수 있는 통합 Bound 객체(field) 반환
         return field
 
 class DynamicsExecutor(BaseExecutor):
@@ -156,10 +157,10 @@ class DynamicsExecutor(BaseExecutor):
         super().__init__()
         self.config_dict = config_dict
         
-        # 1. SystemBuilder로 선언적 시스템 완벽 조립
+        ## SystemBuilder로 선언적 시스템 완벽 조립
         self.bound = SystemBuilder.build(self.config_dict)
         
-        # 2. XeCont (상태 벡터 및 위상/스노우플레이크 캐리어) 래핑 및 Bound 주입
+        ## XeCont (상태 벡터 및 위상/스노우플레이크 캐리어) 래핑 및 Bound 주입
         self._xe = XeCont(bound=self.bound, ex="dynamics.init", origin="system.boot")
 
     @property
@@ -168,8 +169,5 @@ class DynamicsExecutor(BaseExecutor):
         return getattr(self._xe, 'phase_id', 0)
 
     async def execute(self, psi: Any) -> List[Any]:
-        """
-        @flow: 외부의 LoopCarrier로부터 틱(Tick)을 받아 내부 _xe로 전달 (Psi 흡수 및 전이)
-        """
-        # 핵심 위상 전이 및 Rupture 로직은 XeCont.execute()에서 처리
+        """@flow: 외부의 LoopCarrier로부터 틱(Tick)을 받아 내부 _xe로 전달 (Psi 흡수 및 전이)"""
         return await self._xe.execute(psi)

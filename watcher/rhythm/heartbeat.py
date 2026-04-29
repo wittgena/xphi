@@ -10,9 +10,9 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from flow.emitter import get_emitter
-from watcher.plane import BoundPlane
 from bridge.psi import PsiEvent, PsiCarrier
+from flow.emitter import get_emitter
+from bound.plane import BoundPlane
 from watcher.rhythm.bridge import BridgeRhythm
 
 class PhaseField(type):

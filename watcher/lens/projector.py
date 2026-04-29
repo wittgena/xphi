@@ -7,7 +7,7 @@ import datetime
 import time
 from typing import Dict, Any, List, Optional
 from bridge.bus import AsyncEventBus
-from sphere.interface import IPhaseAtor, IPhaseField, IEventBus
+from resonance.interface import IPhaseAtor, IPhaseField, IEventBus
 from bridge.psi import PsiCarrier, PsiEvent
 from watcher.lens.trajectory import (
     Point, 

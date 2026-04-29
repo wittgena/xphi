@@ -5,7 +5,7 @@ import click
 import redis
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from watcher.surface.topos import RedisTopos
+from resonance.surface.redis import SurfaceRedis
 from xe.trace.source import FieldKernel, SourceTracer
 
 class PhaseAwareGroup(click.Group):
@@ -14,7 +14,7 @@ class PhaseAwareGroup(click.Group):
     @flow: Φ → surface projection
     """
     def list_commands(self, ctx):
-        surface = RedisTopos()
+        surface = SurfaceRedis()
         phase = surface.get_current_phase()
 
         commands = ['observe']
@@ -41,7 +41,7 @@ def observe(watch_dir):
     @desc: boostrap loop
     @flow: Ψ → Φ → Ψ′ → Ψ
     """
-    surface = RedisTopos()
+    surface = SurfaceRedis()
     kernel = FieldKernel(surface)
     
     ## Start Kernel Daemons

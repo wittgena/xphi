@@ -13,8 +13,8 @@ from bridge.psi import PsiEvent, PsiCarrier
 from model.event import next_id, LogEvent
 from dataclasses import asdict
 from node.sensor import REDIS_URL
-from watcher.plane import surface
 from flow.emitter import get_emitter, flow_scope
+from bound.plane import surface
 from bound.resolver import get_invoker
 from contract.registry import registry
 from contract.executor.result import TaskSummaryEvent, TaskDetailRecord

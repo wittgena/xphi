@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from flow.emitter import get_logger
 from contract.proto.flow import ProtoFlow, FlowState, Transduction
-from contract.registry import contract, discover_modules, registry
+from contract.registry import contract, registry
+from contract.discover import discover_modules
 from phi.transcript import PhiTranscript
 from phi.spec.transcript import SpecTranscript
 from phi.runtime import PhiRuntime

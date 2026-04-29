@@ -4,9 +4,10 @@ import json
 import asyncio
 from typing import Optional, List
 from bridge.psi import PsiCarrier, PsiEvent
-from sphere.interface import IPhaseField, ICriticalDetector, ISystemRegime, IPhaseAtor
+from resonance.interface import IPhaseField, ICriticalDetector, ISystemRegime, IPhaseAtor
 from flow.emitter import get_emitter
-from contract.registry import discover_modules, contract 
+from contract.registry import contract 
+from contract.discover import discover_modules
 from contract.executor.dynamics import LoopCarrier, DynamicsExecutor
 from node.runtime import NodeRuntime
 from bound.resolver import find_current_self

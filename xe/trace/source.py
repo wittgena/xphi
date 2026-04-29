@@ -2,14 +2,14 @@
 import time
 import threading
 from watchdog.events import FileSystemEventHandler
-from watcher.surface.topos import RedisTopos
+from surface.topos import SurfaceRedis
 
 class SourceTracer(FileSystemEventHandler):
     """
     @desc: filesystem mutation → semantic signal
     @flow: environment → Ψ
     """
-    def __init__(self, surface: RedisTopos):
+    def __init__(self, surface: SurfaceRedis):
         self.surface = surface
         self.last_trigger = 0
 
@@ -28,7 +28,7 @@ class FieldKernel:
     @desc: Manages the autonomous closed-loop of the system.
     Evaluates Φ mutations and applies structural inversions (Ψ′).
     """
-    def __init__(self, field: RedisTopos):
+    def __init__(self, field: SurfaceRedis):
         self.field = field
 
     def apply_inversion(self, phase: str):
