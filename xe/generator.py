@@ -10,8 +10,8 @@ from bridge.client.local.lm import LocalLM
 from flow.emitter import get_emitter
 from bound.resolver import resolve_path
 from xe.residue.store import ResidueStore, ResidueSnapshot
-from contract.intent.signature import Signature
-from contract.intent.transition import IntentTransition
+from xe.intent.signature import Signature
+from xe.intent.transition import IntentTransition
 
 PRE_PHASE_ROOT = resolve_path('pre.phase')
 log = get_emitter("context.generator")

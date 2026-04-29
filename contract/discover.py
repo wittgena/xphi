@@ -1,3 +1,4 @@
+# contract.discover
 import sys
 import importlib
 import ast

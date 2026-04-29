@@ -1,4 +1,4 @@
-# sphere.runtime.xor
+# xe.residue.xor
 import sys
 import argparse
 import asyncio
@@ -8,11 +8,11 @@ from typing import List, Optional, Dict, Any
 from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEvent
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.schema import NodeWithScore
+from reflect.xor import Xor, SearchResult 
 from flow.emitter import get_logger
 from bound.resolver import resolve_path
-from bridge.reflect.xor import Xor, SearchResult 
 
-log = get_logger("manifold.xor")
+log = get_logger("residue.xor")
 
 try:
     METADATA_ROOT = resolve_path("io") / "metadata"

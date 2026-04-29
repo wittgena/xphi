@@ -1,4 +1,4 @@
-# watcher.field.ator
+# watcher.field.legacy.ator
 from typing import Dict, Any
 from contract.registry import contract
 from resonance.interface import IPhaseAtor

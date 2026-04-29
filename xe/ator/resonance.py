@@ -1,4 +1,4 @@
-# contract.ator.resonance
+# xe.ator.resonance
 import asyncio
 import inspect
 from pathlib import Path

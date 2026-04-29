@@ -1,10 +1,10 @@
-# contract.intent.script.compiler
+# xe.intent.script.compiler
 import json
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any
 from flow.emitter import get_emitter
 
-log = get_emitter("action.compiler")
+log = get_emitter("script.compiler")
 
 @dataclass
 class Fragment:

@@ -4,7 +4,7 @@ import random
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
 from resonance.interface import IDynamicsKernel
-from sphere.config import KernelConfig
+from sphere.system.config import KernelConfig
 from contract.registry import contract
 
 @contract.kernel("kuramoto")

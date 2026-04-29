@@ -1,4 +1,4 @@
-# contract.intent.generator
+# xe.intent.generator
 import dspy
 import sys
 import json
@@ -9,11 +9,11 @@ from flow.emitter import get_emitter
 from bridge.thch import ThCh, topos_folding_scope
 from bridge.client.local.lm import LocalLM
 from flow.emitter import get_emitter
-from xe.generator import SurfaceIntent, StructuralDissonance
 from bound.resolver import resolve_path
+from xe.generator import SurfaceIntent, StructuralDissonance
 from xe.residue.store import ResidueStore, ResidueSnapshot
-from contract.intent.signature import Signature
-from contract.intent.transition import IntentTransition
+from xe.intent.signature import Signature
+from xe.intent.transition import IntentTransition
 
 PRE_PHASE_ROOT = resolve_path('pre.phase')
 log = get_emitter("intent.generator")

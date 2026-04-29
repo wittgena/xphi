@@ -8,9 +8,9 @@ from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Set
+from reflect.xor import Xor
 from flow.emitter import get_emitter
 from bound.resolver import find_current_self, resolve_path, load_bound
-from bridge.reflect.xor import Xor
 
 log = get_emitter("signature.overlay")
 
