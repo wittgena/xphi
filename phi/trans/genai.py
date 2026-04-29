@@ -10,7 +10,7 @@ from bound.resolver import find_current_self
 from node.runtime import NodeRuntime
 from phi.runtime import PhiRuntime
 from phi.bootstrap import bootstrap 
-from bridge.client.local.llama import LLMClient
+from bridge.client.local.engine import LLMEngine
 from bound.resolver import resolve_path
 
 log = get_logger("trans.genai")
@@ -19,7 +19,7 @@ log = get_logger("trans.genai")
 class TransGenai(Transduction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.llm_client = LLMClient()
+        self.llm_client = LLMEngine()
 
     def _project(self, flow: ProtoFlow, ator_node: Any) -> dict:
         log.info(f"  [Projection] Opening state for LLM inference: {ator_node.role}")

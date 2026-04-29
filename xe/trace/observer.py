@@ -6,7 +6,7 @@ import redis
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from watcher.surface.topos import RedisTopos
-from cont.trace.source import FieldKernel, SourceTracer
+from xe.trace.source import FieldKernel, SourceTracer
 
 class PhaseAwareGroup(click.Group):
     """

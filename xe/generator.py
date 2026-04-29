@@ -9,7 +9,7 @@ from bridge.thch import ThCh, topos_folding_scope
 from bridge.client.local.lm import LocalLM
 from flow.emitter import get_emitter
 from bound.resolver import resolve_path
-from cont.residue.store import ResidueStore, ResidueSnapshot
+from xe.residue.store import ResidueStore, ResidueSnapshot
 from contract.intent.signature import Signature
 from contract.intent.transition import IntentTransition
 

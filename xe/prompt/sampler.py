@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
-from xe.cont.prompt.input import InputBundle, entry
+from xe.prompt.input import InputBundle, entry
 from bound.resolver import find_current_self, resolve_path
 from flow.emitter import get_logger
 from bridge.reflect.xor import Xor, SearchResult

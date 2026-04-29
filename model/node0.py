@@ -10,8 +10,8 @@ from typing import List, Iterator
 from contextlib import contextmanager
 import uuid
 from bridge.psi import PsiCarrier
-from phase.interpreter import PhaseInterpreter, AnchoredIR, AnchorFlow
 from flow.emitter import get_emitter
+from node.interpreter import NodeInterpreter, AnchoredIR, AnchorFlow
 
 log = get_emitter("model.node0")
 
@@ -23,7 +23,7 @@ class Node0State:
         ## node0 always holds a pure origin anchor
         self.origin_anchor: AnchoredIR = AnchorFlow.bootstrap()
 
-    def sync_to_origin(self, interpreter: PhaseInterpreter) -> PhaseInterpreter:
+    def sync_to_origin(self, interpreter: NodeInterpreter) -> NodeInterpreter:
         """
         @action: reset.interpreter
         - Force interpreter to node0 origin
@@ -67,7 +67,7 @@ class Node0State:
         return recovered_signals
 
 @contextmanager
-def enter_node0(interpreter: PhaseInterpreter, node_id: str) -> Iterator[Node0State]:
+def enter_node0(interpreter: NodeInterpreter, node_id: str) -> Iterator[Node0State]:
     """
     @contextmanager: enter_node0
     @flow: unbind → reset to 0 → yield safe context → rebind to spiral

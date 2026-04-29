@@ -6,9 +6,9 @@ from flow.emitter import get_logger
 from contract.proto.flow import ProtoFlow, FlowState
 from contract.protocol import get_proto
 from bridge.psi import PhaseField, PsiCarrier, CarrierType
-from phase.interpreter import AnchorFlow, PhaseInterpreter
 from node.runtime import NodeRuntime
 from model.node0 import enter_node0
+from node.interpreter import AnchorFlow, NodeInterpreter
 
 log = get_logger("phi.runtime")
 
@@ -36,13 +36,13 @@ class PhiRuntime:
         self.boundary_threshold = 0.5
         log.info(f"[RuntimeAtor] Initialized with Anchor Version: {self.global_anchor.version}")
 
-    def _initialize_interpreters(self) -> Dict[str, PhaseInterpreter]:
+    def _initialize_interpreters(self) -> Dict[str, NodeInterpreter]:
         ## field decomposition: {Φ_coherent, Φ_eval, Φ_interference}
         return {
-            "ator": PhaseInterpreter(self.global_anchor, field=PhaseField.COHERENT),
-            "router": PhaseInterpreter(self.global_anchor, field=PhaseField.EVALUATION),
-            "resonance": PhaseInterpreter(self.global_anchor, field=PhaseField.INTERFERENCE),
-            "default": PhaseInterpreter(self.global_anchor)
+            "ator": NodeInterpreter(self.global_anchor, field=PhaseField.COHERENT),
+            "router": NodeInterpreter(self.global_anchor, field=PhaseField.EVALUATION),
+            "resonance": NodeInterpreter(self.global_anchor, field=PhaseField.INTERFERENCE),
+            "default": NodeInterpreter(self.global_anchor)
         }
 
     def _flow_to_carrier(self, flow: ProtoFlow, node_type: str) -> PsiCarrier:

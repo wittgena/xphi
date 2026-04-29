@@ -4,7 +4,7 @@ import json
 from typing import Dict, Any, List
 from xe.residue.store import ResidueStore, ResidueSnapshot
 from flow.emitter import get_logger
-from arch.intent.script.compiler import ScriptCompiler, ScriptProjector
+from contract.intent.script.compiler import ScriptCompiler, ScriptProjector
 
 log = get_logger("action.transition")
 

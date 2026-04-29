@@ -1,5 +1,6 @@
 # watcher.rhythm.bridge
 import json
+from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from model.event import next_id, next_phase_id
 
