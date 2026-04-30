@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Dict, Any, Optional
 from flow.surface.emitter import get_emitter
 
-log = get_emitter("phase.event")
+log = get_emitter("proto.event")
 
 Psi = TypeVar('Psi')           ## psi: dynamic flow (task / message)
 Phi = TypeVar('Phi')           ## phi: shared topology (state / memory)

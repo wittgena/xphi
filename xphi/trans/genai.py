@@ -4,11 +4,11 @@ import asyncio
 import inspect
 from typing import Any
 from flow.surface.emitter import get_logger
-from contract.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from contract.registry import contract
 from contract.discover import discover_modules
 from bound.resolver import find_current_self
-from node.runtime import NodeRuntime
+from bridge.node.runtime import NodeRuntime
 from ator.runtime import AtorRuntime
 from ator.bootstrap import bootstrap 
 from bridge.client.local.engine import LLMEngine

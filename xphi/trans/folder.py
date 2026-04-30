@@ -6,10 +6,10 @@ import inspect
 import ast
 from typing import Any, Dict, List, Tuple
 from flow.surface.emitter import get_logger
-from contract.proto.flow import ProtoFlow, FlowState, Transduction
+from proto.flow import ProtoFlow, FlowState, Transduction
 from contract.registry import contract, registry
 from contract.discover import discover_modules
-from node.runtime import NodeRuntime
+from bridge.node.runtime import NodeRuntime
 from ator.runtime import AtorRuntime
 from bound.resolver import find_current_self, resolve_path
 

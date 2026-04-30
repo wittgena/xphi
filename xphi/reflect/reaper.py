@@ -16,7 +16,7 @@ import urllib.parse
 import os
 from redis import Redis
 from flow.surface.emitter import get_emitter
-from node.runtime import NodeRuntime
+from bridge.node.runtime import NodeRuntime
 
 class Reaper:
     """

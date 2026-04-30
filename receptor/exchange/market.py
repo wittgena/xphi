@@ -5,7 +5,7 @@ import json
 from bridge.psi import PsiCarrier, PsiEvent
 from flow.surface.emitter import get_emitter
 from bound.resolver import find_current_self
-from node.runtime import NodeRuntime
+from bridge.node.runtime import NodeRuntime
 from contract.discover import discover_modules
 from contract.executor.dynamics import LoopCarrier, DynamicsExecutor
 

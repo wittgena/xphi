@@ -2,7 +2,7 @@
 import httpx
 import re
 from typing import Any, Dict
-from contract.proto.flow import ProtoFlow, Transduction
+from proto.flow import ProtoFlow, Transduction
 from contract.registry import contract
 from flow.surface.emitter import get_logger
 

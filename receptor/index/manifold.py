@@ -11,7 +11,7 @@ from flow.surface.emitter import get_logger
 from xphi.reflect.xor import Xor 
 from xphi.reflect.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from bound.resolver import find_current_self, resolve_path
-from foldbox.bounding import bounding
+from bridge.foldbox.bounding import bounding
 from contract.block.extractor import extract_block_from_file, Block
 
 log = get_logger("manifold.index")
