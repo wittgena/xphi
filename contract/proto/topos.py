@@ -3,7 +3,7 @@ import asyncio
 import enum 
 import logging
 from typing import List, Tuple, Any, Optional, Dict
-from flow.emitter import get_emitter
+from flow.surface.emitter import get_emitter
 from contract.protocol import proto, get_proto, Proto
 from contract.proto.flow import ProtoFlow, FlowState
 from contract.proto.trans import TransRule, PhaseSpec, NodeType

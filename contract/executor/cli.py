@@ -10,10 +10,10 @@ import redis.asyncio as redis_async
 from typing import Callable, Any
 from pathlib import Path
 from bridge.psi import PsiEvent, PsiCarrier
-from model.event import next_id, LogEvent
+from contract.event import next_id, LogEvent
 from dataclasses import asdict
 from node.sensor import REDIS_URL
-from flow.emitter import get_emitter, flow_scope
+from flow.surface.emitter import get_emitter, flow_scope
 from bound.plane import surface
 from bound.resolver import get_invoker
 from contract.registry import registry

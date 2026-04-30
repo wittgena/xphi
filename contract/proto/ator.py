@@ -3,7 +3,7 @@ import uuid
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from flow.emitter import get_logger
+from flow.surface.emitter import get_logger
 from contract.proto.flow import (
     ProtoFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather

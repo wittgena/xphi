@@ -8,7 +8,7 @@ from pathlib import Path
 from tqdm import tqdm
 from collections import defaultdict, Counter
 from gensim import corpora, models
-from flow.emitter import get_logger
+from flow.surface.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
 from contract.block.code.ext.topic import TopicMap, TopicMetadata, PhaseSpace, CoreModuleInfo
 from contract.block.parser.topos import ToposAstParser

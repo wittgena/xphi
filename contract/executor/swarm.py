@@ -8,10 +8,10 @@ import subprocess
 import importlib
 from typing import Callable, Any
 from bridge.psi import PsiEvent, PsiCarrier
-from model.event import next_id, LogEvent
+from contract.event import next_id, LogEvent
 from dataclasses import asdict
 from bound.plane import surface
-from flow.emitter import get_logger, flow_scope
+from flow.surface.emitter import get_logger, flow_scope
 from contract.registry import registry
 from contract.executor.base import BaseExecutor
 from contract.executor.cli import _GenericCliExecutor

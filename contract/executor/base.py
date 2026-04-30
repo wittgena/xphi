@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, Any, Protocol
 from dataclasses import dataclass
 from bridge.psi import PsiType, PsiEvent
 from resonance.interface import IPhaseField, IBoundExecutor
-from flow.emitter import get_emitter
+from flow.surface.emitter import get_emitter
 
 class BaseExecutor(ABC):
     """@phase.executor: ψ → {ψ'} (execution / dispersion / transduction)"""
