@@ -7,7 +7,7 @@ from collections import defaultdict
 from reflect.xor import Xor, SearchResult
 from flow.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
-from xe.prompt.input import InputBundle, entry
+from xe.intent.prompt.input import InputBundle, entry
 
 log = get_logger("prompt.sampler")
 

@@ -2,9 +2,9 @@
 """@flow: ResidueStore(rocks.db) → XeCrystallizer → ScriptCompiler(Φ') → ScriptProjector(Ψ)"""
 import json
 from typing import Dict, Any, List
-from xe.residue.store import ResidueStore, ResidueSnapshot
 from flow.emitter import get_logger
-from xe.intent.script.compiler import ScriptCompiler, ScriptProjector
+from xe.compiler import XeCompiler, XeProjector
+from xe.residue.store import ResidueStore, ResidueSnapshot
 
 log = get_logger("intent.transition")
 
@@ -16,8 +16,8 @@ class IntentTransition:
     def __init__(self, target_module_id: str = "ator_dynamic_core"):
         self.target_module_id = target_module_id
         self.store = ResidueStore()
-        self.compiler = ScriptCompiler()
-        self.projector = ScriptProjector()
+        self.compiler = XeCompiler()
+        self.projector = XeProjector()
 
     def process_latest_snapshot(self) -> Dict[str, Any]:
         """DB에서 가장 최근의 응결된 스냅샷을 가져와 상전이를 트리거한다."""

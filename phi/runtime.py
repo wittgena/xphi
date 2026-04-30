@@ -6,8 +6,8 @@ from flow.emitter import get_logger
 from contract.proto.flow import ProtoFlow, FlowState
 from contract.protocol import get_proto
 from bridge.psi import PhaseField, PsiCarrier, CarrierType
+from bound.node0 import enter_node0
 from node.runtime import NodeRuntime
-from model.node0 import enter_node0
 from node.interpreter import AnchorFlow, NodeInterpreter
 
 log = get_logger("phi.runtime")

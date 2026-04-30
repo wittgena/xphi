@@ -1,4 +1,4 @@
-# xe.ator.resonance
+# phi.resonator
 import asyncio
 import inspect
 from pathlib import Path
@@ -7,7 +7,7 @@ from contract.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, J
 from contract.registry import contract
 from flow.emitter import get_logger
 
-log = get_logger('ator.resonance')
+log = get_logger("phi.resonator")
 
 @contract.ator("resonance.feedback")
 class ResonanceFeedback(Resonance):

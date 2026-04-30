@@ -6,7 +6,7 @@ import dspy
 from typing import Dict, Any
 from pathlib import Path
 from flow.emitter import get_emitter
-from bridge.thch import ThCh, topos_folding_scope
+from bridge.thch import thch_scope
 from bridge.client.local.lm import LocalLM
 from flow.emitter import get_emitter
 from bound.resolver import resolve_path
@@ -33,7 +33,7 @@ class IntentGenerator:
         log.signal("Phase 2 [Judgment]: Extracting Surface and Dissonance (xe)...")
         doc = f_kwargs["document_content"]
         
-        with topos_folding_scope(lm=LocalLM()):
+        with thch_scope(lm=LocalLM()):
             ## @step.1: 표면 구조 추출
             step1_engine = dspy.Predict("ExtractSurfaceLMP_Signature_Here")
             s1 = step1_engine(document_content=doc)

@@ -19,7 +19,7 @@ class InternalContext:
     state: CoreState
     evidence: Dict[str, Any]
 
-class ExtAssembler:
+class XeAssembler:
     """
     @context: runtime state + surface evidence → InternalContext (Payload)
     """

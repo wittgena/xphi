@@ -1,14 +1,13 @@
-# xe.intent.script.compiler
+# xe.compiler
 import json
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any
 from flow.emitter import get_emitter
 
-log = get_emitter("script.compiler")
+log = get_emitter("xe.compiler")
 
 @dataclass
 class Fragment:
-    # @topos.role: minimal unit
     id: str
     label: str  # 'projector', 'operator', 'boundary' 등의 위상적 역할
     attributes: Dict[str, Any] = field(default_factory=dict)
@@ -18,16 +17,16 @@ class Fragment:
         return asdict(self)
 
 @dataclass
-class SignatureScript:
+class XeSignature:
     # @topos.role: Φ′ (projected structural field)
     entry_point: str
     nodes: Dict[str, Fragment] = field(default_factory=dict)
     projections: List[str] = field(default_factory=list)
-    meta: Dict[str, Any] = field(default_factory=dict)  # Basis Footprint 보존
+    meta: Dict[str, Any] = field(default_factory=dict)  # Basis FootLog.info 보존
 
     def get_fragment(self, frag_id: str) -> Fragment:
         if frag_id not in self.nodes:
-            raise KeyError(f"Fragment '{frag_id}' not found in PhaseScript.")
+            raise KeyError(f"Fragment '{frag_id}' not found in Phasesignature.")
         return self.nodes[frag_id]
 
     def export_boundary(self) -> Dict[str, Any]:
@@ -39,19 +38,19 @@ class SignatureScript:
             "nodes": {k: v.to_dict() for k, v in self.nodes.items()}
         }
 
-class ScriptCompiler:
+class XeCompiler:
     """@phase: Φ⁺ (Mutated State) → Φ′ (Topology)"""
-    def compile(self, signature_state: Dict[str, Any]) -> SignatureScript:
+    def compile(self, signature_state: Dict[str, Any]) -> XeSignature:
         entry_id = signature_state.get("module_id", "unknown_ator")
         log.info(f"Starting compilation for ator topology: {entry_id}")
         
-        script = SignatureScript(
+        xe = XeSignature(
             entry_point=entry_id,
             projections=signature_state.get("output_fields", [])
         )
 
-        ## Script Meta (원인 보존)
-        script.meta = {
+        ## signature Meta (원인 보존)
+        xe.meta = {
             "basis_ref": signature_state.get("basis_snapshot", "genesis"),
             "tension_at_crystallization": signature_state.get("tension", 0.0)
         }
@@ -63,7 +62,7 @@ class ScriptCompiler:
             "inputs": signature_state.get("input_fields", [])
         }
         main_frag = Fragment(id=entry_id, label="projector", attributes=main_attrs)
-        script.nodes[entry_id] = main_frag
+        xe.nodes[entry_id] = main_frag
         rules = signature_state.get("mutated_rules", [])
         for idx, rule in enumerate(rules):
             rule_id = f"{entry_id}_op_{idx}"
@@ -76,7 +75,7 @@ class ScriptCompiler:
                     "source_basis": rule.get("basis_ref")
                 }
             )
-            script.nodes[rule_id] = rule_frag
+            xe.nodes[rule_id] = rule_frag
             main_frag.relations.append({"target": rule_id, "rel": "flows_into" })
             target_id = rule.get("target_module")
             if target_id:
@@ -85,8 +84,8 @@ class ScriptCompiler:
                     "rel": "produces_aspect",
                     "dst": rule.get("aspect", f"aspect_{idx}")
                 })
-                if target_id not in script.nodes:
-                    script.nodes[target_id] = Fragment(
+                if target_id not in xe.nodes:
+                    xe.nodes[target_id] = Fragment(
                         id=target_id, 
                         label="boundary",
                         attributes={
@@ -94,24 +93,24 @@ class ScriptCompiler:
                             "direction": "outbound"
                         }
                     )
-        self._validate_phase(script)
-        return script
+        self._validate_phase(xe)
+        return xe
 
-    def _validate_phase(self, script: SignatureScript):
-        if script.entry_point not in script.nodes:
-            raise ValueError(f"Entry point '{script.entry_point}' is missing.")
-        for frag_id, fragment in script.nodes.items():
+    def _validate_phase(self, signature: XeSignature):
+        if signature.entry_point not in signature.nodes:
+            raise ValueError(f"Entry point '{signature.entry_point}' is missing.")
+        for frag_id, fragment in signature.nodes.items():
             for edge in fragment.relations:
                 target_id = edge.get("target")
-                if target_id not in script.nodes:
+                if target_id not in signature.nodes:
                     raise ValueError(f"Fragment '{frag_id}' points to non-existent target '{target_id}'.")
 
 
-class ScriptProjector:
+class XeProjector:
     """@phase: Φ′ → Runtime Spec (Lowering to 'ator' seeds)"""
-    def project(self, script: SignatureScript) -> Dict[str, Dict[str, Any]]:
+    def project(self, signature: XeSignature) -> Dict[str, Dict[str, Any]]:
         specs = {}
-        for frag_id, frag in script.nodes.items():
+        for frag_id, frag in signature.nodes.items():
             # Fragment Label을 실제 ator 하부 구조 타입으로 매핑
             if frag.label == "projector":
                 ator_type = "ator.projector"
@@ -173,18 +172,18 @@ if __name__ == "__main__":
         ]
     }
 
-    print("\n## ScriptCompiler: Weaving Ator Topology...")
-    compiler = ScriptCompiler()
+    log.info("\n## signatureCompiler: Weaving Ator Topology...")
+    compiler = XeCompiler()
 
     try:
-        phase_script = compiler.compile(mock_mutated_state)
-        print("## Boundary Export (For BoundaryRenderer Φs)")
-        boundary_dict = phase_script.export_boundary()
-        print(json.dumps(boundary_dict, indent=2, ensure_ascii=False))
+        phase_signature = compiler.compile(mock_mutated_state)
+        log.info("## Boundary Export (For BoundaryRenderer Φs)")
+        boundary_dict = phase_signature.export_boundary()
+        log.info(json.dumps(boundary_dict, indent=2, ensure_ascii=False))
 
-        print("## Runtime Specifications (Lowering to 'ator' xe)")
-        projector = ScriptProjector()
-        runtime_specs = projector.project(phase_script)
-        print(json.dumps(runtime_specs, indent=2, ensure_ascii=False))
+        log.info("## Runtime Specifications (Lowering to 'ator' xe)")
+        projector = XeProjector()
+        runtime_specs = projector.project(phase_signature)
+        log.info(json.dumps(runtime_specs, indent=2, ensure_ascii=False))
     except Exception as e:
         log.error(f"Compilation failed: {e}")
