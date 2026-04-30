@@ -8,9 +8,9 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
 from flow.surface.emitter import get_logger
 from bound.resolver import resolve_path, get_invoker
-from model.context.graph import ContextGraph, SurfaceTemplateData, _extract_rel_attr, EntryTemplate
+from xor.context.graph import ContextGraph, SurfaceTemplateData, _extract_rel_attr, EntryTemplate
 from resonance.schema import ResonanceGraph, ResonanceNode
-from topos.lang.binder import LangBinder
+from flow.lang.binder import LangBinder
 from contract.registry import cli_contract
 from contract.executor.cli import dispatch_cli, execute_cli_task, CliTaskAdapter, parse_local
 

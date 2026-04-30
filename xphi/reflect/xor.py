@@ -14,7 +14,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from bound.resolver import find_current_self, resolve_path
 from flow.surface.emitter import get_emitter
-from reflect.phix.runtime import PhiXRuntime
+from xphi.runtime import XPhiRuntime
 from bridge.client.stream import StreamClient
 from bridge.client.surface import RedisClient, SurfaceClient
 
@@ -45,7 +45,7 @@ class Xor(SurfaceClient):
     def __init__(self):
         super().__init__(
             stream_client=StreamClient(),
-            bootstrap_runtime=PhiXRuntime(LIB_ROOT),
+            bootstrap_runtime=XPhiRuntime(LIB_ROOT),
             redis_surface=RedisClient(REDIS_HOST, REDIS_PORT),
             source_name="surface.xor",
             fallback_url=XPHI_API_BASE,
