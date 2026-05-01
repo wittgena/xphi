@@ -9,8 +9,8 @@ from contract.registry import contract
 from contract.discover import discover_modules
 from bound.resolver import find_current_self
 from bridge.node.runtime import NodeRuntime
-from ator.runtime import AtorRuntime
-from ator.bootstrap import bootstrap 
+from bound.ator.runtime import AtorRuntime
+from bound.ator.bootstrap import bootstrap 
 from bridge.client.local.engine import LLMEngine
 from bound.resolver import resolve_path
 
