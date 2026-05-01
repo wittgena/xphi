@@ -1,0 +1,224 @@
+# meta.flow.align.path
+import os
+import sys
+import argparse
+import yaml
+from typing import List, Dict, Any
+from pathlib import Path
+from session.bound.resolver import find_current_self, get_invoker
+from session.contract.registry import contract
+from meta.flow.surface.emitter import get_emitter
+from meta.flow.surface.aligner import FieldAligner, AlignRecord
+from session.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
+
+log = get_emitter("align.path")
+
+try:
+    SELF_ROOT = find_current_self()
+except Exception as e:
+    log.error(f"[error] 기준면(.self)을 찾을 수 없음: {e}")
+    sys.exit(1)
+
+TARGET_EXTENSIONS = {".md", ".py"}
+EXCLUDED_DIRS = {"__pycache__"}
+
+## @grouping.axes
+def key_path(item: AlignRecord) -> str:
+    namespace = item["namespace"]
+    parts = namespace.split(".")
+    return namespace if len(parts) <= 1 else ".".join(parts[:-1])
+
+def key_status(item: AlignRecord) -> str:
+    return item.get("status", "unknown")
+
+def key_type(item: AlignRecord) -> str:
+    return "missing" if item.get("missing") else "mismatch"
+
+GROUP_KEYS = {
+    "path": key_path,
+    "status": key_status,
+    "type": key_type,
+}
+
+class PathAligner(FieldAligner):
+    def check_alphabet_collision(repos: List[Path]):
+        """[위상 규칙 3] 각 Repo 내 1차 폴더들의 시작 알파벳 중복 체크"""
+        for repo in repos:
+            first_chars = [d.name[0].upper() for d in repo.iterdir() if d.is_dir()]
+            collisions = {c for c in first_chars if first_chars.count(c) > 1}
+            if collisions:
+                log.error(f"[topos.collision] {repo.name} has overlapping prefixes: {collisions}")
+
+    def scan(self, only_dirs: List[str] | None = None):
+        root_dir = Path(self.root_dir)
+        mismatches: List[AlignRecord] = []
+        matched_count = 0
+        mismatched_count = 0
+
+        log.info(f"[scan] start (root={root_dir})")
+        try:
+            repo_dirs = [
+                d
+                for d in root_dir.iterdir()
+                if d.is_dir()
+                and not d.name.startswith(".")
+                and d.name not in EXCLUDED_DIRS
+                and (only_dirs is None or d.name in only_dirs)
+            ]
+        except FileNotFoundError:
+            log.error(f"[error] 루트 디렉토리 '{root_dir}'를 찾을 수 없습니다.")
+            return [], 0, 0
+
+        for repo_dir in repo_dirs:
+            log.info(f"[scan] repo={repo_dir.name}")
+            for file_path in repo_dir.rglob("*"):
+                if (
+                    not file_path.is_file()
+                    or file_path.suffix not in TARGET_EXTENSIONS
+                    or file_path.name.startswith(".")
+                    or any(p in EXCLUDED_DIRS for p in file_path.parts)
+                ):
+                    continue
+
+                try:
+                    with file_path.open("r", encoding="utf-8") as f:
+                        lines = f.readlines()
+
+                    first_line = lines[0].strip() if lines else ""
+                    relative_path = file_path.relative_to(repo_dir)
+                    expected = (
+                        relative_path.with_suffix("")
+                        .as_posix()
+                        .replace("/", ".")
+                    )
+                    namespace = (
+                        file_path.relative_to(root_dir)
+                        .with_suffix("")
+                        .as_posix()
+                        .replace("/", ".")
+                    )
+
+                    if not first_line.startswith("# "):
+                        log.warning(f"[missing] {namespace} (expected={expected})")
+                        mismatched_count += 1
+                        mismatches.append(
+                            {
+                                "file_path": str(file_path),
+                                "namespace": namespace,
+                                "expected": expected,
+                                "actual": "",
+                                "missing": True,
+                            }
+                        )
+                        continue
+                    
+                    actual = first_line[2:]
+                    
+                    # 핵심 개선: 첫 줄이 맞더라도 다음 줄이 '# '로 시작하면 중복된 타이틀로 간주
+                    has_redundant_titles = len(lines) > 1 and lines[1].startswith("# ")
+
+                    if actual != expected or has_redundant_titles:
+                        if actual != expected:
+                            log.warning(f"[mismatch] {namespace} (actual={actual}, expected={expected})")
+                        else:
+                            log.warning(f"[redundant] {namespace} (correct title but has multiple titles below)")
+                            
+                        mismatched_count += 1
+                        mismatches.append(
+                            {
+                                "file_path": str(file_path),
+                                "namespace": namespace,
+                                "expected": expected,
+                                "actual": actual,
+                                "missing": False,
+                            }
+                        )
+                    else:
+                        matched_count += 1
+
+                except Exception as e:
+                    log.error(f"[error] {file_path}: {e}")
+
+        log.info(f"[scan] done matched={matched_count}, mismatched={mismatched_count}")
+        return mismatches, matched_count, mismatched_count
+
+    def align(self, mismatches: List[AlignRecord], prefixes: List[str], append: bool = False):
+        log.info(f"[align] start (total={len(mismatches)})")
+
+        results = []
+        for item in mismatches:
+            namespace = item["namespace"]
+            fixable = any(namespace.startswith(p) for p in prefixes)
+            status = "mismatch"
+            
+            if fixable:
+                try:
+                    path = Path(item["file_path"])
+                    with path.open("r+", encoding="utf-8") as f:
+                        lines = f.readlines()
+                        expected_title = f"# {item['expected']}\n"
+                        
+                        if append:
+                            # --append 옵션: 단순 상단 추가 (중복 타이틀 검사 무시)
+                            lines.insert(0, expected_title)
+                        else:
+                            # --append 옵션 없음: 상단의 연속된 '# ' 모두 삭제 후 단일 정규 타이틀 삽입
+                            delete_count = 0
+                            for line in lines:
+                                if line.startswith("# "):
+                                    delete_count += 1
+                                else:
+                                    break
+                            
+                            if delete_count > 0:
+                                lines = [expected_title] + lines[delete_count:]
+                            else:
+                                lines.insert(0, expected_title)
+
+                        f.seek(0)
+                        f.writelines(lines)
+                        f.truncate()
+
+                    status = "fixed"
+                except Exception as e:
+                    status = "fail"
+                    item["error"] = str(e)
+
+            item["status"] = status
+            results.append(item)
+
+        log.info(f"[align] done")
+        return results
+
+def normalize_prefix(prefix: str) -> str:
+    return prefix.strip().replace("/", ".").lstrip(".")
+
+def entry_task(args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", action="append")
+    parser.add_argument("--group-by", default="path", choices=["path", "status", "type"])
+    parser.add_argument("--append", action="store_true", help="기존 타이틀을 대체하지 않고 최상단에 새로 추가합니다.") 
+    args = parser.parse_args(args)
+    
+    prefixes = [normalize_prefix(p) for p in (args.repo or [])]
+    only_repo = args.repo or None
+
+    aligner = PathAligner(SELF_ROOT)
+    run_kwargs = {
+        "axis": args.group_by,
+        "group_keys": GROUP_KEYS,
+        "scan_kwargs": {"only_dirs": only_repo},
+        "fix_kwargs": {"prefixes": prefixes, "append": args.append},
+    }
+    return CliTaskAdapter(aligner.run, **run_kwargs)
+
+@contract.cli(name="align.path", recept=[])
+def main():
+    bound_args, remain = parse_local(sys.argv[1:])
+    if bound_args.local:
+        entry_task(remain).run()
+    else:
+        dispatch_cli("align.path", entry_task, __file__)
+
+if __name__ == "__main__":
+    main()

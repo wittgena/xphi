@@ -1,0 +1,27 @@
+# session.resonance.surface.topos
+import time
+import json
+from session.resonance.surface.sink import EmitterSink
+
+class PhaseSurface:
+    """
+    @role: ∂Φ boundary surface (Domain Layer)
+    - 인프라(Redis, File, API)는 EmitterSink로 추상화되어 주입됨.
+    """
+    def __init__(self, sink: EmitterSink):
+        self.sink = sink
+        self.state_key = "meta.self:state:current_phase"
+        self.signal_channel = "meta.self:signals:phase_mutation"
+        self.psi_channel = "meta.self:signals:psi"
+
+    async def get_current_phase(self) -> str:
+        val = await self.sink.get_control_flag(self.state_key)
+        return val or "Φ0"
+
+    async def set_phase(self, phase: str):
+        await self.sink.set(self.state_key, phase)
+
+    async def emit_psi(self, event_type: str, weight: int = 1):
+        payload = {"event": event_type, "weight": weight, "ts": time.time()}
+        print(f"Ψ emit → {payload}")
+        await self.sink.publish(self.psi_channel, json.dumps(payload))
