@@ -3,10 +3,10 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from bridge.event.psi import PsiCarrier, PsiEvent
+from resonance.event.psi import PsiCarrier, PsiEvent
 from flow.surface.emitter import get_emitter
 from bound.resolver import find_current_self
-from bridge.node.runtime import NodeRuntime
+from resonance.node.runtime import NodeRuntime
 from contract.registry import registry, contract
 from contract.discover import discover_modules
 from contract.executor.dynamics import LoopCarrier, DynamicsExecutor

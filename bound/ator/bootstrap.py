@@ -14,7 +14,7 @@ from contract.discover import discover_modules
 from bound.ator.transcript.phi import TranscriptPhi
 from bound.ator.transcript.spec import TranscriptSpec
 from bound.ator.runtime import AtorRuntime
-from bridge.node.runtime import NodeRuntime
+from resonance.node.runtime import NodeRuntime
 from bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_logger("ator.bootstrap")

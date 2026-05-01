@@ -7,7 +7,7 @@ from llama_index.core.llms.callbacks import llm_completion_callback
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from flow.surface.emitter import get_emitter
 from bound.folding import folding
-from bridge.client.local.engine import LLMEngine
+from bound.client.local.engine import LLMEngine
 
 log = get_emitter('agent.workflow')
 

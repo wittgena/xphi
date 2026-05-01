@@ -4,7 +4,7 @@ import random
 from typing import Dict, Any
 from contract.registry import contract
 from contract.proto.interface import IPhaseAtor, IPhaseField
-from bridge.event.psi import PsiEvent, PsiCarrier
+from resonance.event.psi import PsiEvent, PsiCarrier
 
 @contract.ator("phase.node.ator")
 class PhaseNodeAtor(IPhaseAtor):

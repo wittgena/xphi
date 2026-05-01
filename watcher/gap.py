@@ -8,10 +8,10 @@
 
 import asyncio
 from typing import List, Any, Dict
-from bridge.event.contract import next_id, next_phase_id, parse_id, parse_phase_id
+from resonance.event.contract import next_id, next_phase_id, parse_id, parse_phase_id
 from contract.executor.base import BaseExecutor
 from contract.executor.dynamics import XeCont, LoopCarrier
-from bridge.event.bus import AsyncEventBus
+from resonance.event.bus import AsyncEventBus
 
 class DynamicXe(XeCont):
     """

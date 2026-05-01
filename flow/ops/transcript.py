@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any
 from bound.resolver import find_current_self, resolve_path
-from sphere.container.validator.compose import FlowValidator, SelfExtractor 
+from watcher.sphere.container.validator.compose import FlowValidator, SelfExtractor 
 from contract.block.parser.md import MdAstParser
 from contract.block.extractor import BlockExtractor
 from flow.surface.emitter import get_emitter

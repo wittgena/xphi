@@ -5,10 +5,10 @@ from typing import Dict, Any, List, Tuple
 from flow.surface.emitter import get_logger
 from contract.proto.flow import ProtoFlow, FlowState
 from contract.proto.col import get_proto
-from bridge.event.psi import PhaseField, PsiCarrier, CarrierType
+from resonance.event.psi import PhaseField, PsiCarrier, CarrierType
 from bound.node0 import enter_node0
-from bridge.node.runtime import NodeRuntime
-from bridge.node.interpreter import AnchorFlow, NodeInterpreter
+from resonance.node.runtime import NodeRuntime
+from resonance.node.interpreter import AnchorFlow, NodeInterpreter
 
 log = get_logger("ator.runtime")
 

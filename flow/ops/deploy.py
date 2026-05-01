@@ -12,7 +12,7 @@ from typing import Optional
 from flow.ops.transcript import TranscriptEngine, Projector
 from flow.surface.emitter import get_emitter
 from bound.resolver import find_current_self, resolve_path
-from sphere.container.validator.compose import FlowValidator, SelfExtractor
+from watcher.sphere.container.validator.compose import FlowValidator, SelfExtractor
 
 log = get_emitter("ops.deploy")
 

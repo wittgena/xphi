@@ -3,13 +3,13 @@ from __future__ import annotations
 import json
 import asyncio
 from typing import Optional, List
-from bridge.event.psi import PsiCarrier, PsiEvent
+from resonance.event.psi import PsiCarrier, PsiEvent
 from contract.proto.interface import IPhaseField, ICriticalDetector, ISystemRegime, IPhaseAtor
 from flow.surface.emitter import get_emitter
 from contract.registry import contract 
 from contract.discover import discover_modules
 from contract.executor.dynamics import LoopCarrier, DynamicsExecutor
-from bridge.node.runtime import NodeRuntime
+from resonance.node.runtime import NodeRuntime
 from bound.resolver import find_current_self
 
 log = get_emitter("watcher.sphere", phase="BOOT")

@@ -5,8 +5,8 @@ import asyncio
 from datetime import datetime
 from watchdog.events import FileSystemEventHandler
 from typing import Dict, List
-from bridge.resonance.surface.topos import PhaseSurface
-from sphere.receptor.lens.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
+from resonance.surface.topos import PhaseSurface
+from watcher.sphere.receptor.lens.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 class TracerSource(FileSystemEventHandler):
     """@desc: 물리적 파일 시스템의 변이를 감지하여 PhaseSurface에 이산적 틱(Tick)을 주입"""

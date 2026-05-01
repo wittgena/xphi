@@ -2,7 +2,7 @@
 from typing import List, Dict, Optional, Any
 from contract.registry import contract
 from contract.proto.interface import ICriticalDetector, IPhaseField
-from bridge.event.psi import PsiEvent, PsiCarrier
+from resonance.event.psi import PsiEvent, PsiCarrier
 
 @contract.watcher("singularity.watcher")
 class SingularityWatcher(ICriticalDetector):

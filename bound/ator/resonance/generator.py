@@ -11,7 +11,7 @@ from bound.resolver import find_current_self
 from contract.registry import registry, contract
 from bound.ator.runtime import AtorRuntime
 from bound.ator.bootstrap import bootstrap
-from bridge.node.runtime import NodeRuntime
+from resonance.node.runtime import NodeRuntime
 
 log = logging.getLogger("resonance.generator")
 

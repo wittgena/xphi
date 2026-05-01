@@ -7,7 +7,7 @@ import traceback
 from typing import Any, Dict, Optional, Callable
 from contextvars import ContextVar
 from contextlib import contextmanager
-from bridge.event.contract import LogEvent
+from resonance.event.contract import LogEvent
 from bound.plane import default_plane
 
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})

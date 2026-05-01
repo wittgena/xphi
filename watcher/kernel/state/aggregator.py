@@ -2,8 +2,8 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 import redis.asyncio as redis_async
-from bridge.event.psi import PsiCarrier
-from bridge.node.interpreter import NodeInterpreter
+from resonance.event.psi import PsiCarrier
+from resonance.node.interpreter import NodeInterpreter
 
 @dataclass
 class CoreState:

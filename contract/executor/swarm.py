@@ -7,8 +7,8 @@ import asyncio
 import subprocess
 import importlib
 from typing import Callable, Any
-from bridge.event.psi import PsiEvent, PsiCarrier
-from bridge.event.contract import next_id, LogEvent
+from resonance.event.psi import PsiEvent, PsiCarrier
+from resonance.event.contract import next_id, LogEvent
 from dataclasses import asdict
 from bound.plane import surface
 from flow.surface.emitter import get_logger, flow_scope

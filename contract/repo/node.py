@@ -10,7 +10,7 @@ import json
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
-from bridge.event.contract import next_id
+from resonance.event.contract import next_id
 from contract.repo.commit import RepoCommit, AnchorCommit
 from bound.resolver import resolve_path
 
