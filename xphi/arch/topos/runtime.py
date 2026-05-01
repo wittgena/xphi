@@ -7,8 +7,8 @@ from dataclasses import field
 from flow.surface.emitter import get_emitter
 from contract.proto.col import proto, get_proto, Proto
 from contract.proto.flow import ProtoFlow, FlowState
-from arch.topos.trans import PhaseSpec, TransRule, NodeType
-from arch.topos.node import LinkerNode, InversionNode, PhaseNode, ResidueType
+from xphi.arch.topos.trans import PhaseSpec, TransRule, NodeType
+from xphi.arch.topos.node import LinkerNode, InversionNode, PhaseNode, ResidueType
 
 log = get_emitter("topos.runtime")
 

@@ -1,4 +1,4 @@
-# receptor.lens.metrics
+# sphere.receptor.lens.metrics
 import numpy as np
 
 ## Kinematic (운동학)

@@ -1,4 +1,4 @@
-# receptor.ext.feed
+# sphere.receptor.ext.feed
 import asyncio
 import json
 import math

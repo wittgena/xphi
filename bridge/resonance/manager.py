@@ -1,4 +1,4 @@
-# resonance.manager
+# bridge.resonance.manager
 from abc import ABC, abstractmethod
 import os
 import subprocess

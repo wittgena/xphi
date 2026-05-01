@@ -1,4 +1,4 @@
-# xor.context.organizer
+# bridge.xor.context.organizer
 import os
 import sys
 import json

@@ -24,7 +24,7 @@ from contract.executor.swarm import SwarmCliExecutor
 from bridge.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
 from xphi.cognitive.coupler import CognitiveCoupler
 from xphi.cognitive.worker import CognitiveWorker
-from kernel.state.aggregator import KernelStateAggregator
+from watcher.kernel.state.aggregator import KernelStateAggregator
 from bridge.client.local.engine import LLMEngine
 from bridge.xor.context.assembler import ContextAssembler
 

@@ -1,4 +1,4 @@
-# resonance.hand.context
+# bridge.resonance.hand.context
 """
 @flow: context -> constraint -> self-state -> emission
 @desc: Agent의 실행 경계와 상태를 기술하는 최소 위상 컨텍스트

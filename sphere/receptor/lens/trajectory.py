@@ -1,4 +1,4 @@
-# receptor.lens.trajectory
+# sphere.receptor.lens.trajectory
 import numpy as np
 import datetime
 import uuid

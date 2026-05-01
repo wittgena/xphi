@@ -1,4 +1,4 @@
-# receptor.index.manifold
+# sphere.receptor.index.manifold
 import sys
 import json
 import asyncio

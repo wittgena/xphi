@@ -1,4 +1,4 @@
-# agent.cognitive.worker
+# xphi.cognitive.worker
 import asyncio
 from flow.surface.emitter import get_emitter
 from bridge.client.local.engine import LLMEngine

@@ -1,4 +1,4 @@
-# resonance.hand.engine
+# bridge.resonance.hand.engine
 from abc import ABC, abstractmethod
 from bridge.resonance.schema import BridgeEvent
 

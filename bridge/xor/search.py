@@ -1,4 +1,4 @@
-# xor.search
+# bridge.xor.search
 import sys
 import argparse
 import asyncio

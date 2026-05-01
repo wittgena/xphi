@@ -1,4 +1,4 @@
-# xor.signature.transition
+# bridge.xor.signature.transition
 """@flow: ResidueStore(rocks.db) → XeCrystallizer → ScriptCompiler(Φ') → ScriptProjector(Ψ)"""
 import json
 from typing import Dict, Any, List

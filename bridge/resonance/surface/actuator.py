@@ -1,4 +1,4 @@
-# resonance.surface.actuator
+# bridge.resonance.surface.actuator
 import asyncio
 import random
 import time

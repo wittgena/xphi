@@ -1,4 +1,4 @@
-# xor.judgment
+# bridge.xor.judgment
 import asyncio
 import time
 from typing import Dict, List, Optional

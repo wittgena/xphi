@@ -1,4 +1,4 @@
-# xor.signature.overlay
+# bridge.xor.signature.overlay
 import sys
 import json
 import random

@@ -1,4 +1,4 @@
-# xor.intent.generator
+# bridge.xor.intent.generator
 import dspy
 import sys
 import json

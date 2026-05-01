@@ -1,4 +1,4 @@
-# receptor.ext.oracle
+# sphere.receptor.ext.oracle
 import asyncio
 import json
 import math

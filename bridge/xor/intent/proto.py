@@ -1,4 +1,4 @@
-# xor.intent.proto
+# bridge.xor.intent.proto
 import inspect
 import logging
 from typing import Any, TextIO

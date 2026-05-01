@@ -1,4 +1,4 @@
-# resonance.bridge
+# bridge.resonance.bridge
 import time
 import hashlib
 import json

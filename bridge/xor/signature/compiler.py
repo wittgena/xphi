@@ -1,4 +1,4 @@
-# xor.signature.compiler
+# bridge.xor.signature.compiler
 import json
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any

@@ -1,4 +1,4 @@
-# xor.context.generator
+# bridge.xor.context.generator
 import dspy
 import sys
 import json

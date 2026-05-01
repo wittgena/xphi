@@ -1,4 +1,4 @@
-# xor.intent.signature
+# bridge.xor.intent.signature
 import ast
 import importlib
 import inspect

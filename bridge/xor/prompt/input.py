@@ -1,4 +1,4 @@
-# xor.prompt.input
+# bridge.xor.prompt.input
 from dataclasses import dataclass
 from typing import Dict, List
 import argparse

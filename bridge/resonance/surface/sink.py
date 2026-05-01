@@ -1,4 +1,4 @@
-# resonance.surface.sink
+# bridge.resonance.surface.sink
 import os
 import json
 import aiohttp

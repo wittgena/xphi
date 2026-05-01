@@ -1,4 +1,4 @@
-# resonance.prober
+# bridge.resonance.prober
 import sys
 import json
 import httpx

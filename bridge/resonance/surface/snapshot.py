@@ -1,4 +1,4 @@
-# resonance.surface.snapshot
+# bridge.resonance.surface.snapshot
 import sys
 import json
 import hashlib

@@ -1,10 +1,10 @@
-# bridge.cognitive.coupler
+# xphi.cognitive.coupler
 import asyncio
 from typing import Optional
 from flow.surface.emitter import get_emitter
 from bridge.event.psi import PsiEvent, PsiCarrier
 from bridge.node.interpreter import PhaseJudgment
-from kernel.state.aggregator import KernelStateAggregator, InternalContext
+from watcher.kernel.state.aggregator import KernelStateAggregator, InternalContext
 from xphi.cognitive.worker import CognitiveWorker
 
 class CognitiveCoupler:

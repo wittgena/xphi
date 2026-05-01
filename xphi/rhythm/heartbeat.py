@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from bridge.event.psi import PsiEvent, PsiCarrier
 from bound.plane import BoundPlane
-from xphi.rhythm import RhythmBridge
+from xphi.rhythm.bridge import RhythmBridge
 from flow.surface.emitter import get_emitter
 
 class PhaseField(type):

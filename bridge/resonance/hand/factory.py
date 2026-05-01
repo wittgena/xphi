@@ -1,4 +1,4 @@
-# resonance.hand.factory
+# bridge.resonance.hand.factory
 import os
 from pathlib import Path
 from pydantic import SecretStr

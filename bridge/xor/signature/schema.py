@@ -1,4 +1,4 @@
-# xor.signature.schema
+# bridge.xor.signature.schema
 import json
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Set

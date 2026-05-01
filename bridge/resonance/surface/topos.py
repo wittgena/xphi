@@ -1,4 +1,4 @@
-# resonance.surface.topos
+# bridge.resonance.surface.topos
 import time
 import json
 from bridge.resonance.surface.sink import EmitterSink

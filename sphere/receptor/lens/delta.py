@@ -1,4 +1,4 @@
-# receptor.lens.delta
+# sphere.receptor.lens.delta
 """
 @flow: Field → [ ψ_asset(t), Φ ] → ψ_Φ(t) → ψ(t,w) → Bound(Spike, Co-Diff) → trace
 """

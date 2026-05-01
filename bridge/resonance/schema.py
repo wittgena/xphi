@@ -1,4 +1,4 @@
-# resonance.schema
+# bridge.resonance.schema
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Set, Optional
 

@@ -1,4 +1,4 @@
-# resonance.hand.launcher
+# bridge.resonance.hand.launcher
 """@flow: Ψ(import) → ∂Φ(boundary) → Φ(local override) → Φ(surface)"""
 import sys
 import uvicorn
