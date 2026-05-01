@@ -1,7 +1,7 @@
 # contract.executor.dynamics
 from __future__ import annotations
 import asyncio
-from contract.event import next_id, next_phase_id, parse_id, parse_phase_id 
+from bridge.event.contract import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
 from contract.executor.base import BaseExecutor
 from contract.registry import registry

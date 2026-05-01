@@ -1,4 +1,4 @@
-# watcher.rhythm.heartbeat
+# rhythm.heartbeat
 """
 @desc: 정렬된 자율 진동 하트비트 루프
 @metaphor: SA Node $\rightarrow$ Cardiac Cycle $\rightarrow$ External ECG Transduction
@@ -10,7 +10,7 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from bridge.psi import PsiEvent, PsiCarrier
+from bridge.event.psi import PsiEvent, PsiCarrier
 from bound.plane import BoundPlane
 from bridge.rhythm import BridgeRhythm
 from flow.surface.emitter import get_emitter

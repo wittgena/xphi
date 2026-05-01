@@ -18,7 +18,7 @@ import redis.asyncio as redis_async
 from flow.surface.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
 from contract.proto.interface import IEventBus, IPhaseField, IPhaseAtor
-from bridge.psi import PsiEvent
+from bridge.event.psi import PsiEvent
 from xphi.runtime import XPhiRuntime
 from bridge.client.stream import StreamClient
 from bridge.client.surface import RedisClient, SurfaceClient

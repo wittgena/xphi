@@ -10,7 +10,7 @@ import json
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
-from contract.event import next_id
+from bridge.event.contract import next_id
 from contract.repo.node import RepoNode, AnchorNode
 from bound.resolver import resolve_path
 

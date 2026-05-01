@@ -1,9 +1,9 @@
-# watcher.rhythm.coupler
+# rhythm.coupler
 import time
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from bridge.psi import PsiType
+from bridge.event.psi import PsiType
 from bound.plane import BoundPlane
 from contract.proto.interface import IEventBus
 

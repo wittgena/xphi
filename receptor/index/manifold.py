@@ -11,10 +11,10 @@ from flow.surface.emitter import get_logger
 from xphi.reflect.xor import Xor 
 from xphi.reflect.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from bound.resolver import find_current_self, resolve_path
-from bridge.foldbox.bounding import bounding
+from bound.folding import folding
 from contract.block.extractor import extract_block_from_file, Block
 
-log = get_logger("manifold.index")
+log = get_logger("index.manifold")
 
 try:
     SELF_ROOT = find_current_self()
@@ -210,7 +210,7 @@ async def run_pipeline(repo_name: str):
     ## - bounding 내부에서 MdPhiTranscript가 workflow.__doc__을 파싱합니다.
     ## - 주석의 @phase.flow(YAML)에 정의된 analyze_repository(retry:5) 등이 실체화됩니다.
     ## - xor_client 역시 동시에 접합하여 분산 인덱싱의 불안정성을 제어합니다.
-    with bounding(workflow, workflow.xor_client, re_entry_limit=3) as (b_workflow, b_xor):
+    with folding(workflow, workflow.xor_client, re_entry_limit=3) as (b_workflow, b_xor):
         log.info(f"[System] 위상 전사 완료. '{repo_name}' 파이프라인 가동.")
         result = await b_workflow.run(target_dir=str(root))
     

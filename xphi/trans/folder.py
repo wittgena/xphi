@@ -6,7 +6,7 @@ import inspect
 import ast
 from typing import Any, Dict, List, Tuple
 from flow.surface.emitter import get_logger
-from proto.flow import ProtoFlow, FlowState, Transduction
+from contract.proto.flow import ProtoFlow, FlowState, Transduction
 from contract.registry import contract, registry
 from contract.discover import discover_modules
 from bridge.node.runtime import NodeRuntime

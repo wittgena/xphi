@@ -4,7 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any, Protocol
 from dataclasses import dataclass
-from bridge.psi import PsiType, PsiEvent
+from bridge.event.psi import PsiType, PsiEvent
 from contract.proto.interface import IPhaseField, IBoundExecutor
 from flow.surface.emitter import get_emitter
 

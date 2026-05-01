@@ -1,4 +1,4 @@
-# contract.protocol
+# contract.proto.col
 """@desc: Proto decorator (non-executing structural record)"""
 from typing import Tuple, Any, Callable, Union, Type, TypeVar
 from dataclasses import dataclass

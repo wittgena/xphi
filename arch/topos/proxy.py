@@ -7,8 +7,8 @@ import random
 import json
 from typing import Optional, Any
 from flow.surface.emitter import get_emitter
-from bridge.psi import PsiEvent
-from proto.flow import ProtoFlow
+from bridge.event.psi import PsiEvent
+from contract.proto.flow import ProtoFlow
 
 log = get_emitter("inversion.proxy")
 
