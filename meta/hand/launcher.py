@@ -5,7 +5,7 @@ import uvicorn
 import importlib.util
 import argparse
 from pathlib import Path
-from anchor.server.api import api
+from ary.server.api import api
 from session.resonance.middleware import ResonanceMiddleware
 from session.contract.registry import contract
 from meta.flow.surface.emitter import get_emitter
@@ -19,7 +19,7 @@ api.add_middleware(ResonanceMiddleware)
 @contract.cli(
     name="serve", 
     args=["--host", "--port", "--log-level"], 
-    tags=["anchor", "hand", "launcher"],
+    tags=["ary", "hand", "launcher"],
     entry="main"
 )
 def main():
