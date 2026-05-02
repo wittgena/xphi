@@ -1,4 +1,4 @@
-# meta.flow.ops.transcript
+# meta.ops.transcript
 """@flow: Φ(config surface) → Ψ(transcription) → Ψ′(k8s projection)"""
 import subprocess
 import yaml

@@ -1,4 +1,4 @@
-# meta.flow.ops.workflow
+# meta.ops.workflow
 from typing import Any
 from pydantic import PrivateAttr
 from llama_index.core import Settings, Document, VectorStoreIndex

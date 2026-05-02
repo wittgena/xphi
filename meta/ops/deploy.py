@@ -1,4 +1,4 @@
-# meta.flow.ops.deploy
+# meta.ops.deploy
 """
 @flow: Ψ(source) → Φ(artifact/image) → Φx(registry) → Ω(projection)
 @topos: detect → build → oci_push → validate → transcribe → project
@@ -9,7 +9,7 @@ import shutil
 import re
 from pathlib import Path
 from typing import Optional
-from meta.flow.ops.transcript import TranscriptEngine, Projector
+from meta.ops.transcript import TranscriptEngine, Projector
 from meta.flow.surface.emitter import get_emitter
 from session.bound.resolver import find_current_self, resolve_path
 from phase.sphere.container.validator.compose import FlowValidator, SelfExtractor

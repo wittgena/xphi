@@ -28,12 +28,23 @@ def parse_local(argv):
     return parser.parse_known_args(argv)
 
 def dispatch_cli(command_name: str, entry_func: Callable, file_path: str):
-    """CLI 엔트리포인트의 공통 배관 로직을 처리하는 유니버설 디스패처"""
-    invoker, command = get_invoker(Path(file_path))
-    cli_args = sys.argv[1:]
-    payload = { "_context": {"invoker": str(invoker), "command": command, "cli_args": cli_args} }
-    task = entry_func(cli_args)
-    execute_cli_task(task_instance=task, command_name=command_name, payload=payload)
+    """
+    @role: Universal Execution Router
+    @desc: CLI 자극(sys.argv)을 분석하여 물리적 로컬 실행을 할지, 위상 공간(Redis)으로 주입할지 결정합니다.
+    """
+    bound_args, remain = parse_local(sys.argv[1:])
+    if bound_args.local:
+        ## [ 차원 1: 물리적 직접 실행 ]
+        log.info(f"[Router] Routing {command_name} to Local Process.")
+        task = entry_func(remain)
+        task.run() 
+    else:
+        ## [ 차원 2: 위상 공간으로의 사건(Ψ) 주입 ]
+        log.info(f"[Router] Injecting {command_name} to Topological Manifold.")
+        invoker, command = get_invoker(Path(file_path))
+        payload = { "_context": {"invoker": str(invoker), "command": command, "cli_args": remain} }
+        task = entry_func(remain)
+        execute_cli_task(task_instance=task, command_name=command_name, payload=payload)
 
 class _GenericCliExecutor(BaseExecutor):
     """bound(transduction) - external CLI → internal Ψ execution"""
