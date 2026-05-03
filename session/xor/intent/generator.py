@@ -10,8 +10,8 @@ from session.xor.thch import thch_scope
 from bound.client.local.lm import LocalLM
 from bound.surface.emitter import get_emitter
 from bound.resolver import resolve_path
-from phase.ator.generator import SurfaceIntent, StructuralDissonance
-from session.xor.store import ResidueStore, ResidueSnapshot
+from session.xor.context.generator import SurfaceIntent, StructuralDissonance
+from session.xor.residue.store import ResidueStore, ResidueSnapshot
 from session.xor.intent.signature import IntentSignature
 from session.xor.signature.transition import SignatureTransition
 

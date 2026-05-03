@@ -3,7 +3,7 @@
 import json
 from typing import Dict, Any, List
 from bound.surface.emitter import get_logger
-from session.xor.store import ResidueStore, ResidueSnapshot
+from session.xor.residue.store import ResidueStore, ResidueSnapshot
 from session.xor.signature.compiler import SignatureCompiler, SignatureProjector
 
 log = get_logger("signature.transition")

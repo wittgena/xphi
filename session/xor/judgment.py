@@ -4,7 +4,7 @@ import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 from bound.client.local.lm import LocalLM
-from session.xor.store import ResidueStore, ResidueSnapshot
+from session.xor.residue.store import ResidueStore, ResidueSnapshot
 from bound.surface.emitter import get_emitter
 
 log = get_emitter("proto.flow")
