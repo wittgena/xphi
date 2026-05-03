@@ -15,13 +15,13 @@ import threading
 import urllib.parse
 from typing import Callable, List, Dict, Any
 import redis.asyncio as redis_async
-from meta.flow.surface.emitter import get_logger
-from session.bound.resolver import find_current_self, resolve_path
+from bound.surface.emitter import get_logger
+from bound.resolver import find_current_self, resolve_path
 from session.contract.proto.interface import IEventBus, IPhaseField, IPhaseAtor
-from phase.event.psi import PsiEvent
+from bound.event.psi import PsiEvent
 from phase.reflect.xphi.runtime import XPhiRuntime
-from session.bound.client.stream import StreamClient
-from session.bound.client.surface import RedisClient, SurfaceClient
+from bound.client.stream import StreamClient
+from bound.client.surface import RedisClient, SurfaceClient
 
 log = get_logger("xphi.invoker")
 

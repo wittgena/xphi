@@ -4,8 +4,8 @@ import sys
 import subprocess
 from typing import List, Callable, Any
 from pathlib import Path
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self, get_invoker
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self, get_invoker
 from session.contract.repo.node import RepoNode, AnchorNode
 from session.contract.repo.protocol import anchor_commit_protocol
 from session.contract.repo.scanner import NodeScanner, NodeCommit

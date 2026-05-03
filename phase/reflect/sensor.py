@@ -13,9 +13,9 @@ import logging
 from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from session.contract.registry import cli_contract
-from session.bound.resolver import find_current_self, resolve_path, load_bound
+from bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_emitter('reflect.sensor')
 

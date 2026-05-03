@@ -2,7 +2,7 @@
 """@flow: ResidueStore(rocks.db) → XeCrystallizer → ScriptCompiler(Φ') → ScriptProjector(Ψ)"""
 import json
 from typing import Dict, Any, List
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from session.contract.xor.store import ResidueStore, ResidueSnapshot
 from session.contract.xor.signature.compiler import SignatureCompiler, SignatureProjector
 

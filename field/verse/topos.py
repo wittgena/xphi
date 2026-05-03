@@ -4,8 +4,8 @@ import json
 import time
 import redis.asyncio as redis_async
 from typing import Optional, Dict, Any
-from session.bound.resolver import resolve_channel
-from meta.flow.surface.emitter import get_emitter
+from bound.resolver import resolve_channel
+from bound.surface.emitter import get_emitter
 
 class VerseTopos:
     """

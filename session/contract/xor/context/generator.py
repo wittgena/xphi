@@ -6,9 +6,9 @@ import dspy
 from typing import Dict, Any
 from pathlib import Path
 from session.resonance.thch import thch_scope
-from session.bound.client.local.lm import LocalLM
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import resolve_path
+from bound.client.local.lm import LocalLM
+from bound.surface.emitter import get_emitter
+from bound.resolver import resolve_path
 from session.contract.xor.store import ResidueStore, ResidueSnapshot
 from session.contract.xor.intent.signature import IntentSignature
 from session.contract.xor.intent.transition import SignatureTransition

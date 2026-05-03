@@ -9,8 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Set
 from phase.reflect.xor import Xor
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self, resolve_path, load_bound
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_emitter("signature.overlay")
 

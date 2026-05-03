@@ -5,7 +5,7 @@ import re
 import logging
 from functools import wraps
 from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEvent
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("foldbox.router")
 

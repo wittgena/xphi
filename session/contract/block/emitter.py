@@ -5,9 +5,9 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from phase.reflect.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
-from session.bound.resolver import find_current_self, resolve_path
+from bound.resolver import find_current_self, resolve_path
 from session.contract.block.extractor import extract_block_from_file, Block
 
 log = get_logger("block.emitter")

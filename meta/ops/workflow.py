@@ -5,9 +5,9 @@ from llama_index.core import Settings, Document, VectorStoreIndex
 from llama_index.core.llms import CustomLLM, CompletionResponse, LLMMetadata
 from llama_index.core.llms.callbacks import llm_completion_callback
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from meta.flow.surface.emitter import get_emitter
-from session.bound.folding import folding
-from session.bound.client.local.engine import LLMEngine
+from bound.surface.emitter import get_emitter
+from bound.folding import folding
+from bound.client.local.engine import LLMEngine
 
 log = get_emitter('agent.workflow')
 

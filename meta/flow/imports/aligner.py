@@ -7,7 +7,7 @@ import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
 from meta.flow.surface.aligner import FieldAligner, AlignRecord
-from meta.flow.surface.emitter import get_emitter, flow_scope
+from bound.surface.emitter import get_emitter, flow_scope
 from meta.flow.imports.transformer import ImportTransformer
 
 def generate_diff(original: str, modified: str, filename: str) -> str:

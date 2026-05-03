@@ -6,8 +6,8 @@ import uuid
 import datetime
 import time
 from typing import Dict, Any, List, Optional
-from phase.event.bus import AsyncEventBus
-from phase.event.psi import PsiCarrier, PsiEvent
+from bound.event.bus import AsyncEventBus
+from bound.event.psi import PsiCarrier, PsiEvent
 from session.contract.proto.interface import IPhaseAtor, IPhaseField, IEventBus
 from phase.sphere.receptor.lens.trajectory import (
     Point, 
@@ -17,7 +17,7 @@ from phase.sphere.receptor.lens.trajectory import (
     WindowProjector
 )
 from phase.sphere.container.scale.emitter import ScaleEmitter
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 class ToposField(IPhaseField):
     """

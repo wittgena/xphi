@@ -3,9 +3,9 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from session.bound.resolver import find_current_self
+from bound.resolver import find_current_self
 from session.contract.registry import contract
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from session.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
 from meta.flow.imports.aligner import ImportAligner
 

@@ -4,7 +4,7 @@ import random
 from typing import Optional
 from session.contract.registry import contract
 from session.contract.proto.interface import ISystemRegime, IPhaseField, IPhaseAtor
-from phase.event.psi import PsiEvent
+from bound.event.psi import PsiEvent
 
 @contract.regime("phase.transition.regime")
 class PhaseTransitionRegime(ISystemRegime):

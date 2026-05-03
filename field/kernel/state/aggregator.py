@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 import redis.asyncio as redis_async
-from phase.event.psi import PsiCarrier
+from bound.event.psi import PsiCarrier
 from phase.node.interpreter import NodeInterpreter
 
 @dataclass

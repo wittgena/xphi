@@ -3,16 +3,16 @@ import json
 import asyncio
 import inspect
 from typing import Any
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from session.contract.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from session.contract.registry import contract
 from session.contract.discover import discover_modules
-from session.bound.resolver import find_current_self
+from bound.resolver import find_current_self
 from phase.node.runtime import NodeRuntime
 from phase.ator.runtime import AtorRuntime
 from phase.ator.bootstrap import bootstrap 
-from session.bound.client.local.engine import LLMEngine
-from session.bound.resolver import resolve_path
+from bound.client.local.engine import LLMEngine
+from bound.resolver import resolve_path
 
 log = get_logger("trans.genai")
 

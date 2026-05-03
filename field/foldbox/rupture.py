@@ -4,7 +4,7 @@ from typing import List
 from llama_index.core.schema import NodeWithScore
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("foldbox.rupture")
 

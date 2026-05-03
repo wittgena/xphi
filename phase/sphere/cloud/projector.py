@@ -9,7 +9,7 @@
 import time
 from dataclasses import dataclass
 from typing import Dict
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from phase.sphere.cloud.snapshot import MetricsSnapshot, CloudEnv
 
 log = get_emitter("cloud.projector")

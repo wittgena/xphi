@@ -5,7 +5,7 @@ import uuid
 import time
 from typing import Dict, Any
 from session.contract.proto.interface import IPhaseAtor, IPhaseField, IEventBus, PsiEvent
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 class CloudActuator(IPhaseAtor):
     """

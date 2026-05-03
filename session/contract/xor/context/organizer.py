@@ -6,11 +6,11 @@ import argparse
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
-from meta.flow.surface.emitter import get_logger
-from session.bound.resolver import resolve_path, get_invoker
+from bound.surface.emitter import get_logger
+from bound.resolver import resolve_path, get_invoker
 from session.contract.xor.context.graph import ContextGraph, SurfaceTemplateData, _extract_rel_attr, EntryTemplate
 from session.resonance.schema import ResonanceGraph, ResonanceNode
-from session.contract.arch.lang.binder import LangBinder
+from phase.pattern.lang.binder import LangBinder
 from session.contract.registry import cli_contract
 from session.executor.cli import dispatch_cli, execute_cli_task, CliTaskAdapter, parse_local
 

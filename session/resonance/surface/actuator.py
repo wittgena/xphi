@@ -3,9 +3,9 @@ import asyncio
 import random
 import time
 import re
-from phase.event.psi import PsiType
-from session.bound.resolver import resolve_pattern
-from meta.flow.surface.emitter import get_emitter
+from bound.event.psi import PsiType
+from bound.resolver import resolve_pattern
+from bound.surface.emitter import get_emitter
 
 class SurfaceActuator:
     KEY_PARTS = [

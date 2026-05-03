@@ -2,9 +2,9 @@
 from __future__ import annotations
 import asyncio
 import json
-from phase.event.psi import PsiCarrier, PsiEvent
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self
+from bound.event.psi import PsiCarrier, PsiEvent
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self
 from phase.node.runtime import NodeRuntime
 from session.contract.discover import discover_modules
 from session.executor.dynamics import LoopCarrier, DynamicsExecutor

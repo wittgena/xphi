@@ -7,12 +7,12 @@ from pathlib import Path
 from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEvent
 from llama_index.core.schema import TextNode, Document
 from llama_index.core import VectorStoreIndex
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from session.resonance.thch import thch_scope
 from session.contract.xor.store import ResidueStore, ResidueSnapshot
 from session.contract.xor.intent.transition import IntentTransition
-from session.bound.folding import folding 
-from session.bound.client.local.lm import LocalLM
+from bound.folding import folding 
+from bound.client.local.lm import LocalLM
 
 log = get_logger("context.intent")
 

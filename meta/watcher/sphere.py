@@ -3,14 +3,14 @@ from __future__ import annotations
 import json
 import asyncio
 from typing import Optional, List
-from phase.event.psi import PsiCarrier, PsiEvent
+from bound.event.psi import PsiCarrier, PsiEvent
 from session.contract.proto.interface import IPhaseField, ICriticalDetector, ISystemRegime, IPhaseAtor
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from session.contract.registry import contract 
 from session.contract.discover import discover_modules
 from session.executor.dynamics import LoopCarrier, DynamicsExecutor
 from phase.node.runtime import NodeRuntime
-from session.bound.resolver import find_current_self
+from bound.resolver import find_current_self
 
 log = get_emitter("watcher.sphere", phase="BOOT")
 

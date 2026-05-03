@@ -11,8 +11,8 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import List, Optional, Generator
 import redis
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self, resolve_path
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self, resolve_path
 
 log = get_emitter("phix.runtime")
 

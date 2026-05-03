@@ -4,9 +4,9 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any, Protocol
 from dataclasses import dataclass
-from phase.event.psi import PsiType, PsiEvent
+from bound.event.psi import PsiType, PsiEvent
 from session.contract.proto.interface import IPhaseField, IBoundExecutor
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 class BaseExecutor(ABC):
     """@phase.executor: ψ → {ψ'} (execution / dispersion / transduction)"""

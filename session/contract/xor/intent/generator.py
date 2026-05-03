@@ -5,11 +5,11 @@ import json
 import dspy
 from typing import Dict, Any
 from pathlib import Path
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from session.resonance.thch import thch_scope
-from session.bound.client.local.lm import LocalLM
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import resolve_path
+from bound.client.local.lm import LocalLM
+from bound.surface.emitter import get_emitter
+from bound.resolver import resolve_path
 from phase.ator.generator import SurfaceIntent, StructuralDissonance
 from session.contract.xor.store import ResidueStore, ResidueSnapshot
 from session.contract.xor.intent.signature import IntentSignature

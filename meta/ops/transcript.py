@@ -9,11 +9,11 @@ import re
 import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any
-from session.bound.resolver import find_current_self, resolve_path
+from bound.resolver import find_current_self, resolve_path
 from phase.sphere.container.validator.compose import FlowValidator, SelfExtractor 
 from session.contract.block.parser.md import MdAstParser
 from session.contract.block.extractor import BlockExtractor
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("kube.loop")
 

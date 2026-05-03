@@ -10,9 +10,9 @@ import json
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
-from phase.event.contract import next_id
+from bound.event.contract import next_id
 from session.contract.repo.node import RepoNode, AnchorNode
-from session.bound.resolver import resolve_path
+from bound.resolver import resolve_path
 
 DEFAULT_ID = "0000000"
 

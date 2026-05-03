@@ -7,17 +7,17 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.event.psi import PsiEvent, PsiCarrier
-from phase.event.bus import AsyncEventBus
-from phase.event.contract import next_id
+from bound.event.psi import PsiEvent, PsiCarrier
+from bound.event.bus import AsyncEventBus
+from bound.event.contract import next_id
 from session.contract.proto.interface import IPhaseAtor, IPhaseField
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
 from phase.node.interpreter import NodeInterpreter, AnchorFlow
 from session.resonance.surface.sink import RedisSink
 from session.resonance.surface.actuator import SurfaceActuator
-from session.bound.resolver import resolve_path, find_current_self
+from bound.resolver import resolve_path, find_current_self
 from session.contract.registry import registry
 from session.contract.discover import discover_modules
 from session.executor.swarm import SwarmCliExecutor
@@ -25,7 +25,7 @@ from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, Sign
 from phase.reflect.cognitive.coupler import CognitiveCoupler
 from phase.reflect.cognitive.worker import CognitiveWorker
 from field.kernel.state.aggregator import KernelStateAggregator
-from session.bound.client.local.engine import LLMEngine
+from bound.client.local.engine import LLMEngine
 from session.contract.xor.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())

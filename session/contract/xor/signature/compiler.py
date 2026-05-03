@@ -2,7 +2,7 @@
 import json
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("signature.compiler")
 

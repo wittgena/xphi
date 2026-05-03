@@ -3,8 +3,8 @@ import _thread
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import resolve_path
+from bound.surface.emitter import get_emitter
+from bound.resolver import resolve_path
 
 WORKSPACE = resolve_path("workspace")
 log = get_emitter("plan.runner")

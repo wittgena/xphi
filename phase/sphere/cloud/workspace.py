@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from session.contract.registry import contract
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter('core.workspace')
 

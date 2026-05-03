@@ -7,11 +7,11 @@ from typing import Dict, List, Dict, Any
 from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEvent, Context
 from llama_index.core.schema import TextNode
 from llama_index.core import VectorStoreIndex
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from phase.reflect.xor import Xor 
 from phase.reflect.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
-from session.bound.resolver import find_current_self, resolve_path
-from session.bound.folding import folding
+from bound.resolver import find_current_self, resolve_path
+from bound.folding import folding
 from session.contract.block.extractor import extract_block_from_file, Block
 
 log = get_logger("index.manifold")

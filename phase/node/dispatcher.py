@@ -2,7 +2,7 @@
 import asyncio
 import time
 from typing import Callable, Optional
-from phase.event.psi import PsiType
+from bound.event.psi import PsiType
 
 class Dispatcher:
     def __init__(

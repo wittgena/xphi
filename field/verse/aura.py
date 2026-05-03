@@ -6,9 +6,9 @@ import redis.asyncio as redis_async
 from dataclasses import dataclass
 from phase.reflect.cognitive.worker import CognitiveWorker
 from session.contract.xor.context.assembler import ContextAssembler
-from session.bound.client.local.engine import LLMEngine
+from bound.client.local.engine import LLMEngine
 from field.kernel.state.aggregator import InternalContext
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter('verse.aura')
 

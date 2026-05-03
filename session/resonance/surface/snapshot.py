@@ -6,8 +6,8 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import Dict, Tuple
-from phase.event.psi import PsiCarrier
-from meta.flow.surface.emitter import get_logger
+from bound.event.psi import PsiCarrier
+from bound.surface.emitter import get_logger
 
 log = get_logger("ext.trace.delta")
 

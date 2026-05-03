@@ -3,7 +3,7 @@ import math
 import uuid
 from typing import Dict, Any, List, Optional
 from session.contract.proto.interface import IPhaseAtor, PsiEvent
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 class ScaleProactor(IPhaseAtor):
     """Decision Ator (event emission only)"""

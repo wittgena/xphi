@@ -17,7 +17,7 @@ import redis.asyncio as redis_async
 from bridge.event.psi import PsiEvent
 from bridge.event.bus import AsyncEventBus
 from sphere.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
-from bound.plane import BoundPlane
+from bound.surface.plane import SurfacePlane
 from watcher.rhythm.coupler import RhythmCoupler
 
 class SimpleKernel(IDynamicsKernel):

@@ -5,9 +5,9 @@ import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 from session.contract.proto.flow import ProtoFlow, FlowState, Transduction, Align
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from dataclasses import dataclass, field
-from session.bound.resolver import find_current_self
+from bound.resolver import find_current_self
 from session.contract.registry import registry, contract
 from phase.ator.runtime import AtorRuntime
 from phase.ator.bootstrap import bootstrap

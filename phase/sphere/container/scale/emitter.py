@@ -1,10 +1,10 @@
 # phase.sphere.container.scale.emitter
 import asyncio
 from kubernetes_asyncio import client, config
-from phase.event.psi import PsiEvent
+from bound.event.psi import PsiEvent
 from session.contract.proto.interface import IPhaseAtor, IPhaseField
-from phase.event.bus import AsyncEventBus
-from meta.flow.surface.emitter import get_logger
+from bound.event.bus import AsyncEventBus
+from bound.surface.emitter import get_logger
 from session.contract.registry import contract
 
 log = get_logger("scale.emitter")

@@ -6,8 +6,8 @@ import argparse
 import sys
 import redis.asyncio as redis_async
 from typing import Optional, Dict, Any, List
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self
 from session.contract.registry import contract
 from session.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
 

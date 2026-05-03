@@ -5,8 +5,8 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
 from phase.reflect.xor import Xor, SearchResult
-from meta.flow.surface.emitter import get_logger
-from session.bound.resolver import find_current_self, resolve_path
+from bound.surface.emitter import get_logger
+from bound.resolver import find_current_self, resolve_path
 from session.contract.xor.prompt.input import InputBundle, build_prompt 
 
 log = get_logger("context.assembler")

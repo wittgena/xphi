@@ -5,10 +5,9 @@ import json
 import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
-from session.contract.block.code.ext.topic import TopicMap
-from session.contract.block.code.ext.schema import ExtRegistry
-from session.contract.block.code.bounder import CodeBounder 
-from session.bound.resolver import find_current_self, resolve_path, get_invoker
+from phase.pattern.code.schema import TopicMap, run_clustering_for_repo, ExtRegistry
+from phase.pattern.code.bounder import CodeBounder 
+from bound.resolver import find_current_self, resolve_path, get_invoker
 from session.executor.cli import execute_cli_task, CliTaskAdapter
 
 XOR_ROOT = resolve_path('xor')
@@ -39,12 +38,9 @@ class FieldActivator:
         
         repo_name = target_path.name
         topic_json = XOR_ROOT / "bound" / f"{repo_name}.code.topic.json"
-        
-        # [NEW] 지도가 없으면 block.code.topic을 동적으로 호출하여 생성
         if not topic_json.exists():
             print(f"[*] TopicMap missing for '{repo_name}'. Triggering Topology Scanner...")
             try:
-                from session.contract.block.code.topic import run_clustering_for_repo
                 run_clustering_for_repo(repo_name)
             except ImportError as e:
                 print(f"[!] Failed to import Topic Engine: {e}")

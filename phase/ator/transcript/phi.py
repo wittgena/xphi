@@ -7,7 +7,7 @@ import re
 import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from session.contract.proto.flow import ProtoFlow, FlowState, Transduction
 from session.contract.registry import contract, registry
 from session.contract.block.parser.md import MdAstParser

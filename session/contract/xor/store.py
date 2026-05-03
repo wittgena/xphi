@@ -8,9 +8,9 @@ import sys
 from typing import List, Set, Any, Dict
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
-from phase.event.psi import PsiType
-from meta.flow.surface.emitter import get_logger
-from session.bound.resolver import find_current_self, resolve_path
+from bound.event.psi import PsiType
+from bound.surface.emitter import get_logger
+from bound.resolver import find_current_self, resolve_path
 from phase.node.runtime import NodeRuntime
 from session.executor.base import BaseExecutor
 

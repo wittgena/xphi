@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 from typing import List, Dict, Any, Set
 from collections import defaultdict
-from session.bound.resolver import find_current_self, resolve_path
+from bound.resolver import find_current_self, resolve_path
 from anchor.around import discover_repos
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from session.contract.registry import contract
 
 SELF_ROOT = find_current_self()

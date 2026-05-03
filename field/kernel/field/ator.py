@@ -4,7 +4,7 @@ import random
 from typing import Dict, Any
 from session.contract.registry import contract
 from session.contract.proto.interface import IPhaseAtor, IPhaseField
-from phase.event.psi import PsiEvent, PsiCarrier
+from bound.event.psi import PsiEvent, PsiCarrier
 
 @contract.ator("phase.node.ator")
 class PhaseNodeAtor(IPhaseAtor):

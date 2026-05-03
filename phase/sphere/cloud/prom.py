@@ -1,12 +1,12 @@
 # phase.sphere.cloud.prom
 import asyncio
 from typing import Dict, Any, List
-from phase.event.psi import PsiEvent
+from bound.event.psi import PsiEvent
 from session.contract.proto.interface import IPhaseAtor, IPhaseField
-from phase.event.bus import AsyncEventBus
-from meta.flow.surface.emitter import get_logger
+from bound.event.bus import AsyncEventBus
+from bound.surface.emitter import get_logger
 from session.contract.registry import contract
-from session.bound.client.prom import PrometheusClient 
+from bound.client.prom import PrometheusClient 
 
 log = get_logger("receptor.prom")
 

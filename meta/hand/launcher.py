@@ -8,8 +8,8 @@ from pathlib import Path
 from ary.server.api import api
 from session.resonance.middleware import ResonanceMiddleware
 from session.contract.registry import contract
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self, resolve_path
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self, resolve_path
 
 log = get_emitter("hand.launcher")
 

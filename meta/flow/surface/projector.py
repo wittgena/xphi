@@ -1,7 +1,7 @@
 # meta.flow.surface.projector
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Any, Optional
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("surface.projector")
 

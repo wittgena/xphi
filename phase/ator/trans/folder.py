@@ -5,13 +5,13 @@ import json
 import inspect
 import ast
 from typing import Any, Dict, List, Tuple
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from session.contract.proto.flow import ProtoFlow, FlowState, Transduction
 from session.contract.registry import contract, registry
 from session.contract.discover import discover_modules
 from phase.node.runtime import NodeRuntime
 from phase.ator.runtime import AtorRuntime
-from session.bound.resolver import find_current_self, resolve_path
+from bound.resolver import find_current_self, resolve_path
 
 log = get_logger("trans.folder")
 

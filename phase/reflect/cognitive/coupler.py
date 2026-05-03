@@ -1,8 +1,8 @@
 # phase.reflect.cognitive.coupler
 import asyncio
 from typing import Optional
-from meta.flow.surface.emitter import get_emitter
-from phase.event.psi import PsiEvent, PsiCarrier
+from bound.surface.emitter import get_emitter
+from bound.event.psi import PsiEvent, PsiCarrier
 from phase.node.interpreter import PhaseJudgment
 from field.kernel.state.aggregator import KernelStateAggregator, InternalContext
 from phase.reflect.cognitive.worker import CognitiveWorker

@@ -4,10 +4,10 @@ import asyncio
 import math
 import random
 from typing import List, Dict, Optional, Any, Type, Callable
-from phase.event.bus import AsyncEventBus
-from phase.event.psi import PsiCarrier, PsiEvent
+from bound.event.bus import AsyncEventBus
+from bound.event.psi import PsiCarrier, PsiEvent
 from session.contract.proto.interface import IPhaseAtor, IPhaseField, ICriticalDetector, ISystemRegime
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from session.contract.registry import registry, contract 
 
 @contract.field("global.field")

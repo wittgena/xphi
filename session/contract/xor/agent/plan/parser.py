@@ -5,8 +5,8 @@ import time
 import tempfile
 import webbrowser
 from typing import Dict, Optional
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self, resolve_path
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self, resolve_path
 
 SELF_ROOT = find_current_self()
 SURFACE_ROOT = resolve_path("surface")

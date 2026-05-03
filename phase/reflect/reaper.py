@@ -15,7 +15,7 @@ import json
 import urllib.parse
 import os
 from redis import Redis
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from phase.node.runtime import NodeRuntime
 
 class Reaper:

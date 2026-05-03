@@ -3,8 +3,8 @@ import sys
 import json
 import httpx
 from typing import List, Dict, Any
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import find_current_self, resolve_path
+from bound.surface.emitter import get_emitter
+from bound.resolver import find_current_self, resolve_path
 from meta.hand.launcher import api
 
 SPEC_ROOT = resolve_path("spec")

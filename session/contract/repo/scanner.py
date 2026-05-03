@@ -9,7 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("repo.scanner", mode="SLIM")
 

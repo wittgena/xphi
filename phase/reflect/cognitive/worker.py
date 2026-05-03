@@ -1,7 +1,7 @@
 # phase.reflect.cognitive.worker
 import asyncio
-from meta.flow.surface.emitter import get_emitter
-from session.bound.client.local.engine import LLMEngine
+from bound.surface.emitter import get_emitter
+from bound.client.local.engine import LLMEngine
 from field.kernel.state.aggregator import InternalContext
 from session.contract.xor.context.assembler import ContextAssembler
 

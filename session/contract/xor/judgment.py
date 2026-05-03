@@ -3,9 +3,9 @@ import asyncio
 import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
-from session.bound.client.local.lm import LocalLM
+from bound.client.local.lm import LocalLM
 from session.contract.xor.store import ResidueStore, ResidueSnapshot
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("proto.flow")
 

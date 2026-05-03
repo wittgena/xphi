@@ -15,7 +15,7 @@ import asyncio
 import time
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.event.bus import AsyncEventBus
+from bound.event.bus import AsyncEventBus
 from session.contract.proto.interface import (
     IPhaseAtor,
     IPhaseField,
@@ -24,7 +24,7 @@ from session.contract.proto.interface import (
 )
 from phase.sphere.cloud.snapshot import MetricsSnapshot
 from phase.sphere.cloud.projector import CloudProjector
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 class EventAdapter:
     """

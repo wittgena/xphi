@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Tuple, List, Any
 from session.contract.block.parser.md import MdAstParser
 from session.contract.block.extractor import BlockExtractor
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("validator.promql")
 

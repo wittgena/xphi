@@ -4,8 +4,8 @@ from pathlib import Path
 from pydantic import SecretStr
 from openhands.sdk import LLM, Agent, Tool
 from openhands.tools.preset.default import get_default_tools
-from session.bound.client.local.engine import SERVER_PORT, MODEL_NAME
-from session.bound.resolver import resolve_path
+from bound.client.local.engine import SERVER_PORT, MODEL_NAME
+from bound.resolver import resolve_path
 
 RES_ROOT = resolve_path("res")
 

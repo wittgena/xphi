@@ -12,9 +12,9 @@ from collections import defaultdict
 from typing import Optional, Dict, Any, List, Tuple
 from google import genai
 from google.genai import types
-from session.bound.resolver import find_current_self, resolve_path, get_invoker
+from bound.resolver import find_current_self, resolve_path, get_invoker
 from session.contract.registry import contract
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 from meta.flow.surface.projector import SurfaceProjector
 from session.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 from session.contract.block.parser.py import PyDotMdParser

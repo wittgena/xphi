@@ -1,7 +1,7 @@
 # session.executor.dynamics
 from __future__ import annotations
 import asyncio
-from phase.event.contract import next_id, next_phase_id, parse_id, parse_phase_id 
+from bound.event.contract import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
 from session.executor.base import BaseExecutor
 from session.contract.registry import registry

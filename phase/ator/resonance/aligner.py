@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any, Dict
 from session.contract.proto.flow import ProtoFlow, FlowState, Align
 from session.contract.registry import contract
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 
 log = get_logger('resonance.aligner')
 

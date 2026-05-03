@@ -8,8 +8,8 @@ import threading
 import httpx
 from dataclasses import dataclass
 from typing import Optional
-from session.bound.client.local.engine import LLMEngine
-from meta.flow.surface.emitter import get_emitter
+from bound.client.local.engine import LLMEngine
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("resonance.manager")
 

@@ -2,8 +2,8 @@
 import _thread
 import os
 from pathlib import Path
-from meta.flow.surface.emitter import get_emitter
-from session.bound.resolver import resolve_path
+from bound.surface.emitter import get_emitter
+from bound.resolver import resolve_path
 
 WORKSPACE_ROOT = resolve_path("workspace")
 log = get_emitter("plan.server")

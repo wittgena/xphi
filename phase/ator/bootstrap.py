@@ -7,7 +7,7 @@ import ast
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from session.contract.proto.flow import ProtoFlow, FlowState, Transduction
 from session.contract.registry import contract, registry
 from session.contract.discover import discover_modules
@@ -15,7 +15,7 @@ from phase.ator.transcript.phi import TranscriptPhi
 from phase.ator.transcript.spec import TranscriptSpec
 from phase.ator.runtime import AtorRuntime
 from phase.node.runtime import NodeRuntime
-from session.bound.resolver import find_current_self, resolve_path, load_bound
+from bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_logger("ator.bootstrap")
 SELF_ROOT = find_current_self()

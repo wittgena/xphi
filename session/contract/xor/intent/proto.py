@@ -12,7 +12,7 @@ from dspy.utils.inspect_history import pretty_print_history
 from dspy.utils.usage_tracker import track_usage
 from session.contract.intent.signature import Signature
 from session.resonance.thch import ThCh
-from meta.flow.surface.emitter import get_emitter
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("intent.proto")
 

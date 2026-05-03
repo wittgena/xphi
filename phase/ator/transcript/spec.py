@@ -3,7 +3,7 @@ import re
 import yaml
 import os
 from typing import Any, Dict, List, Optional
-from meta.flow.surface.emitter import get_logger
+from bound.surface.emitter import get_logger
 from session.contract.registry import contract
 from session.contract.block.parser.md import MdAstParser
 from session.contract.block.extractor import BlockExtractor

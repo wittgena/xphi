@@ -12,11 +12,11 @@ import urllib.parse
 from typing import List, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass
-from session.bound.resolver import find_current_self, resolve_path
-from meta.flow.surface.emitter import get_emitter
+from bound.resolver import find_current_self, resolve_path
+from bound.surface.emitter import get_emitter
 from phase.reflect.xphi.runtime import XPhiRuntime
-from session.bound.client.stream import StreamClient
-from session.bound.client.surface import RedisClient, SurfaceClient
+from bound.client.stream import StreamClient
+from bound.client.surface import RedisClient, SurfaceClient
 
 log = get_emitter("reflect.xor")
 

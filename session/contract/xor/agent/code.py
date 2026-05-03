@@ -8,8 +8,8 @@ from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.schema import NodeWithScore
 from llama_index.llms.openai import OpenAI
 from llama_index.core.prompts import PromptTemplate
-from meta.flow.surface.emitter import get_logger
-from session.bound.resolver import resolve_path
+from bound.surface.emitter import get_logger
+from bound.resolver import resolve_path
 
 log = get_logger("context.code")
 
