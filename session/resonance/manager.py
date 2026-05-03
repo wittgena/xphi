@@ -114,7 +114,7 @@ class HandSurface(BaseSurface):
             log.info("[+] Hand Surface process terminated.")
 
     def get_engine(self):
-        from meta.hand.engine import OpenHandsEngine
+        from session.resonance.hand.engine import OpenHandsEngine
         return lambda agent_usage: OpenHandsEngine(self.base_url, agent_usage)
 
 class SurfaceManager:

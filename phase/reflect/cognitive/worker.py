@@ -3,7 +3,7 @@ import asyncio
 from bound.surface.emitter import get_emitter
 from bound.client.local.engine import LLMEngine
 from field.kernel.state.aggregator import InternalContext
-from session.contract.xor.context.assembler import ContextAssembler
+from session.context.assembler import ContextAssembler
 
 log = get_emitter('cognitive.worker')
 
