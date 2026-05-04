@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
 from bound.resolver import find_current_self, resolve_path, get_invoker
-from bound.code.schema import TopicMap, ExtRegistry
+from bound.code.schema import TopicMap, HypoRegistry
 from bound.code.tracer import CodeTracer 
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter
 from meta.project.code.topic.modeler import run_clustering_for_repo

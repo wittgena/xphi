@@ -16,8 +16,8 @@ from bound.surface.plane import SurfacePlane
 from bound.surface.emitter import get_emitter
 from phase.field.bridge.rhythm import RhythmBridge
 from bound.surface.emitter import get_emitter
-from foldbox.state.manifold.particle import PhaseManifold, Particle
-from foldbox.state.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from topos.state.manifold.particle import PhaseManifold, Particle
+from topos.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("field.dynamics")
 

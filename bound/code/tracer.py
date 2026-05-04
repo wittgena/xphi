@@ -12,7 +12,7 @@ import importlib
 import sys
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional
-from bound.code.schema import ExtRegistry, TopicMap
+from bound.code.schema import HypoRegistry, TopicMap
 
 class TraceReflector:
     """@flow: access → ∂Φ trace"""
@@ -48,10 +48,10 @@ class RuptureSnapshot:
         return snapshot
 
 class CodeTracer:
-    """@flow: Scanner -> Tracer -> ExtRegistry"""
+    """@flow: Scanner -> Tracer -> HypoRegistry"""
     def __init__(self, topic_map: Optional[TopicMap] = None):
         self.topic_map = topic_map
-        self.registry = ExtRegistry()  # 상태를 저장할 레지스트리 초기화
+        self.registry = HypoRegistry()  # 상태를 저장할 레지스트리 초기화
 
     @staticmethod
     def strike(target: Callable) -> Dict[str, Any]:

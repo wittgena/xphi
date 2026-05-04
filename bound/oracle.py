@@ -1,4 +1,4 @@
-# bound.ext.oracle
+# bound.oracle
 import asyncio
 import json
 import math
@@ -8,7 +8,7 @@ import redis.asyncio as redis_async
 
 REDIS_URL = "redis://localhost:6379"
 
-class ExtOracle:
+class BoundOracle:
     """
     @role: A semi-permeable transdimensional boundary. It translates the chaotic entropy 
            of the Macro-Civilization (External) into measurable topological frequencies (Phase), 
@@ -171,7 +171,7 @@ class ExtOracle:
             print(f"[Oracle] Ontological Error: {e}")
 
 if __name__ == "__main__":
-    oracle = ExtOracle()
+    oracle = BoundOracle()
     try:
         asyncio.run(oracle.run_probing_cycle(interval=2.0))
     except KeyboardInterrupt:

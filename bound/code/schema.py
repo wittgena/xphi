@@ -3,7 +3,7 @@ import json
 from typing import Any, Callable, Dict, Optional, Union, List, Any
 from pydantic import BaseModel, Field, ConfigDict
 
-class ExtSchema(BaseModel):
+class HypoSchema(BaseModel):
     """Φ_canonical: 경계($\partial$)에서 수집된 파편을 실체(Bound)로 응집한 표준 위상 스키마"""
     model_config = ConfigDict(arbitrary_types_allowed=True) # Callable 허용
     name: str = Field(..., description="객체 또는 도구의 식별자")
@@ -18,10 +18,10 @@ class ExtSchema(BaseModel):
     parameters: Dict[str, Any] = Field(default_factory=dict, description="구조적 요구사항 (JSON Schema)")
     executable: Optional[Callable] = Field(None, exclude=True, description="실제 실행 가능한 결속체")
 
-class ExtRegistry:
+class HypoRegistry:
     """Bound Registry: 파편화된 가설들을 하나의 위상 지도(Map)로 결속하는 저장소"""
     def __init__(self):
-        self._hypotheses: Dict[str, ExtSchema] = {}
+        self._hypotheses: Dict[str, HypoSchema] = {}
 
     def assimilate(self, module_name: str, target_name: str, echoes: Dict[str, Any]):
         """Binder에서 전달된 Echoes를 ExtSchema로 변환하여 결속(Bound)"""
@@ -33,7 +33,7 @@ class ExtRegistry:
             state = "Deep_Boundary_Mapped"
 
         ## 파편을 표준 스키마로 응집
-        schema = ExtSchema(
+        schema = HypoSchema(
             name=target_name,
             module_origin=module_name,
             status=state,
@@ -42,7 +42,7 @@ class ExtRegistry:
         )
         self._hypotheses[key] = schema
 
-    def get_hypothesis(self, key: str) -> Optional[ExtSchema]:
+    def get_hypothesis(self, key: str) -> Optional[HypoSchema]:
         return self._hypotheses.get(key)
 
     def dump(self) -> str:
@@ -56,7 +56,7 @@ class ExtRegistry:
 class PyBuilder:
     """Canonical Form -> DSPy/Python Bound Object"""
     @staticmethod
-    def to_dspy(schema: ExtSchema) -> Any:
+    def to_dspy(schema: HypoSchema) -> Any:
         try:
             from dspy.adapters.types.tool import Tool
         except ImportError: return None
