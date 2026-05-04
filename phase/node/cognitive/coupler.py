@@ -1,11 +1,11 @@
-# bound.reflect.cognitive.coupler
+# phase.node.cognitive.coupler
 import asyncio
 from typing import Optional
 from bound.surface.emitter import get_emitter
 from phase.field.event.psi import PsiEvent, PsiCarrier
 from phase.node.interpreter import PhaseJudgment
-from meta.sphere.kernel.state.aggregator import KernelStateAggregator, InternalContext
-from bound.reflect.cognitive.worker import CognitiveWorker
+from phase.node.state.aggregator import KernelStateAggregator, InternalContext
+from phase.node.cognitive.worker import CognitiveWorker
 
 class CognitiveCoupler:
     """

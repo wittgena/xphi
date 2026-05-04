@@ -5,7 +5,7 @@ import uvicorn
 import importlib.util
 import argparse
 from pathlib import Path
-from foldbox.server.api import api
+from hand.server.api import api
 from bound.resonance.middleware import ResonanceMiddleware
 from phase.contract.registry import contract
 from bound.surface.emitter import get_emitter

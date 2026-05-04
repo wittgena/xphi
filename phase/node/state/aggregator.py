@@ -1,4 +1,4 @@
-# meta.sphere.kernel.state.aggregator
+# phase.node.state.aggregator
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 import redis.asyncio as redis_async

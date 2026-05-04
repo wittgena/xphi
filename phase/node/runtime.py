@@ -22,9 +22,9 @@ from phase.contract.registry import registry
 from phase.contract.discover import discover_modules
 from phase.node.executor.swarm import SwarmCliExecutor
 from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
-from bound.reflect.cognitive.coupler import CognitiveCoupler
-from bound.reflect.cognitive.worker import CognitiveWorker
-from meta.sphere.kernel.state.aggregator import KernelStateAggregator
+from phase.node.cognitive.coupler import CognitiveCoupler
+from phase.node.cognitive.worker import CognitiveWorker
+from phase.node.state.aggregator import KernelStateAggregator
 from phase.field.client.local.engine import LLMEngine
 from phase.session.context.assembler import ContextAssembler
 
