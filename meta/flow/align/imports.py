@@ -4,9 +4,9 @@ import sys
 import argparse
 from pathlib import Path
 from bound.resolver import find_current_self
-from session.contract.registry import contract
+from phase.contract.registry import contract
 from bound.surface.emitter import get_emitter
-from session.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
+from phase.node.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
 from meta.flow.imports.aligner import ImportAligner
 
 log = get_emitter("align.imports", phase="SYSTEM")

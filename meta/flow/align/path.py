@@ -6,10 +6,10 @@ import yaml
 from typing import List, Dict, Any
 from pathlib import Path
 from bound.resolver import find_current_self, get_invoker
-from session.contract.registry import contract
+from phase.contract.registry import contract
 from bound.surface.emitter import get_emitter
 from meta.flow.surface.aligner import FieldAligner, AlignRecord
-from session.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
+from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 
 log = get_emitter("align.path")
 

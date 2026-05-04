@@ -11,8 +11,8 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 from bound.resolver import find_current_self, resolve_path
 from meta.sphere.container.validator.compose import FlowValidator, SelfExtractor 
-from session.contract.block.parser.md import MdAstParser
-from session.contract.block.extractor import BlockExtractor
+from phase.contract.block.parser.md import MdAstParser
+from phase.contract.block.extractor import BlockExtractor
 from bound.surface.emitter import get_emitter
 
 log = get_emitter("kube.loop")

@@ -4,10 +4,10 @@ import random
 import urllib.request
 import redis.asyncio as redis_async
 from dataclasses import dataclass
-from phase.reflect.cognitive.worker import CognitiveWorker
-from session.context.assembler import ContextAssembler
-from bound.client.local.engine import LLMEngine
-from field.kernel.state.aggregator import InternalContext
+from bound.reflect.cognitive.worker import CognitiveWorker
+from phase.session.context.assembler import ContextAssembler
+from phase.field.client.local.engine import LLMEngine
+from meta.sphere.kernel.state.aggregator import InternalContext
 from bound.surface.emitter import get_emitter
 
 log = get_emitter('verse.aura')

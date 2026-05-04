@@ -6,8 +6,8 @@ from llama_index.core.llms import CustomLLM, CompletionResponse, LLMMetadata
 from llama_index.core.llms.callbacks import llm_completion_callback
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from bound.surface.emitter import get_emitter
-from bound.folding import folding
-from bound.client.local.engine import LLMEngine
+from foldbox.folding import folding
+from phase.field.client.local.engine import LLMEngine
 
 log = get_emitter('agent.workflow')
 

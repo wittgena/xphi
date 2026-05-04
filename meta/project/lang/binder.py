@@ -13,7 +13,7 @@ from collections import defaultdict, Counter
 from tqdm import tqdm
 from bound.surface.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
-from session.resonance.schema import ResonanceGraph, ResonanceNode, NodeRelation
+from bound.resonance.schema import ResonanceGraph, ResonanceNode, NodeRelation
 from meta.project.pos.sensor import PosSensor
 
 log = get_logger("lang.binder")

@@ -83,8 +83,8 @@ class Activator:
 
             ## 동적 임포트 (통합 레지스트리로 변경)
             from bound.surface.emitter import get_emitter
-            from session.contract.registry import registry
-            from session.contract.discover import discover_modules
+            from phase.contract.registry import registry
+            from phase.contract.discover import discover_modules
             from bound.resolver import load_bound, find_current_self
             
             self.registry = registry

@@ -8,8 +8,8 @@ import asyncio
 from pathlib import Path
 from bound.surface.emitter import get_logger
 from bound.resolver import resolve_path, find_current_self
-from session.bootstrap import bootstrap
-from session.contract.proto.flow import ProtoFlow, FlowState
+from phase.ator.bootstrap import bootstrap
+from phase.contract.proto.flow import ProtoFlow, FlowState
 
 SELF_ROOT = find_current_self()
 CONTRACT_ROOT = resolve_path("contract")

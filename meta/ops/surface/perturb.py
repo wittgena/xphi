@@ -6,7 +6,7 @@ import time
 import re
 import redis.asyncio as redis_async
 from typing import Optional
-from bound.event.psi import PsiEvent, PsiCarrier
+from phase.field.event.psi import PsiEvent, PsiCarrier
 from bound.resolver import resolve_channel, resolve_pattern
 from bound.surface.emitter import get_emitter
 

@@ -11,7 +11,7 @@ from gensim import corpora, models
 from bound.surface.emitter import get_logger
 from meta.project.code.schema import TopicMap, TopicMetadata, PhaseSpace, CoreModuleInfo
 from bound.resolver import find_current_self, resolve_path
-from session.contract.block.parser.topos import ToposAstParser
+from phase.contract.block.parser.topos import ToposAstParser
 
 log = get_logger("code.topic")
 

@@ -5,7 +5,7 @@ import asyncio
 from dataclasses import replace, asdict
 from typing import Dict, List, Protocol
 from collections import defaultdict, deque
-from bound.event.contract import LogEvent
+from phase.field.event.contract import LogEvent
 import redis.asyncio as redis_async
 
 class EventObserver(Protocol):

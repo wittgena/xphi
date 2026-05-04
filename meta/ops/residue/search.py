@@ -8,7 +8,7 @@ from typing import List, Optional, Dict, Any
 from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEvent
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.schema import NodeWithScore
-from phase.reflect.xor import Xor, SearchResult 
+from bound.reflect.xphi.xor import Xor, SearchResult 
 from bound.surface.emitter import get_logger
 from bound.resolver import resolve_path
 

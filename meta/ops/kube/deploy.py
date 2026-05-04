@@ -9,7 +9,7 @@ import shutil
 import re
 from pathlib import Path
 from typing import Optional
-from meta.ops.transcript import TranscriptEngine, Projector
+from meta.ops.kube.transcript import TranscriptEngine, Projector
 from bound.surface.emitter import get_emitter
 from bound.resolver import find_current_self, resolve_path
 from meta.sphere.container.validator.compose import FlowValidator, SelfExtractor

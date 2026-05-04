@@ -5,10 +5,11 @@ import json
 import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
-from meta.project.code.schema import TopicMap, run_clustering_for_repo, ExtRegistry
+from meta.project.code.schema import TopicMap, ExtRegistry
+# from meta.project.code.schema import run_clustering_for_repo ## missing
 from meta.project.code.bounder import CodeBounder 
 from bound.resolver import find_current_self, resolve_path, get_invoker
-from session.executor.cli import execute_cli_task, CliTaskAdapter
+from phase.node.executor.cli import execute_cli_task, CliTaskAdapter
 
 XOR_ROOT = resolve_path('xor')
 
@@ -41,7 +42,8 @@ class FieldActivator:
         if not topic_json.exists():
             print(f"[*] TopicMap missing for '{repo_name}'. Triggering Topology Scanner...")
             try:
-                run_clustering_for_repo(repo_name)
+                ## TODO missing: run_clustering_for_repo(repo_name)
+                pass
             except ImportError as e:
                 print(f"[!] Failed to import Topic Engine: {e}")
                 return None

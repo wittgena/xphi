@@ -7,26 +7,26 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
-from bound.event.psi import PsiEvent, PsiCarrier
-from bound.event.bus import AsyncEventBus
-from bound.event.contract import next_id
-from session.contract.proto.interface import IPhaseAtor, IPhaseField
+from phase.field.event.psi import PsiEvent, PsiCarrier
+from phase.field.event.bus import AsyncEventBus
+from phase.field.event.contract import next_id
+from phase.contract.proto.interface import IPhaseAtor, IPhaseField
 from bound.surface.emitter import get_emitter
 from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
 from phase.node.interpreter import NodeInterpreter, AnchorFlow
-from session.resonance.surface.sink import RedisSink
-from session.resonance.surface.actuator import SurfaceActuator
+from bound.surface.sink import RedisSink
+from bound.surface.actuator import SurfaceActuator
 from bound.resolver import resolve_path, find_current_self
-from session.contract.registry import registry
-from session.contract.discover import discover_modules
-from session.executor.swarm import SwarmCliExecutor
+from phase.contract.registry import registry
+from phase.contract.discover import discover_modules
+from phase.node.executor.swarm import SwarmCliExecutor
 from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
-from phase.reflect.cognitive.coupler import CognitiveCoupler
-from phase.reflect.cognitive.worker import CognitiveWorker
-from field.kernel.state.aggregator import KernelStateAggregator
-from bound.client.local.engine import LLMEngine
-from session.context.assembler import ContextAssembler
+from bound.reflect.cognitive.coupler import CognitiveCoupler
+from bound.reflect.cognitive.worker import CognitiveWorker
+from meta.sphere.kernel.state.aggregator import KernelStateAggregator
+from phase.field.client.local.engine import LLMEngine
+from phase.session.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 

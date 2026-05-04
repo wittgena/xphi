@@ -5,9 +5,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from enum import Enum
-from bound.event.contract import LogEvent
+from phase.field.event.contract import LogEvent
 from bound.surface.emitter import get_emitter
-from bound.event.psi import PsiCarrier, PhaseField
+from phase.field.event.psi import PsiCarrier, PhaseField
 
 log = get_emitter("node.interpreter")
 
