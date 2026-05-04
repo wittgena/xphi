@@ -3,7 +3,7 @@ import asyncio
 from watchdog.observers import Observer
 from phase.node.receptor.source import TracerSource
 from phase.node.receptor.kernel import TracerKernel
-from bound.surface.topos import PhaseSurface
+from bound.surface.topos import SurfaceTopos
 from bound.surface.sink import RedisSink 
 
 async def receptor_bootstrap(watch_dir: str = "./src"):
@@ -13,7 +13,7 @@ async def receptor_bootstrap(watch_dir: str = "./src"):
     """
     ## 인프라 및 도메인 표면 연결 (Substrate Injection)
     sink = RedisSink() 
-    surface = PhaseSurface(sink)
+    surface = SurfaceTopos(sink)
 
     ## 내부 핵(Cognitive Kernel) 기동
     ## 과거의 반사 신경(FieldKernel) 대신, 시간을 다루는 렌즈(TraceKernel)를 주입합니다.

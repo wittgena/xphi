@@ -3,7 +3,7 @@ import os
 import time
 import subprocess
 import requests
-from bound.resonance.schema import BridgeEvent
+from phase.field.bridge.schema import BridgeEvent
 from bound.surface.emitter import get_emitter
 
 log = get_emitter('local.engine')

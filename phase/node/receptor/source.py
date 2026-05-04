@@ -5,12 +5,12 @@ import asyncio
 from datetime import datetime
 from watchdog.events import FileSystemEventHandler
 from typing import Dict, List
-from bound.surface.topos import PhaseSurface
+from bound.surface.topos import SurfaceTopos
 from phase.node.receptor.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 class TracerSource(FileSystemEventHandler):
     """@desc: 물리적 파일 시스템의 변이를 감지하여 PhaseSurface에 이산적 틱(Tick)을 주입"""
-    def __init__(self, surface: PhaseSurface, loop: asyncio.AbstractEventLoop):
+    def __init__(self, surface: SurfaceTopos, loop: asyncio.AbstractEventLoop):
         self.surface = surface
         self.loop = loop  
         self.last_trigger = 0

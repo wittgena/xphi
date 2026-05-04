@@ -146,7 +146,6 @@ default_plane._observers = []
 surface = ConsoleSurface(mode="NORMAL")
 default_plane.attach(surface)
 
-
 try:
     redis_streamer = RedisSurface(redis_async.from_url("redis:localhost:6379", decode_responses=True))
     default_plane.attach(redis_streamer)

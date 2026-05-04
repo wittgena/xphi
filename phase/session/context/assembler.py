@@ -7,7 +7,7 @@ from collections import defaultdict
 from bound.reflect.xphi.xor import Xor, SearchResult
 from bound.surface.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
-from phase.session.context.prompt.input import InputBundle, build_prompt 
+from phase.session.prompt.input import InputBundle, build_prompt 
 
 log = get_logger("context.assembler")
 

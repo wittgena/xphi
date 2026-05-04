@@ -14,7 +14,7 @@ import redis
 from bound.surface.emitter import get_emitter
 from bound.resolver import find_current_self, resolve_path
 
-log = get_emitter("phix.runtime")
+log = get_emitter("xphi.runtime")
 
 try:
     LIB_ROOT = resolve_path("lib")

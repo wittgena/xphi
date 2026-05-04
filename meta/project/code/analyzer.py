@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from meta.project.lang.model import LangModel, NodeData, EdgeData, LoopEdgeData, PhaseGraphSchema
+from meta.project.model.schema import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
 from bound.surface.emitter import get_emitter
 from bound.resolver import resolve_path
 from meta.project.code.logic.transformer import LogicTransformer
@@ -59,7 +59,7 @@ class CodeAnalyzer:
         else:
             self.g.add_edge(src, tgt, keyword="import", linenos=[line] if line else [])
 
-    def get_dissolve_schema(self, module_index: Dict[str, Path], root: Path) -> PhaseGraphSchema:
+    def get_dissolve_schema(self, module_index: Dict[str, Path], root: Path) -> GraphSchema:
         ## curvature metrics (∂Φ_measure)
         degree = dict(self.g.degree)
         in_degree = dict(self.g.in_degree)
@@ -107,7 +107,7 @@ class CodeAnalyzer:
         penalty = min(len(cycles) * 5, 50)
         base_score = 100 - penalty
         phase_stability = max(0.0, round(base_score, 1))
-        meta = LangModel(
+        meta = MetaModel(
             total_modules=len(self.g.nodes),
             total_dependencies=len(self.g.edges),
             cycles_detected=len(cycles),
@@ -117,4 +117,4 @@ class CodeAnalyzer:
         )
         edges = [EdgeData(source=u, target=v, **d) for u, v, d in self.g.edges(data=True)]
         loop_edges = [{"source": u, "target": v, "type": d["type"]} for u, v, d in self.g_loop.edges(data=True)]
-        return PhaseGraphSchema(meta=meta, nodes=nodes, topos_edges=edges, loop_edges=loop_edges, cycles=cycles)
+        return GraphSchema(meta=meta, nodes=nodes, topos_edges=edges, loop_edges=loop_edges, cycles=cycles)

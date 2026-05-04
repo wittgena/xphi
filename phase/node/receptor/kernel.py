@@ -5,12 +5,12 @@ import asyncio
 from datetime import datetime
 from watchdog.events import FileSystemEventHandler
 from typing import Dict, List
-from bound.surface.topos import PhaseSurface
+from bound.surface.topos import SurfaceTopos
 from phase.node.receptor.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 class TracerKernel:
     """@desc: SourceTracer가 뿜어낸 파동(Ψ)을 스트리밍으로 받아 Lens(Φ')를 통해 실시간 위상 장력을 평가하고 붕괴를 판단"""
-    def __init__(self, surface: PhaseSurface, window_steps: int = 14, lens_preset: str = "kinematic"):
+    def __init__(self, surface: SurfaceTopos, window_steps: int = 14, lens_preset: str = "kinematic"):
         self.surface = surface
         self.window_steps = window_steps
         self.lens = DefaultBoundLensStrategy(preset_name=lens_preset)

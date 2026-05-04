@@ -3,11 +3,8 @@ import time
 import json
 from bound.surface.sink import EmitterSink
 
-class PhaseSurface:
-    """
-    @role: ∂Φ boundary surface (Domain Layer)
-    - 인프라(Redis, File, API)는 EmitterSink로 추상화되어 주입됨.
-    """
+class SurfaceTopos:
+    """@role: ∂Φ bound surface (Domain Layer) - 인프라(Redis, File, API)는 EmitterSink로 추상화되어 주입됨."""
     def __init__(self, sink: EmitterSink):
         self.sink = sink
         self.state_key = "meta.self:state:current_phase"

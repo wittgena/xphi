@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Set, Tuple
 from bound.surface.emitter import get_logger
 from bound.resolver import resolve_path
+from bound.code.manager import CodeManager
 from meta.project.code.analyzer import CodeAnalyzer
-from meta.project.code.bound.manager import BoundManager
 
 CODE_ROOT = resolve_path("code")
 log = get_logger("code.phaser")
@@ -25,10 +25,10 @@ class CodePhaser:
         self.g = analyzer.g  
         
         self.node_pheres = {
-            n: self._extract_phere(n) for n in self.g.nodes
+            n: self._extract_phase(n) for n in self.g.nodes
         }
 
-    def _extract_phere(self, node: str) -> str:
+    def _extract_phase(self, node: str) -> str:
         in_d = self.g.in_degree(node)
         out_d = self.g.out_degree(node)
         is_topos = self.analyzer.runtime_hints.get(node, False)
@@ -112,7 +112,7 @@ class PhaserEngine:
         """전체 위상 분석 궤적 실행"""
         # Phase 1: 투영 및 장(Field) 구축
         log.info(f"[Phase 1: Map] Projecting Topos Field for {self.repo_root.name}...")
-        manager = BoundManager(str(self.repo_root))
+        manager = CodeManager(str(self.repo_root))
         manager.analyzer.build_structure(self._build_module_index(), self.repo_root)
 
         # Phase 2: 경계 획정 및 균열 지점 계산

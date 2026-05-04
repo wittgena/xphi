@@ -1,8 +1,7 @@
 # bound.reflect.xphi.reaper
 """
 @desc: orphan process collector via echo-resonance
-
-@phase:
+@flow:
 Ψ (ping emission)
   -> Ψ_echo (node self-report)
   -> Φ (port → pid projection)
@@ -19,10 +18,7 @@ from bound.surface.emitter import get_emitter
 from phase.node.runtime import NodeRuntime
 
 class Reaper:
-    """
-    @role: Φ′ executor (cleanup operator)
-    @flow: Ψ -> mode select -> {strike | force | clean} -> process termination
-    """
+    """@flow: Ψ -> mode select -> {strike | force | clean} -> process termination"""
     def __init__(self, redis_conn):
         self.redis = redis_conn
         self.log = get_emitter("surface.reaper", phase="EXEC")
@@ -92,9 +88,7 @@ class Reaper:
         self.log.warn(f" [Killed] PID {pid} with signal {signal}")
 
     async def surgical_strike(self, wait_time: float = 2.0):
-        """
-        @flow: Ψ (ping) -> Ψ_echo (collect) -> Φ (resolve endpoint) -> ∂Φ (pid detection) -> selective kill
-        """
+        """@flow: Ψ (ping) -> Ψ_echo (collect) -> Φ (resolve endpoint) -> ∂Φ (pid detection) -> selective kill"""
         self.log.info("🦇 Broadcasting system:ping...")
         
         pubsub = self.redis.pubsub()
@@ -141,9 +135,7 @@ class Reaper:
             return count
 
 async def main():
-    """
-    @flow: BOOT -> bind surface -> attach executor (Φ′) -> activate RuntimeNode (Ψ loop)
-    """
+    """@flow: BOOT -> bind surface -> attach executor (Φ′) -> activate RuntimeNode (Ψ loop)"""
     log = get_emitter("reaper.launcher", phase="BOOT")
     redis_conn = Redis(host=os.getenv("REDIS_HOST", "localhost"), decode_responses=True)
     reaper_executor = Reaper(redis_conn)
