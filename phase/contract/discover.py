@@ -38,9 +38,7 @@ def discover_modules(
 ) -> None:
     """
     고정된 root를 기준으로 모듈을 탐색하여 일관된 FQN(Fully Qualified Name)을 생성
-    
     :param root: 탐색을 시작할 최상위 디렉토리 경로
-    :param forbidden_libs: 로드하지 않을 의존성 목록 (기본값: openhands, dspy)
     :param exclude_files: 로드에서 명시적으로 제외할 파일명 목록
     """
     if not root.exists():

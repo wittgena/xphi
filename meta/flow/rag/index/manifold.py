@@ -1,4 +1,4 @@
-# meta.project.index.manifold
+# meta.flow.rag.index.manifold
 import sys
 import json
 import asyncio
@@ -11,7 +11,7 @@ from bound.surface.emitter import get_logger
 from meta.flow.xphi.xor import Xor 
 from meta.flow.xphi.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from bound.resolver import find_current_self, resolve_path
-from foldbox.folding import folding
+from bound.folding import folding
 from topos.project.block.extractor import extract_block_from_file, Block
 
 log = get_logger("index.manifold")
