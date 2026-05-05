@@ -7,7 +7,7 @@ from dataclasses import field
 from bound.surface.emitter import get_emitter
 from phase.contract.proto.col import proto, get_proto, Proto
 from phase.contract.proto.flow import ProtoFlow, FlowState
-from topos.state.trans import PhaseSpec, TransRule, NodeType
+from topos.state.rule.trans import PhaseSpec, TransRule, NodeType
 from topos.state.node import LinkerNode, InversionNode, PhaseNode, ResidueType
 
 log = get_emitter("topos.runtime")

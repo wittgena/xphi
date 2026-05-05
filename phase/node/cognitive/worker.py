@@ -3,7 +3,7 @@ import asyncio
 from bound.surface.emitter import get_emitter
 from phase.field.client.local.engine import LLMEngine
 from phase.node.state.aggregator import InternalContext
-from phase.session.context.assembler import ContextAssembler
+from topos.context.assembler import ContextAssembler
 
 log = get_emitter('cognitive.worker')
 

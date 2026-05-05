@@ -7,7 +7,7 @@ from bound.surface.emitter import get_emitter
 from phase.node.runtime import NodeRuntime
 from phase.contract.proto.col import get_proto
 from phase.contract.proto.flow import ProtoFlow, FlowState
-from topos.state.trans import PhaseSpec, TransRule
+from topos.state.rule.trans import PhaseSpec, TransRule
 from topos.state.proxy import DistributedNodePool
 from topos.state.node import LinkerNode, InversionNode, PhaseNode, NodeType
 from topos.state.runtime import ToposRuntime

@@ -5,8 +5,8 @@ import os
 from typing import Any, Dict, List, Optional
 from bound.surface.emitter import get_logger
 from phase.contract.registry import contract
-from phase.contract.block.parser.md import MdAstParser
-from phase.contract.block.extractor import BlockExtractor
+from topos.project.block.parser.md import MdAstParser
+from topos.project.block.extractor import BlockExtractor
 from phase.ator.transcript.phi import TranscriptBase
 
 log = get_logger("transcript.spec")

@@ -18,7 +18,7 @@ from bound.resolver import find_current_self, resolve_path
 from bound.reflect.xphi.runtime import XPhiRuntime
 from phase.field.client.stream import StreamClient
 from phase.field.client.surface import RedisClient, SurfaceClient
-from phase.contract.block.schema import Contract
+from topos.project.block.schema import Contract
 
 log = get_emitter("reflect.ktory")
 

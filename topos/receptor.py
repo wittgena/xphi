@@ -3,7 +3,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from bound.surface.emitter import get_emitter
-from topos.psi import ToposPsi, ToposSignature
+from topos.model.psi import ToposPsi, ToposSignature
 
 log = get_emitter("topos.receptor")
 

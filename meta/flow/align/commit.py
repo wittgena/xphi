@@ -6,9 +6,9 @@ from typing import List, Callable, Any
 from pathlib import Path
 from bound.surface.emitter import get_emitter
 from bound.resolver import find_current_self, get_invoker
-from phase.contract.repo.node import RepoNode, AnchorNode
-from phase.contract.repo.protocol import anchor_commit_protocol
-from phase.contract.repo.scanner import NodeScanner, NodeCommit
+from topos.project.repo.node import RepoNode, AnchorNode
+from topos.project.repo.protocol import anchor_commit_protocol
+from topos.project.repo.scanner import NodeScanner, NodeCommit
 from phase.contract.registry import contract
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, parse_local, dispatch_cli
 

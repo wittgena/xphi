@@ -6,7 +6,7 @@ import redis.asyncio as redis_async
 from dataclasses import dataclass
 from typing import Callable, Optional
 from phase.node.cognitive.worker import CognitiveWorker
-from phase.session.context.assembler import ContextAssembler
+from topos.context.assembler import ContextAssembler
 from phase.field.client.local.engine import LLMEngine
 from phase.node.state.aggregator import InternalContext
 from bound.surface.emitter import get_emitter

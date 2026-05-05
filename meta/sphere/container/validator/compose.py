@@ -10,8 +10,8 @@ import re
 from pathlib import Path
 from typing import Dict, Tuple, List, Any
 
-from phase.contract.block.parser.md import MdAstParser 
-from phase.contract.block.extractor import BlockExtractor, Block
+from topos.project.block.parser.md import MdAstParser 
+from topos.project.block.extractor import BlockExtractor, Block
 from bound.surface.emitter import get_emitter
 
 log = get_emitter("validator.compose")

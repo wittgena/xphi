@@ -10,8 +10,8 @@ from typing import Any, Dict, List, Tuple
 from bound.surface.emitter import get_logger
 from phase.contract.proto.flow import ProtoFlow, FlowState, Transduction
 from phase.contract.registry import contract, registry
-from phase.contract.block.parser.md import MdAstParser
-from phase.contract.block.extractor import BlockExtractor
+from topos.project.block.parser.md import MdAstParser
+from topos.project.block.extractor import BlockExtractor
 
 log = get_logger("transcript.phi")
 

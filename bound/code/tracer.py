@@ -94,7 +94,7 @@ class CodeTracer:
         sys.path.insert(0, str(target_path.absolute()))
         original_argv = sys.argv.copy()
         try:
-            for phase_id, phase_space in self.topic_map.phase_spaces.items():
+            for phase_id, phase_space in self.topic_map.spaces.items():
                 for core_module in phase_space.core_modules:
                     module_name = core_module.path.replace('\\', '/').replace('/', '.').replace('.py', '')
 

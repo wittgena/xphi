@@ -14,7 +14,7 @@ from phase.contract.registry import contract
 from bound.surface.emitter import get_emitter
 from meta.flow.surface.projector import SurfaceProjector
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
-from phase.contract.block.parser.py import PyDotMdParser 
+from topos.project.block.parser.py import PyDotMdParser 
 
 log = get_emitter("bundle.project")
 

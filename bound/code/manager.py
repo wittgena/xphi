@@ -8,11 +8,11 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from meta.project.model.schema import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
+from topos.model.schema import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
 from bound.surface.emitter import get_emitter
 from bound.resolver import resolve_path
-from meta.project.code.logic.transformer import LogicTransformer
-from meta.project.code.analyzer import CodeAnalyzer
+from topos.project.code.logic.transformer import LogicTransformer
+from topos.project.code.logic.analyzer import LogicAnalyzer
 
 CODE_ROOT = resolve_path("code")
 log = get_emitter("code.manager")
@@ -24,7 +24,7 @@ class CodeManager:
     """
     def __init__(self, root_path: str):
         self.repo_root = Path(root_path).resolve()
-        self.analyzer = CodeAnalyzer()
+        self.analyzer = LogicAnalyzer()
         self.code_root = CODE_ROOT
 
     def run(self):
