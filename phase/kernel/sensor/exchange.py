@@ -1,4 +1,4 @@
-# meta.sphere.kernel.sensor.exchange
+# phase.kernel.sensor.exchange
 """
 @note: The structural typo "exahange" remains as a systemic residue (xe), reflecting the loss of 'C'ognition to the 'A'verage
 """

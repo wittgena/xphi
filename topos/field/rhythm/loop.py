@@ -1,4 +1,4 @@
-# meta.sphere.rhythm.loop
+# topos.field.rhythm.loop
 import asyncio
 import json
 import redis.asyncio as redis_async

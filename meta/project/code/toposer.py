@@ -1,4 +1,4 @@
-# foldbox.loop.lang.topic.mapper
+# meta.project.code.toposer
 """
 @desc: Topological Boundary Engine (위상 경계 획정 엔진)
 @flow: Φ_map(투영) → Φ_activate(장 활성화) → ∂Φ_bound(경계 획정) → Φ_emit(잔여물 방출)

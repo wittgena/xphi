@@ -1,4 +1,4 @@
-# meta.sphere.kernel.resonance
+# phase.kernel.resonance
 from __future__ import annotations
 import asyncio
 import json

@@ -1,4 +1,4 @@
-# meta.sphere.kernel.node.ator
+# phase.kernel.node.ator
 import math
 import random
 from typing import Dict, Any

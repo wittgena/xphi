@@ -1,4 +1,4 @@
-# meta.sphere.container.validator.promql
+# meta.ops.kube.validator.promql
 """
 @flow: Ψ(document) → Φ(config surface) → Φ′(validation kernel) → Ψ′(log projection)
 @topos: parsing → projection → validation → loop-check (closure detection)

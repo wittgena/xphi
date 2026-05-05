@@ -1,4 +1,4 @@
-# meta.flow.project.emit.readme
+# meta.project.emit.readme
 from pathlib import Path
 from bound.surface.emitter import get_logger
 from bound.resolver import resolve_path

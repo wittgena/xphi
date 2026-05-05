@@ -1,4 +1,4 @@
-# meta.sphere.container.scale.proactor
+# topos.field.sphere.scale.proactor
 import math
 import uuid
 from typing import Dict, Any, List, Optional

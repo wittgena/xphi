@@ -1,4 +1,4 @@
-# meta.flow.project.topic.modeler
+# meta.project.topic.modeler
 """@role: Topic Clustering Engine for Code Topos (Bound Interface Integrated)"""
 import sys
 import json

@@ -1,4 +1,4 @@
-# meta.sphere.kernel.sensor.kuramoto
+# phase.kernel.sensor.kuramoto
 import math
 import random
 from typing import List, Dict, Optional, Any

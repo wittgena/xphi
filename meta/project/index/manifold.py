@@ -1,4 +1,4 @@
-# meta.flow.project.index.manifold
+# meta.project.index.manifold
 import sys
 import json
 import asyncio

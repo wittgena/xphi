@@ -1,4 +1,4 @@
-# meta.sphere.kernel.sensor.ator
+# phase.kernel.sensor.ator
 import math
 import random
 from typing import List, Dict, Optional, Any

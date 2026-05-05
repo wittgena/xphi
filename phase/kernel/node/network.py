@@ -1,4 +1,4 @@
-# meta.sphere.kernel.node.network
+# phase.kernel.node.network
 import math
 import random
 from typing import Dict, Any, List, Optional

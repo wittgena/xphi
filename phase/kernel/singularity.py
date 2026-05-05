@@ -1,4 +1,4 @@
-# meta.sphere.kernel.singularity
+# phase.kernel.singularity
 from typing import List, Dict, Optional, Any
 from phase.contract.registry import contract
 from phase.proto.interface import ICriticalDetector, IPhaseField

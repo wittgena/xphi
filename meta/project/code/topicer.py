@@ -1,4 +1,4 @@
-# meta.flow.project.code.binder
+# meta.project.code.topicer
 """@flow: Scanner -> Tracer -> Registry -> Schema -> Interface"""
 import sys
 import json
@@ -10,7 +10,7 @@ from bound.code.schema import HypoRegistry
 from bound.code.tracer import CodeTracer 
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter
 from topos.project.code.topic.map import TopicMap
-from meta.flow.project.topic.modeler import run_topos_clustering
+from meta.project.topic.modeler import run_topos_clustering
 
 XOR_ROOT = resolve_path('xor')
 

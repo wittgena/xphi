@@ -1,4 +1,4 @@
-# meta.flow.project.emit.bundle
+# meta.project.emit.bundle
 import os
 import sys
 import re

@@ -1,4 +1,4 @@
-# meta.flow.project.emit.summarize
+# meta.project.emit.summarize
 import os
 import argparse
 import ast

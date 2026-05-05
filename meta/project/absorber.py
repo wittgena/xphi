@@ -1,4 +1,4 @@
-# meta.flow.project.absorber
+# meta.project.absorber
 """
 @flow: Ψ_total (files) -> sample (Anchor selection based on Dest size) → extract (AST imports) → resonance (similarity) → bind (absorb) → re-topologize
 """

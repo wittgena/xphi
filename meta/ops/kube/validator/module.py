@@ -1,4 +1,4 @@
-# meta.sphere.container.validator.module
+# meta.ops.kube.validator.module
 """
 @desc: 최종 위상(Topology) 및 PromQL 의존성 불변성 검증
 @phase: invariants_verified (Bootstrap Phase 6)

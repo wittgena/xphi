@@ -1,4 +1,4 @@
-# meta.sphere.container.validator.compose
+# meta.ops.kube.validator.compose
 """
 @flow: Ψ(document) → Φ(orchestration surface) → Φ′(compose kernel) → Ψ′(k8s projection)
 @topos: metadata_check → compose_validation → dependency_graph → transform_readiness

@@ -1,4 +1,4 @@
-# meta.sphere.kernel.config
+# phase.kernel.config
 import math
 import json
 from dataclasses import dataclass, asdict

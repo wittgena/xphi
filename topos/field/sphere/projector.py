@@ -1,4 +1,4 @@
-# meta.sphere.projector
+# topos.field.sphere.projector
 import asyncio
 import math
 import random

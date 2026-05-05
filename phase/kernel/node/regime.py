@@ -1,4 +1,4 @@
-# meta.sphere.kernel.node.regime
+# phase.kernel.node.regime
 import math
 import random
 from typing import Optional

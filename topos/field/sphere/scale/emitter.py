@@ -1,4 +1,4 @@
-# meta.sphere.container.scale.emitter
+# topos.field.sphere.scale.emitter
 import asyncio
 from kubernetes_asyncio import client, config
 from phase.reflect.event.psi import PsiEvent
