@@ -1,7 +1,7 @@
 # phase.node.cognitive.worker
 import asyncio
 from bound.surface.emitter import get_emitter
-from phase.field.client.local.engine import LLMEngine
+from phase.reflect.client.local.engine import LLMEngine
 from phase.node.state.aggregator import InternalContext
 from topos.context.assembler import ContextAssembler
 

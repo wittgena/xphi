@@ -8,10 +8,10 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from bound.surface.plane import SurfacePlane
-from phase.field.event.psi import PsiEvent, PsiCarrier
-from phase.field.bridge.rhythm import RhythmBridge
+from phase.reflect.event.psi import PsiEvent, PsiCarrier
+from phase.reflect.rhythm import RhythmBridge
 from bound.surface.emitter import get_emitter
-from topos.state.manifold.particle import ToposManifold, Particle
+from topos.field.particle import ToposManifold, Particle
 
 class TensionAccumulator(Particle):
     """@phase: Tension Accumulation (결핍 축적 및 자율 파열)"""

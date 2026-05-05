@@ -5,9 +5,9 @@ import time
 from abc import ABC, abstractmethod
 import redis.asyncio as redis_async
 from bound.surface.emitter import get_emitter
-from phase.field.event.psi import PsiEvent, PsiCarrier
+from phase.reflect.event.psi import PsiEvent, PsiCarrier
 from phase.node.sensor import sense_once
-from phase.field.event.bus import AsyncEventBus
+from phase.reflect.event.bus import AsyncEventBus
 from phase.node.dispatcher import Dispatcher
 
 SENSOR_INTERVAL = 1.0

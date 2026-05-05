@@ -4,8 +4,8 @@ import enum
 import logging
 from typing import List, Tuple, Any, Optional, Dict
 from bound.surface.emitter import get_emitter
-from phase.contract.proto.col import proto, get_proto, Proto
-from phase.contract.proto.flow import ProtoFlow, FlowState
+from phase.proto.col import proto, get_proto, Proto
+from phase.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import TransRule, PhaseSpec, NodeType
 
 log = get_emitter("state.node")

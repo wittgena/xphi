@@ -8,7 +8,7 @@ from pathlib import Path
 from bound.resolver import find_current_self, get_invoker
 from phase.contract.registry import contract
 from bound.surface.emitter import get_emitter
-from meta.flow.surface.aligner import FieldAligner, AlignRecord
+from phase.proto.surface.aligner import FieldAligner, AlignRecord
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 
 log = get_emitter("align.path")

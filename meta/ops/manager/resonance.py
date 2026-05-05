@@ -8,7 +8,7 @@ import threading
 import httpx
 from dataclasses import dataclass
 from typing import Optional
-from phase.field.client.local.engine import LLMEngine
+from phase.reflect.client.local.engine import LLMEngine
 from bound.surface.emitter import get_emitter
 
 log = get_emitter("manager.resonance")
@@ -114,7 +114,7 @@ class HandSurface(BaseSurface):
             log.info("[+] Hand Surface process terminated.")
 
     def get_engine(self):
-        from bound.reflect.hand.engine import OpenHandsEngine
+        from phase.reflect.hand.engine import OpenHandsEngine
         return lambda agent_usage: OpenHandsEngine(self.base_url, agent_usage)
 
 class SurfaceManager:

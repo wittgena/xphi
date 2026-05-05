@@ -6,7 +6,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from bound.surface.emitter import get_logger
-from bound.reflect.xphi.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
+from phase.reflect.xphi.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from bound.resolver import find_current_self, resolve_path
 from topos.project.block.extractor import extract_block_from_file, Block
 

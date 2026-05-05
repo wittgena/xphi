@@ -4,7 +4,7 @@ import yaml
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
-from bound.reflect.xphi.xor import Xor, SearchResult
+from phase.reflect.xphi.xor import Xor, SearchResult
 from bound.surface.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
 from topos.context.prompt.input import InputBundle, build_prompt 

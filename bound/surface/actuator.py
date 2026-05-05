@@ -3,7 +3,7 @@ import asyncio
 import random
 import time
 import re
-from phase.field.event.psi import PsiType
+from phase.reflect.event.psi import PsiType
 from bound.resolver import resolve_pattern
 from bound.surface.emitter import get_emitter
 

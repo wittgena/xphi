@@ -7,8 +7,8 @@ import asyncio
 import subprocess
 import importlib
 from typing import Callable, Any
-from phase.field.event.psi import PsiEvent, PsiCarrier
-from phase.field.event.contract import next_id, LogEvent
+from phase.reflect.event.psi import PsiEvent, PsiCarrier
+from phase.reflect.event.contract import next_id, LogEvent
 from dataclasses import asdict
 from bound.surface.plane import surface
 from bound.surface.emitter import get_logger, flow_scope

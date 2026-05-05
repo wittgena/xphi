@@ -14,11 +14,11 @@ import uuid
 import math
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.field.event.psi import PsiEvent
-from phase.field.event.bus import AsyncEventBus
-from phase.contract.proto.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
+from phase.reflect.event.psi import PsiEvent
+from phase.reflect.event.bus import AsyncEventBus
+from phase.proto.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
 from bound.surface.plane import SurfacePlane
-from meta.rhythm.coupler import RhythmCoupler
+from phase.field.rhythm.coupler import RhythmCoupler
 
 class SimpleKernel(IDynamicsKernel):
     """내부 장력(Tension)의 감쇠와 위상 전이를 계산하는 커널"""

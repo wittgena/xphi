@@ -12,9 +12,9 @@ from typing import Optional
 from meta.ops.kube.transcript import TranscriptEngine, Projector
 from bound.surface.emitter import get_emitter
 from bound.resolver import find_current_self, resolve_path
-from meta.sphere.container.validator.compose import FlowValidator, SelfExtractor
+from meta.ops.kube.validator.compose import FlowValidator, SelfExtractor
 
-log = get_emitter("ops.deploy")
+log = get_emitter("kube.deploy")
 
 def sanitize_id(name: str) -> str:
     """한글/특수문자 경로 문제를 방지하기 위한 ID 정규화"""

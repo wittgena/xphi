@@ -15,8 +15,8 @@ import asyncio
 import time
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.field.event.bus import AsyncEventBus
-from phase.contract.proto.interface import (
+from phase.reflect.event.bus import AsyncEventBus
+from phase.proto.interface import (
     IPhaseAtor,
     IPhaseField,
     IEventBus,

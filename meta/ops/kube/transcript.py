@@ -10,12 +10,12 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any
 from bound.resolver import find_current_self, resolve_path
-from meta.sphere.container.validator.compose import FlowValidator, SelfExtractor 
+from meta.ops.kube.validator.compose import FlowValidator, SelfExtractor 
 from topos.project.block.parser.md import MdAstParser
 from topos.project.block.extractor import BlockExtractor
 from bound.surface.emitter import get_emitter
 
-log = get_emitter("kube.loop")
+log = get_emitter("kube.trascript")
 
 def sanitize_name(name: str) -> str:
     """한글 및 특수문자를 제거하고 시스템 안전한 이름으로 변환"""

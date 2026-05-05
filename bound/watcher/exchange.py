@@ -2,7 +2,7 @@
 from __future__ import annotations
 import asyncio
 import json
-from phase.field.event.psi import PsiCarrier, PsiEvent
+from phase.reflect.event.psi import PsiCarrier, PsiEvent
 from bound.surface.emitter import get_emitter
 from bound.resolver import find_current_self
 from phase.node.runtime import NodeRuntime

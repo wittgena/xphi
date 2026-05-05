@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Set, List
 import redis.asyncio as airedis
-from phase.field.event.psi import PsiType
+from phase.reflect.event.psi import PsiType
 from bound.resolver import (
     find_current_self,
     resolve_path,

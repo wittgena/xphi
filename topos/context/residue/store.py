@@ -8,7 +8,7 @@ import sys
 from typing import List, Set, Any, Dict
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
-from phase.field.event.psi import PsiType
+from phase.reflect.event.psi import PsiType
 from bound.surface.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
 from phase.node.runtime import NodeRuntime

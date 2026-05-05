@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Set, Type, Protocol, runtime_checkable, Froz
 from pathlib import Path
 from dataclasses import dataclass
 from collections import defaultdict
-from phase.contract.proto.col import Proto
+from phase.proto.col import Proto
 
 @runtime_checkable
 class PhaseNode(Protocol):

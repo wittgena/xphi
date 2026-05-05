@@ -9,8 +9,8 @@ import subprocess
 import redis.asyncio as redis_async
 from typing import Callable, Any
 from pathlib import Path
-from phase.field.event.psi import PsiEvent, PsiCarrier
-from phase.field.event.contract import next_id, LogEvent
+from phase.reflect.event.psi import PsiEvent, PsiCarrier
+from phase.reflect.event.contract import next_id, LogEvent
 from dataclasses import asdict
 from phase.node.sensor import REDIS_URL
 from bound.surface.emitter import get_emitter, flow_scope

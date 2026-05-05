@@ -10,7 +10,7 @@ import json
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
-from phase.field.event.contract import next_id
+from phase.reflect.event.contract import next_id
 from topos.project.repo.node import RepoNode, AnchorNode
 from bound.resolver import resolve_path
 

@@ -1,7 +1,7 @@
 # phase.node.executor.dynamics
 from __future__ import annotations
 import asyncio
-from phase.field.event.contract import next_id, next_phase_id, parse_id, parse_phase_id 
+from phase.reflect.event.contract import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
 from phase.node.executor.base import BaseExecutor
 from phase.contract.registry import registry
