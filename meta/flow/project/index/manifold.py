@@ -8,8 +8,8 @@ from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEve
 from llama_index.core.schema import TextNode
 from llama_index.core import VectorStoreIndex
 from bound.surface.emitter import get_logger
-from phase.reflect.xphi.xor import Xor 
-from phase.reflect.xphi.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
+from meta.flow.xphi.xor import Xor 
+from meta.flow.xphi.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from bound.resolver import find_current_self, resolve_path
 from foldbox.folding import folding
 from topos.project.block.extractor import extract_block_from_file, Block

@@ -18,10 +18,10 @@ from phase.proto.flow import ProtoFlow, FlowState
 from topos.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 from topos.field.particle import ToposManifold
 from topos.state.proxy import DistributedNodePool
-from meta.flow.organizer.state import ToposOrganizer
-from topos.state.node import inject_pr_signal, PhaseNode, NodeType
-from topos.state.runtime import ToposRuntime
-from flow.surface.emitter import get_emitter
+from meta.ops.organizer.topos import ToposOrganizer
+from topos.state.node import inject_pr_signal, ToposNode, NodeType
+from topos.runtime import ToposRuntime
+from bound.surface.emitter import get_emitter
 
 log = get_emitter("topos.engine")
 
@@ -94,13 +94,13 @@ class SystemOrganizer:
 
         ## @structure: Defining the initial [CON-TEXT] boundary. 
         ## (Temporarily defined; to be loaded from storage in reality)
-        current_phase = PhaseNode(spec={
+        current_phase = ToposNode(spec={
             "name": "root", "kind": NodeType.ANCHOR,
             "children": {
-                "self": PhaseNode(spec={
+                "self": ToposNode(spec={
                     "name": "field", "kind": NodeType.CORE,
                     "children": {
-                        "stable_core": PhaseNode(spec={"name": "stable_core", "kind": NodeType.CORE, "content": "Legacy Logic"})
+                        "stable_core": ToposNode(spec={"name": "stable_core", "kind": NodeType.CORE, "content": "Legacy Logic"})
                     }
                 })
             }

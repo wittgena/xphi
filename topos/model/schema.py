@@ -1,6 +1,6 @@
 # topos.model.schema
 from typing import TypedDict, List, Dict, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 class MetaModel(TypedDict):
     total_modules: int

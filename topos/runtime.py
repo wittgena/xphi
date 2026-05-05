@@ -8,7 +8,7 @@ from bound.surface.emitter import get_emitter
 from phase.proto.col import proto, get_proto, Proto
 from phase.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import PhaseSpec, TransRule, NodeType
-from topos.state.node import LinkerNode, InversionNode, PhaseNode, ResidueType
+from topos.state.node import LinkerNode, InversionNode, ToposNode, ResidueType
 
 log = get_emitter("topos.runtime")
 

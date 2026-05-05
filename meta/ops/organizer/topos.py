@@ -9,15 +9,15 @@ from phase.proto.col import get_proto
 from phase.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import PhaseSpec, TransRule
 from topos.state.proxy import DistributedNodePool
-from topos.state.node import LinkerNode, InversionNode, PhaseNode, NodeType
-from topos.state.runtime import ToposRuntime
+from topos.state.node import LinkerNode, InversionNode, ToposNode, NodeType
+from topos.runtime import ToposRuntime
 
 log = get_emitter("organizer.topos")
 
 NODE_REGISTRY = {
     "linker": LinkerNode,
     "inversion": InversionNode,
-    "phase": PhaseNode
+    "topos": ToposNode
 }
 
 class ToposOrganizer:
@@ -83,18 +83,18 @@ async def main():
         )
         flow_controller.attach()
 
-        phase = PhaseNode(spec={
+        topos = ToposNode(spec={
             "name": "root",
             "kind": NodeType.ANCHOR,
             "children": {
-                "self": PhaseNode(spec={
+                "self": ToposNode(spec={
                     "name": "field",
                     "kind": NodeType.CORE,
                     "children": {
-                        "legacy_symlink": PhaseNode(
+                        "legacy_symlink": ToposNode(
                             spec={ "name": "legacy_symlink", "kind": NodeType.SYMLINK, "ref_target": "ext_src" }
                         ),
-                        "stable_core": PhaseNode(
+                        "stable_core": ToposNode(
                             spec={ "name": "stable_core", "kind": NodeType.CORE, "content": "existing logic" }
                         )
                     }
@@ -110,7 +110,7 @@ async def main():
         ## 자가 유도 활성화 - payload에 'target_spec'이 없으므로 LinkerNode가 'legacy_symlink'를 스스로 서치
         initial_flow = ProtoFlow(payload={}, aspect="root")
         initial_ctx = FlowState(initial_flow, state={
-            "phase_root": phase,
+            "topos_root": topos,
             "external_rules": external_pr_rules  # 외부 신호 주입
         })
 

@@ -16,7 +16,7 @@ from phase.node.receptor.trajectory import (
     SlidingWindowStrategy,
     WindowProjector
 )
-from phase.field.sphere.scale.emitter import ScaleEmitter
+from topos.field.sphere.scale.emitter import ScaleEmitter
 from bound.surface.emitter import get_emitter
 
 class ToposField(IPhaseField):

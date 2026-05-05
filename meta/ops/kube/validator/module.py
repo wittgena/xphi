@@ -13,7 +13,7 @@ from bound.surface.emitter import get_emitter
 from phase.contract.registry import cli_contract
 from topos.project.block.parser.md import MdAstParser
 from topos.project.block.extractor import BlockExtractor
-from meta.sphere.container.validator.promql import MarkdownConfigExtractor, PromQLValidator, LoopTopologyValidator
+from meta.ops.kube.validator.promql import MarkdownConfigExtractor, PromQLValidator, LoopTopologyValidator
 
 log = get_emitter("validator.module")
 

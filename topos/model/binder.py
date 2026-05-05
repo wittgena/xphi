@@ -18,7 +18,7 @@ from topos.model.pos.sensor import PosSensor
 
 log = get_logger("lang.binder")
 
-class LangManifold:
+class ModelManifold:
     """추출된 Φ 노드와 이들 간의 결합(Edge)을 관리하는 데이터 필드"""
     
     def __init__(self):
@@ -50,7 +50,7 @@ class ModelBinder:
 
     def __init__(self):
         self.sensor = PosSensor()
-        self.manifold = LangManifold()
+        self.manifold = ModelManifold()
         self.model_root = resolve_path('model')
         self.output_path = resolve_path("xor") / "node" / "model.bound.json"
 

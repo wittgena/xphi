@@ -18,7 +18,7 @@ from phase.reflect.event.psi import PsiEvent
 from phase.reflect.event.bus import AsyncEventBus
 from phase.proto.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
 from bound.surface.plane import SurfacePlane
-from phase.field.rhythm.coupler import RhythmCoupler
+from topos.field.rhythm.coupler import RhythmCoupler
 
 class SimpleKernel(IDynamicsKernel):
     """내부 장력(Tension)의 감쇠와 위상 전이를 계산하는 커널"""

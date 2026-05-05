@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, List, Union
 from bound.surface.emitter import get_logger
 from bound.resolver import resolve_path, get_invoker
 from topos.model.schema import EntryNode, RenderingData, _extract_rel_attr, EntryTemplate
-from topos.model.lang.binder import LangBinder
+from topos.model.binder import ModelBinder
 from phase.reflect.schema import ResonanceGraph, ResonanceNode
 from phase.contract.registry import cli_contract
 from phase.node.executor.cli import dispatch_cli, execute_cli_task, CliTaskAdapter, parse_local
@@ -159,7 +159,7 @@ class ModelSurfacer:
     def execute(self):
         if not self.fixed_graph_path.exists():
             log.info("[Auto-Bind] Graph topology missing. Orchestrating ModelBinder...")
-            binder = LangBinder()
+            binder = ModelBinder()
             if self.target_dir:
                 binder.model_root = resolve_path('model') / self.target_dir
                 log.info(f"[Auto-Bind] Focusing bind scope to directory: {binder.model_root}")

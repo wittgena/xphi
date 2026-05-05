@@ -16,8 +16,8 @@ from bound.surface.plane import SurfacePlane
 from bound.surface.emitter import get_emitter
 from phase.reflect.rhythm import RhythmBridge
 from bound.surface.emitter import get_emitter
-from topos.field.particle import PhaseManifold, Particle
-from topos.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from topos.field.particle import ToposManifold, Particle
+from topos.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("field.dynamics")
 
@@ -40,7 +40,7 @@ class FieldDynamics:
 
         while True:
             await asyncio.sleep(1)
-            log.info(f"[Monitor] Field active. Nodes: {len(PhaseManifold._instances)} | Tick: {PhaseManifold.global_tick}")
+            log.info(f"[Monitor] Field active. Nodes: {len(ToposManifold._instances)} | Tick: {ToposManifold.global_tick}")
 
     async def _listen_signals(self):
         ## @phase: Signal ingress boundary (External -> Internal)
@@ -66,26 +66,26 @@ class FieldDynamics:
             SurfacePlane.record(time.time(), "PERTURB", "[⚡] ENTROPY FLUSH: Global Phase Reset", "CRIT")
             
             tasks = [
-                inst.phase_reset() for inst in PhaseManifold._instances 
+                inst.phase_reset() for inst in ToposManifold._instances 
                 if hasattr(inst, 'phase_reset')
             ]
             if tasks: await asyncio.gather(*tasks)
             
             ## @point: Dissipate all topological residue queues
-            for q in (PhaseManifold.void_gap, PhaseManifold.projection_flow, PhaseManifold.collapse_field):
+            for q in (ToposManifold.void_gap, ToposManifold.projection_flow, ToposManifold.collapse_field):
                 while not q.empty(): q.get_nowait()
 
         elif sig_type == "topos:inject":
             ## @point: External demand tension injection
             SurfacePlane.record(time.time(), "INJECT", "[External] Demand Tension Injected", "WARN")
-            await PhaseManifold.void_gap.put({
+            await ToposManifold.void_gap.put({
                 "id": f"rupture.inject.{uuid.uuid4().hex[:4]}", 
                 "parent_id": "ext-inject-event"
             })
 
         elif sig_type == "origin:run":
             ## @point: Initial engine ignition
-            if not PhaseManifold._instances and self.dynamics_task is None:
+            if not ToposManifold._instances and self.dynamics_task is None:
                 self.dynamics_task = asyncio.create_task(self._flow_dynamics())
             else:
                 log.info("[System] Dynamics field is already oscillating.")
@@ -97,7 +97,7 @@ class FieldDynamics:
             
             tasks = [
                 inst.update_multiplier(new_factor) 
-                for inst in PhaseManifold._instances 
+                for inst in ToposManifold._instances 
                 if isinstance(inst, ReentryInversion)
             ]
             if tasks: await asyncio.gather(*tasks)

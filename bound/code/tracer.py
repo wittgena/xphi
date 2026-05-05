@@ -12,7 +12,7 @@ import importlib
 import sys
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional
-from bound.code.schema import HypoRegistry, TopicMap
+from topos.project.code.topic.map import TopicMap
 
 class TraceReflector:
     """@flow: access → ∂Φ trace"""
