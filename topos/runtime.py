@@ -5,8 +5,8 @@ import logging
 from typing import List, Tuple, Any, Optional, Dict
 from dataclasses import field
 from bound.surface.emitter import get_emitter
-from phase.proto.col import proto, get_proto, Proto
-from phase.proto.flow import ProtoFlow, FlowState
+from arch.contract.protocol import proto, get_proto, Proto
+from arch.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import PhaseSpec, TransRule, NodeType
 from topos.state.node import LinkerNode, InversionNode, ToposNode, ResidueType
 

@@ -9,7 +9,7 @@ from collections import defaultdict
 from bound.resolver import find_current_self, resolve_path
 from anchor.around import discover_repos
 from bound.surface.emitter import get_emitter
-from phase.contract.registry import contract
+from arch.contract.registry import contract
 
 SELF_ROOT = find_current_self()
 CONTRACT_ROOT = resolve_path('contract')

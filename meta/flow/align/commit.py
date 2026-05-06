@@ -9,7 +9,7 @@ from bound.resolver import find_current_self, get_invoker
 from topos.project.repo.node import RepoNode, AnchorNode
 from topos.project.repo.protocol import anchor_commit_protocol
 from topos.project.repo.scanner import NodeScanner, NodeCommit
-from phase.contract.registry import contract
+from arch.contract.registry import contract
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, parse_local, dispatch_cli
 
 log = get_emitter("align.commit", mode="SLIM")

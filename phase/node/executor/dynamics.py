@@ -4,7 +4,7 @@ import asyncio
 from phase.reflect.event.contract import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
 from phase.node.executor.base import BaseExecutor
-from phase.contract.registry import registry
+from arch.contract.registry import registry
 
 class PhaseField(type(BaseExecutor)):
     """@phase.bound: 클래스 생성 시점에 고유한 Snowflake ID 부여"""

@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 from foldbox.server.api import api
 from phase.reflect.hand.middleware import ResonanceMiddleware
-from phase.contract.registry import contract
+from arch.contract.registry import contract
 from bound.surface.emitter import get_emitter
 from bound.resolver import find_current_self, resolve_path
 

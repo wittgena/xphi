@@ -10,9 +10,9 @@ from typing import Generic, TypeVar, List, Tuple, Dict, Any, Optional
 from pathlib import Path
 from collections import defaultdict
 from bound.resolver import find_current_self, resolve_path, get_invoker
-from phase.contract.registry import contract
+from arch.contract.registry import contract
 from bound.surface.emitter import get_emitter
-from phase.proto.surface.projector import SurfaceProjector
+from arch.surface.projector import SurfaceProjector
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 from topos.project.block.parser.py import PyDotMdParser 
 

@@ -11,7 +11,7 @@ from bound.resolver import resolve_path, get_invoker
 from topos.model.schema import EntryNode, RenderingData, _extract_rel_attr, EntryTemplate
 from topos.model.binder import ModelBinder
 from phase.reflect.schema import ResonanceGraph, ResonanceNode
-from phase.contract.registry import cli_contract
+from arch.contract.registry import cli_contract
 from phase.node.executor.cli import dispatch_cli, execute_cli_task, CliTaskAdapter, parse_local
 
 log = get_logger("model.surfacer")

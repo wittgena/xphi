@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
 from bound.resolver import find_current_self, resolve_path
-from phase.contract.registry import contract
+from arch.contract.registry import contract
 from phase.node.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
 from topos.project.code.topic.registry import TopicMap
 from topos.project.code.topic.tracer import TopicTracer

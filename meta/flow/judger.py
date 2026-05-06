@@ -1,10 +1,10 @@
-# foldbox.rag.lang.judgment
+# meta.flow.judger
 import asyncio
 import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 from foldbox.client.lm import LocalLM
-from topos.context.residue.store import ResidueStore, ResidueSnapshot
+from meta.context.residue.store import ResidueStore, ResidueSnapshot
 from bound.surface.emitter import get_emitter
 
 log = get_emitter("flow.judger")

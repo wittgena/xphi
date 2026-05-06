@@ -1,4 +1,4 @@
-# foldbox.rag.lang.phase
+# meta.flow.rhythm
 """
 @flow:
 Ψ (event)
@@ -15,9 +15,9 @@ from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from phase.reflect.event.psi import PsiEvent
 from phase.reflect.event.bus import AsyncEventBus
-from phase.proto.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
+from phase.reflect.rhythm.coupler import RhythmCoupler
+from arch.contract.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
 from bound.surface.plane import SurfacePlane
-from topos.field.rhythm.coupler import RhythmCoupler
 
 class SimpleKernel(IDynamicsKernel):
     def compute_step(self, states, dt):

@@ -9,9 +9,9 @@ from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from bound.surface.plane import SurfacePlane
 from phase.reflect.event.psi import PsiEvent, PsiCarrier
-from phase.reflect.rhythm import RhythmBridge
+from phase.reflect.rhythm.bridge import RhythmBridge
 from bound.surface.emitter import get_emitter
-from topos.field.particle import ToposManifold, Particle
+from topos.model.manifold.particle import ToposManifold, Particle
 
 class TensionAccumulator(Particle):
     """@phase: Tension Accumulation (결핍 축적 및 자율 파열)"""

@@ -1,4 +1,4 @@
-# meta.flow.plan.visualizer
+# meta.flow.work.visualizer
 import re
 import os
 import time

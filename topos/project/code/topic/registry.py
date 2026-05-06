@@ -1,4 +1,4 @@
-# topos.project.code.topic.map
+# topos.project.code.topic.registry
 import json
 from typing import Any, Callable, Dict, Optional, Union, List, Any
 from pydantic import BaseModel, Field, ConfigDict

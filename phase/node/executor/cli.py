@@ -16,7 +16,7 @@ from phase.node.sensor import REDIS_URL
 from bound.surface.emitter import get_emitter, flow_scope
 from bound.surface.plane import surface
 from bound.resolver import get_invoker
-from phase.contract.registry import registry
+from arch.contract.registry import registry
 from phase.node.executor.result import TaskSummaryEvent, TaskDetailRecord
 from phase.node.executor.base import BaseExecutor
 

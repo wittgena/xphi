@@ -2,7 +2,7 @@
 import asyncio
 from typing import Dict, Any, List, Optional
 from phase.reflect.event.psi import PsiEvent
-from phase.proto.interface import IPhaseAtor, IPhaseField, IEventBus
+from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from bound.surface.emitter import get_emitter
 
 class AsyncEventBus(IEventBus):

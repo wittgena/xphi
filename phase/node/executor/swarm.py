@@ -12,7 +12,7 @@ from phase.reflect.event.contract import next_id, LogEvent
 from dataclasses import asdict
 from bound.surface.plane import surface
 from bound.surface.emitter import get_logger, flow_scope
-from phase.contract.registry import registry
+from arch.contract.registry import registry
 from phase.node.executor.base import BaseExecutor
 from phase.node.executor.cli import _GenericCliExecutor
 

@@ -5,8 +5,8 @@ import redis.asyncio as redis_async
 from typing import Dict, Any
 from bound.surface.emitter import get_emitter
 from phase.node.runtime import NodeRuntime
-from phase.proto.col import get_proto
-from phase.proto.flow import ProtoFlow, FlowState
+from arch.contract.protocol import get_proto
+from arch.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import PhaseSpec, TransRule
 from topos.state.proxy import DistributedNodePool
 from topos.state.node import LinkerNode, InversionNode, ToposNode, NodeType

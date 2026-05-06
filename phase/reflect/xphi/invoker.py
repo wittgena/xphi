@@ -17,7 +17,7 @@ from typing import Callable, List, Dict, Any
 import redis.asyncio as redis_async
 from bound.surface.emitter import get_logger
 from bound.resolver import find_current_self, resolve_path
-from phase.proto.interface import IEventBus, IPhaseField, IPhaseAtor
+from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
 from phase.reflect.event.psi import PsiEvent
 from phase.reflect.xphi.runtime import XPhiRuntime
 from phase.reflect.client.stream import StreamClient

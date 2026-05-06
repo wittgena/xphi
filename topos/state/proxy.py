@@ -8,7 +8,7 @@ import json
 from typing import Optional, Any
 from bound.surface.emitter import get_emitter
 from phase.reflect.event.psi import PsiEvent
-from phase.proto.flow import ProtoFlow
+from arch.proto.flow import ProtoFlow
 
 log = get_emitter("state.proxy")
 

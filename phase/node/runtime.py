@@ -10,7 +10,7 @@ import redis.asyncio as redis_async
 from phase.reflect.event.psi import PsiEvent, PsiCarrier
 from phase.reflect.event.bus import AsyncEventBus
 from phase.reflect.event.contract import next_id
-from phase.proto.interface import IPhaseAtor, IPhaseField
+from arch.contract.interface import IPhaseAtor, IPhaseField
 from bound.surface.emitter import get_emitter
 from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
@@ -18,15 +18,15 @@ from phase.node.interpreter import NodeInterpreter, AnchorFlow
 from bound.surface.sink import RedisSink
 from bound.surface.actuator import SurfaceActuator
 from bound.resolver import resolve_path, find_current_self
-from phase.contract.registry import registry
-from phase.contract.discover import discover_modules
+from arch.contract.registry import registry
+from arch.contract.discover import discover_modules
 from phase.node.executor.swarm import SwarmCliExecutor
 from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
 from phase.node.cognitive.coupler import CognitiveCoupler
 from phase.node.cognitive.worker import CognitiveWorker
 from phase.node.state.aggregator import KernelStateAggregator
 from phase.reflect.client.local.engine import LLMEngine
-from topos.context.assembler import ContextAssembler
+from meta.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
