@@ -11,7 +11,9 @@ from phase.node.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
 from arch.project.code.topic.registry import TopicMap
 from arch.project.code.topic.tracer import TopicTracer
 from arch.project.code.topic.modeler import run_topos_clustering
+from phase.bound.plane.emitter import get_emitter
 
+log = get_emitter("code.prober")
 CODE_ROOT = resolve_path('code')
 
 class ProjectMapper:
@@ -35,29 +37,29 @@ class FieldActivator:
     """[Phase 1] 환경 설정 및 위상 지도 로드 (자동화 적용)"""
     @staticmethod
     def activate(target_path: Path) -> Optional[TopicMap]:
-        print(f"[Binder:Session] Field Activation: {target_path}")
+        log.info(f"[Binder:Session] Field Activation: {target_path}")
         ProjectMapper.setup_workspace(target_path)
         
         repo_name = target_path.name
         topic_json = CODE_ROOT / "topic" / f"{repo_name}.json"
         if not topic_json.exists():
-            print(f"[*] TopicMap missing for '{repo_name}'. Triggering Topology Scanner...")
+            log.info(f"[*] TopicMap missing for '{repo_name}'. Triggering Topology Scanner...")
             try:
                 run_topos_clustering(repo_name)
             except ImportError as e:
-                print(f"[!] Failed to import Topic Engine: {e}")
+                log.info(f"[!] Failed to import Topic Engine: {e}")
                 return None
             except Exception as e:
-                print(f"[!] Topic clustering execution failed: {e}")
+                log.info(f"[!] Topic clustering execution failed: {e}")
                 return None
         
         if topic_json.exists():
             try:
                 t_map = TopicMap.load_from_json(str(topic_json))
-                print(f"[*] Topos Map Loaded: {len(t_map.spaces)} Phases detected.")
+                log.info(f"[*] Topos Map Loaded: {len(t_map.spaces)} Phases detected.")
                 return t_map
             except Exception as e:
-                print(f"[!] Map Load Failure: {e}")
+                log.info(f"[!] Map Load Failure: {e}")
         return None
 
 class StratifiedStorage:
@@ -126,10 +128,10 @@ class EmergenceReporter:
         bound = len([v for v in hypotheses.values() if v.status == "bound.map"])
         rate = (bound / total * 100) if total > 0 else 0
 
-        print(f"## [Emergence] Structural Evolution: {repo_name.upper()}")
-        print(f"- Total Hypotheses : {total}")
-        print(f"- Bounds      : {bound} ({rate:.1f}%)")
-        print(f"- Storage Path     : {output_path.absolute()}")
+        log.info(f"## [Emergence] Structural Evolution: {repo_name.upper()}")
+        log.info(f"- Total Hypotheses : {total}")
+        log.info(f"- Bounds      : {bound} ({rate:.1f}%)")
+        log.info(f"- Storage Path     : {output_path.absolute()}")
 
 class CodeProber:
     def __init__(self, target_repo: str):
@@ -141,7 +143,7 @@ class CodeProber:
     def run(self, **kwargs):
         self.topic_map = FieldActivator.activate(self.target_path)
         if not self.topic_map:
-            print("[!] Analysis aborted due to missing TopicMap.")
+            log.info("[!] Analysis aborted due to missing TopicMap.")
             return {"status": "fail", "reason": "Missing TopicMap"}
 
         self.binder = TopicTracer(topic_map=self.topic_map)

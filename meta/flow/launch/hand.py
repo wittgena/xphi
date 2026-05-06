@@ -1,4 +1,4 @@
-# phase.reflect.hand.launcher
+# meta.flow.launch.hand
 """@flow: Ψ(import) → ∂Φ(boundary) → Φ(local override) → Φ(surface)"""
 import sys
 import uvicorn
@@ -11,7 +11,7 @@ from arch.contract.registry import contract
 from phase.bound.plane.emitter import get_emitter
 from phase.bound.resolver import find_current_self, resolve_path
 
-log = get_emitter("hand.launcher")
+log = get_emitter("launcher.hand")
 
 SELF_ROOT = find_current_self()
 api.add_middleware(ResonanceMiddleware)
@@ -19,7 +19,7 @@ api.add_middleware(ResonanceMiddleware)
 @contract.cli(
     name="serve", 
     args=["--host", "--port", "--log-level"], 
-    tags=["ary", "hand", "launcher"],
+    tags=["hand", "launcher"],
     entry="main"
 )
 def main():

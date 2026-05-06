@@ -1,4 +1,4 @@
-# meta.ops.observer.aura
+# meta.ops.daemon.observer.aura
 import asyncio
 import random
 import urllib.request

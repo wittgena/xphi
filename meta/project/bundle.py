@@ -1,4 +1,4 @@
-# meta.project.emit.bundle
+# meta.project.bundle
 import os
 import sys
 import re
@@ -16,7 +16,7 @@ from arch.proto.projector import SurfaceProjector
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 from arch.project.block.parser.py import PyDotMdParser 
 
-log = get_emitter("bundle.project")
+log = get_emitter("project.bundle")
 
 DELIMITER = "#####"
 
@@ -182,19 +182,19 @@ class ProjectBundler(SurfaceProjector[Path, Optional[Dict[str, Any]], Tuple[str,
                 log.error(f"[WRITE ERROR] {out_path}: {e}")
 
 def entry_task(args):
-    parser = argparse.ArgumentParser(description="Compile project topos into a grouped markdown.")
+    parser = argparse.ArgumentParser(description="Compile project bundle into a grouped markdown.")
     parser.add_argument("--repo", type=str, required=True, help="Target input path. E.g., flow/dev")
     args = parser.parse_args(args)
     compiler = ProjectBundler(target_repo=args.repo)
     return CliTaskAdapter(compiler.compile)
 
-@contract.cli(name="emit.bundle", recept=[])
+@contract.cli(name="project.bundle", recept=[])
 def main():
     bound_args, remain = parse_local(sys.argv[1:])
     if bound_args.local:
         entry_task(remain).run()
     else:
-        dispatch_cli("emit.bundle", entry_task, __file__)
+        dispatch_cli("project.bundle", entry_task, __file__)
 
 if __name__ == "__main__":
     main()

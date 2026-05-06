@@ -1,4 +1,4 @@
-# meta.ops.observer.cloud
+# meta.ops.daemon.observer.cloud
 """
 @desc: Topos-aligned Theoria Observation Loop (AWS)
 

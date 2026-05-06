@@ -95,12 +95,11 @@ class NodeRuntime(IPhaseAtor):
 
     def _create_phase_handler(self, coupler: CognitiveCoupler):
         def handler(psi: PsiEvent):
-            # 1. 반사계의 판단 (Sync)
+            ## 반사계의 판단 (Sync)
             judgment = self.interpreter.process(psi.carrier)
             
-            # 2. 교량으로 이관 (Fire and Forget)
+            ## 교량으로 이관 (Fire and Forget)
             coupler.ingest(psi.carrier, judgment)
-            
             return {
                 "psi": judgment.psi_symbol,
                 "action": judgment.action.value,

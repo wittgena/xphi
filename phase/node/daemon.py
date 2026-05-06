@@ -2,6 +2,7 @@
 import asyncio
 import json
 import time
+import random
 from abc import ABC, abstractmethod
 import redis.asyncio as redis_async
 from phase.bound.plane.emitter import get_emitter
@@ -66,6 +67,7 @@ class CaptureDaemon(AbstractDaemon):
         self.redis = redis
         self.dispatcher = dispatcher
         self.node = node
+        self.base_timeout = idle_timeout  
         self.idle_timeout = idle_timeout
         self.last_active_time = time.time()
 
@@ -82,14 +84,29 @@ class CaptureDaemon(AbstractDaemon):
                     
                     psi = PsiEvent(**event_dict)
                     self.last_active_time = time.time()
-                    
-                    # 위상 정합성 확인 및 분배
+                    self.idle_timeout = self.base_timeout 
                     await self.dispatcher.send(psi)
                 else:
                     if time.time() - self.last_active_time > self.idle_timeout:
-                        self.log.warn(f"Idle for {self.idle_timeout}s. Self-evaporating...")
-                        asyncio.create_task(self.node.shutdown())
-                        break
+                        ## [항상성 확인]: 현재 생존 중인 노드 수 파악
+                        active_nodes = await self.redis.keys("runtime:heartbeat:*")
+                        if len(active_nodes) <= 1:
+                            ## [변이 적용]: 최후의 1인일 경우 90% + 랜덤 지터(±5초)
+                            decayed = self.idle_timeout * 0.9
+                            jitter = random.uniform(-5.0, 5.0)
+                            
+                            ## 하한선 10초를 보장하여 음수나 과도한 폴링 방지
+                            self.idle_timeout = max(10.0, decayed + jitter)
+                            self.last_active_time = time.time()
+                            self.log.warn(
+                                f"Last node standing. Evaporation aborted. "
+                                f"Idle timeout mutated to {self.idle_timeout:.1f}s"
+                            )
+                        else:
+                            ## 다른 노드가 존재하면 정상적으로 증발(Evaporation)
+                            self.log.warn(f"Idle for {self.idle_timeout:.1f}s. Self-evaporating...")
+                            asyncio.create_task(self.node.shutdown())
+                            break
             except asyncio.CancelledError:
                 break
             except Exception as e:

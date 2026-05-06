@@ -1,4 +1,4 @@
-# meta.ops.observer.phase
+# meta.ops.daemon.observer.phase
 import asyncio
 import json
 import time

@@ -1,4 +1,4 @@
-# meta.ops.manager.topos
+# meta.ops.daemon.observer.surface
 import asyncio
 import time
 import json
@@ -11,7 +11,7 @@ from phase.bound.resolver import find_current_self
 from arch.contract.registry import contract
 from phase.node.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
 
-class SurfaceManager:
+class SurfaceObserver:
     """
     @role: Topology Steward / Manifold Manager
     @desc: 위상 공간(Redis)의 엔트로피를 제어하는 선택적 백그라운드 관리자
@@ -146,7 +146,7 @@ def entry_task(args):
     parser.add_argument("--tasks", type=str, default="all", help="Comma-separated list of tasks to run (gc, trim, quarantine, digest) or 'all'")
     parser.add_argument("--plan-only", action="store_true", help="Print the task.plan and exit without executing anything")
     parsed_args = parser.parse_args(args)
-    manager = SurfaceManager()
+    manager = SurfaceObserver()
     
     if parsed_args.tasks.lower() == "all":
         active_list = list(manager.task_registry.keys())
@@ -159,10 +159,10 @@ def entry_task(args):
     }
     return CliTaskAdapter(manager.run, **run_kwargs)
 
-@contract.cli(name="topos.manager", recept=[])
+@contract.cli(name="observer.surface", recept=[])
 def main():
     bound_args, remain = parse_local(sys.argv[1:])
-    dispatch_cli("topos.manager", entry_task, __file__)
+    dispatch_cli("observer.surface", entry_task, __file__)
 
 if __name__ == "__main__":
     main()

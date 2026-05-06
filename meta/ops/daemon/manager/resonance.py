@@ -1,4 +1,4 @@
-# meta.ops.manager.resonance
+# meta.ops.daemon.manager.resonance
 from abc import ABC, abstractmethod
 import os
 import subprocess
@@ -67,7 +67,7 @@ class HandSurface(BaseSurface):
 
     def up(self):
         log.info(f"[*] Booting Hand Surface on {self.base_url}...")
-        cmd = [sys.executable, "-m", "bound.resonance.hand.launcher", "--host", self.config.host, "--port", str(self.config.port)]
+        cmd = [sys.executable, "-m", "meta.flow.launch.hand", "--host", self.config.host, "--port", str(self.config.port)]
         env = {**os.environ, "LOG_JSON": "true", "PYTHONUNBUFFERED": "1", "OPENHANDS_SUPPRESS_BANNER": "1"}
         self.process = subprocess.Popen(
             cmd,

@@ -1,4 +1,4 @@
-# meta.project.surfacer
+# meta.project.model.surfacer
 import os
 import sys
 import json
@@ -185,13 +185,13 @@ def entry_task(args):
     )
     return CliTaskAdapter(orchestrator.execute)
 
-@cli_contract(name="project.surfacer", recept=["lang.binder"])
+@cli_contract(name="model.surfacer", recept=["lang.binder"])
 def main():
     bound_args, remain = parse_local(sys.argv[1:])
     if bound_args.local:
         entry_task(remain).run()
     else:
-        dispatch_cli("project.surfacer", entry_task, __file__)
+        dispatch_cli("model.surfacer", entry_task, __file__)
 
 if __name__ == "__main__":
     main()

@@ -1,10 +1,10 @@
-# meta.project.emit.readme
+# meta.project.readme
 from pathlib import Path
 from phase.bound.plane.emitter import get_logger
 from phase.bound.resolver import resolve_path
 from datetime import datetime
 
-BASE_ROOT = resolve_path('base')
+MODEL_ROOT = resolve_path('model')
 log = get_logger("project.readme")
 
 ## README 기본 템플릿 정의
@@ -29,7 +29,7 @@ class ReadmeGenerator:
     @phase: Φ_local → README.md
     """
     def __init__(self, repo_name: str):
-        self.target_dir = BASE_ROOT / repo_name
+        self.target_dir = MODEL_ROOT / repo_name
         if not self.target_dir.exists() or not self.target_dir.is_dir():
             raise FileNotFoundError(f"Target repository directory not found: {self.target_dir}")
 
@@ -76,17 +76,14 @@ class ReadmeGenerator:
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Repository README Generator with Template")
-    
     parser.add_argument(
-        "--dir", 
+        "--repo", 
         required=True, 
         help="Target repository name in 'model' directory to generate README.md"
     )
-    
     args = parser.parse_args()
-
     try:
-        generator = ReadmeGenerator(args.dir)
+        generator = ReadmeGenerator(args.repo)
         generator.generate()
     except Exception as e:
         log.error(f"Process failed: {e}")

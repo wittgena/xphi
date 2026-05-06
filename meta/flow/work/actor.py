@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from pathlib import Path
 from phase.bound.plane.emitter import get_emitter
 from phase.bound.resolver import resolve_path
-from meta.ops.manager.resonance import managed_resonance
+from meta.ops.daemon.manager.resonance import managed_resonance
 
 WORKSPACE = resolve_path("workspace")
 log = get_emitter("work.actor")
