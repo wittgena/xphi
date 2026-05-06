@@ -11,7 +11,7 @@ from llama_index.core.prompts import PromptTemplate
 from bound.surface.emitter import get_logger
 from bound.resolver import resolve_path
 
-log = get_logger("context.code")
+log = get_logger("rag.code")
 
 try:
     METADATA_ROOT = resolve_path("io") / "metadata"

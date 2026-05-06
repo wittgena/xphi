@@ -9,7 +9,7 @@ from tqdm import tqdm
 from collections import defaultdict, Counter
 from gensim import corpora, models
 from bound.surface.emitter import get_emitter
-from topos.project.code.topic.map import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
+from topos.project.code.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
 from bound.resolver import find_current_self, resolve_path
 from topos.project.block.parser.topos import ToposAstParser
 
@@ -17,13 +17,13 @@ log = get_emitter("topic.modeler")
 
 try:
     WORKSPACE_ROOT = find_current_self()
-    OUTPUT_ROOT = resolve_path("xor") / "bound"
+    OUTPUT_ROOT = resolve_path("code") / "topic"
 except Exception as e:
     log.error(f"[Critical] 시스템 위상 로드 실패: {e}")
     sys.exit(1)
 
 # Parameters
-REPOS = ['meta', 'phase', 'theoria']
+REPOS = ['subst', 'theoria']
 NUM_spaces = 5
 TOP_WORDS = 10
 TOP_DOCS = 10
@@ -55,21 +55,20 @@ def load_py_topology(base_dir: Path):
             parser = ToposAstParser(path)
             md_doc = parser.parse()
             
-            topos_footlog.info = ""
+            # 변경: 단순 문자열 변수로 텍스트 누적
+            doc_text = ""
             for sec in md_doc.sections:
-                topos_footlog.info += extract_text_from_md(sec) + " "
+                doc_text += extract_text_from_md(sec) + " "
                 
-            if topos_footlog.info.strip():
-                docs.append(topos_footlog.info)
+            if doc_text.strip():
+                docs.append(doc_text)
                 paths.append(path.relative_to(base_dir).as_posix())
         except Exception as e:
             log.warning(f"[Skip] {path.name}: {e}")
             
     return docs, paths
 
-# ==========================================
-# 4. Phase Space Clustering (LDA)
-# ==========================================
+## Phase Space Clustering (LDA)
 def extract_unique_interfaces(topics):
     keyword_counter = Counter()
     topic_keywords = {}
@@ -167,7 +166,7 @@ def run_topos_clustering(repo_name: str):
         module_alignment=module_map
     )
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
-    output_file = OUTPUT_ROOT / f"{repo_name}.code.topic.json"
+    output_file = OUTPUT_ROOT / f"{repo_name}.json"
     
     with open(output_file, "w", encoding="utf-8") as f:
         json.dump(topic_map.model_dump(), f, indent=2, ensure_ascii=False)

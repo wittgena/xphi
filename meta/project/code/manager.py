@@ -1,4 +1,4 @@
-# bound.code.manager
+# meta.project.code.manager
 import ast
 import json
 import argparse
@@ -18,10 +18,7 @@ CODE_ROOT = resolve_path("code")
 log = get_emitter("code.manager")
 
 class CodeManager:
-    """
-    @∂Φ: Boundary Orbit (I/O & Orchestration)
-    @flow: filesystem → scan(Ψ_modules) → invoke(ToposAnalyzer) → Φ_schema → materialize(JSON)
-    """
+    """@flow: filesystem → scan(Ψ_modules) → invoke(ToposAnalyzer) → Φ_schema → store(JSON)"""
     def __init__(self, root_path: str):
         self.repo_root = Path(root_path).resolve()
         self.analyzer = LogicAnalyzer()

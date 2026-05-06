@@ -8,7 +8,7 @@ from bound.resolver import resolve_path
 from meta.ops.manager.resonance import managed_resonance
 
 WORKSPACE = resolve_path("workspace")
-log = get_emitter("plan.runner")
+log = get_emitter("work.actor")
 
 @dataclass
 class PlanAction:
@@ -18,7 +18,7 @@ class PlanAction:
     agent_usage: str = "worker" # 사용할 에이전트 위상
     meta: Dict[str, Any] = field(default_factory=dict) # 추가 제어 플래그
 
-class PlanRunner:
+class WorkActor:
     def __init__(self, engine_factory: callable, workspace_root: Path):
         self.engine_factory = engine_factory
         self.workspace_root = workspace_root
@@ -80,7 +80,7 @@ class PlanRunner:
 
 def main():
     with managed_resonance(use_hands=False) as server:
-        runner = PlanRunner(server.get_engine, WORKSPACE)
+        runner = WorkActor(server.get_engine, WORKSPACE)
         ## 동적인 액션 시퀀스 정의
         actions = [
             PlanAction("logic_design", "Create a core logic for data processing.", "core.py", "planner"),

@@ -1,4 +1,4 @@
-# bound.code.tracer
+# topos.project.code.topic.tracer
 """
 @flow:
 - TopicMap(위상 지도) 기반 목표 모듈 식별
@@ -10,9 +10,31 @@ import os
 import inspect
 import importlib
 import sys
+import signal
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional
-from topos.project.code.topic.map import TopicMap
+from topos.project.code.topic.registry import TopicRegistry, TopicMap
+
+class TemporalRupture(Exception):
+    """@role: 무한 루프나 블로킹 코드를 끊어내는 위상적 시간 한계 예외"""
+    pass
+
+@contextmanager
+def time_limit(seconds: int):
+    """@flow: 시간 제한 장(Field) 형성 -> 한계 도달 시 강제 Rupture 격발"""
+    def signal_handler(signum, frame):
+        raise TemporalRupture(f"Execution exceeded temporal limit of {seconds}s.")
+    
+    # 알람 시그널 바인딩 및 타이머 시작
+    old_handler = signal.signal(signal.SIGALRM, signal_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        # 정상 종료 시 타이머 해제 및 핸들러 복구
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
 
 class TraceReflector:
     """@flow: access → ∂Φ trace"""
@@ -30,7 +52,7 @@ class TraceReflector:
     def __getitem__(self, key): self._log_and_rupture(f"getitem([{key}])")
     def __iter__(self): self._log_and_rupture("iter()")
 
-class RuptureSnapshot:
+class ExceptionSnapshot:
     """@flow: exception → stack + locals"""
     @staticmethod
     def capture(e: Exception) -> Dict[str, Any]:
@@ -47,14 +69,14 @@ class RuptureSnapshot:
             tb = tb.tb_next
         return snapshot
 
-class CodeTracer:
-    """@flow: Scanner -> Tracer -> HypoRegistry"""
+class TopicTracer:
+    """@flow: Scanner -> Tracer -> TopicRegistry"""
     def __init__(self, topic_map: Optional[TopicMap] = None):
         self.topic_map = topic_map
-        self.registry = HypoRegistry()  # 상태를 저장할 레지스트리 초기화
+        self.registry = TopicRegistry()  # 상태를 저장할 레지스트리 초기화
 
     @staticmethod
-    def strike(target: Callable) -> Dict[str, Any]:
+    def probe(target: Callable) -> Dict[str, Any]:
         """기존의 파괴적 경계면 탐색 로직 (단일 대상)"""
         echoes = {"signature": None, "traces": [], "behavioral_map": {}}
         
@@ -77,16 +99,16 @@ class CodeTracer:
             
             target(*args, **kwargs)
         except Exception as e:
-            echoes["traces"].append(f"[Rupture] {type(e).__name__}")
+            echoes["traces"].append(f"[exception] {type(e).__name__}")
             echoes["behavioral_map"] = {
                 "access_path": access_log,
-                "snapshot": RuptureSnapshot.capture(e)
+                "snapshot": ExceptionSnapshot.capture(e)
             }
             
         return echoes
 
     def run_strategic_scan(self, target_path: Path):
-        """TopicMap을 기반으로 코드베이스를 순회하며 가설을 레지스트리에 결속"""
+        """TopicMap을 기반으로 코드베이스를 순회하며 반응을 레지스트리에 축적"""
         if not self.topic_map:
             print("[!] TopicMap이 누락되었습니다. 스캔을 건너뜁니다.")
             return
@@ -100,13 +122,18 @@ class CodeTracer:
 
                     try:
                         sys.argv = [original_argv[0]] 
-                        module = importlib.import_module(module_name)
                         
-                        for name, obj in inspect.getmembers(module):
-                            if callable(obj) and getattr(obj, '__module__', None) == module_name and not name.startswith('_'):
-                                echoes = self.strike(obj)
-                                self.registry.assimilate(module_name, name, echoes)
-                                
+                        # [개입 지점] 단일 모듈의 로딩 및 프로빙 시간을 3초로 제한
+                        with time_limit(3):
+                            module = importlib.import_module(module_name)
+                            
+                            for name, obj in inspect.getmembers(module):
+                                if callable(obj) and getattr(obj, '__module__', None) == module_name and not name.startswith('_'):
+                                    echoes = self.probe(obj)
+                                    self.registry.assimilate(module_name, name, echoes)
+                                    
+                    except TemporalRupture as e:
+                        print(f"[Bounder:Scan] 🚨 [Rupture] Infinite Loop/Blocking Code isolated in '{module_name}'. Moving to next phase.")
                     except SystemExit as e:
                         print(f"[Bounder:Scan] Prevented SystemExit during import ({module_name})")
                     except Exception as e:

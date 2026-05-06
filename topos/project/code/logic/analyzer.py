@@ -17,10 +17,7 @@ CODE_ROOT = resolve_path("code")
 log = get_emitter("logic.analyzer")
 
 class LogicAnalyzer:
-    """
-    @Σ: Topos Orbit (Graph Inference & Resonance)
-    @flow: Ψ_fragments → bind(edges) → construct(Φ_graph) → measure(curvature / centrality) → classify(phere) → Φ_dissolved
-    """
+    """@flow: Ψ_fragments → bind(edges) → construct(Φ_graph) → measure(curvature / centrality) → classify(phere) → Φ_dissolved"""
     def __init__(self):
         self.g = nx.DiGraph()
         self.g_loop = nx.DiGraph()

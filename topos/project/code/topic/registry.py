@@ -1,9 +1,39 @@
-# bound.code.schema
+# topos.project.code.topic.map
 import json
 from typing import Any, Callable, Dict, Optional, Union, List, Any
 from pydantic import BaseModel, Field, ConfigDict
 
-class HypoSchema(BaseModel):
+class CoreModuleInfo(BaseModel):
+    """Phase Space 내의 핵심 모듈 정보"""
+    path: str = Field(..., description="모듈의 파일 시스템 경로")
+    density: float = Field(..., description="해당 Phase 내의 위상적 밀도(확률)")
+
+class ToposSpace(BaseModel):
+    """위상적으로 클러스터링된 하위 시스템(Subsystem) 정보"""
+    topos_markers: List[str] = Field(..., description="해당 공간을 식별하는 주요 심볼들 (Boundary 후보)")
+    core_modules: List[CoreModuleInfo] = Field(..., description="해당 공간의 중추 역할을 하는 모듈들")
+
+class TopicMetadata(BaseModel):
+    """저장소 전역 위상 메타데이터"""
+    repository: str
+    analyzed_modules: int
+    global_interfaces: List[str] = Field(..., description="시스템 버스(Bus) 역할을 하는 전역 인터페이스 리스트")
+    local_variants: Dict[str, List[str]] = Field(..., description="각 Phase 고유의 변이 심볼들")
+
+class TopicMap(BaseModel):
+    """Topic Space Map"""
+    metadata: TopicMetadata
+    spaces: Dict[str, ToposSpace]
+    module_alignment: Dict[str, Dict[str, Any]] = Field(..., description="모듈별 Phase 소속 정보")
+
+    @classmethod
+    def load_from_json(cls, file_path: str) -> "TopicMap":
+        """JSON 파일을 읽어 TopicMap 객체로 결속(Bound)합니다."""
+        with open(file_path, "r", encoding="utf-8") as f:
+            import json
+            return cls.model_validate(json.load(f))
+
+class TopicSchema(BaseModel):
     """Φ_canonical: 경계($\partial$)에서 수집된 파편을 실체(Bound)로 응집한 표준 위상 스키마"""
     model_config = ConfigDict(arbitrary_types_allowed=True) # Callable 허용
     name: str = Field(..., description="객체 또는 도구의 식별자")
@@ -18,10 +48,10 @@ class HypoSchema(BaseModel):
     parameters: Dict[str, Any] = Field(default_factory=dict, description="구조적 요구사항 (JSON Schema)")
     executable: Optional[Callable] = Field(None, exclude=True, description="실제 실행 가능한 결속체")
 
-class HypoRegistry:
+class TopicRegistry:
     """Bound Registry: 파편화된 가설들을 하나의 위상 지도(Map)로 결속하는 저장소"""
     def __init__(self):
-        self._hypotheses: Dict[str, HypoSchema] = {}
+        self._hypotheses: Dict[str, TopicSchema] = {}
 
     def assimilate(self, module_name: str, target_name: str, echoes: Dict[str, Any]):
         """Binder에서 전달된 Echoes를 ExtSchema로 변환하여 결속(Bound)"""
@@ -33,7 +63,7 @@ class HypoRegistry:
             state = "Deep_Boundary_Mapped"
 
         ## 파편을 표준 스키마로 응집
-        schema = HypoSchema(
+        schema = TopicSchema(
             name=target_name,
             module_origin=module_name,
             status=state,
@@ -42,7 +72,7 @@ class HypoRegistry:
         )
         self._hypotheses[key] = schema
 
-    def get_hypothesis(self, key: str) -> Optional[HypoSchema]:
+    def get_hypothesis(self, key: str) -> Optional[TopicSchema]:
         return self._hypotheses.get(key)
 
     def dump(self) -> str:

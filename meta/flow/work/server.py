@@ -9,7 +9,7 @@ from meta.ops.manager.resonance import managed_resonance
 WORKSPACE_ROOT = resolve_path("workspace")
 log = get_emitter("plan.server")
 
-class PlanServer:
+class WorkServer:
     def __init__(self, engine_factory: callable):
         """
         engine_factory: (agent_usage: str) -> BaseEngine
@@ -80,7 +80,7 @@ class PlanServer:
 def main():
     with managed_resonance(use_hands=False, show_logs=True) as server:
         engine_factory = server.get_engine() 
-        PlanServer(engine_factory=engine_factory).run()
+        WorkServer(engine_factory=engine_factory).run()
 
 if __name__ == "__main__":
     main()

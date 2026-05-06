@@ -1,18 +1,18 @@
-# meta.project.code.topicer
+# meta.project.code.prober
 """@flow: Scanner -> Tracer -> Registry -> Schema -> Interface"""
 import sys
 import json
 import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
-from bound.resolver import find_current_self, resolve_path, get_invoker
-from bound.code.schema import HypoRegistry
-from bound.code.tracer import CodeTracer 
-from phase.node.executor.cli import execute_cli_task, CliTaskAdapter
-from topos.project.code.topic.map import TopicMap
-from meta.project.topic.modeler import run_topos_clustering
+from bound.resolver import find_current_self, resolve_path
+from phase.contract.registry import contract
+from phase.node.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
+from topos.project.code.topic.registry import TopicMap
+from topos.project.code.topic.tracer import TopicTracer
+from topos.project.code.topic.modeler import run_topos_clustering
 
-XOR_ROOT = resolve_path('xor')
+CODE_ROOT = resolve_path('code')
 
 class ProjectMapper:
     """프로젝트의 위상과 경로를 관리합니다."""
@@ -39,7 +39,7 @@ class FieldActivator:
         ProjectMapper.setup_workspace(target_path)
         
         repo_name = target_path.name
-        topic_json = XOR_ROOT / "bound" / f"{repo_name}.code.topic.json"
+        topic_json = CODE_ROOT / "topic" / f"{repo_name}.json"
         if not topic_json.exists():
             print(f"[*] TopicMap missing for '{repo_name}'. Triggering Topology Scanner...")
             try:
@@ -61,20 +61,18 @@ class FieldActivator:
         return None
 
 class StratifiedStorage:
-    """[Phase 2] 계층적 데이터 저장 담당 (Index, Gold, Phase)"""
     def __init__(self, repo_name: str, hypotheses: Dict, topic_map: Optional[TopicMap]):
         self.repo_name = repo_name
         self.hypotheses = hypotheses
         self.topic_map = topic_map
-        self.output_dir = XOR_ROOT / "bound" / repo_name
+        self.output_dir = CODE_ROOT / "topic" / repo_name
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def save_all(self):
-        """모든 계층의 데이터를 물리적으로 박제"""
         self._save_index()
-        self._save_gold_bounds()
+        self._save_map()
         if self.topic_map:
-            self._save_phase_shards()
+            self._save_architectural_shards() # 메서드명 및 로직 변경
         return self.output_dir
 
     def _save_index(self):
@@ -82,36 +80,58 @@ class StratifiedStorage:
         with open(self.output_dir / "index.json", "w", encoding="utf-8") as f:
             json.dump(index, f, indent=2, ensure_ascii=False)
 
-    def _save_gold_bounds(self):
-        gold = {k: v.model_dump() for k, v in self.hypotheses.items() if v.status == "deep.bound.map"}
-        with open(self.output_dir / "gold.bounds.json", "w", encoding="utf-8") as f:
-            json.dump(gold, f, indent=2, ensure_ascii=False)
+    def _save_map(self):
+        bound = {k: v.model_dump() for k, v in self.hypotheses.items() if v.status == "bound.map"}
+        with open(self.output_dir / "bounds.json", "w", encoding="utf-8") as f:
+            json.dump(bound, f, indent=2, ensure_ascii=False)
 
-    def _save_phase_shards(self):
+    def _save_architectural_shards(self):
+        """
+        @flow: 5차원의 수학적 군집(Phase_X) -> 3차원의 인지적 위상 공간으로 붕괴(Collapse)
+        """
+        tiers = {
+            "1_topos_core": {},    # 존재의 뼈대, 추상 규칙, 레지스트리
+            "2_phase_flow": {},    # 동역학, 이벤트, 전이 상태
+            "3_bound_surface": {}  # 물리적 집행, 외부 경계, I/O 센서
+        }
+
         for pid, info in self.topic_map.spaces.items():
             core_paths = [m.path for m in info.core_modules]
-            phase_data = {
-                k: v.model_dump() for k, v in self.hypotheses.items()
-                if any(cp.replace('/', '.').replace('.py', '') in k for cp in core_paths)
-            }
-            if phase_data:
-                with open(self.output_dir / f"{pid}.json", "w", encoding="utf-8") as f:
-                    json.dump(phase_data, f, indent=2, ensure_ascii=False)
+            path_str = " ".join(core_paths).lower()
+
+            # 1. 군집의 중심(Core) 성향을 파악하여 3대 공간 중 하나로 라우팅
+            if any(k in path_str for k in ["topos", "meta", "registry", "schema", "contract"]):
+                target_tier = "1_topos_core"
+            elif any(k in path_str for k in ["phase", "flow", "loop", "event", "engine"]):
+                target_tier = "2_phase_flow"
+            else:
+                target_tier = "3_bound_surface"
+
+            # 2. 해당 군집에 속한 모듈 데이터를 목표 위상(Tier)에 병합(Merge)
+            for k, v in self.hypotheses.items():
+                if any(cp.replace('/', '.').replace('.py', '') in k for cp in core_paths):
+                    tiers[target_tier][k] = v.model_dump()
+
+        # 3. 최종적으로 3개의 명확한 파일로 디스크에 물리화(Physicalization)
+        for tier_name, data in tiers.items():
+            if data:  # 데이터가 존재하는 축만 파일로 생성
+                with open(self.output_dir / f"{tier_name}.json", "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
 
 class EmergenceReporter:
     """[Phase 3] 분석 결과 요약 리포팅 담당"""
     @staticmethod
     def report(repo_name: str, hypotheses: Dict, output_path: Path):
         total = len(hypotheses)
-        gold = len([v for v in hypotheses.values() if v.status == "deep.bound.map"])
-        rate = (gold / total * 100) if total > 0 else 0
+        bound = len([v for v in hypotheses.values() if v.status == "bound.map"])
+        rate = (bound / total * 100) if total > 0 else 0
 
         print(f"## [Emergence] Structural Evolution: {repo_name.upper()}")
         print(f"- Total Hypotheses : {total}")
-        print(f"- Gold Bounds      : {gold} ({rate:.1f}%)")
+        print(f"- Bounds      : {bound} ({rate:.1f}%)")
         print(f"- Storage Path     : {output_path.absolute()}")
 
-class ProjectBinder:
+class CodeProber:
     def __init__(self, target_repo: str):
         self.target_path = Path(target_repo).resolve()
         self.repo_name = self.target_path.name
@@ -124,7 +144,7 @@ class ProjectBinder:
             print("[!] Analysis aborted due to missing TopicMap.")
             return {"status": "fail", "reason": "Missing TopicMap"}
 
-        self.binder = CodeTracer(topic_map=self.topic_map)
+        self.binder = TopicTracer(topic_map=self.topic_map)
         self.binder.run_strategic_scan(self.target_path)
 
         storage = StratifiedStorage(self.repo_name, self.binder.registry._hypotheses, self.topic_map)
@@ -133,26 +153,25 @@ class ProjectBinder:
         return {
             "status": "success",
             "repo_name": self.repo_name,
-            "hypotheses_count": len(self.binder.registry._hypotheses),
+            "topic_count": len(self.binder.registry._hypotheses),
             "storage_path": str(output_path)
         }
 
-def main():
+def entry_task(args):
+    """실행 인자를 파싱하고 태스크 어댑터를 반환하는 엔트리 포인트"""
     parser = argparse.ArgumentParser(description="Code Topology Binder Session")
     parser.add_argument("--repo", type=str, default=".", help="Target directory")
-    args, _ = parser.parse_known_args()
+    parsed_args, _ = parser.parse_known_args(args)
+    session = CodeProber(parsed_args.repo)
+    return CliTaskAdapter(session.run)
 
-    session = ProjectBinder(args.repo)
-    adapted_task = CliTaskAdapter(session.run)
-    invoker, command = get_invoker(Path(__file__))
-    payload = {
-        "_context": {
-            "invoker": str(invoker), 
-            "command": command, 
-            "cli_args": sys.argv[1:]
-        }
-    }
-    execute_cli_task(task_instance=adapted_task, command_name="code.binder", payload=payload)
+@contract.cli(name="code.prober", recept=[])
+def main():
+    bound_args, remain = parse_local(sys.argv[1:])
+    if bound_args.local:
+        entry_task(remain).run()
+    else:
+        dispatch_cli("code.prober", entry_task, __file__)
 
 if __name__ == "__main__":
     main()
