@@ -9,7 +9,7 @@ from phase.node.cognitive.worker import CognitiveWorker
 from meta.context.assembler import ContextAssembler
 from phase.reflect.client.local.engine import LLMEngine
 from phase.node.state.aggregator import InternalContext
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter('aura.observer')
 

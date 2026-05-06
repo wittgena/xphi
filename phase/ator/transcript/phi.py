@@ -7,11 +7,11 @@ import re
 import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry import contract, registry
-from topos.project.block.parser.md import MdAstParser
-from topos.project.block.extractor import BlockExtractor
+from arch.project.block.parser.md import MdAstParser
+from arch.project.block.extractor import BlockExtractor
 
 log = get_logger("transcript.phi")
 

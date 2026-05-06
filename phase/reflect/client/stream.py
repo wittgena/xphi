@@ -12,7 +12,7 @@ import os
 from dataclasses import dataclass, field
 from typing import List, Optional, Generator
 from pathlib import Path
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 
 log = get_logger("client.stream")
 

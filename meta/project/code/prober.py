@@ -5,12 +5,12 @@ import json
 import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
-from bound.resolver import find_current_self, resolve_path
+from phase.bound.resolver import find_current_self, resolve_path
 from arch.contract.registry import contract
 from phase.node.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
-from topos.project.code.topic.registry import TopicMap
-from topos.project.code.topic.tracer import TopicTracer
-from topos.project.code.topic.modeler import run_topos_clustering
+from arch.project.code.topic.registry import TopicMap
+from arch.project.code.topic.tracer import TopicTracer
+from arch.project.code.topic.modeler import run_topos_clustering
 
 CODE_ROOT = resolve_path('code')
 

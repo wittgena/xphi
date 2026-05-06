@@ -4,8 +4,8 @@ import json
 import time
 import redis.asyncio as redis_async
 from typing import Optional, Dict, Any
-from bound.resolver import resolve_channel
-from bound.surface.emitter import get_emitter
+from phase.bound.resolver import resolve_channel
+from phase.bound.plane.emitter import get_emitter
 
 class PhaseObserver:
     """

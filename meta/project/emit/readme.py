@@ -1,7 +1,7 @@
 # meta.project.emit.readme
 from pathlib import Path
-from bound.surface.emitter import get_logger
-from bound.resolver import resolve_path
+from phase.bound.plane.emitter import get_logger
+from phase.bound.resolver import resolve_path
 from datetime import datetime
 
 BASE_ROOT = resolve_path('base')

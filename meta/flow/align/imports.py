@@ -3,11 +3,11 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from bound.resolver import find_current_self
+from phase.bound.resolver import find_current_self
 from arch.contract.registry import contract
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 from phase.node.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
-from topos.project.code.imports.aligner import ImportAligner
+from arch.project.code.imports.aligner import ImportAligner
 
 log = get_emitter("imports.aligner", phase="SYSTEM")
 

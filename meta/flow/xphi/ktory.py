@@ -13,12 +13,12 @@ import urllib.parse
 from typing import List, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass, field
-from bound.surface.emitter import get_emitter
-from bound.resolver import find_current_self, resolve_path
-from phase.reflect.xphi.runtime import XPhiRuntime
+from phase.bound.plane.emitter import get_emitter
+from phase.bound.resolver import find_current_self, resolve_path
+from phase.topos.xphi.runtime import XPhiRuntime
 from phase.reflect.client.stream import StreamClient
 from phase.reflect.client.surface import RedisClient, SurfaceClient
-from topos.project.block.schema import Contract
+from arch.project.block.schema import Contract
 
 log = get_emitter("xphi.ktory")
 

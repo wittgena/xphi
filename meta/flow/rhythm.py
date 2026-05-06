@@ -13,11 +13,11 @@ import json
 import uuid
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.reflect.event.psi import PsiEvent
-from phase.reflect.event.bus import AsyncEventBus
+from arch.contract.event.psi import PsiEvent
+from arch.contract.event.bus import AsyncEventBus
 from phase.reflect.rhythm.coupler import RhythmCoupler
 from arch.contract.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
-from bound.surface.plane import SurfacePlane
+from phase.bound.plane.surface import SurfacePlane
 
 class SimpleKernel(IDynamicsKernel):
     def compute_step(self, states, dt):

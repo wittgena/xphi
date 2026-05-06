@@ -2,7 +2,7 @@
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.reflect.event.contract import next_id, next_phase_id
+from arch.contract.event.next import next_id, next_phase_id
 
 class RhythmBridge:
     """

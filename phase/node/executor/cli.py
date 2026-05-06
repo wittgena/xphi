@@ -9,13 +9,13 @@ import subprocess
 import redis.asyncio as redis_async
 from typing import Callable, Any
 from pathlib import Path
-from phase.reflect.event.psi import PsiEvent, PsiCarrier
-from phase.reflect.event.contract import next_id, LogEvent
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.next import next_id, LogEvent
 from dataclasses import asdict
 from phase.node.sensor import REDIS_URL
-from bound.surface.emitter import get_emitter, flow_scope
-from bound.surface.plane import surface
-from bound.resolver import get_invoker
+from phase.bound.plane.emitter import get_emitter, flow_scope
+from phase.bound.plane.surface import surface
+from phase.bound.resolver import get_invoker
 from arch.contract.registry import registry
 from phase.node.executor.result import TaskSummaryEvent, TaskDetailRecord
 from phase.node.executor.base import BaseExecutor

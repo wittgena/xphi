@@ -4,7 +4,7 @@ import time
 import subprocess
 import requests
 from phase.reflect.schema import BridgeEvent
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')
 MODEL_HF = os.getenv("LLAMA_MODEL_HF", "ggml-org/gemma-3-1b-it-GGUF")

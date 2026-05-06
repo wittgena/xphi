@@ -2,7 +2,7 @@
 import json
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter("context.compiler")
 

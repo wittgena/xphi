@@ -8,8 +8,8 @@ from pathlib import Path
 from foldbox.server.api import api
 from phase.reflect.hand.middleware import ResonanceMiddleware
 from arch.contract.registry import contract
-from bound.surface.emitter import get_emitter
-from bound.resolver import find_current_self, resolve_path
+from phase.bound.plane.emitter import get_emitter
+from phase.bound.resolver import find_current_self, resolve_path
 
 log = get_emitter("hand.launcher")
 

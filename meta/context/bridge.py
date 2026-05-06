@@ -2,7 +2,7 @@
 """@flow: ResidueStore(rocks.db) → XeCrystallizer → ScriptCompiler(Φ') → ScriptProjector(Ψ)"""
 import json
 from typing import Dict, Any, List
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 from meta.context.residue.store import ResidueStore, ResidueSnapshot
 from meta.context.compiler import ContextCompiler, ContextProjector
 

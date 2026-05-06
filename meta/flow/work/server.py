@@ -2,8 +2,8 @@
 import _thread
 import os
 from pathlib import Path
-from bound.surface.emitter import get_emitter
-from bound.resolver import resolve_path
+from phase.bound.plane.emitter import get_emitter
+from phase.bound.resolver import resolve_path
 from meta.ops.manager.resonance import managed_resonance
 
 WORKSPACE_ROOT = resolve_path("workspace")

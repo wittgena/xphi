@@ -3,8 +3,8 @@ import _thread
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from bound.surface.emitter import get_emitter
-from bound.resolver import resolve_path
+from phase.bound.plane.emitter import get_emitter
+from phase.bound.resolver import resolve_path
 from meta.ops.manager.resonance import managed_resonance
 
 WORKSPACE = resolve_path("workspace")

@@ -12,9 +12,9 @@ import urllib.parse
 from typing import List, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass
-from bound.resolver import find_current_self, resolve_path
-from bound.surface.emitter import get_emitter
-from phase.reflect.xphi.runtime import XPhiRuntime
+from phase.bound.resolver import find_current_self, resolve_path
+from phase.bound.plane.emitter import get_emitter
+from phase.topos.xphi.runtime import XPhiRuntime
 from phase.reflect.client.stream import StreamClient
 from phase.reflect.client.surface import RedisClient, SurfaceClient
 

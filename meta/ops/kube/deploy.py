@@ -10,8 +10,8 @@ import re
 from pathlib import Path
 from typing import Optional
 from meta.ops.kube.transcript import TranscriptEngine, Projector
-from bound.surface.emitter import get_emitter
-from bound.resolver import find_current_self, resolve_path
+from phase.bound.plane.emitter import get_emitter
+from phase.bound.resolver import find_current_self, resolve_path
 from meta.ops.kube.validator.compose import FlowValidator, SelfExtractor
 
 log = get_emitter("kube.deploy")
@@ -73,7 +73,7 @@ class FinalDeployFlow:
         log.info(f"[Φx:transcribe] 설계도 변환: {md_path.name}")
         # 내부적으로 KubeFlowValidator를 거쳐 K8s YAML 생성
         # 생성된 YAML의 이미지는 'host.minikube.internal:5000/...'를 바라봐야 함
-        from bound.res.transcript import run_pipeline
+        from phase.bound.res.transcript import run_pipeline
         run_pipeline(str(md_path)) 
 
         log.info(f"[Ω:finish] '{service_id}' 배포 사이클 완료.")

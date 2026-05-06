@@ -9,10 +9,10 @@ import re
 import argparse
 from pathlib import Path
 from typing import Dict, Tuple, List, Any
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 from arch.contract.registry import cli_contract
-from topos.project.block.parser.md import MdAstParser
-from topos.project.block.extractor import BlockExtractor
+from arch.project.block.parser.md import MdAstParser
+from arch.project.block.extractor import BlockExtractor
 from meta.ops.kube.validator.promql import MarkdownConfigExtractor, PromQLValidator, LoopTopologyValidator
 
 log = get_emitter("validator.module")

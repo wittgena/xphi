@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 from watchdog.events import FileSystemEventHandler
 from typing import Dict, List
-from bound.surface.topos import SurfaceTopos
+from phase.node.receptor.topos import SurfaceTopos
 from phase.node.receptor.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 class TracerSource(FileSystemEventHandler):

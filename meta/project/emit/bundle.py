@@ -9,12 +9,12 @@ from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Tuple, Dict, Any, Optional
 from pathlib import Path
 from collections import defaultdict
-from bound.resolver import find_current_self, resolve_path, get_invoker
+from phase.bound.resolver import find_current_self, resolve_path, get_invoker
 from arch.contract.registry import contract
-from bound.surface.emitter import get_emitter
-from arch.surface.projector import SurfaceProjector
+from phase.bound.plane.emitter import get_emitter
+from arch.proto.projector import SurfaceProjector
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
-from topos.project.block.parser.py import PyDotMdParser 
+from arch.project.block.parser.py import PyDotMdParser 
 
 log = get_emitter("bundle.project")
 

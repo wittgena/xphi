@@ -1,7 +1,7 @@
 # phase.ator.flow.monitor
 import functools
 import re
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 
 log = get_logger("flow.monitor")
 

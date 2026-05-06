@@ -5,10 +5,10 @@ import argparse
 import yaml
 from typing import List, Dict, Any
 from pathlib import Path
-from bound.resolver import find_current_self, get_invoker
+from phase.bound.resolver import find_current_self, get_invoker
 from arch.contract.registry import contract
-from bound.surface.emitter import get_emitter
-from arch.surface.aligner import FieldAligner, AlignRecord
+from phase.bound.plane.emitter import get_emitter
+from arch.proto.aligner import FieldAligner, AlignRecord
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 
 log = get_emitter("align.path")

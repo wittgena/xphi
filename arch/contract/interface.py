@@ -13,7 +13,7 @@ from typing import Tuple, List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol
-from phase.reflect.event.psi import PsiEvent
+from arch.contract.event.psi import PsiEvent
 from arch.proto.event import EventAligner, EventRouter, EventDisperser
 
 class IPhaseField(ABC):

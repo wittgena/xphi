@@ -8,11 +8,11 @@ import json
 import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
-from topos.project.code.topic.registry import TopicMap
-from topos.project.code.topic.tracer import TopicTracer
-from bound.resolver import find_current_self, resolve_path, get_invoker
+from arch.project.code.topic.registry import TopicMap
+from arch.project.code.topic.tracer import TopicTracer
+from phase.bound.resolver import find_current_self, resolve_path, get_invoker
 from phase.node.executor.cli import execute_cli_task, CliTaskAdapter
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 
 XOR_ROOT = resolve_path('xor')
 log = get_logger("code.toposer")

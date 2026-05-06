@@ -3,7 +3,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from bound.resolver import resolve_path
+from phase.bound.resolver import resolve_path
 from meta.ops.block.emitter import main as emitter_main, get_logger
 
 log = get_logger("block.aggregator")

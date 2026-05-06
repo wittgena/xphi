@@ -5,9 +5,9 @@ import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 from arch.proto.flow import ProtoFlow, FlowState, Transduction, Align
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 from dataclasses import dataclass, field
-from bound.resolver import find_current_self
+from phase.bound.resolver import find_current_self
 from arch.contract.registry import registry, contract
 from phase.ator.runtime import AtorRuntime
 from phase.ator.bootstrap import bootstrap

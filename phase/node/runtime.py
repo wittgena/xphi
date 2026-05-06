@@ -7,17 +7,17 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.reflect.event.psi import PsiEvent, PsiCarrier
-from phase.reflect.event.bus import AsyncEventBus
-from phase.reflect.event.contract import next_id
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.bus import AsyncEventBus
+from arch.contract.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
 from phase.node.interpreter import NodeInterpreter, AnchorFlow
-from bound.surface.sink import RedisSink
-from bound.surface.actuator import SurfaceActuator
-from bound.resolver import resolve_path, find_current_self
+from phase.node.surface.actuator import SurfaceActuator
+from phase.topos.surface.sink import RedisSink
+from phase.bound.resolver import resolve_path, find_current_self
 from arch.contract.registry import registry
 from arch.contract.discover import discover_modules
 from phase.node.executor.swarm import SwarmCliExecutor

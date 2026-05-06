@@ -9,11 +9,11 @@ import re
 import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any
-from bound.resolver import find_current_self, resolve_path
+from phase.bound.resolver import find_current_self, resolve_path
 from meta.ops.kube.validator.compose import FlowValidator, SelfExtractor 
-from topos.project.block.parser.md import MdAstParser
-from topos.project.block.extractor import BlockExtractor
-from bound.surface.emitter import get_emitter
+from arch.project.block.parser.md import MdAstParser
+from arch.project.block.extractor import BlockExtractor
+from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter("kube.trascript")
 

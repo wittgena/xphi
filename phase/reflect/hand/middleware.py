@@ -6,7 +6,7 @@ from typing import Dict, List
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter("resonance.middleware")
 

@@ -3,8 +3,8 @@ import time
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.reflect.event.psi import PsiType
-from bound.surface.plane import SurfacePlane
+from arch.contract.event.psi import PsiType
+from phase.bound.plane.surface import SurfacePlane
 from arch.contract.interface import IEventBus
 
 class RhythmCoupler:

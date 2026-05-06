@@ -6,8 +6,8 @@
 import sys
 import asyncio
 from pathlib import Path
-from bound.surface.emitter import get_logger
-from bound.resolver import resolve_path, find_current_self
+from phase.bound.plane.emitter import get_logger
+from phase.bound.resolver import resolve_path, find_current_self
 from phase.ator.bootstrap import bootstrap
 from arch.proto.flow import ProtoFlow, FlowState
 

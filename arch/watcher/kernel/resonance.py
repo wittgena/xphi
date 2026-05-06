@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from phase.reflect.event.psi import PsiCarrier, PsiEvent
-from bound.surface.emitter import get_emitter
-from bound.resolver import find_current_self
+from arch.contract.event.psi import PsiCarrier, PsiEvent
+from phase.bound.plane.emitter import get_emitter
+from phase.bound.resolver import find_current_self
 from phase.node.runtime import NodeRuntime
 from arch.contract.registry import registry, contract
 from arch.contract.discover import discover_modules

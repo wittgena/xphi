@@ -9,9 +9,9 @@ import yaml
 import re
 from pathlib import Path
 from typing import Dict, Tuple, List, Any
-from topos.project.block.parser.md import MdAstParser
-from topos.project.block.extractor import BlockExtractor
-from bound.surface.emitter import get_emitter
+from arch.project.block.parser.md import MdAstParser
+from arch.project.block.extractor import BlockExtractor
+from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter("validator.promql")
 

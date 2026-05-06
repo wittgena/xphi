@@ -9,8 +9,8 @@ re-anchor to the base bootstrap domain, and process toxic signals without side e
 from typing import List, Iterator
 from contextlib import contextmanager
 import uuid
-from phase.reflect.event.psi import PsiCarrier
-from bound.surface.emitter import get_emitter
+from arch.contract.event.psi import PsiCarrier
+from phase.bound.plane.emitter import get_emitter
 from phase.node.interpreter import NodeInterpreter, AnchoredIR, AnchorFlow
 
 log = get_emitter("state.node0")

@@ -9,8 +9,8 @@ from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEve
 from llama_index.core import StorageContext, load_index_from_storage
 from llama_index.core.schema import NodeWithScore
 from meta.flow.xphi.xor import Xor, SearchResult 
-from bound.surface.emitter import get_logger
-from bound.resolver import resolve_path
+from phase.bound.plane.emitter import get_logger
+from phase.bound.resolver import resolve_path
 
 log = get_logger("rag.search")
 

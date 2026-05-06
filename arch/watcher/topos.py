@@ -3,14 +3,14 @@ from __future__ import annotations
 import json
 import asyncio
 from typing import Optional, List
-from phase.reflect.event.psi import PsiCarrier, PsiEvent
+from arch.contract.event.psi import PsiCarrier, PsiEvent
 from arch.contract.interface import IPhaseField, ICriticalDetector, ISystemRegime, IPhaseAtor
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 from arch.contract.registry import contract 
 from arch.contract.discover import discover_modules
 from phase.node.executor.dynamics import LoopCarrier, DynamicsExecutor
 from phase.node.runtime import NodeRuntime
-from bound.resolver import find_current_self
+from phase.bound.resolver import find_current_self
 
 log = get_emitter("field.topos", phase="BOOT")
 

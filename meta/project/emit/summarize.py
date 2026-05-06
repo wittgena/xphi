@@ -3,7 +3,7 @@ import os
 import argparse
 import ast
 from pathlib import Path
-from bound.resolver import find_current_self
+from phase.bound.resolver import find_current_self
 
 class ProjectSummarize:
     """Repo 내의 마크다운 및 파이썬 파일에서 메타데이터를 추출하여 LLM 주입에 최적화된 단일 라인 형태로 포맷팅"""

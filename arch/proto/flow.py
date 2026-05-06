@@ -12,7 +12,7 @@ import uuid
 import enum
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 
 log = get_logger("proto.flow")
 

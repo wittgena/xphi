@@ -8,11 +8,11 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from topos.model.schema import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
-from bound.surface.emitter import get_emitter
-from bound.resolver import resolve_path
-from topos.project.code.logic.transformer import LogicTransformer
-from topos.project.code.logic.analyzer import LogicAnalyzer
+from arch.model.schema import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
+from phase.bound.plane.emitter import get_emitter
+from phase.bound.resolver import resolve_path
+from arch.project.code.logic.transformer import LogicTransformer
+from arch.project.code.logic.analyzer import LogicAnalyzer
 
 CODE_ROOT = resolve_path("code")
 log = get_emitter("code.manager")

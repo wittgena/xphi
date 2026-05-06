@@ -7,12 +7,12 @@ from typing import Dict, List, Dict, Any
 from llama_index.core.workflow import Workflow, step, Event, StartEvent, StopEvent, Context
 from llama_index.core.schema import TextNode
 from llama_index.core import VectorStoreIndex
-from bound.surface.emitter import get_logger
+from phase.bound.plane.emitter import get_logger
 from meta.flow.xphi.xor import Xor 
 from meta.flow.xphi.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
-from bound.resolver import find_current_self, resolve_path
-from bound.folding import folding
-from topos.project.block.extractor import extract_block_from_file, Block
+from phase.bound.resolver import find_current_self, resolve_path
+from phase.bound.folding import folding
+from arch.project.block.extractor import extract_block_from_file, Block
 
 log = get_logger("index.manifold")
 

@@ -9,7 +9,7 @@ import httpx
 from dataclasses import dataclass
 from typing import Optional
 from phase.reflect.client.local.engine import LLMEngine
-from bound.surface.emitter import get_emitter
+from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter("manager.resonance")
 

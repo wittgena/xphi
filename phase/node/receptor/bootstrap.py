@@ -3,8 +3,8 @@ import asyncio
 from watchdog.observers import Observer
 from phase.node.receptor.source import TracerSource
 from phase.node.receptor.kernel import TracerKernel
-from bound.surface.topos import SurfaceTopos
-from bound.surface.sink import RedisSink 
+from phase.node.receptor.topos import SurfaceTopos
+from phase.topos.surface.sink import RedisSink 
 
 async def receptor_bootstrap(watch_dir: str = "./src"):
     """
