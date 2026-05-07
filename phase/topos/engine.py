@@ -18,7 +18,7 @@ from arch.proto.flow import ProtoFlow, FlowState
 from arch.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 from arch.model.manifold.particle import ToposManifold
 from phase.topos.state.proxy import DistributedNodePool
-from meta.ops.organizer.topos import ToposOrganizer
+from meta.ops.daemon.organizer.topos import ToposOrganizer
 from phase.topos.state.node import inject_pr_signal, ToposNode, NodeType
 from phase.topos.runtime import ToposRuntime
 from phase.bound.plane.emitter import get_emitter
