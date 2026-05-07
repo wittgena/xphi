@@ -7,7 +7,7 @@ from phase.bound.resolver import resolve_path
 from meta.ops.daemon.manager.resonance import managed_resonance
 
 WORKSPACE_ROOT = resolve_path("workspace")
-log = get_emitter("plan.server")
+log = get_emitter("work.server")
 
 class WorkServer:
     def __init__(self, engine_factory: callable):
