@@ -1,6 +1,6 @@
 # arch.proto.pump.events
 from typing import Any
-from hand.config.pump import Message
+from arch.proto.pump.message import Message
 
 class AgentConfigured(Message):
     """
