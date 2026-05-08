@@ -1,4 +1,4 @@
-# arch.watcher.resonator
+# topos.watcher.resonator
 """
 @flow:
   Ψ (event)

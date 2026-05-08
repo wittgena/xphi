@@ -1,13 +1,13 @@
-# topos.aura.field.receptor
+# arch.context.aura.receptor
 import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from phase.bound.plane.emitter import get_emitter
 from arch.project.model.psi import ToposPsi, ToposSignature
 
-log = get_emitter("field.receptor")
+log = get_emitter("aura.receptor")
 
-class FieldReceptor:
+class AuraReceptor:
     def __init__(self, name: str, own_signature: ToposSignature, rupture_threshold: float = 1.0):
         self.name = name
         self.own_signature = own_signature
@@ -45,7 +45,7 @@ class FieldReceptor:
 
 if __name__ == "__main__":
     ## 수신 노드(관찰자) 생성: 차원 3, 밀도 0.5의 구조를 가짐
-    analyzer_node = FieldReceptor(
+    analyzer_node = AuraReceptor(
         name="L3:AnalyzerState",
         own_signature=ToposSignature(dimension=3, density=0.5, is_closed=True),
         rupture_threshold=2.0 # 텐션이 2.0이 되면 파열

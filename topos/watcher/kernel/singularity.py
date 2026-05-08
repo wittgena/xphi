@@ -1,4 +1,4 @@
-# arch.watcher.kernel.singularity
+# topos.watcher.kernel.singularity
 from typing import List, Dict, Optional, Any
 from arch.contract.registry import contract
 from arch.contract.interface import ICriticalDetector, IPhaseField

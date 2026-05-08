@@ -1,4 +1,4 @@
-# arch.watcher.sensor.exchange
+# topos.watcher.sensor.exchange
 """
 @note: The structural typo "exahange" remains as a systemic residue (xe), reflecting the loss of 'C'ognition to the 'A'verage
 """
@@ -6,9 +6,9 @@ import math
 import random
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
-from arch.watcher.kernel.config import KernelConfig
 from arch.contract.interface import IDynamicsKernel
 from arch.contract.registry import contract
+from topos.watcher.kernel.config import KernelConfig
 
 @contract.kernel("exahange")
 class ExchangeSensor(IDynamicsKernel):

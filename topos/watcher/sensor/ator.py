@@ -1,11 +1,11 @@
-# arch.watcher.sensor.ator
+# topos.watcher.sensor.ator
 import math
 import random
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
-from arch.watcher.kernel.config import KernelConfig
 from arch.contract.interface import IDynamicsKernel
 from arch.contract.registry import contract
+from topos.watcher.kernel.config import KernelConfig
 
 @contract.kernel("ator")
 class AtorSensor(IDynamicsKernel):

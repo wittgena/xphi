@@ -1,4 +1,4 @@
-# topos.aura.events
+# arch.context.aura.events
 from textual.message import Message
 
 class AuraTriggerEvent(Message):

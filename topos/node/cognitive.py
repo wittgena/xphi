@@ -4,7 +4,7 @@ import dspy
 from typing import Any, Dict
 from arch.contract.protocol import proto
 from topos.proto.flow import ProtoFlow, FlowState
-from topos.state.node import ToposNode, NodeType
+from topos.state.node import StateNode, NodeType
 from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
@@ -36,7 +36,7 @@ class CognitiveModule(dspy.Module):
 # Topos 시스템의 컨벤션(@proto, FlowState)을 엄격히 준수하는 런타임 노드
 # ---------------------------------------------------------
 @proto(kind=NodeType.CORE, sequence=["process", "mutate_state"])
-class CognitiveNode(ToposNode):
+class CognitiveNode(StateNode):
     """
     DSPy 인지 엔진을 탑재한 Topos 실행 노드.
     FlowState를 받아 인지 연산을 수행하고, 상태를 변이(Mutate)시켜 반환합니다.

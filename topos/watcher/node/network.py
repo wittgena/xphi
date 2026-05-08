@@ -1,4 +1,4 @@
-# arch.watcher.node.network
+# topos.watcher.node.network
 import math
 import random
 from typing import Dict, Any, List, Optional

@@ -1,10 +1,10 @@
-# topos.aura.organizer
+# topos.organizer.aura
 import asyncio
 from typing import Dict, Any, Optional
 from phase.bound.plane.emitter import get_emitter
 from topos.proto.pump.message import Message, MessagePump
-from topos.state.node import ToposNode 
-from meta.ops.organizer.topos import DistributedNodePool
+from topos.state.node import StateNode
+from topos.node.proxy import DistributedNodePool
 
 log = get_emitter(__name__)
 
@@ -56,7 +56,7 @@ class UnifiedNode:
         if isinstance(self.instance, MessagePump):
             # MessagePump 기반 노드일 경우
             self.instance.post_message(payload)
-        elif isinstance(self.instance, ToposNode):
+        elif isinstance(self.instance, StateNode):
             # 기존 Topos 기반 노드일 경우 (FlowState 처리 등)
             await self.instance.process(payload)
 
@@ -135,6 +135,6 @@ class AuraOrganizer:
         elif node_type == "policy_node":
             return PolicyNode(name)
         elif node_type == "logic_node":
-            return ToposNode(spec={"name": name})
+            return StateNode(spec={"name": name})
         # ... 추가 노드 매핑
         return None

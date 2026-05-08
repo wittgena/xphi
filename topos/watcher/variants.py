@@ -1,4 +1,4 @@
-# arch.watcher.variants
+# topos.watcher.variants
 """
 @desc: Verifies structural invariants of the topos flow field.
 

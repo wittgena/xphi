@@ -1,4 +1,4 @@
-# arch.watcher.field.entropy
+# topos.watcher.field.entropy
 """
 @phase: Friction -> Decay -> Residue Accumulation -> Perturbation Feedback
 @flow: The Arrow of Time coupling abstract dynamics with physical degradation

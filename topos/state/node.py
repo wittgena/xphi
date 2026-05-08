@@ -45,7 +45,7 @@ class Inversion:
             if rule.action == "INVERT":
                 removed = self_node.children.pop(rule.source_name)
                 # [수정됨] ToposNode가 BaseNode 스펙을 따르도록 spec dict 전달
-                new_core = ToposNode(spec={
+                new_core = StateNode(spec={
                     "name": rule.target_name,
                     "kind": rule.target_kind,
                     "content": f"Materialized from {removed.ref_target}"
@@ -56,7 +56,7 @@ class Inversion:
         return residues
 
 @proto(Proto((ProtoFlow, StateOperator, "State"), kind="phase"))
-class ToposNode(BaseNode):
+class StateNode(BaseNode):
     def __init__(self, spec: dict, pool: Any = None, **kwargs):
         super().__init__(spec, pool, **kwargs)
         self.name = spec.get("name", "unnamed")
@@ -100,7 +100,7 @@ class LinkerNode(BaseNode):
             
         return [(self.next, ctx)]
 
-    def _derive_rules(self, node: ToposNode) -> List[TransRule]:
+    def _derive_rules(self, node: StateNode) -> List[TransRule]:
         rules = []
         for child_name, child_node in node.children.items():
             if child_node.kind == NodeType.SYMLINK:

@@ -1,4 +1,4 @@
-# arch.watcher.field.gap
+# topos.watcher.field.gap
 """
 @topology: Void ⊗ Gradient → Attractor ⊧ Rupture → Inversion.
 @dynamics: Snowflake[Global] ⊗ Phase[Causal] ⊗ Tick[Local].

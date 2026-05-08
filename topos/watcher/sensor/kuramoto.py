@@ -1,11 +1,11 @@
-# arch.watcher.sensor.kuramoto
+# topos.watcher.sensor.kuramoto
 import math
 import random
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
 from arch.contract.interface import IDynamicsKernel
-from arch.watcher.kernel.config import KernelConfig
 from arch.contract.registry import contract
+from topos.watcher.kernel.config import KernelConfig
 
 @contract.kernel("kuramoto")
 class KuramotoSensor(IDynamicsKernel):

@@ -19,7 +19,7 @@ from phase.bound.plane.emitter import get_logger
 from phase.bound.resolver import find_current_self, resolve_path
 from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
 from arch.contract.event.psi import PsiEvent
-from topos.xphi.runtime import XPhiRuntime
+from phase.reflect.xphi.runtime import XPhiRuntime
 from phase.reflect.client.stream import StreamClient
 from phase.reflect.client.surface import RedisClient, SurfaceClient
 

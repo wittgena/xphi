@@ -8,9 +8,9 @@ from phase.bound.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
 from topos.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import PhaseSpec, TransRule, NodeType
-from topos.state.node import LinkerNode, InversionNode, ToposNode, ResidueType
+from topos.state.node import LinkerNode, InversionNode, StateNode, ResidueType
 
-log = get_emitter("topos.runtime")
+log = get_emitter("state.runtime")
 
 class StateRuntime:
     def __init__(self, entry: str, nodes: Dict[str, Any], runtime_node: Any):

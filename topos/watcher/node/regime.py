@@ -1,4 +1,4 @@
-# arch.watcher.node.regime
+# topos.watcher.node.regime
 import math
 import random
 from typing import Optional

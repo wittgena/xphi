@@ -7,9 +7,9 @@ from phase.bound.plane.emitter import get_emitter
 from phase.node.runtime import NodeRuntime
 from arch.contract.protocol import get_proto
 from topos.proto.flow import ProtoFlow, FlowState
+from topos.node.proxy import DistributedNodePool
 from topos.state.rule.trans import PhaseSpec, TransRule
-from topos.state.proxy import DistributedNodePool
-from topos.state.node import LinkerNode, InversionNode, ToposNode, NodeType
+from topos.state.node import LinkerNode, InversionNode, StateNode, NodeType
 from topos.state.runtime import StateRuntime
 
 log = get_emitter("organizer.node")
@@ -17,7 +17,7 @@ log = get_emitter("organizer.node")
 NODE_REGISTRY = {
     "linker": LinkerNode,
     "inversion": InversionNode,
-    "topos": ToposNode
+    "state": StateNode
 }
 
 class NodeOrganizer:
@@ -82,19 +82,18 @@ async def main():
             runtime_node=base_node
         )
         flow_controller.attach()
-
-        topos = ToposNode(spec={
+        root = StateNode(spec={
             "name": "root",
             "kind": NodeType.ANCHOR,
             "children": {
-                "self": ToposNode(spec={
+                "self": StateNode(spec={
                     "name": "field",
                     "kind": NodeType.CORE,
                     "children": {
-                        "legacy_symlink": ToposNode(
+                        "legacy_symlink": StateNode(
                             spec={ "name": "legacy_symlink", "kind": NodeType.SYMLINK, "ref_target": "ext_src" }
                         ),
-                        "stable_core": ToposNode(
+                        "stable_core": StateNode(
                             spec={ "name": "stable_core", "kind": NodeType.CORE, "content": "existing logic" }
                         )
                     }
@@ -110,7 +109,7 @@ async def main():
         ## 자가 유도 활성화 - payload에 'target_spec'이 없으므로 LinkerNode가 'legacy_symlink'를 스스로 서치
         initial_flow = ProtoFlow(payload={}, aspect="root")
         initial_ctx = FlowState(initial_flow, state={
-            "topos_root": topos,
+            "root": root,
             "external_rules": external_pr_rules  # 외부 신호 주입
         })
 

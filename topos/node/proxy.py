@@ -1,4 +1,4 @@
-# topos.state.proxy
+# topos.node.proxy
 import time
 import uuid
 import asyncio
