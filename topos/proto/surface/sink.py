@@ -1,4 +1,4 @@
-# topos.surface.sink
+# topos.proto.surface.sink
 import os
 import json
 import aiohttp

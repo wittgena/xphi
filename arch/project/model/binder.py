@@ -1,4 +1,4 @@
-# arch.model.binder
+# arch.project.model.binder
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:
@@ -14,7 +14,7 @@ from tqdm import tqdm
 from phase.bound.plane.emitter import get_logger
 from phase.bound.resolver import find_current_self, resolve_path
 from phase.reflect.schema import ResonanceGraph, ResonanceNode, NodeRelation
-from arch.model.pos.sensor import PosSensor
+from arch.project.model.pos.sensor import PosSensor
 
 log = get_logger("model.binder")
 

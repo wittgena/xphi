@@ -1,4 +1,4 @@
-# topos.runtime
+# topos.state.runtime
 import asyncio
 import enum 
 import logging
@@ -12,7 +12,7 @@ from topos.state.node import LinkerNode, InversionNode, ToposNode, ResidueType
 
 log = get_emitter("topos.runtime")
 
-class ToposRuntime:
+class StateRuntime:
     def __init__(self, entry: str, nodes: Dict[str, Any], runtime_node: Any):
         self.entry = entry
         self.nodes = nodes

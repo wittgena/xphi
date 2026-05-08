@@ -1,4 +1,4 @@
-# topos.aura.node.cognitive
+# topos.node.cognitive
 import asyncio
 import dspy
 from typing import Any, Dict

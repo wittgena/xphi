@@ -3,7 +3,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from phase.bound.plane.emitter import get_emitter
-from arch.model.psi import ToposPsi, ToposSignature
+from arch.project.model.psi import ToposPsi, ToposSignature
 
 log = get_emitter("field.receptor")
 

@@ -4,7 +4,7 @@ from watchdog.observers import Observer
 from phase.node.receptor.source import TracerSource
 from phase.node.receptor.kernel import TracerKernel
 from phase.node.receptor.topos import SurfaceTopos
-from topos.surface.sink import RedisSink 
+from topos.proto.surface.sink import RedisSink 
 
 async def receptor_bootstrap(watch_dir: str = "./src"):
     """

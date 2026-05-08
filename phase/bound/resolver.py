@@ -63,6 +63,15 @@ def _clean_subpath(root_name: str, sub_path_str: str) -> str:
         return os.path.join(*pure_path.parts[1:]) if len(pure_path.parts) > 1 else "."
     return sub_path_str
 
+def _track_io_usage(name: str, target_path: Path):
+    """[NEW] 런타임 IO 추적용 훅 - 수정됨"""
+    try:
+        from arch.contract.path import path_registry
+        ## 메서드 이름을 log_access로 통일
+        path_registry.log_access(name, target_path)
+    except ImportError:
+        pass
+
 @lru_cache(maxsize=32)
 def resolve_path(name: str, start: Path | None = None) -> Path:
     ## lru_cache 히트율을 위해 start 인자 정규화
@@ -104,6 +113,7 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
 
     ## 최종 경로 생성 보장
     target_path.mkdir(parents=True, exist_ok=True)
+    _track_io_usage(name, target_path)
     return target_path
 
 def resolve_channel(name: str, start: Path | None = None) -> str:

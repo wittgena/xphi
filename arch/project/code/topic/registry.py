@@ -34,10 +34,10 @@ class TopicMap(BaseModel):
             return cls.model_validate(json.load(f))
 
 class TopicSchema(BaseModel):
-    """Φ_canonical: 경계($\partial$)에서 수집된 파편을 실체(Bound)로 응집한 표준 위상 스키마"""
+    """Φ_canonical: 경계에서 수집된 파편을 실체(Bound)로 응집한 표준 위상 스키마"""
     model_config = ConfigDict(arbitrary_types_allowed=True) # Callable 허용
     name: str = Field(..., description="객체 또는 도구의 식별자")
-    module_origin: Optional[str] = Field(None, description="원본 모듈 경로 ($\partial$의 위치)")
+    module_origin: Optional[str] = Field(None, description="원본 모듈 경로의 위치)")
     
     ## [Boundary Echoes] 경계면 현상 데이터
     status: str = Field("Unresolved", description="발현 상태: Signature_Captured | Deep_Boundary_Mapped")

@@ -1,4 +1,4 @@
-# arch.model.pos.sensor
+# arch.project.model.pos.sensor
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:

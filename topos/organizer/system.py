@@ -1,4 +1,4 @@
-# topos.engine
+# topos.organizer.system
 """
 @desc: A unified runtime model where Flow (Dynamics), Substate (Observation), and Organizer (Materialization) resonate and rupture through the Manifold.
 @topos: 
@@ -15,12 +15,12 @@ import time
 import redis.asyncio as redis_async
 from phase.node.runtime import NodeRuntime
 from topos.proto.flow import ProtoFlow, FlowState
-from arch.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
-from arch.model.manifold.particle import ToposManifold
+from arch.project.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from topos.proto.manifold.particle import ToposManifold
 from topos.state.proxy import DistributedNodePool
-from meta.ops.daemon.organizer.topos import ToposOrganizer
+from topos.organizer.node import NodeOrganizer
 from topos.state.node import inject_pr_signal, ToposNode, NodeType
-from topos.runtime import ToposRuntime
+from topos.state.runtime import StateRuntime
 from phase.bound.plane.emitter import get_emitter
 
 log = get_emitter("topos.engine")
@@ -74,7 +74,7 @@ class SystemOrganizer:
     def __init__(self, base_node: NodeRuntime):
         self.base_node = base_node
         self.pool = DistributedNodePool(self.base_node)
-        self.builder = ToposOrganizer(self.pool)
+        self.organizer = NodeOrganizer(self.pool)
 
     async def listen_and_build(self):
         log.info("[Organizer] Physical Builder standing by...")
@@ -86,10 +86,10 @@ class SystemOrganizer:
         }
         
         ## Pre-build runtime nodes (utilizing ToposOrganizer)
-        runtime_nodes = self.builder.build_runtime_nodes(ir_specs)
+        runtime_nodes = self.organizer.build_runtime_nodes(ir_specs)
         
         ## Attach Runtime Flow Controller
-        flow_controller = ToposRuntime(entry="linker_1", nodes=runtime_nodes, runtime_node=self.base_node)
+        flow_controller = StateRuntime(entry="linker_1", nodes=runtime_nodes, runtime_node=self.base_node)
         flow_controller.attach()
 
         ## @structure: Defining the initial [CON-TEXT] boundary. 

@@ -8,7 +8,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from arch.model.schema import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
+from arch.project.model.schema import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
 from phase.bound.plane.emitter import get_emitter
 from phase.bound.resolver import resolve_path
 from arch.project.code.logic.transformer import LogicTransformer

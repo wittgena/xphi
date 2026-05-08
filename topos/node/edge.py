@@ -1,4 +1,4 @@
-# topos.aura.node.edge
+# topos.node.edge
 import uuid
 from enum import Enum
 from typing import List, Optional, Dict, Any

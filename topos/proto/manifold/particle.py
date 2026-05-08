@@ -1,4 +1,4 @@
-# arch.model.manifold.particle
+# topos.proto.manifold.particle
 """@phase: Tension Accumulation $\rightarrow$ Projection $\rightarrow$ Collapse $\rightarrow$ Re-entry"""
 import asyncio
 import uuid

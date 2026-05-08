@@ -1,4 +1,4 @@
-# arch.model.manifold.dynamics
+# topos.proto.manifold.dynamics
 """
 @phase: Autonomous topological oscillation and perturbation routing
 @flow: Tension Accumulation -> Projection -> Collapse -> Re-entry
@@ -16,8 +16,8 @@ from phase.bound.plane.surface import SurfacePlane
 from phase.bound.plane.emitter import get_emitter
 from phase.reflect.rhythm.bridge import RhythmBridge
 from phase.bound.plane.emitter import get_emitter
-from arch.model.manifold.particle import ToposManifold, Particle
-from arch.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from topos.proto.manifold.particle import ToposManifold, Particle
+from arch.project.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("field.dynamics")
 

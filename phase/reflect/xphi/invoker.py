@@ -1,4 +1,4 @@
-# topos.xphi.invoker
+# phase.reflect.xphi.invoker
 """
 @phase:
 Ψ (event ingress via Redis)

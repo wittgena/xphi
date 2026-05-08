@@ -86,11 +86,18 @@ class UnifiedRegistry:
         if c_type not in target_map:
             raise ValueError(f"[Registry] Unknown {category}: {c_type}")
 
-        return target_map[c_type](**extra_kwargs)
+        node_class = target_map[c_type]
+        try:
+            return node_class(**extra_kwargs)
+        except TypeError as e:
+            ## 주입된 kwargs와 클래스의 __init__ 시그니처가 맞지 않을 때 명확한 에러 제공
+            raise TypeError(f"[Registry] Failed to init {node_class.__name__} due to signature mismatch: {e}")
 
 registry = UnifiedRegistry()
 
-def manifold_node(name: str, requires: list, emits: list):
+def manifold_node(name: str, *, requires: List[str] = None, emits: List[str] = None):
+    requires = requires or []
+    emits = emits or []
     def decorator(cls: Type):
         proto_meta = getattr(cls, "__proto_meta__", None) 
         registry.register_node(name, cls, requires, emits, proto_meta)

@@ -1,4 +1,4 @@
-# topos.aura.node.synapse
+# topos.node.synapse
 import asyncio
 from typing import Optional
 from topos.proto.pump.message import Message, MessagePump

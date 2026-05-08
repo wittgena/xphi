@@ -1,4 +1,4 @@
-# arch.model.flow
+# arch.project.model.flow
 """@phase: Tension Accumulation $\rightarrow$ Projection $\rightarrow$ Collapse $\rightarrow$ Re-entry"""
 import asyncio
 import uuid
@@ -11,7 +11,7 @@ from phase.bound.plane.surface import SurfacePlane
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from phase.reflect.rhythm.bridge import RhythmBridge
 from phase.bound.plane.emitter import get_emitter
-from arch.model.manifold.particle import ToposManifold, Particle
+from topos.proto.manifold.particle import ToposManifold, Particle
 
 class TensionAccumulator(Particle):
     """@phase: Tension Accumulation (결핍 축적 및 자율 파열)"""
