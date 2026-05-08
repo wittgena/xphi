@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol
 from arch.contract.event.psi import PsiEvent
-from arch.proto.event import EventAligner, EventRouter, EventDisperser
+from topos.proto.event import EventAligner, EventRouter, EventDisperser
 
 class IPhaseField(ABC):
     """Φ-field: shared phase space where system tension accumulates"""

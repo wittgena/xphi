@@ -6,7 +6,7 @@ import argparse
 import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
-from arch.proto.aligner import FieldAligner, AlignRecord
+from topos.proto.aligner import FieldAligner, AlignRecord
 from phase.bound.plane.emitter import get_emitter, flow_scope
 from arch.project.code.imports.transformer import ImportTransformer
 

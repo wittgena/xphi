@@ -1,7 +1,7 @@
 # phase.node.receptor.topos
 import time
 import json
-from phase.topos.surface.sink import EmitterSink
+from topos.surface.sink import EmitterSink
 
 class SurfaceTopos:
     """@role: ∂Φ bound surface (Domain Layer) - 인프라(Redis, File, API)는 EmitterSink로 추상화되어 주입됨."""
