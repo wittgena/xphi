@@ -49,7 +49,7 @@ class ConsoleSurface(EventObserver):
         elif self.mode == "MINIMAL":
             print(f"{event.message}{fold}")
         else:
-            prefix = f"T-{event.tick:04d}" if event.tick is not None else f"{event.kind.upper():^5}"
+            prefix = f"T-{int(event.tick):04d}" if event.tick is not None else f"{event.kind.upper():^5}"
             print(f"{prefix}{p_mark}| {phase_str:^6} | {event.level:^5} | {gain} {event.source_id}: {event.message}{fold}")
 
 class PressureMeter:

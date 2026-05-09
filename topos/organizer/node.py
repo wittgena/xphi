@@ -62,6 +62,9 @@ async def main():
 
     base_node = NodeRuntime(redis_url="redis://localhost:6379", executor=None)
     base_node.redis = redis_async.from_url(base_node.redis_url, decode_responses=True)
+    
+    # finally 블록에서 안전하게 참조하기 위해 초기화
+    flow_controller = None
 
     try:
         dummy_worker_id = "node-dummy-123"
@@ -82,6 +85,7 @@ async def main():
             runtime_node=base_node
         )
         flow_controller.attach()
+        
         root = StateNode(spec={
             "name": "root",
             "kind": NodeType.ANCHOR,
@@ -108,23 +112,43 @@ async def main():
 
         ## 자가 유도 활성화 - payload에 'target_spec'이 없으므로 LinkerNode가 'legacy_symlink'를 스스로 서치
         initial_flow = ProtoFlow(payload={}, aspect="root")
+        if not hasattr(initial_flow, 'id'):
+            import uuid
+            initial_flow.id = uuid.uuid4().hex
+
         initial_ctx = FlowState(initial_flow, state={
-            "root": root,
+            "phase_root": root,
             "external_rules": external_pr_rules  # 외부 신호 주입
         })
 
         log.info(f">>> Injecting Evolutionary Flow into ({entry_point})...")
-        await base_node.psi_queue.put((entry_point, initial_ctx))
-        await base_node.psi_queue.join()
+        if not hasattr(base_node, 'psi_queue'):
+            base_node.psi_queue = asyncio.Queue()
+        
+        await flow_controller.psi_queue.put((entry_point, initial_ctx))
+        # await flow_controller.psi_queue.join()
+        # await flow_controller.flow_completed.wait()
+        try:
+            await asyncio.wait_for(flow_controller.flow_completed.wait(), timeout=10.0)
+            log.info(">>> Evolution Cycle Finished.")
+        except asyncio.TimeoutError:
+            log.error("Evolution Cycle Timeout! 10초 내에 END 노드에 도달하지 못했습니다. (LinkerNode 내부 에러 의심)")
         log.info(">>> Evolution Cycle Finished.")
         
     except Exception as e:
         log.error(f"Execution Error: {e}", exc_info=True)
     finally:
+        log.info("[Organizer] System teardown initiated.")
+        
+        ## StateRuntime에게 내부 태스크들을 알아서 취소하고 종료하도록 위임
+        if flow_controller is not None:
+            await flow_controller.detach()
+            
         base_node.running = False
-        for task in base_node.loop_tasks:
-            task.cancel()
-        await base_node.redis.aclose()
+        if hasattr(base_node, 'redis') and base_node.redis:
+            await base_node.redis.aclose()
+        
+        log.info("[Organizer] Teardown complete. Exit.")
 
 if __name__ == "__main__":
     asyncio.run(main())

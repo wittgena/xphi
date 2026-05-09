@@ -77,7 +77,7 @@ async def main():
     config_dict = json.loads(redis_payload)
     field_size = config_dict["field"]["params"]["size"]
     
-    ## 인지적 결단(PhaseNodeAtor)을 내리는 30개의 에이전트 동적 생성
+    ## 인지적 결단(NodeAtor)을 내리는 30개의 에이전트 동적 생성
     config_dict["ators"] = [
         {
             "type": "node.ator", 

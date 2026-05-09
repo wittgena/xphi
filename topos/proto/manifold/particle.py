@@ -21,7 +21,10 @@ class ToposManifold(type):
 
     void_gap = asyncio.Queue()      
     projection_flow = asyncio.Queue()  
-    collapse_field = asyncio.Queue() 
+    collapse_field = asyncio.Queue()
+
+    psi_queue = asyncio.Queue()
+
     global_tick = 0
 
     def __call__(cls, *args, **kwargs):

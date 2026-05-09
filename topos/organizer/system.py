@@ -118,7 +118,8 @@ class SystemOrganizer:
 
             ## @mutate: Advecting [xe] into the topology to construct a higher-dimensional [TEXT]
             log.info(f"[Organizer] Advecting state into the phase mutation pipeline ({entry_point})...")
-            await self.base_node.psi_queue.put((entry_point, ctx))
+            await flow_controller.psi_queue.put((entry_point, ctx))
+            # await self.base_node.psi_queue.put((entry_point, ctx))
             
             ## Awaiting NodeRuntime queue processing (Handled by async workers in reality)
             await asyncio.sleep(2.0)
@@ -132,16 +133,17 @@ async def main():
     ## Initialize Redis and foundational NodeRuntime
     base_node = NodeRuntime(redis_url="redis://localhost:6379", executor=None)
     base_node.redis = redis_async.from_url(base_node.redis_url, decode_responses=True)
-    
+    # base_node.psi_queue = asyncio.Queue()   
+
     dummy_worker_id = "node-dummy-123"
     await base_node.redis.sadd("runtime:index:emits:capability:code", dummy_worker_id)
     await base_node.redis.set(f"runtime:heartbeat:{dummy_worker_id}", int(time.time()), ex=60)
 
     ## Instantiate Dynamics Layer (Flow)
     accumulator = TensionAccumulator(threshold=1.0)
-    projector = PhaseProjector(phase_name="PROJECTOR")
-    collapse = ToposCollapse(phase_name="COLLAPSE")
-    inversion = ReentryInversion(phase_name="INVERSION")
+    projector = PhaseProjector()  # 내부에서 알아서 세팅할 것으로 추정됨
+    collapse = ToposCollapse()    # 내부에서 알아서 세팅할 것으로 추정됨
+    inversion = ReentryInversion() # 에러 발생 지점 수정
 
     ## Instantiate Meta-Observer (Mind) and Physical Builder (Body)
     mind = SubStateSurveillance(threshold=8)

@@ -88,32 +88,29 @@ class AuraOrganizer:
         """
         log.info("[Organizer] 통합 위상 구조 맵핑을 시작합니다...")
 
-        # 1. 통합 정점(Unified Node) 생성 및 레지스트리 등록
+        ## 통합 정점(Unified Node) 생성 및 레지스트리 등록
         for node_id, spec in topology_spec.items():
             node_type = spec.get("type")
             
-            # 인스턴스 생성 로직 (팩토리 패턴 생략)
+            ## 인스턴스 생성 로직 (팩토리 패턴 생략)
             instance = self._create_instance_by_type(node_type, node_id)
             unified_node = UnifiedNode(node_id, instance)
             
             if spec.get("location") == "local":
                 self.local_registry[node_id] = unified_node
             
-            # 모든 노드를 캐싱 (로컬이든 원격 프록시든)
-            # 원격 노드의 경우 실제 실행은 다른 워커에서 되지만, 라우팅을 위한 Proxy 정점으로 존재
-
-        # 2. 경계(Boundary) 기반 엣지(Edge) 연결
+        ## 경계(Boundary) 기반 엣지(Edge) 연결
         for node_id, spec in topology_spec.items():
             source_node = self.local_registry.get(node_id)
             if not source_node:
-                continue # 원격 노드의 엣지 구성은 해당 원격 워커의 Organizer가 수행
+                continue
 
             for target_id in spec.get("edges", []):
                 target_spec = topology_spec.get(target_id, {})
                 
-                # 목적지 노드의 위치에 따라 경계 결정
+                ## 목적지 노드의 위치에 따라 경계 결정
                 if target_spec.get("location") == "local":
-                    # DOM 트리나 로컬 파이프라인의 수직/수평 연결
+                    ## DOM 트리나 로컬 파이프라인의 수직/수평 연결
                     source_node.attach_boundary(target_id, self.local_boundary)
                     log.info(f"[Edge Bound] {node_id} --(LocalBoundary)--> {target_id}")
                 else:
@@ -136,5 +133,4 @@ class AuraOrganizer:
             return PolicyNode(name)
         elif node_type == "logic_node":
             return StateNode(spec={"name": name})
-        # ... 추가 노드 매핑
         return None
