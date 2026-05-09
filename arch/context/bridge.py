@@ -6,7 +6,7 @@ from phase.bound.plane.emitter import get_logger
 from phase.xor.store import ResidueStore, ResidueSnapshot
 from arch.context.compiler import ContextCompiler, ContextProjector
 
-log = get_logger("context.transition")
+log = get_logger("context.bridge")
 
 class ContextBridge:
     """
