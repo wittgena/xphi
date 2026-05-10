@@ -5,8 +5,8 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from topos.plane.emitter import get_logger
-from arch.bound.resolver import find_current_self, resolve_path
+from topos.bound.plane.emitter import get_logger
+from topos.bound.resolver import find_current_self, resolve_path
 from arch.contract.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 from arch.contract.block.parser.md import MdAstParser
 from arch.contract.block.parser.py import PyAstParser

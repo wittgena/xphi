@@ -82,10 +82,10 @@ class Activator:
             self._setup_physical_boundary()
 
             ## 동적 임포트 (통합 레지스트리로 변경)
-            from topos.plane.emitter import get_emitter
+            from topos.bound.plane.emitter import get_emitter
             from arch.contract.registry import registry
             from arch.contract.discover import discover_modules
-            from arch.bound.resolver import load_bound, find_current_self
+            from topos.bound.resolver import load_bound, find_current_self
             
             self.registry = registry
             self.log = get_emitter("in.activator")

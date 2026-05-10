@@ -9,10 +9,10 @@ from typing import List, Set, Any, Dict
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
 from arch.contract.event.psi import PsiType
-from topos.plane.emitter import get_logger
-from arch.bound.resolver import find_current_self, resolve_path
+from topos.bound.plane.emitter import get_logger
+from topos.bound.resolver import find_current_self, resolve_path
 from phase.node.runtime import NodeRuntime
-from phase.node.executor.base import BaseExecutor
+from arch.executor.base import BaseExecutor
 
 log = get_logger("residue.store")
 

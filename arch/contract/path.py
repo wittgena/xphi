@@ -3,8 +3,8 @@ import os
 import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
-from arch.bound.resolver import find_current_self, load_bound, resolve_path as legacy_resolve
-from topos.plane.emitter import get_emitter
+from topos.bound.resolver import find_current_self, load_bound, resolve_path as legacy_resolve
+from topos.bound.plane.emitter import get_emitter
 
 log = get_emitter('contract.path')
 
@@ -21,7 +21,7 @@ class PathRegistry:
         """시스템 부팅 후 resolver를 통해 bound.json과 동기화"""
         if self._initialized: return
         try:
-            from arch.bound.resolver import find_current_self, load_bound
+            from topos.bound.resolver import find_current_self, load_bound
             self_root = find_current_self()
             bound = load_bound(self_root)
             self._aliases = bound.get("paths", {})
@@ -51,7 +51,7 @@ class PathRegistry:
 
     def resolve(self, name: str, start: Path | None = None) -> Path:
         """기존 resolve_path를 호출하고 기록을 남깁니다."""
-        from arch.bound.resolver import resolve_path as legacy_resolve
+        from topos.bound.resolver import resolve_path as legacy_resolve
         resolved = legacy_resolve(name, start)
         self.log_access(name, resolved)
         return resolved

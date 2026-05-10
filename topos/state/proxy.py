@@ -6,7 +6,7 @@ import logging
 import random
 import json
 from typing import Optional, Any
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 from arch.contract.event.psi import PsiEvent
 from arch.proto.flow import ProtoFlow
 

@@ -1,7 +1,7 @@
 # phase.cognitive.coupler
 import asyncio
 from typing import Optional
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from phase.node.interpreter import PhaseJudgment
 from phase.node.state.aggregator import KernelStateAggregator, InternalContext

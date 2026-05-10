@@ -13,9 +13,9 @@ import logging
 from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 from arch.contract.registry import cli_contract
-from arch.bound.resolver import find_current_self, resolve_path, load_bound
+from topos.bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_emitter('reflect.sensor')
 

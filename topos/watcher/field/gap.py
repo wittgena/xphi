@@ -9,8 +9,8 @@
 import asyncio
 from typing import List, Any, Dict
 from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id
-from phase.node.executor.base import BaseExecutor
-from phase.node.executor.dynamics import XeCont, LoopCarrier
+from arch.executor.base import BaseExecutor
+from arch.executor.dynamics import XeCont, LoopCarrier
 from arch.contract.event.bus import AsyncEventBus
 
 class DynamicXe(XeCont):

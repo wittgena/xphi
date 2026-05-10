@@ -3,9 +3,9 @@ import asyncio
 import time
 from typing import Dict, List, Optional
 from dataclasses import dataclass, field
-from phase.reflect.client.lm import LocalLM
+from phase.reflect.client.local.lm import LocalLM
 from phase.xor.store import ResidueStore, ResidueSnapshot
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 
 log = get_emitter("flow.judger")
 

@@ -5,12 +5,12 @@ import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 from arch.proto.flow import ProtoFlow, FlowState, Transduction, Align
-from topos.plane.emitter import get_logger
+from topos.bound.plane.emitter import get_logger
 from dataclasses import dataclass, field
-from arch.bound.resolver import find_current_self
+from topos.bound.resolver import find_current_self
 from arch.contract.registry import registry, contract
-from arch.bound.ator.runtime import AtorRuntime
-from arch.bound.ator.bootstrap import bootstrap
+from topos.bound.ator.runtime import AtorRuntime
+from topos.bound.ator.bootstrap import bootstrap
 from phase.node.runtime import NodeRuntime
 
 log = logging.getLogger("resonance.generator")

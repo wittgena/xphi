@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Dict
 from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from arch.contract.registry import contract
-from topos.plane.emitter import get_logger
+from topos.bound.plane.emitter import get_logger
 
 log = get_logger('resonance.validator')
 

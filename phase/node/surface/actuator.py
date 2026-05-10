@@ -4,8 +4,8 @@ import random
 import time
 import re
 from arch.contract.event.psi import PsiType
-from arch.bound.resolver import resolve_pattern
-from topos.plane.emitter import get_emitter
+from topos.bound.resolver import resolve_pattern
+from topos.bound.plane.emitter import get_emitter
 
 class SurfaceActuator:
     KEY_PARTS = [

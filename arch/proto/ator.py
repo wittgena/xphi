@@ -3,7 +3,7 @@ import uuid
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from topos.plane.emitter import get_logger
+from topos.bound.plane.emitter import get_logger
 from arch.proto.flow import (
     ProtoFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather

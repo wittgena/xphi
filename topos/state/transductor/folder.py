@@ -5,13 +5,13 @@ import json
 import inspect
 import ast
 from typing import Any, Dict, List, Tuple
-from topos.plane.emitter import get_logger
+from topos.bound.plane.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry import contract, registry
 from arch.contract.discover import discover_modules
 from phase.node.runtime import NodeRuntime
-from arch.bound.ator.runtime import AtorRuntime
-from arch.bound.resolver import find_current_self, resolve_path
+from topos.bound.ator.runtime import AtorRuntime
+from topos.bound.resolver import find_current_self, resolve_path
 
 log = get_logger("trans.folder")
 

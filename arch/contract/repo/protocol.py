@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from arch.contract.event.next import next_id
 from arch.contract.repo.node import RepoNode, AnchorNode
-from arch.bound.resolver import resolve_path
+from topos.bound.resolver import resolve_path
 
 DEFAULT_ID = "0000000"
 

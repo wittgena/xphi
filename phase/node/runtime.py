@@ -11,22 +11,22 @@ from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.bus import AsyncEventBus
 from arch.contract.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
 from phase.node.interpreter import NodeInterpreter, AnchorFlow
 from phase.node.surface.actuator import SurfaceActuator
 from arch.proto.surface.sink import RedisSink
-from arch.bound.resolver import resolve_path, find_current_self
+from topos.bound.resolver import resolve_path, find_current_self
 from arch.contract.registry import registry
 from arch.contract.discover import discover_modules
-from phase.node.executor.swarm import SwarmCliExecutor
+from arch.executor.swarm import SwarmExecutor
 from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
 from phase.cognitive.coupler import CognitiveCoupler
 from phase.cognitive.worker import CognitiveWorker
 from phase.node.state.aggregator import KernelStateAggregator
 from phase.reflect.client.local.engine import LLMEngine
-from arch.model.context.assembler import ContextAssembler
+from phase.xor.model.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -252,7 +252,7 @@ def install_os_signal(node: NodeRuntime):
 
 async def main_async():
     completion_signal = asyncio.Event()
-    executor = SwarmCliExecutor(completion_signal)
+    executor = SwarmExecutor(completion_signal)
     node = NodeRuntime(executor=executor)
     install_os_signal(node)
     

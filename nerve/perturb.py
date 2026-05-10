@@ -7,8 +7,8 @@ import re
 import redis.asyncio as redis_async
 from typing import Optional
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-from arch.bound.resolver import resolve_channel, resolve_pattern
-from topos.plane.emitter import get_emitter
+from topos.bound.resolver import resolve_channel, resolve_pattern
+from topos.bound.plane.emitter import get_emitter
 
 class NervePerturb:
     """

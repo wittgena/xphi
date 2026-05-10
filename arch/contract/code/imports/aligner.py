@@ -7,7 +7,7 @@ import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
 from arch.proto.surface.aligner import FieldAligner, AlignRecord
-from topos.plane.emitter import get_emitter, flow_scope
+from topos.bound.plane.emitter import get_emitter, flow_scope
 from arch.contract.code.imports.transformer import ImportTransformer
 
 def generate_diff(original: str, modified: str, filename: str) -> str:

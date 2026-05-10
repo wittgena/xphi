@@ -5,7 +5,7 @@ import time
 import random
 from abc import ABC, abstractmethod
 import redis.asyncio as redis_async
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from phase.node.sensor import sense_once
 from arch.contract.event.bus import AsyncEventBus

@@ -1,9 +1,9 @@
 # phase.cognitive.worker
 import asyncio
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 from phase.reflect.client.local.engine import LLMEngine
 from phase.node.state.aggregator import InternalContext
-from arch.model.context.assembler import ContextAssembler
+from phase.xor.model.context.assembler import ContextAssembler
 
 log = get_emitter('cognitive.worker')
 

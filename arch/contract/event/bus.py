@@ -3,7 +3,7 @@ import asyncio
 from typing import Dict, Any, List, Optional
 from arch.contract.event.psi import PsiEvent
 from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from topos.plane.emitter import get_emitter
+from topos.bound.plane.emitter import get_emitter
 
 class AsyncEventBus(IEventBus):
     """@desc: Actor isolation + bounded fan-out"""

@@ -1,8 +1,8 @@
 # nerve.aura.node
 import asyncio
 from typing import Dict, Any, Optional
-from topos.plane.emitter import get_emitter
-from arch.model.nerve.gan import Message, GanNode
+from topos.bound.plane.emitter import get_emitter
+from nerve.node.gan import Message, GanNode
 from topos.state.node import StateNode
 from topos.state.proxy import DistributedNodePool
 

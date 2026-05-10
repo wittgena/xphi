@@ -3,11 +3,11 @@ from __future__ import annotations
 import asyncio
 import json
 from arch.contract.event.psi import PsiCarrier, PsiEvent
-from topos.plane.emitter import get_emitter
-from arch.bound.resolver import find_current_self
+from topos.bound.plane.emitter import get_emitter
+from topos.bound.resolver import find_current_self
 from phase.node.runtime import NodeRuntime
 from arch.contract.discover import discover_modules
-from phase.node.executor.dynamics import LoopCarrier, DynamicsExecutor
+from arch.executor.dynamics import LoopCarrier, DynamicsExecutor
 
 async def main():
     discover_modules(find_current_self())
