@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict
 from topos.bound.ator.runtime import AtorRuntime
 from phase.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
-from arch.contract.registry import contract
+from arch.contract.registry.unified import contract
 from topos.bound.plane.emitter import get_logger
 
 log = get_logger('ator.reflector')

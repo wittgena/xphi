@@ -83,7 +83,7 @@ class Activator:
 
             ## 동적 임포트 (통합 레지스트리로 변경)
             from topos.bound.plane.emitter import get_emitter
-            from arch.contract.registry import registry
+            from arch.contract.registry.unified import registry
             from arch.contract.discover import discover_modules
             from topos.bound.resolver import load_bound, find_current_self
             

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
 from phase.flow import ProtoFlow, FlowState, Transduction
-from arch.contract.registry import contract, registry
+from arch.contract.registry.unified import contract, registry
 from arch.contract.discover import discover_modules
 from phase.xor.transcript.phi import TranscriptPhi
 from phase.xor.transcript.spec import TranscriptSpec

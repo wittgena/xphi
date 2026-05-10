@@ -4,7 +4,7 @@ import inspect
 from pathlib import Path
 from typing import Any, Dict
 from phase.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
-from arch.contract.registry import contract
+from arch.contract.registry.unified import contract
 from topos.bound.plane.emitter import get_logger
 
 log = get_logger("ator.resonator")

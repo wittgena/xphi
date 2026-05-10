@@ -4,9 +4,9 @@ import yaml
 import os
 from typing import Any, Dict, List, Optional
 from topos.bound.plane.emitter import get_logger
-from arch.contract.registry import contract
-from arch.contract.block.parser.md import MdAstParser
-from arch.contract.block.extractor import BlockExtractor
+from arch.contract.registry.unified import contract
+from arch.model.block.parser.md import MdAstParser
+from arch.model.block.extractor import BlockExtractor
 from phase.xor.transcript.phi import TranscriptBase
 
 log = get_logger("transcript.spec")

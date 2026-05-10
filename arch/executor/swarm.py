@@ -12,7 +12,7 @@ from arch.contract.event.next import next_id, LogEvent
 from dataclasses import asdict
 from topos.bound.plane.surface import surface
 from topos.bound.plane.emitter import get_logger, flow_scope
-from arch.contract.registry import registry
+from arch.contract.registry.unified import registry
 from arch.executor.base import BaseExecutor
 from arch.executor.cli import _GenericCliExecutor
 from arch.executor.flow import _FlowCliExecutor

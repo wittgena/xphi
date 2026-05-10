@@ -9,9 +9,9 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
 from phase.flow import ProtoFlow, FlowState, Transduction
-from arch.contract.registry import contract, registry
-from arch.contract.block.parser.md import MdAstParser
-from arch.contract.block.extractor import BlockExtractor
+from arch.contract.registry.unified import contract, registry
+from arch.model.block.parser.md import MdAstParser
+from arch.model.block.extractor import BlockExtractor
 
 log = get_logger("transcript.phi")
 

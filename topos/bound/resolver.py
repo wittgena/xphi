@@ -66,7 +66,7 @@ def _clean_subpath(root_name: str, sub_path_str: str) -> str:
 def _track_io_usage(name: str, target_path: Path):
     """[NEW] 런타임 IO 추적용 훅 - 수정됨"""
     try:
-        from arch.contract.path import path_registry
+        from arch.contract.registry.path import path_registry
         ## 메서드 이름을 log_access로 통일
         path_registry.log_access(name, target_path)
     except ImportError:

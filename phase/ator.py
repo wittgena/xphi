@@ -9,7 +9,7 @@ from phase.flow import (
     Transduction, Align, Resonance, Gather
 )
 from arch.contract.protocol import Proto, proto
-from arch.contract.registry import manifold_node, registry
+from arch.contract.registry.unified import manifold_node, registry
 
 log = get_logger('proto.ator')
 

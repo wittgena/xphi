@@ -1,7 +1,7 @@
 # arch.activator.workspace
 import os
 from pathlib import Path
-from arch.contract.registry import contract
+from arch.contract.registry.unified import contract
 from topos.bound.plane.emitter import get_emitter
 
 log = get_emitter('core.workspace')

@@ -16,7 +16,7 @@ from phase.node.sensor import REDIS_URL
 from topos.bound.plane.emitter import get_emitter, flow_scope
 from topos.bound.plane.surface import surface
 from topos.bound.resolver import get_invoker
-from arch.contract.registry import registry
+from arch.contract.registry.unified import registry
 from arch.executor.event.task import TaskSummaryEvent, TaskDetailRecord
 from arch.executor.base import BaseExecutor
 

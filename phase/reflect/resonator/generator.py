@@ -8,7 +8,7 @@ from phase.flow import ProtoFlow, FlowState, Transduction, Align
 from topos.bound.plane.emitter import get_logger
 from dataclasses import dataclass, field
 from topos.bound.resolver import find_current_self
-from arch.contract.registry import registry, contract
+from arch.contract.registry.unified import registry, contract
 from topos.bound.ator.runtime import AtorRuntime
 from topos.bound.ator.bootstrap import bootstrap
 from phase.node.runtime import NodeRuntime
