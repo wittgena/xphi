@@ -1,4 +1,4 @@
-# topos.manifold.flow
+# topos.bound.manifold.flow
 """@phase: Tension Accumulation $\rightarrow$ Projection $\rightarrow$ Collapse $\rightarrow$ Re-entry"""
 import asyncio
 import uuid

@@ -1,4 +1,4 @@
-# arch.proto.surface.aligner
+# arch.surface.aligner
 import abc
 from typing import List, Dict, Any, Tuple, Callable
 from collections import defaultdict

@@ -1,7 +1,7 @@
 # nerve.receptor.topos
 import time
 import json
-from arch.proto.surface.sink import EmitterSink
+from arch.surface.sink import EmitterSink
 
 class ReceptorTopos:
     """@role: ∂Φ bound surface (Domain Layer) - 인프라(Redis, File, API)는 EmitterSink로 추상화되어 주입됨."""

@@ -1,9 +1,9 @@
-# arch.bound.ator.runtime
+# topos.bound.ator.runtime
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState
+from phase.flow import ProtoFlow, FlowState
 from arch.contract.protocol import get_proto
 from arch.contract.event.psi import PhaseField, PsiCarrier, CarrierType
 from phase.node.state.node0 import enter_node0

@@ -1,4 +1,4 @@
-# nerve.synapse
+# nerve.node.synapse
 import asyncio
 from typing import Optional
 from nerve.node.gan import Message, GanNode

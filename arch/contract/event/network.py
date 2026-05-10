@@ -1,4 +1,4 @@
-# arch.proto.event
+# arch.contract.event.network
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Dict, Any, Optional
 from topos.bound.plane.emitter import get_emitter

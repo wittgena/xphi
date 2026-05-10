@@ -1,4 +1,4 @@
-# arch.bound.folding
+# topos.bound.folding
 import contextlib
 import types
 import inspect

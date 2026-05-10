@@ -1,4 +1,4 @@
-# arch.proto.flow
+# phase.flow
 """
 @phase
 - ψ: event signal resonance around

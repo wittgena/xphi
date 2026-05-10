@@ -6,7 +6,7 @@ import inspect
 import ast
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState, Transduction
+from phase.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry import contract, registry
 from arch.contract.discover import discover_modules
 from phase.node.runtime import NodeRuntime

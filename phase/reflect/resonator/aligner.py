@@ -5,7 +5,7 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from arch.proto.flow import ProtoFlow, FlowState, Align
+from phase.flow import ProtoFlow, FlowState, Align
 from arch.contract.registry import contract
 from topos.bound.plane.emitter import get_logger
 

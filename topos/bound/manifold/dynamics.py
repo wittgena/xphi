@@ -1,4 +1,4 @@
-# topos.manifold.dynamics
+# topos.bound.manifold.dynamics
 """
 @phase: Autonomous topological oscillation and perturbation routing
 @flow: Tension Accumulation -> Projection -> Collapse -> Re-entry

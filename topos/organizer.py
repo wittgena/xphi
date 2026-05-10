@@ -1,4 +1,4 @@
-# nerve.node.organizer
+# topos.organizer
 import time
 import asyncio
 import redis.asyncio as redis_async
@@ -6,7 +6,7 @@ from typing import Dict, Any
 from topos.bound.plane.emitter import get_emitter
 from phase.node.runtime import NodeRuntime
 from arch.contract.protocol import get_proto
-from arch.proto.flow import ProtoFlow, FlowState
+from phase.flow import ProtoFlow, FlowState
 from topos.state.proxy import DistributedNodePool
 from topos.state.rule.trans import PhaseSpec, TransRule
 from topos.state.node import LinkerNode, InversionNode, StateNode, NodeType

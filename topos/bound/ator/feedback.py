@@ -1,9 +1,9 @@
-# arch.bound.ator.feedback
+# topos.bound.ator.feedback
 import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from phase.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from arch.contract.registry import contract
 from topos.bound.plane.emitter import get_logger
 

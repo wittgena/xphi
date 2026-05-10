@@ -1,4 +1,4 @@
-# arch.model.context.prompt.input
+# phase.xor.model.context.prompt.input
 from dataclasses import dataclass
 from typing import Dict, List
 import argparse

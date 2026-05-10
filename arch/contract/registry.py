@@ -26,7 +26,7 @@ class NodeMeta:
     contract: ContractSpec
 
 class UnifiedRegistry:
-    """단일 진실 공급원 (SSOT) 레지스트리"""
+    """단일 진실 공급원 (SSOT) 레지스트리 - 가소성(Plasticity) 지원"""
     def __init__(self):
         self._nodes: Dict[str, NodeMeta] = {}
         self._cli_tasks: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
@@ -56,14 +56,31 @@ class UnifiedRegistry:
         self._nodes[name] = NodeMeta(node_class=cls, contract=contract)
     
     def register_cli_task(self, name: str, module_fqn: str, args: Optional[List[str]] = None, 
-        tags: Optional[List[str]] = None, entry: str = "", recept: Optional[List[str]] = None):
+                          tags: Optional[List[str]] = None, entry: str = "", recept: Optional[List[str]] = None,
+                          task_type: str = "cli"):
+        """[개선] 핫 리로딩 안전성 (Idempotency) 보장 - 동일한 module_fqn이 이미 존재한다면 제거 후 새로 등록하여 리스트 중복 팽창을 방지"""
+        self._cli_tasks[name] = [
+            task for task in self._cli_tasks[name] 
+            if task.get("module_fqn") != module_fqn
+        ]
+        
         self._cli_tasks[name].append({
             "module_fqn": module_fqn, 
             "args": args or [],
             "tags": tags or [],
             "entry": entry,
-            "recept": recept or []
+            "recept": recept or [],
+            "type": task_type 
         })
+
+    def add_dynamic_route(self, route_name: str, component_config: Dict[str, Any]):
+        """
+        [추가] 런타임 동적 가소성 (Runtime Plasticity)
+        파이썬 파일(.py) 로드 없이, 실행 중인 시스템에 새로운 위상 라우팅(Config 조합)을 즉시 생성합니다.
+        """
+        # 강제 덮어쓰기 (가장 최신의 동적 주입이 우선권을 가짐)
+        self._cli_tasks[route_name] = [component_config]
+        print(f"[Registry] Dynamic Route Formed: {route_name}")
 
     def register_component(self, category: str, name: str, cls: Type):
         target = getattr(self, f"_{category}s")
@@ -72,10 +89,8 @@ class UnifiedRegistry:
 
     def create_component(self, category: str, config: Any, **extra_kwargs):
         """범용 컴포넌트 팩토리"""
-        # 1. 'type' 추출 (Dict/Object 공통 처리)
         if isinstance(config, dict):
             c_type = config.get('type', '').lower()
-            # 딕셔너리일 경우 params를 기본적으로 extra_kwargs에 병합
             params = config.get('params', {})
             extra_kwargs = {**params, **extra_kwargs}
         else:
@@ -90,7 +105,6 @@ class UnifiedRegistry:
         try:
             return node_class(**extra_kwargs)
         except TypeError as e:
-            ## 주입된 kwargs와 클래스의 __init__ 시그니처가 맞지 않을 때 명확한 에러 제공
             raise TypeError(f"[Registry] Failed to init {node_class.__name__} due to signature mismatch: {e}")
 
 registry = UnifiedRegistry()
@@ -105,8 +119,16 @@ def manifold_node(name: str, *, requires: List[str] = None, emits: List[str] = N
     return decorator
 
 def cli_contract(name: str, args: List[str] = None, tags: List[str] = None, entry: str = "entry_task", recept: List[str] = None):
+    """일반적인 단일 반환(Discrete) 형태의 작업을 위한 수용체"""
     def decorator(func: Callable):
-        registry.register_cli_task(name, func.__module__, args, tags, entry, recept)
+        registry.register_cli_task(name, func.__module__, args, tags, entry, recept, task_type="cli")
+        return func
+    return decorator
+
+def flow_contract(name: str, args: List[str] = None, tags: List[str] = None, entry: str = "entry_task", recept: List[str] = None):
+    """RMFlow, GanNode 등 연속적인 스트림(Continuous stream) 형태의 작업을 위한 수용체"""
+    def decorator(func: Callable):
+        registry.register_cli_task(name, func.__module__, args, tags, entry, recept, task_type="flow")
         return func
     return decorator
 
@@ -132,6 +154,7 @@ def ator_contract(name: str):
 
 contract = SimpleNamespace(
     cli=cli_contract,
+    flow=flow_contract,
     kernel=kernel_contract,
     field=field_contract,
     watcher=watcher_contract,

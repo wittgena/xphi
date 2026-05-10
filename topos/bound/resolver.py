@@ -1,4 +1,4 @@
-# arch.bound.resolver
+# topos.bound.resolver
 import os
 import json
 import re

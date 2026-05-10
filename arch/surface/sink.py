@@ -1,4 +1,4 @@
-# arch.proto.surface.sink
+# arch.surface.sink
 import os
 import json
 import aiohttp

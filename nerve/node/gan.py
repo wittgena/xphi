@@ -1,4 +1,4 @@
-# arch.model.nerve.gan
+# nerve.node.gan
 """
 @desc: Base communication module handling message passing and hierarchical event routing (bubbling) 
        between GanNodes, each possessing an independent asynchronous lifecycle within the topos.

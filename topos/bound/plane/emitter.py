@@ -1,4 +1,4 @@
-# topos.plane.emitter
+# topos.bound.plane.emitter
 """@flow: Context -> Event -> Control -> Projection"""
 import logging
 import os

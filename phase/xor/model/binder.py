@@ -1,4 +1,4 @@
-# arch.model.binder
+# phase.xor.model.binder
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:

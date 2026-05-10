@@ -4,7 +4,7 @@ import asyncio
 import inspect
 from typing import Any
 from topos.bound.plane.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from phase.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from arch.contract.registry import contract
 from arch.contract.discover import discover_modules
 from topos.bound.resolver import find_current_self

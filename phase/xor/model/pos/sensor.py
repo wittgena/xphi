@@ -1,4 +1,4 @@
-# arch.model.pos.sensor
+# phase.xor.model.pos.sensor
 """
 @role: Class-based Boundary-driven Model Binder
 @semantics:

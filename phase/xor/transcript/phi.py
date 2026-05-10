@@ -8,7 +8,7 @@ import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from arch.proto.flow import ProtoFlow, FlowState, Transduction
+from phase.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry import contract, registry
 from arch.contract.block.parser.md import MdAstParser
 from arch.contract.block.extractor import BlockExtractor

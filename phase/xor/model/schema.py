@@ -1,4 +1,4 @@
-# arch.model.schema
+# phase.xor.model.schema
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict, field
 

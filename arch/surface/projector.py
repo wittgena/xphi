@@ -1,4 +1,4 @@
-# arch.proto.surface.projector
+# arch.surface.projector
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Any, Optional
 from topos.bound.plane.emitter import get_emitter

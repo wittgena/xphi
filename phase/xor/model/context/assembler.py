@@ -1,4 +1,4 @@
-# arch.model.context.assembler
+# phase.xor.model.context.assembler
 import json
 import yaml
 from pathlib import Path

@@ -16,7 +16,7 @@ from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
 from phase.node.interpreter import NodeInterpreter, AnchorFlow
 from phase.node.surface.actuator import SurfaceActuator
-from arch.proto.surface.sink import RedisSink
+from arch.surface.sink import RedisSink
 from topos.bound.resolver import resolve_path, find_current_self
 from arch.contract.registry import registry
 from arch.contract.discover import discover_modules
