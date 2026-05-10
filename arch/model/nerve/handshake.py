@@ -1,4 +1,4 @@
-# nerve.model.handshake
+# arch.model.nerve.handshake
 """
 @phase: meta.model
 @desc: A handshake module simulating the 'Topological Alignment' process through 
