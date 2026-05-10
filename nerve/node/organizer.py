@@ -6,7 +6,7 @@ from typing import Dict, Any
 from topos.plane.emitter import get_emitter
 from phase.node.runtime import NodeRuntime
 from arch.contract.protocol import get_proto
-from topos.proto.flow import ProtoFlow, FlowState
+from arch.proto.flow import ProtoFlow, FlowState
 from topos.state.proxy import DistributedNodePool
 from topos.state.rule.trans import PhaseSpec, TransRule
 from topos.state.node import LinkerNode, InversionNode, StateNode, NodeType

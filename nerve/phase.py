@@ -11,7 +11,7 @@ class Phase(Enum):
     FRAGMENTED = "Φᶠ"    # 파편화된 기억: 실패했으나 재시도를 위해 보존됨
     DOMINIUM = "Ψᴰ"      # 앵커링된 최종 상태
 
-class CognitivePhase:
+class NervePhase:
     def __init__(self, origin: str = "0"):
         self.id: uuid.UUID = uuid.uuid4()
         self.origin: str = origin

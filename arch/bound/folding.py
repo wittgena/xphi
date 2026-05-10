@@ -5,7 +5,7 @@ import inspect
 import functools
 import logging
 from typing import Dict, Any
-from arch.ator.transcript.spec import TranscriptSpec
+from phase.transcript.spec import TranscriptSpec
 
 log = logging.getLogger("bound.folding")
 

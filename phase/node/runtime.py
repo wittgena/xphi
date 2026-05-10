@@ -16,14 +16,14 @@ from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
 from phase.node.interpreter import NodeInterpreter, AnchorFlow
 from phase.node.surface.actuator import SurfaceActuator
-from topos.proto.surface.sink import RedisSink
+from arch.proto.surface.sink import RedisSink
 from arch.bound.resolver import resolve_path, find_current_self
 from arch.contract.registry import registry
 from arch.contract.discover import discover_modules
 from phase.node.executor.swarm import SwarmCliExecutor
 from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
-from nerve.cognitive.coupler import CognitiveCoupler
-from nerve.cognitive.worker import CognitiveWorker
+from phase.cognitive.coupler import CognitiveCoupler
+from phase.cognitive.worker import CognitiveWorker
 from phase.node.state.aggregator import KernelStateAggregator
 from phase.reflect.client.local.engine import LLMEngine
 from arch.model.context.assembler import ContextAssembler

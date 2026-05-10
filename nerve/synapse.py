@@ -1,12 +1,12 @@
 # nerve.synapse
 import asyncio
 from typing import Optional
-from topos.proto.pump.message import Message, MessagePump
+from arch.model.nerve.gan import Message, GanNode
 from topos.plane.emitter import get_emitter
 from topos.state.rule.trans import TransRule
 from topos.state.node import NodeType
 
-log = get_emitter('bridge.synapse')
+log = get_emitter('nerve.synapse')
 
 class TensionAlert(Message):
     """@desc: Aura가 임계 텐션을 감지했을 때 펌프(DOM)에 방출하는 경고 이벤트"""
@@ -16,9 +16,9 @@ class TensionAlert(Message):
         self.persona = persona
         self.cause = cause
 
-class NerveSynapse(MessagePump):
+class NerveSynapse(GanNode):
     """
-    @desc: 제어 평면(MessagePump)과 실행 평면(Topos Graph)을 잇는 단방향 시냅스.
+    @desc: 제어 평면(GanNode)과 실행 평면(Topos Graph)을 잇는 단방향 시냅스.
     Aura의 상태 이벤트를 수신하여, Topos의 위상 변이(TransRule) 규칙으로 번역(Translate)한 뒤
     Redis/Queue 경계를 통해 주입(Inject)합니다.
     """
@@ -55,7 +55,7 @@ class NerveSynapse(MessagePump):
 
     async def _inject_to_topos_boundary(self, rules: list[TransRule], cause: str):
         """
-        MessagePump의 공간에서 Topos의 공간(Redis/Queue)으로 데이터를 넘깁니다.
+        GanNode의 공간에서 Topos의 공간(Redis/Queue)으로 데이터를 넘깁니다.
         여기서 '경계(Boundary)'를 넘는 행위가 일어납니다.
         """
         # ToposOrganizer가 이해할 수 있는 형태(Event, Payload)로 캡슐화

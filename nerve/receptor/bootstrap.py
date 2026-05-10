@@ -4,7 +4,7 @@ from watchdog.observers import Observer
 from nerve.receptor.tracer.source import TracerSource
 from nerve.receptor.tracer.kernel import TracerKernel
 from nerve.receptor.topos import ReceptorTopos
-from topos.proto.surface.sink import RedisSink 
+from arch.proto.surface.sink import RedisSink 
 
 async def receptor_bootstrap(watch_dir: str = "./src"):
     """

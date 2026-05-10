@@ -3,18 +3,18 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from topos.plane.emitter import get_emitter
-from arch.model.psi import ToposPsi, ToposSignature
+from nerve.aura.psi import AuraPsi, AuraSignature
 
 log = get_emitter("aura.receptor")
 
 class AuraReceptor:
-    def __init__(self, name: str, own_signature: ToposSignature, rupture_threshold: float = 1.0):
+    def __init__(self, name: str, own_signature: AuraSignature, rupture_threshold: float = 1.0):
         self.name = name
         self.own_signature = own_signature
         self.rupture_threshold = rupture_threshold
         self.current_tension = 0.0  # 누적된 압력
 
-    def absorb(self, wave: ToposPsi):
+    def absorb(self, wave: AuraPsi):
         ## 수신자의 구조와 발신자의 구조가 얼마나 공명하는가?
         resonance_coeff = self.own_signature.resonance_with(wave.signature)
         
@@ -47,23 +47,23 @@ if __name__ == "__main__":
     ## 수신 노드(관찰자) 생성: 차원 3, 밀도 0.5의 구조를 가짐
     analyzer_node = AuraReceptor(
         name="L3:AnalyzerState",
-        own_signature=ToposSignature(dimension=3, density=0.5, is_closed=True),
+        own_signature=AuraSignature(dimension=3, density=0.5, is_closed=True),
         rupture_threshold=2.0 # 텐션이 2.0이 되면 파열
     )
 
     ## 매질에 던져지는 파동들 (타입이 없습니다)
     waves = [
         ## 구조가 전혀 다른 곳에서 온 약한 파동 (공명 낮음)
-        ToposPsi(
+        AuraPsi(
             origin_id="L0:PrimitiveUtils",
             intensity=1.0,
-            signature=ToposSignature(dimension=1, density=0.1, is_closed=False)
+            signature=AuraSignature(dimension=1, density=0.1, is_closed=False)
         ),
         ## 구조가 완전히 동일한 곳에서 온 중간 파동 (공명 100%)
-        ToposPsi(
+        AuraPsi(
             origin_id="L3:ToposBounder",
             intensity=1.5,
-            signature=ToposSignature(dimension=3, density=0.5, is_closed=True),
+            signature=AuraSignature(dimension=3, density=0.5, is_closed=True),
             residue="[xe: Unresolved Graph Leakage]"
         )
     ]

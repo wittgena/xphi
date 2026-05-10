@@ -2,7 +2,7 @@
 import asyncio
 from typing import Dict, Any, Optional
 from topos.plane.emitter import get_emitter
-from topos.proto.pump.message import Message, MessagePump
+from arch.model.nerve.gan import Message, GanNode
 from topos.state.node import StateNode
 from topos.state.proxy import DistributedNodePool
 
@@ -14,7 +14,7 @@ class Boundary:
         raise NotImplementedError
 
 class LocalBoundary(Boundary):
-    """같은 메모리/프로세스 내에 존재하는 노드 간의 경계 (기존 MessagePump의 큐 방식)"""
+    """같은 메모리/프로세스 내에 존재하는 노드 간의 경계 (기존 GanNode의 큐 방식)"""
     def __init__(self, local_registry: Dict[str, 'UnifiedNode']):
         self.registry = local_registry
 
@@ -52,8 +52,8 @@ class AuraNode:
 
     async def receive(self, payload: Any):
         """이전 노드/경계로부터 데이터를 수신하여 원본 인스턴스에 전달"""
-        if isinstance(self.instance, MessagePump):
-            # MessagePump 기반 노드일 경우
+        if isinstance(self.instance, GanNode):
+            # GanNode 기반 노드일 경우
             self.instance.post_message(payload)
         elif isinstance(self.instance, StateNode):
             # 기존 Topos 기반 노드일 경우 (FlowState 처리 등)
@@ -121,7 +121,7 @@ class ToposAura:
         return self.local_registry
 
     def _create_instance_by_type(self, node_type: str, name: str) -> Any:
-        """타입에 따라 기존 MessagePump 기반 앱 노드나 Topos 기반 로직 노드를 생성"""
+        """타입에 따라 기존 GanNode 기반 앱 노드나 Topos 기반 로직 노드를 생성"""
         from hand.config.app import AgentApp
         from hand.config.policy import PolicyNode
         
