@@ -7,7 +7,7 @@ from typing import Any, Dict
 from arch.ator.runtime import AtorRuntime
 from topos.proto.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
 from arch.contract.registry import contract
-from phase.bound.plane.emitter import get_logger
+from topos.plane.emitter import get_logger
 
 log = get_logger('ator.reflector')
 

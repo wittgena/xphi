@@ -4,7 +4,7 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.contract.event.psi import PsiType
-from phase.bound.plane.surface import SurfacePlane
+from topos.plane.surface import SurfacePlane
 from arch.contract.interface import IEventBus
 
 class RhythmCoupler:

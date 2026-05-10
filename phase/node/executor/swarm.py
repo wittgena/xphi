@@ -10,8 +10,8 @@ from typing import Callable, Any
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.next import next_id, LogEvent
 from dataclasses import asdict
-from phase.bound.plane.surface import surface
-from phase.bound.plane.emitter import get_logger, flow_scope
+from topos.plane.surface import surface
+from topos.plane.emitter import get_logger, flow_scope
 from arch.contract.registry import registry
 from phase.node.executor.base import BaseExecutor
 from phase.node.executor.cli import _GenericCliExecutor

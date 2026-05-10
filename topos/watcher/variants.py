@@ -10,8 +10,8 @@
 """
 import unittest
 import time
-from phase.bound.plane.emitter import get_emitter, flow_scope, _flow_context
-from phase.bound.plane.surface import SurfacePlane
+from topos.plane.emitter import get_emitter, flow_scope, _flow_context
+from topos.plane.surface import SurfacePlane
 
 class ToposVariants(unittest.TestCase):
     def setUp(self):

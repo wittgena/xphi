@@ -8,8 +8,8 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from phase.bound.plane.emitter import get_emitter
-from phase.bound.resolver import resolve_path
+from topos.plane.emitter import get_emitter
+from arch.bound.resolver import resolve_path
 
 class LogicTransformer:
     """

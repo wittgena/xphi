@@ -8,9 +8,9 @@ from pathlib import Path
 from tqdm import tqdm
 from collections import defaultdict, Counter
 from gensim import corpora, models
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 from arch.project.code.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
-from phase.bound.resolver import find_current_self, resolve_path
+from arch.bound.resolver import find_current_self, resolve_path
 from arch.project.block.parser.topos import ToposAstParser
 
 log = get_emitter("topic.modeler")

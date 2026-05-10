@@ -4,7 +4,7 @@ import enum
 import logging
 from typing import List, Tuple, Any, Optional, Dict
 from dataclasses import field
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
 from topos.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import PhaseSpec, TransRule, NodeType

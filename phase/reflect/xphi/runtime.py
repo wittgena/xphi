@@ -11,8 +11,8 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import List, Optional, Generator
 import redis
-from phase.bound.plane.emitter import get_emitter
-from phase.bound.resolver import find_current_self, resolve_path
+from topos.plane.emitter import get_emitter
+from arch.bound.resolver import find_current_self, resolve_path
 
 log = get_emitter("xphi.runtime")
 

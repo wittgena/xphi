@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from arch.contract.event.next import next_id
 from arch.project.repo.commit import RepoCommit, AnchorCommit
-from phase.bound.resolver import resolve_path
+from arch.bound.resolver import resolve_path
 
 DEFAULT_ID = "0000000"
 LINEAGE_ROOT = resolve_path('contract') / 'lineage'

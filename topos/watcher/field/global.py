@@ -7,7 +7,7 @@ from typing import List, Dict, Optional, Any, Type, Callable
 from arch.contract.event.bus import AsyncEventBus
 from arch.contract.event.psi import PsiCarrier, PsiEvent
 from arch.contract.interface import IPhaseAtor, IPhaseField, ICriticalDetector, ISystemRegime
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 from arch.contract.registry import registry, contract 
 
 @contract.field("global.field")

@@ -15,8 +15,8 @@ import threading
 import urllib.parse
 from typing import Callable, List, Dict, Any
 import redis.asyncio as redis_async
-from phase.bound.plane.emitter import get_logger
-from phase.bound.resolver import find_current_self, resolve_path
+from topos.plane.emitter import get_logger
+from arch.bound.resolver import find_current_self, resolve_path
 from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
 from arch.contract.event.psi import PsiEvent
 from phase.reflect.xphi.runtime import XPhiRuntime

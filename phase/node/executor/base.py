@@ -6,7 +6,7 @@ from typing import List, Dict, Optional, Any, Protocol
 from dataclasses import dataclass
 from arch.contract.event.psi import PsiType, PsiEvent
 from arch.contract.interface import IPhaseField, IBoundExecutor
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 
 class BaseExecutor(ABC):
     """@executor: ψ → {ψ'} (execution / dispersion / transduction)"""

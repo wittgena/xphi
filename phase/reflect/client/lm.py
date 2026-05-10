@@ -1,7 +1,7 @@
 # phase.reflect.client.lm
 import dspy
 from phase.reflect.client.local.engine import LLMEngine
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 
 log = get_emitter("local.lm")
 

@@ -5,9 +5,9 @@ import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 from topos.proto.flow import ProtoFlow, FlowState, Transduction, Align
-from phase.bound.plane.emitter import get_logger
+from topos.plane.emitter import get_logger
 from dataclasses import dataclass, field
-from phase.bound.resolver import find_current_self
+from arch.bound.resolver import find_current_self
 from arch.contract.registry import registry, contract
 from arch.ator.runtime import AtorRuntime
 from arch.ator.bootstrap import bootstrap

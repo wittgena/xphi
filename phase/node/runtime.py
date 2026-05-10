@@ -11,22 +11,22 @@ from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.bus import AsyncEventBus
 from arch.contract.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 from phase.node.sensor import sense_once, REDIS_URL
 from phase.node.dispatcher import Dispatcher
 from phase.node.interpreter import NodeInterpreter, AnchorFlow
 from phase.node.surface.actuator import SurfaceActuator
 from topos.proto.surface.sink import RedisSink
-from phase.bound.resolver import resolve_path, find_current_self
+from arch.bound.resolver import resolve_path, find_current_self
 from arch.contract.registry import registry
 from arch.contract.discover import discover_modules
 from phase.node.executor.swarm import SwarmCliExecutor
 from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
-from phase.node.cognitive.coupler import CognitiveCoupler
-from phase.node.cognitive.worker import CognitiveWorker
+from nerve.cognitive.coupler import CognitiveCoupler
+from nerve.cognitive.worker import CognitiveWorker
 from phase.node.state.aggregator import KernelStateAggregator
 from phase.reflect.client.local.engine import LLMEngine
-from arch.context.assembler import ContextAssembler
+from arch.model.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 

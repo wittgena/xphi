@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 from phase.reflect.client.lm import LocalLM
 from phase.xor.store import ResidueStore, ResidueSnapshot
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 
 log = get_emitter("flow.judger")
 

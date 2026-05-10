@@ -13,9 +13,9 @@ from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.next import next_id, LogEvent
 from dataclasses import asdict
 from phase.node.sensor import REDIS_URL
-from phase.bound.plane.emitter import get_emitter, flow_scope
-from phase.bound.plane.surface import surface
-from phase.bound.resolver import get_invoker
+from topos.plane.emitter import get_emitter, flow_scope
+from topos.plane.surface import surface
+from arch.bound.resolver import get_invoker
 from arch.contract.registry import registry
 from phase.node.executor.result import TaskSummaryEvent, TaskDetailRecord
 from phase.node.executor.base import BaseExecutor

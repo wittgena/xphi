@@ -9,7 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 
 log = get_emitter("repo.scanner", mode="SLIM")
 

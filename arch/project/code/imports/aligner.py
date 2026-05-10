@@ -6,8 +6,8 @@ import argparse
 import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
-from topos.proto.aligner import FieldAligner, AlignRecord
-from phase.bound.plane.emitter import get_emitter, flow_scope
+from topos.proto.surface.aligner import FieldAligner, AlignRecord
+from topos.plane.emitter import get_emitter, flow_scope
 from arch.project.code.imports.transformer import ImportTransformer
 
 def generate_diff(original: str, modified: str, filename: str) -> str:

@@ -5,7 +5,7 @@ from pydantic import SecretStr
 from openhands.sdk import LLM, Agent, Tool
 from openhands.tools.preset.default import get_default_tools
 from phase.reflect.client.local.engine import SERVER_PORT, MODEL_NAME
-from phase.bound.resolver import resolve_path
+from arch.bound.resolver import resolve_path
 
 RES_ROOT = resolve_path("res")
 

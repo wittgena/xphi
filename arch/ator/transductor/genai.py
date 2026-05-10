@@ -3,16 +3,16 @@ import json
 import asyncio
 import inspect
 from typing import Any
-from phase.bound.plane.emitter import get_logger
+from topos.plane.emitter import get_logger
 from topos.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from arch.contract.registry import contract
 from arch.contract.discover import discover_modules
-from phase.bound.resolver import find_current_self
+from arch.bound.resolver import find_current_self
 from phase.node.runtime import NodeRuntime
 from arch.ator.runtime import AtorRuntime
 from arch.ator.bootstrap import bootstrap 
 from phase.reflect.client.local.engine import LLMEngine
-from phase.bound.resolver import resolve_path
+from arch.bound.resolver import resolve_path
 
 log = get_logger("trans.genai")
 

@@ -10,7 +10,7 @@ from typing import List, Iterator
 from contextlib import contextmanager
 import uuid
 from arch.contract.event.psi import PsiCarrier
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 from phase.node.interpreter import NodeInterpreter, AnchoredIR, AnchorFlow
 
 log = get_emitter("state.node0")

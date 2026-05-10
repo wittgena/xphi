@@ -12,12 +12,12 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-from phase.bound.plane.surface import SurfacePlane
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.surface import SurfacePlane
+from topos.plane.emitter import get_emitter
 from phase.reflect.rhythm.bridge import RhythmBridge
-from phase.bound.plane.emitter import get_emitter
+from topos.plane.emitter import get_emitter
 from topos.proto.manifold.particle import ToposManifold, Particle
-from arch.project.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from arch.model.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("field.dynamics")
 
