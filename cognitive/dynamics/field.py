@@ -16,8 +16,8 @@ from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from topos.bound.plane.surface import SurfacePlane
 from topos.bound.plane.emitter import get_emitter
 from topos.bound.rhythm.bridge import RhythmBridge
-from cognitive.dynamics.manifold.particle import ToposManifold, Particle
-from cognitive.dynamics.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from topos.manifold import ToposManifold, Particle
+from cognitive.dynamics.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("dynamics.field")
 

@@ -5,7 +5,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from topos.bound.plane.emitter import get_emitter
-from xphi.model.aura.psi import AuraPsi, AuraSignature
+from cognitive.context.aura.psi import AuraPsi, AuraSignature
 
 log = get_emitter("aura.receptor")
 

@@ -27,7 +27,7 @@ from phase.reflect.cognitive.coupler import CognitiveCoupler
 from phase.reflect.cognitive.worker import CognitiveWorker
 from phase.runtime.state.aggregator import KernelStateAggregator
 from phase.reflect.client.local.engine import LLMEngine
-from xphi.model.context.assembler import ContextAssembler
+from cognitive.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 

@@ -3,7 +3,7 @@ import os
 import time
 import subprocess
 import requests
-from xphi.model.resonance import BridgeEvent
+from topos.model.resonance import BridgeEvent
 from topos.bound.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')

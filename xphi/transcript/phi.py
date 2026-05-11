@@ -12,8 +12,8 @@ from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
 from phase.reflect.proto.flow import ProtoFlow, FlowState, Transduction
 from phase.runtime.contract.registry.unified import contract, registry
-from topos.arch.block.parser.md import MdAstParser
-from topos.arch.block.extractor import BlockExtractor
+from xphi.code.block.parser.md import MdAstParser
+from xphi.code.block.extractor import BlockExtractor
 
 log = get_logger("transcript.phi")
 

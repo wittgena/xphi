@@ -7,8 +7,8 @@ import os
 from typing import Any, Dict, List, Optional
 from topos.bound.plane.emitter import get_logger
 from phase.runtime.contract.registry.unified import contract
-from topos.arch.block.parser.md import MdAstParser
-from topos.arch.block.extractor import BlockExtractor
+from xphi.code.block.parser.md import MdAstParser
+from xphi.code.block.extractor import BlockExtractor
 from xphi.transcript.phi import TranscriptBase
 
 log = get_logger("transcript.spec")
