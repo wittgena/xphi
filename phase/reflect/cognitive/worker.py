@@ -4,7 +4,7 @@ import asyncio
 from topos.bound.plane.emitter import get_emitter
 from phase.reflect.client.local.engine import LLMEngine
 from phase.runtime.state.aggregator import InternalContext
-from topos.xor.model.context.assembler import ContextAssembler
+from xphi.model.context.assembler import ContextAssembler
 
 log = get_emitter('cognitive.worker')
 

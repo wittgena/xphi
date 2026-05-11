@@ -4,16 +4,21 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
+import argparse
+from pathlib import Path
 from typing import Dict, Any
+from phase.runtime.contract.registry.path import path_registry
 from phase.runtime.contract.event.psi import PsiCarrier, PsiEvent
 from topos.bound.plane.emitter import get_emitter
 from topos.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from phase.runtime.contract.discover import discover_modules
-from topos.dynamics.carrier import LoopCarrier
-from topos.dynamics.executor import DynamicsExecutor
+from cognitive.dynamics.carrier import LoopCarrier
+from cognitive.dynamics.executor import DynamicsExecutor
 from cognitive.edge.treg import FrameRegistry, TregEdge, PhaseState
 from cognitive.edge.trajectory import SignatureBound, TrajectoryXor
+from topos.validator.contract import ContractValidator
+from phase.runtime.contract.proposer import execute_proposer
 
 class ExchangeSystem:
     """
@@ -24,13 +29,30 @@ class ExchangeSystem:
         discover_modules(find_current_self())
         self.log = get_emitter("cognitive.exchange", phase="BOOT")
         self.config = json.loads(config_payload)
-        
+ 
+        # self._perform_static_validation()
+
         self.executor: DynamicsExecutor = None
         self.node: NodeRuntime = None
         self.treg_gate: TregEdge = None
         self.signature: SignatureBound = None
 
         self._initialize_topology()
+
+    def _perform_static_validation(self):
+        """flow.json 로드 및 정합성 체크"""
+        try:
+            flow_path = path_registry.resolve("contract") / "flow.json"
+            if not flow_path.exists():
+                self.log.warning("!!! flow.json not found. Skipping static validation. !!!")
+                return
+
+            validator = ContractValidator(flow_path)
+            validator.validate(self.config)
+            self.log.info(">>> Static Contract Validation Passed. (Phase: Cryst) <<<")
+        except Exception as e:
+            self.log.critical(f"🚨 [STATIC VALIDATION FAILED] {e}")
+            sys.exit(1)
 
     def _initialize_topology(self):
         """Prepares the manifold and seeds the initial population of agents."""
@@ -156,6 +178,19 @@ async def main():
       "ators": []
     }
     """
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--sync", action="store_true", help="부팅 전 위상 계약(flow.json) 강제 동기화")
+    args = parser.parse_args()
+
+    if args.sync:
+        print("[Boot] 위상 구조를 재정렬합니다 (Proposing...)")
+        execute_proposer()
+
+    print("[Boot] Macroscopic Exchange System 기동...")
+    system = ExchangeSystem(redis_payload)
+    await system.run()
+
     system = ExchangeSystem(redis_payload)
     await system.run()
 

@@ -1,6 +1,6 @@
 # phase.reflect.hand.engine
 from abc import ABC, abstractmethod
-from phase.reflect.schema import BridgeEvent
+from xphi.model.resonance import BridgeEvent
 
 class BaseEngine(ABC):
     @abstractmethod

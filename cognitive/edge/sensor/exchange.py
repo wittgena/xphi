@@ -7,7 +7,7 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
 from phase.runtime.contract.interface import IDynamicsKernel
 from phase.runtime.contract.registry.unified import contract
-from topos.bound.watcher.config import KernelConfig
+from cognitive.watcher.config import KernelConfig
 
 @contract.kernel("cognitive.exchange")
 class ExchangeSensor(IDynamicsKernel):
