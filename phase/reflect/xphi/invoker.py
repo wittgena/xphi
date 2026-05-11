@@ -17,8 +17,8 @@ from typing import Callable, List, Dict, Any
 import redis.asyncio as redis_async
 from topos.bound.plane.emitter import get_logger
 from topos.bound.resolver import find_current_self, resolve_path
-from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
-from arch.contract.event.psi import PsiEvent
+from phase.runtime.contract.interface import IEventBus, IPhaseField, IPhaseAtor
+from phase.runtime.contract.event.psi import PsiEvent
 from phase.reflect.xphi.runtime import XPhiRuntime
 from phase.reflect.client.stream import StreamClient
 from phase.reflect.client.surface import RedisClient, SurfaceClient

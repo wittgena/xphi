@@ -11,10 +11,10 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.contract.event.psi import PsiEvent, PsiCarrier
+from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from topos.bound.plane.surface import SurfacePlane
 from topos.bound.plane.emitter import get_emitter
-from phase.reflect.rhythm.bridge import RhythmBridge
+from topos.bound.rhythm.bridge import RhythmBridge
 from topos.dynamics.manifold.particle import ToposManifold, Particle
 from topos.dynamics.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 

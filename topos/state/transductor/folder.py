@@ -6,10 +6,10 @@ import inspect
 import ast
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from phase.flow import ProtoFlow, FlowState, Transduction
-from arch.contract.registry.unified import contract, registry
-from arch.contract.discover import discover_modules
-from phase.node.runtime import NodeRuntime
+from phase.reflect.proto.flow import ProtoFlow, FlowState, Transduction
+from phase.runtime.contract.registry.unified import contract, registry
+from phase.runtime.contract.discover import discover_modules
+from phase.runtime.node import NodeRuntime
 from topos.bound.ator.runtime import AtorRuntime
 from topos.bound.resolver import find_current_self, resolve_path
 

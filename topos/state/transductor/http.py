@@ -2,8 +2,8 @@
 import httpx
 import re
 from typing import Any, Dict
-from phase.flow import ProtoFlow, Transduction
-from arch.contract.registry.unified import contract
+from phase.reflect.proto.flow import ProtoFlow, Transduction
+from phase.runtime.contract.registry.unified import contract
 from topos.bound.plane.emitter import get_logger
 
 log = get_logger('transductor.http')

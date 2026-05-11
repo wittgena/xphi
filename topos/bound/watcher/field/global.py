@@ -4,11 +4,11 @@ import asyncio
 import math
 import random
 from typing import List, Dict, Optional, Any, Type, Callable
-from arch.contract.event.bus import AsyncEventBus
-from arch.contract.event.psi import PsiCarrier, PsiEvent
-from arch.contract.interface import IPhaseAtor, IPhaseField, ICriticalDetector, ISystemRegime
+from phase.runtime.contract.event.bus import AsyncEventBus
+from phase.runtime.contract.event.psi import PsiCarrier, PsiEvent
+from phase.runtime.contract.interface import IPhaseAtor, IPhaseField, ICriticalDetector, ISystemRegime
 from topos.bound.plane.emitter import get_emitter
-from arch.contract.registry.unified import registry, contract 
+from phase.runtime.contract.registry.unified import registry, contract 
 
 @contract.field("global.field")
 class GlobalField(IPhaseField):

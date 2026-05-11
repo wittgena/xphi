@@ -4,8 +4,8 @@ import enum
 import logging
 from typing import List, Tuple, Any, Optional, Dict
 from topos.bound.plane.emitter import get_emitter
-from arch.contract.protocol import proto, get_proto, Proto
-from phase.flow import ProtoFlow, FlowState
+from phase.runtime.contract.protocol import proto, get_proto, Proto
+from phase.reflect.proto.flow import ProtoFlow, FlowState
 from topos.state.rule.trans import TransRule, PhaseSpec, NodeType
 
 log = get_emitter("state.node")

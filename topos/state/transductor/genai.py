@@ -4,11 +4,11 @@ import asyncio
 import inspect
 from typing import Any
 from topos.bound.plane.emitter import get_logger
-from phase.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
-from arch.contract.registry.unified import contract
-from arch.contract.discover import discover_modules
+from phase.reflect.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from phase.runtime.contract.registry.unified import contract
+from phase.runtime.contract.discover import discover_modules
 from topos.bound.resolver import find_current_self
-from phase.node.runtime import NodeRuntime
+from phase.runtime.node import NodeRuntime
 from topos.bound.ator.runtime import AtorRuntime
 from topos.bound.ator.bootstrap import bootstrap 
 from phase.reflect.client.local.engine import LLMEngine

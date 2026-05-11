@@ -3,15 +3,15 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from arch.contract.event.psi import PsiCarrier, PsiEvent
+from phase.runtime.contract.event.psi import PsiCarrier, PsiEvent
 from topos.bound.plane.emitter import get_emitter
 from topos.bound.resolver import find_current_self
-from phase.node.runtime import NodeRuntime
-from arch.contract.registry.unified import registry, contract
-from arch.contract.discover import discover_modules
+from phase.runtime.node import NodeRuntime
+from phase.runtime.contract.registry.unified import registry, contract
+from phase.runtime.contract.discover import discover_modules
 from topos.dynamics.carrier import LoopCarrier
 from topos.dynamics.executor import DynamicsExecutor
-from arch.contract.interface import IDynamicsKernel
+from phase.runtime.contract.interface import IDynamicsKernel
 
 @contract.kernel("kernel.resonance")
 class KernelResonance(IDynamicsKernel):

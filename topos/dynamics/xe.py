@@ -1,10 +1,10 @@
 # topos.dynamics.xe
 from __future__ import annotations
 import asyncio
-from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
+from phase.runtime.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
-from arch.executor.base import BaseExecutor
-from arch.contract.registry.unified import registry
+from phase.executor.base import BaseExecutor
+from phase.runtime.contract.registry.unified import registry
 
 class PhaseField(type(BaseExecutor)):
     """@phase.bound: 클래스 생성 시점에 고유한 Snowflake ID 부여"""

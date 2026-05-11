@@ -8,13 +8,13 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from phase.flow import ProtoFlow, FlowState, Transduction
-from arch.contract.registry.unified import contract, registry
-from arch.contract.discover import discover_modules
-from phase.xor.transcript.phi import TranscriptPhi
-from phase.xor.transcript.spec import TranscriptSpec
+from phase.reflect.proto.flow import ProtoFlow, FlowState, Transduction
+from phase.runtime.contract.registry.unified import contract, registry
+from phase.runtime.contract.discover import discover_modules
+from topos.xor.transcript.phi import TranscriptPhi
+from topos.xor.transcript.spec import TranscriptSpec
 from topos.bound.ator.runtime import AtorRuntime
-from phase.node.runtime import NodeRuntime
+from phase.runtime.node import NodeRuntime
 from topos.bound.resolver import find_current_self, resolve_path, load_bound
 
 log = get_logger("ator.bootstrap")

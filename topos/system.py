@@ -13,8 +13,8 @@ import asyncio
 import logging
 import time
 import redis.asyncio as redis_async
-from phase.node.runtime import NodeRuntime
-from phase.flow import ProtoFlow, FlowState
+from phase.runtime.node import NodeRuntime
+from phase.reflect.proto.flow import ProtoFlow, FlowState
 from topos.dynamics.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 from topos.dynamics.manifold.particle import ToposManifold
 from topos.state.proxy import DistributedNodePool
