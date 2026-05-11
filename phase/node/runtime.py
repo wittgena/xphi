@@ -21,7 +21,7 @@ from topos.bound.resolver import resolve_path, find_current_self
 from arch.contract.registry.unified import registry
 from arch.contract.discover import discover_modules
 from arch.executor.swarm import SwarmExecutor
-from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon
+from phase.node.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
 from cognitive.coupler import CognitiveCoupler
 from cognitive.worker import CognitiveWorker
 from phase.node.state.aggregator import KernelStateAggregator
@@ -119,7 +119,8 @@ class NodeRuntime(IPhaseAtor):
         if self.executor:
             self.executor.node = self
 
-        discover_modules(find_current_self())
+        watch_dir = find_current_self()
+        discover_modules(watch_dir)
         self.local_manifold = registry.registered_nodes
         self.log.info(f"discovered {len(self.local_manifold)} local phasenodes.")
 
@@ -162,7 +163,8 @@ class NodeRuntime(IPhaseAtor):
             SensorDaemon(self.redis, self.bus),
             CaptureDaemon(self.redis, self.dispatcher, self, self.idle_timeout),
             HeartbeatDaemon(self.redis, self.node_id),
-            SignalDaemon(self.redis, self)
+            SignalDaemon(self.redis, self),
+            ReceptorDaemon(self.redis, self.node_id, watch_dir)
         ]
 
         tasks = []

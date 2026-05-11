@@ -69,11 +69,25 @@ def discover_modules(
             print(f"[Discover] Ignored (heavy dependency found): {py_file.name}")
             continue
 
-        ## @rule.C: 모듈 동적 로딩
+        # ## @rule.C: 모듈 동적 로딩
+        # try:
+        #     relative = py_file.relative_to(root)
+        #     module_path = ".".join(relative.with_suffix("").parts)
+        #     if module_path and module_path not in sys.modules:
+        #         importlib.import_module(module_path)
+        # except Exception as e:
+        #     print(f"[Discover] Failed to load {py_file}: {e}")
+
+        ## @rule.C: 모듈 동적 로딩 및 핫 리로딩(Hot Reloading) 지원
         try:
             relative = py_file.relative_to(root)
             module_path = ".".join(relative.with_suffix("").parts)
-            if module_path and module_path not in sys.modules:
-                importlib.import_module(module_path)
+            if module_path:
+                if module_path in sys.modules:
+                    # 이미 캐시된 위상(모듈)인 경우, 파일의 수정 사항을 반영하기 위해 강제 리로드
+                    importlib.reload(sys.modules[module_path])
+                else:
+                    # 최초 진입하는 위상인 경우 정상 로드
+                    importlib.import_module(module_path)
         except Exception as e:
             print(f"[Discover] Failed to load {py_file}: {e}")

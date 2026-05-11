@@ -4,12 +4,14 @@ import json
 import time
 import random
 from abc import ABC, abstractmethod
+from typing import Optional
 import redis.asyncio as redis_async
 from topos.bound.plane.emitter import get_emitter
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from phase.node.sensor import sense_once
 from arch.contract.event.bus import AsyncEventBus
 from phase.node.dispatcher import Dispatcher
+from cognitive.receptor.bootstrap import receptor_bootstrap
 
 SENSOR_INTERVAL = 1.0
 
@@ -88,14 +90,10 @@ class CaptureDaemon(AbstractDaemon):
                     await self.dispatcher.send(psi)
                 else:
                     if time.time() - self.last_active_time > self.idle_timeout:
-                        ## [항상성 확인]: 현재 생존 중인 노드 수 파악
                         active_nodes = await self.redis.keys("runtime:heartbeat:*")
                         if len(active_nodes) <= 1:
-                            ## [변이 적용]: 최후의 1인일 경우 90% + 랜덤 지터(±5초)
                             decayed = self.idle_timeout * 0.9
                             jitter = random.uniform(-5.0, 5.0)
-                            
-                            ## 하한선 10초를 보장하여 음수나 과도한 폴링 방지
                             self.idle_timeout = max(10.0, decayed + jitter)
                             self.last_active_time = time.time()
                             self.log.warn(
@@ -103,7 +101,6 @@ class CaptureDaemon(AbstractDaemon):
                                 f"Idle timeout mutated to {self.idle_timeout:.1f}s"
                             )
                         else:
-                            ## 다른 노드가 존재하면 정상적으로 증발(Evaporation)
                             self.log.warn(f"Idle for {self.idle_timeout:.1f}s. Self-evaporating...")
                             asyncio.create_task(self.node.shutdown())
                             break
@@ -153,3 +150,73 @@ class SignalDaemon(AbstractDaemon):
         finally:
             await pubsub.unsubscribe("runtime:signal")
             await pubsub.close()
+
+class ReceptorDaemon(AbstractDaemon):
+    """@membrane.leader: 스웜(Swarm) 중 단 하나의 노드만 물리적 멤브레인(Watchdog)을 담당하도록 하는 리더 선출 데몬"""
+    def __init__(self, redis: redis_async.Redis, node_id: str, watch_dir: str):
+        super().__init__("Receptor")
+        self.redis = redis
+        self.node_id = node_id
+        self.watch_dir = watch_dir
+        self.lock_key = "runtime:receptor:leader"
+        self.receptor_task: Optional[asyncio.Task] = None
+
+    async def run(self):
+        self.log.info("Receptor daemon initiated. Engaging in leader election...")
+        try:
+            while self.running:
+                ## 분산 락 획득 시도 (TTL 6초)
+                acquired = await self.redis.set(self.lock_key, self.node_id, nx=True, ex=6)
+                
+                if not acquired:
+                    current_leader = await self.redis.get(self.lock_key)
+                    if current_leader == self.node_id:
+                        await self.redis.expire(self.lock_key, 6)
+                        acquired = True
+
+                ## 위상(역할) 실행
+                if acquired:
+                    if self.receptor_task is None or self.receptor_task.done():
+                        self.log.warn(f"[{self.node_id}] Acquired Membrane Leadership. Bootstrapping Receptor...")
+                        self.receptor_task = asyncio.create_task(receptor_bootstrap(self.watch_dir))
+                else:
+                    ## leadership을 상실했을 때의 처리
+                    if self.receptor_task and not self.receptor_task.done():
+                        self.log.warn(f"[{self.node_id}] Lost Membrane Leadership. Shutting down local Receptor...")
+                        self.receptor_task.cancel()
+                        
+                        ## leadership 교체 시에도 이전 멤브레인의 완전한 철거를 기다림
+                        try:
+                            await self.receptor_task
+                        except asyncio.CancelledError:
+                            pass
+                        self.receptor_task = None
+
+                await asyncio.sleep(2)
+                
+        except asyncio.CancelledError:
+            self.log.warn("ReceptorDaemon received cancellation signal.")
+        except Exception as e:
+            self.log.error(f"ReceptorDaemon Error: {e}")
+        
+        finally:
+            ## Graceful Teardown
+            if self.receptor_task and not self.receptor_task.done():
+                self.log.warn("Tearing down Membrane (Watchdog OS Threads)...")
+                self.receptor_task.cancel()
+                try:
+                    ## cancel 후 태스크가 완전히 끝날 때(observer.join() 완료)까지 대기
+                    await self.receptor_task 
+                except asyncio.CancelledError:
+                    pass
+                except Exception as e:
+                    self.log.error(f"Error during Membrane teardown: {e}")
+            
+            ## 내가 리더로서 종료되는 것이라면 락을 해제하여 타 노드에 즉시 인계
+            try:
+                if await self.redis.get(self.lock_key) == self.node_id:
+                    await self.redis.delete(self.lock_key)
+            except Exception:
+                pass
+            
+            self.log.info("ReceptorDaemon successfully evaporated.")

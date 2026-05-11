@@ -9,7 +9,7 @@ import asyncio
 from enum import Enum
 from topos.bound.plane.emitter import get_emitter
 from cognitive.nerve.node.gan import Message, GanNode
-from cognitive.nerve.node.phase import Phase
+from cognitive.node.phase import Phase
 
 log = get_emitter("node.handshake")
 
