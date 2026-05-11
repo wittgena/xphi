@@ -1,8 +1,6 @@
 # topos.arch.repo.protocol
 ## @lineage: arch.model.repo.protocol
 """
-@align.commit: lineage inscription over execution results
-@node: execution-capable self (not tied to repo)
 @anchor: synchronization boundary across nodes (era frame)
 @commit: parent linkage under anchor-constrained selection
 @state.partition: aligned vs lag (no non-existence)

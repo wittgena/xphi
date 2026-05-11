@@ -1,4 +1,5 @@
-# topos.bound.watcher.sensor.kuramoto
+# cognitive.edge.sensor.kuramoto
+## @lineage: topos.bound.watcher.sensor.kuramoto
 import math
 import random
 from typing import List, Dict, Optional, Any

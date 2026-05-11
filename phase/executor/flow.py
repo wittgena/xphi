@@ -59,7 +59,7 @@ async def _local_stream_runner(flow_instance, command_name):
         elif event_type == "CollapseEvent":
             print(f" └─ [\033[92mCOLLAPSE\033[0m] Converged to '{event.surface.name}'")
 
-class _FlowCliExecutor(BaseExecutor):
+class _FlowExecutor(BaseExecutor):
     """bound(transduction) - external CLI → internal continuous Ψ stream execution"""
     
     def __init__(self, flow_instance, completion_signal: asyncio.Event):

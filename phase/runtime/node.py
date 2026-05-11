@@ -1,4 +1,4 @@
-# phase.runtime.runtime
+# phase.runtime.node
 ## @lineage: phase.node.runtime
 import asyncio
 import signal
@@ -95,12 +95,15 @@ class NodeRuntime(IPhaseAtor):
                 self.log.error(f"Failed to push event to Redis queue: {e}")
 
     def _create_phase_handler(self, coupler: CognitiveCoupler):
-        def handler(psi: PsiEvent):
+        async def handler(psi: PsiEvent):
             ## 반사계의 판단 (Sync)
             judgment = self.interpreter.process(psi.carrier)
             
             ## 교량으로 이관 (Fire and Forget)
             coupler.ingest(psi.carrier, judgment)
+            if self.executor:
+                await self.executor.execute(psi)
+
             return {
                 "psi": judgment.psi_symbol,
                 "action": judgment.action.value,

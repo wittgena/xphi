@@ -16,7 +16,7 @@ from topos.bound.plane.emitter import get_logger, flow_scope
 from phase.runtime.contract.registry.unified import registry
 from phase.executor.base import BaseExecutor
 from phase.executor.cli import _GenericCliExecutor
-from phase.executor.flow import _FlowCliExecutor
+from phase.executor.flow import _FlowExecutor
 
 log = get_logger("executor.swarm")
 
@@ -61,7 +61,7 @@ class SwarmExecutor(BaseExecutor):
                     completion_signal = asyncio.Event()
                     
                     if task_type == "flow":
-                        internal_executor = _FlowCliExecutor(task_instance, completion_signal)
+                        internal_executor = _FlowExecutor(task_instance, completion_signal)
                         self.log.info(f"[Swarm] Allocated _FlowCliExecutor for {command}")
                     else:
                         internal_executor = _GenericCliExecutor(task_instance, completion_signal)
