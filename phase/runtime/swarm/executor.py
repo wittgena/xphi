@@ -1,4 +1,5 @@
-# phase.executor.swarm
+# phase.runtime.swarm.executor
+## @lineage: phase.executor.swarm
 ## @lineage: arch.executor.swarm
 import os
 import sys
@@ -15,7 +16,7 @@ from topos.bound.plane.surface import surface
 from topos.bound.plane.emitter import get_logger, flow_scope
 from phase.runtime.contract.registry.unified import registry
 from phase.executor.base import BaseExecutor
-from phase.executor.cli import _GenericCliExecutor
+from phase.runtime.cli.executor import _GenericCliExecutor
 from phase.executor.flow import _FlowExecutor
 
 log = get_logger("executor.swarm")

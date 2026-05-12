@@ -8,7 +8,7 @@ import argparse
 import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
-from phase.reflect.proto.aligner import FieldAligner, AlignRecord
+from topos.bound.proto.aligner import FieldAligner, AlignRecord
 from topos.bound.plane.emitter import get_emitter, flow_scope
 from xphi.code.imports.transformer import ImportTransformer
 

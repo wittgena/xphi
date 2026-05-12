@@ -1,7 +1,4 @@
 # cognitive.context.aura.psi
-## @lineage: xphi.model.aura.psi
-## @lineage: cognitive.aura.psi
-## @lineage: cognitive.nerve.aura.psi
 import math
 from dataclasses import dataclass, field
 from typing import Any, Optional

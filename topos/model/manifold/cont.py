@@ -1,4 +1,5 @@
-# cognitive.dynamics.xe
+# topos.model.manifold.cont
+## @lineage: cognitive.dynamics.xe
 ## @lineage: topos.dynamics.xe
 from __future__ import annotations
 import asyncio

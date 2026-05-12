@@ -4,7 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from phase.reflect.proto.flow import ProtoFlow, FlowState
+from topos.bound.proto.flow import ProtoFlow, FlowState
 from phase.runtime.contract.protocol import get_proto
 from phase.runtime.contract.event.psi import PhaseField, PsiCarrier, CarrierType
 from phase.runtime.state.node0 import enter_node0

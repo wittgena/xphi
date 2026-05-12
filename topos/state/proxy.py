@@ -8,7 +8,7 @@ import json
 from typing import Optional, Any
 from topos.bound.plane.emitter import get_emitter
 from phase.runtime.contract.event.psi import PsiEvent
-from phase.reflect.proto.flow import ProtoFlow
+from topos.bound.proto.flow import ProtoFlow
 
 log = get_emitter("state.proxy")
 

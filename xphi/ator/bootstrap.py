@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from phase.reflect.proto.flow import ProtoFlow, FlowState, Transduction
+from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction
 from phase.runtime.contract.registry.unified import contract, registry
 from phase.runtime.contract.discover import discover_modules
 from xphi.transcript.phi import TranscriptPhi

@@ -1,6 +1,4 @@
 # xphi.transcript.spec
-## @lineage: topos.xor.transcript.spec
-## @lineage: phase.xor.transcript.spec
 import re
 import yaml
 import os

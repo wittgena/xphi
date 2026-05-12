@@ -3,6 +3,9 @@ import sys
 import importlib.util
 from pathlib import Path
 from typing import Optional, Union
+from topos.bound.resolver import find_current_self
+
+SELF_ROOT = find_current_self()
 
 class ModuleRedirector:
     def __init__(self, target_package: str, local_dir: Union[str, Path], clear_cache: bool = True):
@@ -76,9 +79,7 @@ class ModuleRedirector:
         self.uninstall()
 
 def main():
-    LOCAL_PATH = Path("meta/local")
-
-    with ModuleRedirector("openhands.agent_server", LOCAL_PATH):
+    with ModuleRedirector("bridge.server", SELF_ROOT):
         import openhands.agent_server.core as core
         print(f"Loaded from: {core.__file__}")
 

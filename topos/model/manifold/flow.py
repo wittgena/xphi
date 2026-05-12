@@ -1,4 +1,5 @@
-# cognitive.dynamics.flow
+# topos.model.manifold.flow
+## @lineage: cognitive.dynamics.flow
 ## @lineage: cognitive.dynamics.manifold.flow
 ## @lineage: topos.dynamics.manifold.flow
 """@phase: Tension Accumulation $\rightarrow$ Projection $\rightarrow$ Collapse $\rightarrow$ Re-entry"""
@@ -13,7 +14,7 @@ from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from topos.bound.rhythm.bridge import RhythmBridge
 from topos.bound.plane.surface import default_plane
 from topos.bound.plane.emitter import get_emitter
-from topos.manifold import ToposManifold, Particle
+from topos.model.manifold.particle import ToposManifold, Particle
 
 class TensionAccumulator(Particle):
     """@phase: Tension Accumulation (결핍 축적 및 자율 파열)"""

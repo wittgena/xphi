@@ -21,7 +21,7 @@ from phase.runtime.surface.sink import RedisSink
 from topos.bound.resolver import resolve_path, find_current_self
 from phase.runtime.contract.registry.unified import registry
 from phase.runtime.contract.discover import discover_modules
-from phase.executor.swarm import SwarmExecutor
+from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
 from phase.reflect.cognitive.coupler import CognitiveCoupler
 from phase.reflect.cognitive.worker import CognitiveWorker

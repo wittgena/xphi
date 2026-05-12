@@ -1,4 +1,5 @@
-# phase.reflect.proto.projector
+# topos.bound.proto.projector
+## @lineage: phase.reflect.proto.projector
 ## @lineage: arch.model.surface.projector
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Any, Optional

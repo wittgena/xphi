@@ -1,7 +1,4 @@
 # cognitive.context.compiler
-## @lineage: xphi.model.context.compiler
-## @lineage: topos.xor.model.context.compiler
-## @lineage: phase.xor.model.context.compiler
 import json
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Any

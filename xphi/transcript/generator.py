@@ -6,7 +6,7 @@ import logging
 import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from phase.reflect.proto.flow import ProtoFlow, FlowState, Transduction, Align
+from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction, Align
 from topos.bound.plane.emitter import get_logger
 from dataclasses import dataclass, field
 from topos.bound.resolver import find_current_self

@@ -1,7 +1,4 @@
 # cognitive.context.prompt.input
-## @lineage: xphi.model.context.prompt.input
-## @lineage: topos.xor.model.context.prompt.input
-## @lineage: phase.xor.model.context.prompt.input
 from dataclasses import dataclass
 from typing import Dict, List
 import argparse

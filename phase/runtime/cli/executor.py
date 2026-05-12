@@ -1,4 +1,5 @@
-# phase.executor.cli
+# phase.runtime.cli.executor
+## @lineage: phase.executor.cli
 ## @lineage: arch.executor.cli
 import os
 import sys
@@ -18,7 +19,7 @@ from topos.bound.plane.emitter import get_emitter, flow_scope
 from topos.bound.plane.surface import surface
 from topos.bound.resolver import get_invoker
 from phase.runtime.contract.registry.unified import registry
-from phase.executor.event.task import TaskSummaryEvent, TaskDetailRecord
+from phase.runtime.cli.task import TaskSummaryEvent, TaskDetailRecord
 from phase.executor.base import BaseExecutor
 
 log = get_emitter("executor.cli")

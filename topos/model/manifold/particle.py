@@ -1,4 +1,5 @@
-# topos.manifold
+# topos.model.manifold.particle
+## @lineage: topos.manifold
 ## @lineage: cognitive.dynamics.manifold.particle
 ## @lineage: topos.dynamics.manifold.particle
 """@phase: Tension Accumulation $\rightarrow$ Projection $\rightarrow$ Collapse $\rightarrow$ Re-entry"""

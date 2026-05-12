@@ -1,7 +1,4 @@
 # cognitive.context.assembler
-## @lineage: xphi.model.context.assembler
-## @lineage: topos.xor.model.context.assembler
-## @lineage: phase.xor.model.context.assembler
 import json
 import yaml
 from pathlib import Path

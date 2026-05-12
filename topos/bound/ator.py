@@ -7,7 +7,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from phase.reflect.proto.flow import (
+from topos.bound.proto.flow import (
     ProtoFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather
 )

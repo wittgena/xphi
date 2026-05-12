@@ -9,7 +9,7 @@ from typing import List, Dict, Optional, Any
 from phase.executor.base import BaseExecutor
 from phase.executor.flow import _FlowExecutor
 from phase.runtime.contract.registry.unified import registry
-from cognitive.dynamics.xe import XeCont
+from topos.model.manifold.cont import XeCont
 
 class SystemBuilder:
     """

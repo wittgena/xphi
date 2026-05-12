@@ -7,7 +7,7 @@ import inspect
 from pathlib import Path
 from typing import Any, Dict
 from xphi.ator.runtime import AtorRuntime
-from phase.reflect.proto.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
+from topos.bound.proto.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
 from phase.runtime.contract.registry.unified import contract
 from topos.bound.plane.emitter import get_logger
 

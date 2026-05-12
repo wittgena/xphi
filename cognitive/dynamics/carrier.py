@@ -5,7 +5,7 @@ import asyncio
 from phase.runtime.contract.event.next import next_id
 from typing import List, Dict, Optional, Any
 from phase.executor.base import BaseExecutor
-from cognitive.dynamics.xe import XeCont
+from topos.model.manifold.cont import XeCont
 
 class LoopCarrier(BaseExecutor):
     """

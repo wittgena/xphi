@@ -1,6 +1,4 @@
 # xphi.transcript.phi
-## @lineage: topos.xor.transcript.phi
-## @lineage: phase.xor.transcript.phi
 import asyncio
 import json
 import inspect
@@ -10,7 +8,7 @@ import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 from topos.bound.plane.emitter import get_logger
-from phase.reflect.proto.flow import ProtoFlow, FlowState, Transduction
+from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction
 from phase.runtime.contract.registry.unified import contract, registry
 from xphi.code.block.parser.md import MdAstParser
 from xphi.code.block.extractor import BlockExtractor
@@ -19,9 +17,10 @@ log = get_logger("transcript.phi")
 
 class TranscriptBase(Transduction):
     """@flow: Ψ → Φ transformer (transcription + translation boundary)"""
-    def __init__(self, base_node: Any):
+    def __init__(self, base_node: Any = None):
         self.base_node = base_node
-        self.manifold = base_node.local_manifold
+        self.manifold = getattr(base_node, "local_manifold", {})
+
         self.role = "transcript.base"
         self.node_context = {
             "instruction": "System Materialization Kernel",

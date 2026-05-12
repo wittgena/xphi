@@ -1,13 +1,11 @@
 # xphi.xor.store
-## @lineage: topos.xor.store
-## @lineage: phase.xor.store
 """@flow: ψ → ResidueExecutor(Buffer → Minimal Tension Eval) → ResidueStore(rocks.db)"""
 import asyncio
 import time
 import json
 import hashlib
 import sys
-from typing import List, Set, Any, Dict
+from typing import List, Set, Any, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
 from phase.runtime.contract.event.psi import PsiType
@@ -36,33 +34,72 @@ class ResidueBlock:
 
 @dataclass
 class ResidueSnapshot:
-    """RocksDB에 결정화(저장)될 위상 스냅샷 데이터 모델"""
-    pressure: float
-    tension: float
-    topology_nodes: List[str]
-    symbols: List[str]
-    blocks: List[Dict[str, Any]]
+    """통합된 RocksDB 결정화 데이터 모델"""
+    symbols: List[str] = field(default_factory=list)
     timestamp: float = field(default_factory=time.time)
     
+    # xphi.xor.store 전용 (Stream Pressure)
+    pressure: float = 0.0
+    tension: float = 0.0
+    topology_nodes: List[str] = field(default_factory=list)
+    blocks: List[Dict[str, Any]] = field(default_factory=list)
+    
+    # work.cache 전용 (Cache & Plane Projection) 및 기타 확장 필드
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
     def to_json(self) -> str:
         return json.dumps(asdict(self))
 
 class ResidueStore:
-    """잔여물(xe)의 물리적 저장소 (RocksDB)"""
-    def __init__(self, path=ROCKS_PATH):
-        opt = Options()
-        opt.create_if_missing(True)
-        self.db = Rdict(str(path), opt)
+    """위상/잔여 데이터의 물리적 저장소 (RocksDB)"""
+    _instance = None
 
-    def deposit(self, snapshot: ResidueSnapshot):
-        """Data Model을 직렬화하여 안전하게 저장"""
+    def __new__(cls, path=ROCKS_PATH):
+        if cls._instance is None:
+            cls._instance = super(ResidueStore, cls).__new__(cls)
+            opt = Options()
+            opt.create_if_missing(True)
+            cls._instance.db = Rdict(str(path), opt)
+        return cls._instance
+
+    def __init__(self, path=ROCKS_PATH):
+        pass
+
+    def deposit(self, snapshot: ResidueSnapshot, key_prefix: Optional[str] = None):
+        """Data Model을 직렬화하여 저장. 
+        key_prefix가 주어지면 계층형 검색이 가능하도록 Prefix 구조 사용"""
         json_data = snapshot.to_json()
-        key = hashlib.sha1(json_data.encode()).hexdigest().encode()
+        
+        if key_prefix:
+            # ex: "flow/dev:AGENT:168000000.123:abc123hash"
+            content_hash = hashlib.md5(json_data.encode()).hexdigest()[:12]
+            key = f"{key_prefix}:{snapshot.timestamp}:{content_hash}".encode('utf-8')
+        else:
+            # Default fallback (단순 무결성 저장)
+            key = hashlib.sha1(json_data.encode()).hexdigest().encode('utf-8')
+            
         self.db[key] = json_data
+        return key.decode('utf-8')
+
+    def retrieve_latest(self, prefix: str) -> Optional[ResidueSnapshot]:
+        """특정 Prefix(예: Repo+Plane)의 가장 최근 위상 스냅샷 탐색 (O(log N))"""
+        prefix_bytes = prefix.encode('utf-8')
+        latest_snap = None
+        latest_time = 0.0
+
+        for key, value in self.db.items():
+            if not key.startswith(prefix_bytes):
+                continue
+            
+            data = json.loads(value.decode('utf-8'))
+            if data['timestamp'] > latest_time:
+                latest_time = data['timestamp']
+                latest_snap = ResidueSnapshot(**data)
+                
+        return latest_snap
 
     def close(self):
         self.db.close()
-
 
 class ResidueExecutor(BaseExecutor):
     """@flow: Buffer → Tension Eval → Deposit"""
