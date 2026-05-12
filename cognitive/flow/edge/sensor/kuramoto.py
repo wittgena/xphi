@@ -1,4 +1,5 @@
-# cognitive.edge.sensor.kuramoto
+# cognitive.flow.edge.sensor.kuramoto
+## @lineage: cognitive.edge.sensor.kuramoto
 ## @lineage: topos.bound.watcher.sensor.kuramoto
 import math
 import random

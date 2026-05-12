@@ -1,4 +1,5 @@
-# cognitive.edge.sensor.exchange
+# cognitive.flow.edge.sensor.exchange
+## @lineage: cognitive.edge.sensor.exchange
 ## @lineage: cognitive.edge.sensor.field
 ## @lineage: topos.bound.watcher.sensor.field
 import math

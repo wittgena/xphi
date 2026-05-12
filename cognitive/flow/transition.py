@@ -1,4 +1,5 @@
-# bridge.node.flow
+# cognitive.flow.transition
+## @lineage: bridge.node.flow
 import uuid
 from enum import Enum
 from typing import List, Optional, Dict, Any

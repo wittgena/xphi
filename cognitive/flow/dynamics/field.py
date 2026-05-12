@@ -1,4 +1,5 @@
-# cognitive.dynamics.field
+# cognitive.flow.dynamics.field
+## @lineage: cognitive.dynamics.field
 ## @lineage: topos.dynamics.field
 """
 @phase: Autonomous topological oscillation and perturbation routing

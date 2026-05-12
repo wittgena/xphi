@@ -1,4 +1,5 @@
-# cognitive.edge.trajectory
+# cognitive.flow.edge.trajectory
+## @lineage: cognitive.edge.trajectory
 ## @lineage: foldbox.trace.trajectory
 import json
 from dataclasses import dataclass, field

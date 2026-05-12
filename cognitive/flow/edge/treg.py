@@ -1,4 +1,5 @@
-# cognitive.edge.treg
+# cognitive.flow.edge.treg
+## @lineage: cognitive.edge.treg
 ## @lineage: cognitive.frame.gate
 import time
 import hashlib

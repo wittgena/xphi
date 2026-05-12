@@ -1,4 +1,5 @@
-# cognitive.edge.sensor.ator
+# cognitive.flow.edge.sensor.ator
+## @lineage: cognitive.edge.sensor.ator
 ## @lineage: topos.bound.watcher.sensor.ator
 import math
 import random
