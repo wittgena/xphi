@@ -13,10 +13,10 @@ from meta.plane.emitter import get_emitter
 from topos.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from phase.runtime.contract.discover import discover_modules
-from cognitive.dynamics.carrier import LoopCarrier
-from cognitive.dynamics.executor import DynamicsExecutor
-from cognitive.edge.treg import FrameRegistry, TregEdge, PhaseState
-from cognitive.edge.trajectory import SignatureBound, TrajectoryXor
+from cognitive.flow.dynamics.carrier import LoopCarrier
+from cognitive.flow.dynamics.executor import DynamicsExecutor
+from cognitive.flow.edge.treg import FrameRegistry, TregEdge, PhaseState
+from cognitive.flow.edge.trajectory import SignatureBound, TrajectoryXor
 from topos.validator.contract import ContractValidator
 from phase.runtime.contract.proposer import execute_proposer
 

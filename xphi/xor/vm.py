@@ -2,7 +2,7 @@
 import asyncio
 import logging
 import torch
-from topos.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter("xor.vm")
 

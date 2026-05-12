@@ -127,7 +127,7 @@ class NodeRuntime(IPhaseAtor):
 
         watch_dir = find_current_self()
         discover_modules(watch_dir)
-        self.local_manifold = registry.registered_nodes
+        # self.local_manifold = registry.registered_nodes
         self.log.info(f"discovered {len(self.local_manifold)} local phasenodes.")
 
         await self.register_node()

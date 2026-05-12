@@ -11,7 +11,7 @@ from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from topos.bound.resolver import resolve_channel, resolve_pattern
 from meta.plane.emitter import get_emitter
 
-class NervePerturb:
+class SensorPerturb:
     """
     @role: Bound Elicitor / state perturb
     @desc:
@@ -135,7 +135,7 @@ class NervePerturb:
 
 if __name__ == "__main__":
     async def main():
-        p = NervePerturb()
+        p = SensorPerturb()
         await p.connect()
         while True:
             await p.run_cycle()

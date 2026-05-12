@@ -4,7 +4,12 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 
 class NodeType(enum.Enum):
-    ANCHOR, SYMLINK, CORE = "ANCHOR", "SYMLINK", "CORE"
+    ANCHOR = "ANCHOR"
+    CORE = "CORE"
+    SYMLINK = "SYMLINK"
+    ATTRACTOR = "ATTRACTOR"
+    PULSE = "PULSE"
+    RUPTURE = "RUPTURE"
 
 class TransRule:
     def __init__(self, source_name: str, target_name: str, target_kind: NodeType, action: str = "INVERT"):

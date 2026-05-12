@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
-from cognitive.edge.trajectory import SignatureBound, TrajectoryXor
+from cognitive.flow.edge.trajectory import SignatureBound, TrajectoryXor
 from meta.plane.emitter import get_emitter
 from topos.bound.resolver import find_current_self
 

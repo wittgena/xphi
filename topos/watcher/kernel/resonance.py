@@ -11,8 +11,8 @@ from topos.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from phase.runtime.contract.registry.unified import registry, contract
 from phase.runtime.contract.discover import discover_modules
-from cognitive.dynamics.carrier import LoopCarrier
-from cognitive.dynamics.executor import DynamicsExecutor
+from cognitive.flow.dynamics.carrier import LoopCarrier
+from cognitive.flow.dynamics.executor import DynamicsExecutor
 from phase.runtime.contract.interface import IDynamicsKernel
 
 @contract.kernel("kernel.resonance")
