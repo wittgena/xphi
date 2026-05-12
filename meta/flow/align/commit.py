@@ -4,7 +4,7 @@ import sys
 import subprocess
 from typing import List, Callable, Any
 from pathlib import Path
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from topos.bound.resolver import find_current_self, get_invoker
 from topos.model.repo.node import RepoNode, AnchorNode
 from topos.model.repo.protocol import anchor_commit_protocol

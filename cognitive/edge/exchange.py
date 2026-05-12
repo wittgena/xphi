@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Dict, Any
 from phase.runtime.contract.registry.path import path_registry
 from phase.runtime.contract.event.psi import PsiCarrier, PsiEvent
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from topos.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from phase.runtime.contract.discover import discover_modules

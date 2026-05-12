@@ -8,7 +8,7 @@
 """
 import asyncio
 from enum import Enum
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from cognitive.node.gan import Message, GanNode
 from cognitive.node.phase import Phase
 

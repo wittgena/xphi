@@ -2,7 +2,7 @@
 ## @lineage: cognitive.coupler
 import asyncio
 from typing import Optional
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.interpreter import PhaseJudgment
 from phase.runtime.state.aggregator import KernelStateAggregator, InternalContext

@@ -4,7 +4,7 @@ import asyncio
 from typing import Dict, Any, List, Optional
 from phase.runtime.contract.event.psi import PsiEvent
 from phase.runtime.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 class AsyncEventBus(IEventBus):
     """@desc: Actor isolation + bounded fan-out"""

@@ -5,7 +5,7 @@ import json
 import inspect
 import ast
 from typing import Any, Dict, List, Tuple
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction
 from phase.runtime.contract.registry.unified import contract, registry
 from phase.runtime.contract.discover import discover_modules

@@ -7,7 +7,7 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.resolver import find_current_self, resolve_path
 from xphi.code.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 from xphi.code.block.parser.md import MdAstParser

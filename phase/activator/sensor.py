@@ -14,7 +14,7 @@ import logging
 from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.contract.registry.unified import cli_contract
 from topos.bound.resolver import find_current_self, resolve_path, load_bound
 

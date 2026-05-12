@@ -7,7 +7,7 @@ import re
 import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction
 from phase.runtime.contract.registry.unified import contract, registry
 from xphi.code.block.parser.md import MdAstParser
@@ -38,7 +38,18 @@ class TranscriptBase(Transduction):
         """Translation (Ψ → Φ_materialized)"""
         log.info("    [Kernel] Materializing Topology into Node Instances")
         runtime_nodes = {}
-        for node_id, config in topology.items():
+        
+        ## 위상 구조 호환성 계층 (Compatibility Layer)
+        # 캡슐화된 구조({"entry": ..., "nodes": {...}})라면 nodes만 추출하고, 
+        # 레거시 구조라면 그대로 사용합니다.
+        nodes_topology = topology.get("nodes", topology) if isinstance(topology, dict) else topology
+
+        ## 추출된 노드 맵을 순회
+        for node_id, config in nodes_topology.items():
+            # (안전장치) 혹시 모를 메타데이터 키가 섞여 있다면 패스
+            if not isinstance(config, dict) or "type" not in config:
+                continue
+                
             node_type = config["type"]
             spec = config["spec"]
             
@@ -47,14 +58,16 @@ class TranscriptBase(Transduction):
             
             NodeClass = self.manifold[node_type].node_class
             node_instance = NodeClass(spec)
+            
             target_operator = spec.get("operator")
             if target_operator:
                 operator_instance = registry.create_component("ator", {"type": target_operator})
                 node_instance.bound_operator = operator_instance
 
             runtime_nodes[node_id] = node_instance
+            
         return runtime_nodes
-    
+
     @abstractmethod
     def _reflect_source(self, file_path: str) -> Dict[str, Any]:
         """소스를 해석하여 Dict(Topology)를 반환하는 메서드 (Subclass must implement)"""

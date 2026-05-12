@@ -3,7 +3,7 @@
 import asyncio
 from typing import Optional
 from cognitive.node.gan import Message, GanNode
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from topos.state.rule.trans import TransRule
 from topos.state.node import NodeType
 

@@ -7,7 +7,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 from cognitive.edge.trajectory import SignatureBound, TrajectoryXor
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from topos.bound.resolver import find_current_self
 
 SELF_ROOT = find_current_self()

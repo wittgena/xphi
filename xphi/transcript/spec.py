@@ -3,7 +3,7 @@ import re
 import yaml
 import os
 from typing import Any, Dict, List, Optional
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from phase.runtime.contract.registry.unified import contract
 from xphi.code.block.parser.md import MdAstParser
 from xphi.code.block.extractor import BlockExtractor

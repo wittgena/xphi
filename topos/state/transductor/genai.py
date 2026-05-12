@@ -3,7 +3,7 @@ import json
 import asyncio
 import inspect
 from typing import Any
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from phase.runtime.contract.registry.unified import contract
 from phase.runtime.contract.discover import discover_modules
@@ -11,7 +11,7 @@ from topos.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from xphi.ator.runtime import AtorRuntime
 from xphi.ator.bootstrap import bootstrap 
-from phase.reflect.client.local.engine import LLMEngine
+from phase.reflect.client.engine.local import LLMEngine
 from topos.bound.resolver import resolve_path
 
 log = get_logger("trans.genai")

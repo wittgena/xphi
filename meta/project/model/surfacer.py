@@ -6,7 +6,7 @@ import argparse
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.resolver import resolve_path, get_invoker
 from topos.model.graph import EntryNode, RenderingData, _extract_rel_attr, EntryTemplate
 from topos.model.binder import ModelBinder

@@ -9,10 +9,10 @@ from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
 from topos.model.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from topos.bound.resolver import resolve_path
-from topos.arch.code.logic.transformer import LogicTransformer
-from topos.arch.code.logic.analyzer import LogicAnalyzer
+from xphi.code.logic.transformer import LogicTransformer
+from xphi.code.logic.analyzer import LogicAnalyzer
 
 CODE_ROOT = resolve_path("code")
 log = get_emitter("code.manager")

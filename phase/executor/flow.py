@@ -14,8 +14,8 @@ from dataclasses import asdict
 from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.contract.event.next import next_id, LogEvent
 from phase.runtime.surface.sensor import REDIS_URL
-from topos.bound.plane.emitter import get_emitter, flow_scope
-from topos.bound.plane.surface import surface
+from meta.plane.emitter import get_emitter, flow_scope
+from meta.plane.surface import surface
 from topos.bound.resolver import get_invoker
 from phase.executor.base import BaseExecutor
 

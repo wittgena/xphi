@@ -16,7 +16,7 @@ import threading
 import urllib.parse
 from typing import Callable, List, Dict, Any
 import redis.asyncio as redis_async
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.resolver import find_current_self, resolve_path
 from phase.runtime.contract.interface import IEventBus, IPhaseField, IPhaseAtor
 from phase.runtime.contract.event.psi import PsiEvent

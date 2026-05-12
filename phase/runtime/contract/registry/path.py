@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 from topos.bound.resolver import find_current_self, load_bound, resolve_path as legacy_resolve
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter('contract.path')
 

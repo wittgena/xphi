@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 from topos.bound.resolver import find_current_self
 from phase.runtime.contract.registry.unified import contract
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.cli.executor import CliTaskAdapter, parse_local, dispatch_cli
 from xphi.code.imports.aligner import ImportAligner
 

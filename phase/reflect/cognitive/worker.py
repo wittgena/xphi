@@ -1,8 +1,8 @@
 # phase.reflect.cognitive.worker
 ## @lineage: cognitive.worker
 import asyncio
-from topos.bound.plane.emitter import get_emitter
-from phase.reflect.client.local.engine import LLMEngine
+from meta.plane.emitter import get_emitter
+from phase.reflect.client.engine.local import LLMEngine
 from phase.runtime.state.aggregator import InternalContext
 from cognitive.context.assembler import ContextAssembler
 

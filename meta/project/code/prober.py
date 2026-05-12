@@ -6,12 +6,12 @@ import argparse
 from pathlib import Path
 from typing import Optional, Dict, List
 from topos.bound.resolver import find_current_self, resolve_path
+from meta.plane.emitter import get_emitter
 from phase.runtime.contract.registry.unified import contract
 from phase.runtime.cli.executor import CliTaskAdapter, parse_local, dispatch_cli
-from topos.arch.code.topic.registry import TopicMap
-from topos.arch.code.topic.tracer import TopicTracer
-from topos.arch.code.topic.modeler import run_topos_clustering
-from topos.bound.plane.emitter import get_emitter
+from xphi.code.topic.registry import TopicMap
+from xphi.code.topic.tracer import TopicTracer
+from xphi.code.topic.modeler import run_topos_clustering
 
 log = get_emitter("code.prober")
 CODE_ROOT = resolve_path('code')

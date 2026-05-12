@@ -12,7 +12,7 @@ from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.contract.event.bus import AsyncEventBus
 from phase.runtime.contract.event.next import next_id
 from phase.runtime.contract.interface import IPhaseAtor, IPhaseField
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once, REDIS_URL
 from phase.runtime.dispatcher import Dispatcher
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
@@ -26,7 +26,7 @@ from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, S
 from phase.reflect.cognitive.coupler import CognitiveCoupler
 from phase.reflect.cognitive.worker import CognitiveWorker
 from phase.runtime.state.aggregator import KernelStateAggregator
-from phase.reflect.client.local.engine import LLMEngine
+from phase.reflect.client.engine.local import LLMEngine
 from cognitive.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -45,7 +45,6 @@ class NodeRuntime(IPhaseAtor):
         self.idle_timeout = idle_timeout
         
         self.running = True
-        # [수정 3] NameError 방지를 위해 추상화된 타입으로 변경
         self.daemons: List[Any] = [] 
         
         self.bus = AsyncEventBus()
@@ -57,7 +56,6 @@ class NodeRuntime(IPhaseAtor):
         self.coupler = None  # 교량(Coupler) 전역 상태 추가
         
         self.bus.subscribe(self)
-        self.local_manifold = {}
 
     def _handle_exception(self, loop, context):
         msg = context.get("exception", context["message"])
@@ -71,6 +69,10 @@ class NodeRuntime(IPhaseAtor):
         except Exception as e:
             self.log.crit(f"Loop Task [{task.get_name()}] died with error: {e}")
             asyncio.create_task(self.shutdown())
+
+    @property
+    def local_manifold(self):
+        return registry.registered_nodes
 
     @property
     def ator_id(self) -> str:

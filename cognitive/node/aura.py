@@ -3,7 +3,7 @@
 ## @lineage: cognitive.nerve.aura.node
 import asyncio
 from typing import Dict, Any, Optional
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from cognitive.node.gan import Message, GanNode
 from topos.state.node import StateNode
 from topos.state.proxy import DistributedNodePool

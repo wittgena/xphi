@@ -7,7 +7,7 @@ import random
 from abc import ABC, abstractmethod
 from typing import Optional
 import redis.asyncio as redis_async
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once
 from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.contract.event.bus import AsyncEventBus

@@ -83,7 +83,7 @@ class Activator:
             self._setup_physical_boundary()
 
             ## 동적 임포트 (통합 레지스트리로 변경)
-            from topos.bound.plane.emitter import get_emitter
+            from meta.plane.emitter import get_emitter
             from phase.runtime.contract.registry.unified import registry
             from phase.runtime.contract.discover import discover_modules
             from topos.bound.resolver import load_bound, find_current_self

@@ -12,8 +12,8 @@ from typing import Callable, Any
 from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.contract.event.next import next_id, LogEvent
 from dataclasses import asdict
-from topos.bound.plane.surface import surface
-from topos.bound.plane.emitter import get_logger, flow_scope
+from meta.plane.surface import surface
+from meta.plane.emitter import get_logger, flow_scope
 from phase.runtime.contract.registry.unified import registry
 from phase.executor.base import BaseExecutor
 from phase.runtime.cli.executor import _GenericCliExecutor

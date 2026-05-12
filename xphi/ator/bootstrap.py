@@ -1,5 +1,6 @@
 # xphi.ator.bootstrap
 ## @lineage: topos.bound.ator.bootstrap
+## @signal: 505
 """@flow: PHI(Φ_declared) → reflect → Ψ → materialize → Φ_materialized → entry(anchor)"""
 import asyncio
 import json
@@ -8,7 +9,7 @@ import ast
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction
 from phase.runtime.contract.registry.unified import contract, registry
 from phase.runtime.contract.discover import discover_modules
@@ -40,9 +41,9 @@ XPHI = {
   "topos_validator": {
     "type": "resonance",
     "spec": {
-      "role": "x.validator",
+      "role": "resonance.validator",
       "next": "evaluator",
-      "operator": "x.validator"
+      "operator": "resonance.validator"
     }
   },
   "evaluator": {
@@ -67,7 +68,7 @@ XPHI = {
     "type": "judgment",
     "spec": {
       "rules": { "retry": "activator", "stable": "projection" },
-      "operator": "contract.judgment"
+      "operator": "resonance.judgment"
     }
   },
   "projection": {
@@ -104,26 +105,30 @@ async def bootstrap(
     return base_node, flow_controller, entry_node
 
 async def main():
-  topology_path = inspect.getsourcefile(lambda: None)
-  base_node, flow_controller, entry_node = await bootstrap(topology_path)
+    topology_path = inspect.getsourcefile(lambda: None)
+    base_node, flow_controller, entry_node = await bootstrap(topology_path)
 
-  try:
-    ## @emit: external task → Ψ injection into field
-    initial_payload = {
-        "task_id": "REQ-101",
-        "requirement": "User profile update API with rate limiting",
-        "security_level": "High"
-    }
-    initial_ctx = FlowState(ProtoFlow(payload=initial_payload, aspect="init"), state={})
-    log.info(f"Submitting task {initial_payload['task_id']} to the field...")
-    await base_node.psi_queue.put(("activator", initial_ctx))
-    await base_node.psi_queue.join()
-    log.info(">>> All tasks processed.")
-  except Exception as e:
-    ## @shutdown: field collapse / loop termination
-    log.error(f"Execution Error: {e}", exc_info=True)
-  finally:
-    base_node.running = False
+    try:
+        ## @emit: external task → Ψ injection into field
+        initial_payload = {
+            "task_id": "REQ-101",
+            "requirement": "User profile update API with rate limiting",
+            "security_level": "High"
+        }
+        initial_ctx = FlowState(ProtoFlow(payload=initial_payload, aspect="init"), state={})
+        log.info(f"Submitting task {initial_payload['task_id']} to the local field...")
+        
+        ## 거시 엔진이 아닌 국소 흐름 제어기에 직접 자극(Task) 주입
+        await flow_controller.psi_queue.put(("activator", initial_ctx))
+        await flow_controller.psi_queue.join()
+        
+        log.info(">>> All tasks processed.")
+    except Exception as e:
+        ## @shutdown: field collapse / loop termination
+        log.error(f"Execution Error: {e}", exc_info=True)
+    finally:
+        base_node.running = False
+        await flow_controller.detach()
 
 if __name__ == "__main__":
     try:

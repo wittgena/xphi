@@ -6,7 +6,7 @@
 """
 import asyncio
 from typing import Optional, Set
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter("nerve.message")
 

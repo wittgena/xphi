@@ -12,8 +12,8 @@ from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
 from topos.bound.rhythm.bridge import RhythmBridge
-from topos.bound.plane.surface import default_plane
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.surface import default_plane
+from meta.plane.emitter import get_emitter
 from topos.model.manifold.particle import ToposManifold, Particle
 
 class TensionAccumulator(Particle):

@@ -9,7 +9,7 @@ from typing import List, Set, Any, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
 from phase.runtime.contract.event.psi import PsiType
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.resolver import find_current_self, resolve_path
 from phase.runtime.node import NodeRuntime
 from phase.executor.base import BaseExecutor

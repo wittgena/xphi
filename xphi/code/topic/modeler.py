@@ -10,7 +10,7 @@ from pathlib import Path
 from tqdm import tqdm
 from collections import defaultdict, Counter
 from gensim import corpora, models
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from xphi.code.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
 from topos.bound.resolver import find_current_self, resolve_path
 from xphi.code.block.parser.topos import ToposAstParser

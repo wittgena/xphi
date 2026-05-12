@@ -4,8 +4,8 @@ import yaml
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
-from meta.ops.xphi.xearch import Xor, SearchResult
-from topos.bound.plane.emitter import get_logger
+from meta.xphi.xearch import Xor, SearchResult
+from meta.plane.emitter import get_logger
 from topos.bound.resolver import find_current_self, resolve_path
 from cognitive.context.prompt.input import InputBundle, build_prompt 
 

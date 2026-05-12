@@ -1,6 +1,6 @@
 # meta.project.model.readme
 from pathlib import Path
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.resolver import resolve_path
 from datetime import datetime
 

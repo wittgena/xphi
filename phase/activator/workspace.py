@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 from phase.runtime.contract.registry.unified import contract
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter('core.workspace')
 

@@ -6,7 +6,7 @@ import time
 import re
 from phase.runtime.contract.event.psi import PsiType
 from topos.bound.resolver import resolve_pattern
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 class SurfaceActuator:
     KEY_PARTS = [

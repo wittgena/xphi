@@ -21,7 +21,7 @@ from topos.state.proxy import DistributedNodePool
 from topos.organizer import ToposOrganizer
 from topos.state.node import inject_pr_signal, StateNode, NodeType
 from topos.state.runtime import StateRuntime
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter("topos.system")
 

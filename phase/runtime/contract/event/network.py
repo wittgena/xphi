@@ -2,7 +2,7 @@
 ## @lineage: arch.contract.event.network
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Dict, Any, Optional
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter("proto.event")
 

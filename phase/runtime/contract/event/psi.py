@@ -16,7 +16,7 @@ from enum import Enum
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from dataclasses import dataclass, field, asdict
 from phase.runtime.contract.event.next import LogEvent
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter("bridge.psi")
 

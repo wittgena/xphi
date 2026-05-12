@@ -9,7 +9,7 @@ import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
 from topos.bound.proto.aligner import FieldAligner, AlignRecord
-from topos.bound.plane.emitter import get_emitter, flow_scope
+from meta.plane.emitter import get_emitter, flow_scope
 from xphi.code.imports.transformer import ImportTransformer
 
 def generate_diff(original: str, modified: str, filename: str) -> str:

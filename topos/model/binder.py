@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 from collections import defaultdict, Counter
 from tqdm import tqdm
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 from topos.bound.resolver import find_current_self, resolve_path
 from topos.model.resonance import ResonanceGraph, ResonanceNode, NodeRelation
 from topos.model.pos.sensor import PosSensor

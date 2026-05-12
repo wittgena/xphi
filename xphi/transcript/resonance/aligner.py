@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any, Dict
 from topos.bound.proto.flow import ProtoFlow, FlowState, Align
 from phase.runtime.contract.registry.unified import contract
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 
 log = get_logger('resonance.aligner')
 

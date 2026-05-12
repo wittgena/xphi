@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from enum import Enum
 from phase.runtime.contract.event.next import LogEvent
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.contract.event.psi import PsiCarrier, PhaseField
 
 log = get_emitter("node.interpreter")

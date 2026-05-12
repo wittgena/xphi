@@ -11,7 +11,7 @@ from typing import List, Iterator
 from contextlib import contextmanager
 import uuid
 from phase.runtime.contract.event.psi import PsiCarrier
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.interpreter import NodeInterpreter, AnchoredIR, AnchorFlow
 
 log = get_emitter("state.node0")

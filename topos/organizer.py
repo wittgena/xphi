@@ -3,7 +3,7 @@ import time
 import asyncio
 import redis.asyncio as redis_async
 from typing import Dict, Any
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from phase.runtime.node import NodeRuntime
 from phase.runtime.contract.protocol import get_proto
 from topos.bound.proto.flow import ProtoFlow, FlowState

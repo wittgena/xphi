@@ -7,7 +7,7 @@ from typing import List, Dict, Any
 from pathlib import Path
 from topos.bound.resolver import find_current_self, get_invoker
 from phase.runtime.contract.registry.unified import contract
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 from topos.bound.proto.aligner import FieldAligner, AlignRecord
 from phase.runtime.cli.executor import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 

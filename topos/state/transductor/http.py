@@ -4,7 +4,7 @@ import re
 from typing import Any, Dict
 from topos.bound.proto.flow import ProtoFlow, Transduction
 from phase.runtime.contract.registry.unified import contract
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 
 log = get_logger('transductor.http')
 

@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Set
-from topos.bound.plane.emitter import get_logger
+from meta.plane.emitter import get_logger
 
 log = get_logger("edge.trajectory")
 

@@ -4,7 +4,7 @@ import time
 import json
 from typing import Optional, Dict
 from phase.runtime.surface.sink import EmitterSink
-from topos.bound.plane.emitter import get_emitter
+from meta.plane.emitter import get_emitter
 
 log = get_emitter("receptor.topos")
 
