@@ -104,6 +104,7 @@ def get_emitter(name: str, phase: Optional[str] = None, boundary: Optional[str] 
     return SurfaceEmitter(name, phase, boundary, mode=mode)
 
 _LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+DEBUG = True
 
 def _create_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
