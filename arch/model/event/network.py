@@ -1,4 +1,5 @@
-# arch.contract.event.network
+# arch.model.event.network
+## @lineage: arch.contract.event.network
 ## @lineage: topos.contract.event.network
 ## @lineage: phase.runtime.contract.event.network
 from abc import ABC, abstractmethod

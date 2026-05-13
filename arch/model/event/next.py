@@ -1,4 +1,5 @@
-# arch.contract.event.next
+# arch.model.event.next
+## @lineage: arch.contract.event.next
 ## @lineage: topos.contract.event.next
 ## @lineage: phase.runtime.contract.event.next
 import asyncio

@@ -1,4 +1,5 @@
-# arch.contract.event.psi
+# arch.model.event.psi
+## @lineage: arch.contract.event.psi
 ## @lineage: topos.contract.event.psi
 ## @lineage: phase.runtime.contract.event.psi
 """
