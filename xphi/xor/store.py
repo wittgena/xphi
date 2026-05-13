@@ -8,11 +8,11 @@ import sys
 from typing import List, Set, Any, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
-from phase.runtime.contract.event.psi import PsiType
+from arch.contract.event.psi import PsiType
 from meta.plane.emitter import get_logger
-from topos.bound.resolver import find_current_self, resolve_path
+from phase.bound.resolver import find_current_self, resolve_path
 from phase.runtime.node import NodeRuntime
-from phase.executor.base import BaseExecutor
+from phase.bound.executor import BaseExecutor
 
 log = get_logger("residue.store")
 

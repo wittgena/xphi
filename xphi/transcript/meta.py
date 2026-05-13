@@ -4,11 +4,11 @@ import logging
 import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from topos.bound.proto.flow import ProtoFlow, FlowState, Transduction, Align
+from phase.bound.proto.flow import ProtoFlow, FlowState, Transduction, Align
 from meta.plane.emitter import get_logger
 from dataclasses import dataclass, field
-from topos.bound.resolver import find_current_self, resolve_path
-from phase.runtime.contract.registry.unified import registry, contract
+from phase.bound.resolver import find_current_self, resolve_path
+from arch.contract.registry.unified import registry, contract
 from xphi.ator.runtime import AtorRuntime
 from xphi.ator.bootstrap import bootstrap
 from phase.runtime.node import NodeRuntime

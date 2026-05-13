@@ -8,7 +8,7 @@ import argparse
 import ast
 import json
 from pathlib import Path
-from topos.bound.resolver import find_current_self
+from phase.bound.resolver import find_current_self
 
 class ProjectSummarizer:
     """@desc: Repo metadata extractor and structural topology formatter"""
@@ -98,7 +98,7 @@ class ProjectSummarizer:
             if not filepath.is_file():
                 continue
                 
-            # @point: Python과 Markdown 파일만 위상 매핑의 대상으로 한정 (find -name "*.py" 조건과 동일한 커버리지)
+            ## @point: Python과 Markdown 파일만 위상 매핑의 대상으로 한정 (find -name "*.py" 조건과 동일한 커버리지)
             if filepath.suffix not in ['.py', '.md']:
                 continue
                 

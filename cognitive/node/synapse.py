@@ -4,8 +4,8 @@ import asyncio
 from typing import Optional
 from cognitive.node.gan import Message, GanNode
 from meta.plane.emitter import get_emitter
-from topos.state.rule.trans import TransRule
-from topos.state.node import NodeType
+from arch.contract.state.spec import TransRule
+from arch.topos.node.state import NodeType
 
 log = get_emitter('nerve.synapse')
 

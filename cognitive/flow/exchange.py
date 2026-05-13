@@ -8,18 +8,18 @@ import sys
 import argparse
 from pathlib import Path
 from typing import Dict, Any
-from phase.runtime.contract.registry.path import path_registry
-from phase.runtime.contract.event.psi import PsiCarrier, PsiEvent
+from arch.contract.registry.path import path_registry
+from arch.contract.event.psi import PsiCarrier, PsiEvent
 from meta.plane.emitter import get_emitter
-from topos.bound.resolver import find_current_self
+from phase.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
-from phase.runtime.contract.discover import discover_modules
+from arch.contract.discover import discover_modules
 from cognitive.flow.dynamics.carrier import LoopCarrier
 from cognitive.flow.dynamics.executor import DynamicsExecutor
 from cognitive.flow.edge.treg import FrameRegistry, TregEdge, PhaseState
 from cognitive.flow.edge.trajectory import SignatureBound, TrajectoryXor
-from topos.validator.contract import ContractValidator
-from phase.runtime.contract.proposer import execute_proposer
+from phase.watcher.validator.contract import ContractValidator
+from arch.contract.proposer import execute_proposer
 
 class ExchangeSystem:
     """

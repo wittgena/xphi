@@ -5,8 +5,8 @@ import asyncio
 from typing import Dict, Any, Optional
 from meta.plane.emitter import get_emitter
 from cognitive.node.gan import Message, GanNode
-from topos.state.node import StateNode
-from topos.state.proxy import DistributedNodePool
+from arch.topos.node.state import StateNode
+from arch.topos.node.proxy import DistributedNodePool
 
 log = get_emitter(__name__)
 

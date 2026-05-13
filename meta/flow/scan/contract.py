@@ -9,7 +9,7 @@ from importlib import metadata
 from pathlib import Path
 from typing import List, Dict, Set
 from collections import defaultdict
-from topos.bound.resolver import find_current_self
+from phase.bound.resolver import find_current_self
 from anchor.around import discover_repos
 from meta.plane.emitter import get_emitter
 

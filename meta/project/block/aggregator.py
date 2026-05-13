@@ -4,7 +4,7 @@ import sys
 import json
 import argparse
 from pathlib import Path
-from topos.bound.resolver import resolve_path
+from phase.bound.resolver import resolve_path
 from meta.plane.emitter import get_emitter
 from meta.flow.emit.block import main as emitter_main
 

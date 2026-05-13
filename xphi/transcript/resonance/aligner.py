@@ -7,8 +7,8 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from topos.bound.proto.flow import ProtoFlow, FlowState, Align
-from phase.runtime.contract.registry.unified import contract
+from phase.bound.proto.flow import ProtoFlow, FlowState, Align
+from arch.contract.registry.unified import contract
 from meta.plane.emitter import get_logger
 
 log = get_logger('resonance.aligner')

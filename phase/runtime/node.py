@@ -8,26 +8,26 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
-from phase.runtime.contract.event.bus import AsyncEventBus
-from phase.runtime.contract.event.next import next_id
-from phase.runtime.contract.interface import IPhaseAtor, IPhaseField
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.bus import AsyncEventBus
+from arch.contract.event.next import next_id
+from arch.contract.interface import IPhaseAtor, IPhaseField
 from meta.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once, REDIS_URL
 from phase.runtime.dispatcher import Dispatcher
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
 from phase.runtime.surface.actuator import SurfaceActuator
 from phase.runtime.surface.sink import RedisSink
-from topos.bound.resolver import resolve_path, find_current_self
-from phase.runtime.contract.registry.unified import registry
-from phase.runtime.contract.discover import discover_modules
+from phase.bound.resolver import resolve_path, find_current_self
+from arch.contract.registry.unified import registry
+from arch.contract.discover import discover_modules
 from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from phase.reflect.cognitive.coupler import CognitiveCoupler
-from phase.reflect.cognitive.worker import CognitiveWorker
-from phase.runtime.state.aggregator import KernelStateAggregator
-from phase.reflect.client.engine.local import LLMEngine
-from cognitive.context.assembler import ContextAssembler
+from cognitive.reflect.coupler import CognitiveCoupler
+from cognitive.reflect.worker import CognitiveWorker
+from arch.contract.state.aggregator import KernelStateAggregator
+from phase.bound.client.engine.local import LLMEngine
+from arch.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 

@@ -4,8 +4,8 @@ import asyncio
 import random
 import time
 import re
-from phase.runtime.contract.event.psi import PsiType
-from topos.bound.resolver import resolve_pattern
+from arch.contract.event.psi import PsiType
+from phase.bound.resolver import resolve_pattern
 from meta.plane.emitter import get_emitter
 
 class SurfaceActuator:

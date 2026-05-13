@@ -13,11 +13,11 @@ import urllib.parse
 from typing import List, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass
-from topos.bound.resolver import find_current_self, resolve_path
+from phase.bound.resolver import find_current_self, resolve_path
 from meta.plane.emitter import get_emitter
 from xphi.runtime import XPhiRuntime
-from phase.reflect.client.stream import StreamClient
-from phase.reflect.client.surface import RedisClient, SurfaceClient
+from phase.bound.client.stream import StreamClient
+from phase.bound.client.surface import RedisClient, SurfaceClient
 
 log = get_emitter("xphi.xearch")
 

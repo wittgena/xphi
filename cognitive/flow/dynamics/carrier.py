@@ -3,10 +3,10 @@
 ## @lineage: topos.dynamics.carrier
 from __future__ import annotations
 import asyncio
-from phase.runtime.contract.event.next import next_id
+from arch.contract.event.next import next_id
 from typing import List, Dict, Optional, Any
-from phase.executor.base import BaseExecutor
-from topos.model.manifold.cont import XeCont
+from phase.bound.executor import BaseExecutor
+from arch.model.manifold.cont import XeCont
 
 class LoopCarrier(BaseExecutor):
     """

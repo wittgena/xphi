@@ -7,11 +7,11 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
 from meta.plane.emitter import get_logger
-from topos.bound.resolver import resolve_path, get_invoker
-from topos.model.graph import EntryNode, RenderingData, _extract_rel_attr, EntryTemplate
-from topos.model.binder import ModelBinder
-from topos.model.resonance import ResonanceGraph, ResonanceNode
-from phase.runtime.contract.registry.unified import cli_contract
+from phase.bound.resolver import resolve_path, get_invoker
+from arch.model.graph import EntryNode, RenderingData, _extract_rel_attr, EntryTemplate
+from arch.model.binder import ModelBinder
+from arch.model.resonance import ResonanceGraph, ResonanceNode
+from arch.contract.registry.unified import cli_contract
 from phase.runtime.cli.executor import dispatch_cli, execute_cli_task, CliTaskAdapter, parse_local
 
 log = get_logger("model.surfacer")

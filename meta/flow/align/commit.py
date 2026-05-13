@@ -5,11 +5,11 @@ import subprocess
 from typing import List, Callable, Any
 from pathlib import Path
 from meta.plane.emitter import get_emitter
-from topos.bound.resolver import find_current_self, get_invoker
-from topos.model.repo.node import RepoNode, AnchorNode
-from topos.model.repo.protocol import anchor_commit_protocol
-from topos.model.repo.scanner import NodeScanner, NodeCommit
-from phase.runtime.contract.registry.unified import contract
+from phase.bound.resolver import find_current_self, get_invoker
+from arch.model.repo.node import RepoNode, AnchorNode
+from arch.model.repo.protocol import anchor_commit_protocol
+from arch.model.repo.scanner import NodeScanner, NodeCommit
+from arch.contract.registry.unified import contract
 from phase.runtime.cli.executor import execute_cli_task, CliTaskAdapter, parse_local, dispatch_cli
 
 log = get_emitter("align.commit", mode="SLIM")

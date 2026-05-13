@@ -7,7 +7,7 @@ import tempfile
 import webbrowser
 from typing import Dict, Optional
 from meta.plane.emitter import get_emitter
-from topos.bound.resolver import find_current_self, resolve_path
+from phase.bound.resolver import find_current_self, resolve_path
 
 SELF_ROOT = find_current_self()
 SURFACE_ROOT = resolve_path("surface")

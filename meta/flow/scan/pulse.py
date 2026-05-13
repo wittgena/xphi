@@ -6,8 +6,8 @@ import re
 from typing import List, Dict, Tuple
 from pathlib import Path
 
-from topos.bound.resolver import find_current_self
-from phase.runtime.contract.registry.unified import contract
+from phase.bound.resolver import find_current_self
+from arch.contract.registry.unified import contract
 from meta.plane.emitter import get_emitter
 from phase.runtime.cli.executor import CliTaskAdapter, dispatch_cli, parse_local
 

@@ -6,7 +6,7 @@ import random
 from dataclasses import dataclass
 from typing import List, AsyncGenerator, AsyncIterable
 from meta.plane.emitter import get_emitter
-from phase.runtime.contract.registry.unified import contract
+from arch.contract.registry.unified import contract
 
 log = get_emitter("xphi.rmflow")
 
@@ -177,7 +177,7 @@ def rmflow_entry(cli_args: list = None, **payload):
     return RMFlow(host, phase, state, max_steps=steps)
 
 if __name__ == "__main__":
-    from phase.executor.flow import dispatch_flow_cli
+    from cognitive.flow.executor import dispatch_flow_cli
     dispatch_flow_cli(
         command_name="rmflow", 
         entry_func=rmflow_entry, 

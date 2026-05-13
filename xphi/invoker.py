@@ -17,12 +17,12 @@ import urllib.parse
 from typing import Callable, List, Dict, Any
 import redis.asyncio as redis_async
 from meta.plane.emitter import get_logger
-from topos.bound.resolver import find_current_self, resolve_path
-from phase.runtime.contract.interface import IEventBus, IPhaseField, IPhaseAtor
-from phase.runtime.contract.event.psi import PsiEvent
+from phase.bound.resolver import find_current_self, resolve_path
+from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
+from arch.contract.event.psi import PsiEvent
 from xphi.runtime import XPhiRuntime
-from phase.reflect.client.stream import StreamClient
-from phase.reflect.client.surface import RedisClient, SurfaceClient
+from phase.bound.client.stream import StreamClient
+from phase.bound.client.surface import RedisClient, SurfaceClient
 
 log = get_logger("xphi.invoker")
 

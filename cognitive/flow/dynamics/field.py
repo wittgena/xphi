@@ -13,12 +13,12 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.psi import PsiEvent, PsiCarrier
 from meta.plane.surface import SurfacePlane
 from meta.plane.emitter import get_emitter
-from topos.bound.rhythm.bridge import RhythmBridge
-from topos.model.manifold.particle import ToposManifold, Particle
-from topos.model.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from cognitive.rhythm.bridge import RhythmBridge
+from arch.model.manifold.particle import ToposManifold, Particle
+from arch.model.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("dynamics.field")
 

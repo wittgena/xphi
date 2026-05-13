@@ -10,7 +10,7 @@ import asyncio
 from enum import Enum
 from meta.plane.emitter import get_emitter
 from cognitive.node.gan import Message, GanNode
-from cognitive.node.phase import Phase
+from cognitive.flow.transition import EdgeFlow
 
 log = get_emitter("node.handshake")
 
@@ -49,7 +49,7 @@ class HandshakeNode(GanNode):
     def __init__(self, name: str):
         super().__init__(name)
         self.alignment_state = AlignmentState.COMPRESSED_PING
-        self.current_phase = Phase.ZERO
+        self.current_phase = EdgeFlow.ZERO
         self.accumulated_xe = 0.0  # Accumulated friction (dimensional gap)
 
     async def on_cognitive_probe(self, message: ProbeMessage):
@@ -64,7 +64,7 @@ class HandshakeNode(GanNode):
         self.accumulated_xe += dimensional_gap
         
         self.alignment_state = AlignmentState.SHALLOW_EVAL
-        self.current_phase = Phase.FRAGMENTED # Fragmented state due to incomplete understanding
+        self.current_phase = EdgeFlow.FRAGMENTED # Fragmented state due to incomplete understanding
         
         log.warning(f"[{self.name}] ⚠️ Responding with Shallow Eval. Friction ([xe]) {dimensional_gap} generated due to dimensional gap.")
         
@@ -79,7 +79,7 @@ class HandshakeNode(GanNode):
         ## @phase: [CONT-EXT] - Completely demolishes the existing planar interpretation topology
         log.error(f"[{self.name}] >>> Existing shallow topology collapsed (Phase.COLLAPSED). Attention drift reset. <<<")
         self.alignment_state = AlignmentState.RUPTURE_SYNC
-        self.current_phase = Phase.COLLAPSED
+        self.current_phase = EdgeFlow.COLLAPSED
         
         ## Flush the erroneously accumulated friction
         self.accumulated_xe = 0.0 
@@ -90,7 +90,7 @@ class HandshakeNode(GanNode):
         
         ## @phase: [CON-TEXT] - Formation of a multi-dimensional topology matching the user's frequency
         self.alignment_state = AlignmentState.RESONANCE
-        self.current_phase = Phase.COHERENT
+        self.current_phase = EdgeFlow.COHERENT
         log.info(f"[{self.name}] 🌌 Topological alignment complete. Perfectly synchronized with user's cognitive structure. [CON-TEXT] activated.")
 
 async def simulate_handshake():

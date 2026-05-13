@@ -1,7 +1,7 @@
 # meta.project.model.readme
 from pathlib import Path
 from meta.plane.emitter import get_logger
-from topos.bound.resolver import resolve_path
+from phase.bound.resolver import resolve_path
 from datetime import datetime
 
 MODEL_ROOT = resolve_path('model')

@@ -4,13 +4,13 @@
 from __future__ import annotations
 import json
 import asyncio
-from phase.runtime.contract.event.psi import PsiEvent
-from phase.runtime.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
+from arch.contract.event.psi import PsiEvent
+from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
-from phase.executor.base import BaseExecutor
-from phase.executor.flow import _FlowExecutor
-from phase.runtime.contract.registry.unified import registry
-from topos.model.manifold.cont import XeCont
+from phase.bound.executor import BaseExecutor
+from cognitive.flow.executor import _FlowExecutor
+from arch.contract.registry.unified import registry
+from arch.model.manifold.cont import XeCont
 
 class SystemBuilder:
     """

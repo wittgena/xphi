@@ -9,10 +9,10 @@ from typing import Optional
 import redis.asyncio as redis_async
 from meta.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once
-from phase.runtime.contract.event.psi import PsiEvent, PsiCarrier
-from phase.runtime.contract.event.bus import AsyncEventBus
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.bus import AsyncEventBus
 from phase.runtime.dispatcher import Dispatcher
-from phase.receptor.bootstrap import receptor_bootstrap
+from phase.runtime.receptor.bootstrap import receptor_bootstrap
 
 SENSOR_INTERVAL = 1.0
 

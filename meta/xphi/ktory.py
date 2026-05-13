@@ -15,11 +15,11 @@ from typing import List, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass, field
 from meta.plane.emitter import get_emitter
-from topos.bound.resolver import find_current_self, resolve_path
+from phase.bound.resolver import find_current_self, resolve_path
 from xphi.runtime import XPhiRuntime
-from phase.reflect.client.stream import StreamClient
-from phase.reflect.client.surface import RedisClient, SurfaceClient
-from xphi.code.block.schema import Contract
+from phase.bound.client.stream import StreamClient
+from phase.bound.client.surface import RedisClient, SurfaceClient
+from arch.project.block.schema import Contract
 
 log = get_emitter("xphi.ktory")
 
