@@ -4,8 +4,8 @@
 from __future__ import annotations
 import json
 import asyncio
-from arch.contract.event.psi import PsiEvent
-from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
+from arch.model.event.psi import PsiEvent
+from arch.model.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
 from phase.bound.executor import BaseExecutor
 from cognitive.flow.executor import _FlowExecutor

@@ -8,7 +8,7 @@ import sys
 from typing import List, Set, Any, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
-from arch.contract.event.psi import PsiType
+from arch.model.event.psi import PsiType
 from meta.plane.emitter import get_logger
 from phase.bound.resolver import find_current_self, resolve_path
 from phase.runtime.node import NodeRuntime

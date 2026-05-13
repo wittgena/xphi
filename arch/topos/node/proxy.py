@@ -8,7 +8,7 @@ import random
 import json
 from typing import Optional, Any
 from meta.plane.emitter import get_emitter
-from arch.contract.event.psi import PsiEvent
+from arch.model.event.psi import PsiEvent
 from phase.bound.proto.flow import ProtoFlow
 
 log = get_emitter("state.proxy")

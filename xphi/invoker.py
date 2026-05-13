@@ -19,7 +19,7 @@ import redis.asyncio as redis_async
 from meta.plane.emitter import get_logger
 from phase.bound.resolver import find_current_self, resolve_path
 from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
-from arch.contract.event.psi import PsiEvent
+from arch.model.event.psi import PsiEvent
 from xphi.runtime import XPhiRuntime
 from phase.bound.client.stream import StreamClient
 from phase.bound.client.surface import RedisClient, SurfaceClient

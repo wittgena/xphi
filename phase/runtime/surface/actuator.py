@@ -4,7 +4,7 @@ import asyncio
 import random
 import time
 import re
-from arch.contract.event.psi import PsiType
+from arch.model.event.psi import PsiType
 from phase.bound.resolver import resolve_pattern
 from meta.plane.emitter import get_emitter
 

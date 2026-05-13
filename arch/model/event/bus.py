@@ -3,7 +3,7 @@
 ## @lineage: phase.runtime.contract.event.bus
 import asyncio
 from typing import Dict, Any, List, Optional
-from arch.contract.event.psi import PsiEvent
+from arch.model.event.psi import PsiEvent
 from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from meta.plane.emitter import get_emitter
 

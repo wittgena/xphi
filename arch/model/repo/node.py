@@ -12,7 +12,7 @@ import json
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
-from arch.contract.event.next import next_id
+from arch.model.event.next import next_id
 from arch.model.repo.commit import RepoCommit, AnchorCommit
 from phase.bound.resolver import resolve_path
 

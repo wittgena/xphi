@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import replace, asdict
 from typing import Dict, List, Protocol
 from collections import defaultdict, deque
-from arch.contract.event.next import LogEvent
+from arch.model.event.next import LogEvent
 import redis.asyncio as redis_async
 
 class EventObserver(Protocol):

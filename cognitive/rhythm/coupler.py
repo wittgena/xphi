@@ -5,7 +5,7 @@ import time
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.contract.event.psi import PsiType
+from arch.model.event.psi import PsiType
 from meta.plane.surface import SurfacePlane
 from arch.contract.interface import IEventBus
 

@@ -8,7 +8,7 @@ import time
 import re
 import redis.asyncio as redis_async
 from typing import Optional
-from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.model.event.psi import PsiEvent, PsiCarrier
 from phase.bound.resolver import resolve_channel, resolve_pattern
 from meta.plane.emitter import get_emitter
 

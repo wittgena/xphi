@@ -11,7 +11,7 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.model.event.psi import PsiEvent, PsiCarrier
 from cognitive.rhythm.bridge import RhythmBridge
 from meta.plane.surface import default_plane
 from meta.plane.emitter import get_emitter

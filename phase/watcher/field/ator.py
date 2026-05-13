@@ -8,7 +8,7 @@ import random
 from typing import Dict, Any
 from arch.contract.registry.unified import contract
 from arch.contract.interface import IPhaseAtor, IPhaseField
-from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.model.event.psi import PsiEvent, PsiCarrier
 
 @contract.ator("node.ator")
 class NodeAtor(IPhaseAtor):

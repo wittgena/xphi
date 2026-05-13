@@ -16,7 +16,7 @@ import json
 from enum import Enum
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from dataclasses import dataclass, field, asdict
-from arch.contract.event.next import LogEvent
+from arch.model.event.next import LogEvent
 from meta.plane.emitter import get_emitter
 
 log = get_emitter("bridge.psi")

@@ -18,8 +18,8 @@ import uuid
 import math
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.contract.event.psi import PsiEvent
-from arch.contract.event.bus import AsyncEventBus
+from arch.model.event.psi import PsiEvent
+from arch.model.event.bus import AsyncEventBus
 from cognitive.rhythm.coupler import RhythmCoupler
 from arch.contract.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
 from meta.plane.surface import SurfacePlane

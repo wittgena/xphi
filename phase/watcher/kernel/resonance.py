@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from arch.contract.event.psi import PsiCarrier, PsiEvent
+from arch.model.event.psi import PsiCarrier, PsiEvent
 from meta.plane.emitter import get_emitter
 from phase.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
