@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, Any
 from arch.contract.registry.path import path_registry
 from arch.model.event.psi import PsiCarrier, PsiEvent
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from phase.bound.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from arch.contract.discover import discover_modules

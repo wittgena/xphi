@@ -18,7 +18,7 @@ from enum import Enum
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from dataclasses import dataclass, field, asdict
 from arch.model.event.next import LogEvent
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("bridge.psi")
 

@@ -6,7 +6,7 @@ import time
 import re
 from arch.model.event.psi import PsiType
 from phase.bound.resolver import resolve_pattern
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 class SurfaceActuator:
     KEY_PARTS = [

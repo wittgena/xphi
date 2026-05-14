@@ -10,7 +10,7 @@ import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
 from phase.bound.proto.aligner import FieldAligner, AlignRecord
-from meta.plane.emitter import get_emitter, flow_scope
+from phase.plane.emitter import get_emitter, flow_scope
 from arch.project.imports.transformer import ImportTransformer
 
 def generate_diff(original: str, modified: str, filename: str) -> str:

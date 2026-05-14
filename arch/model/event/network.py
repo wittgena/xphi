@@ -4,7 +4,7 @@
 ## @lineage: phase.runtime.contract.event.network
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Dict, Any, Optional
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("proto.event")
 

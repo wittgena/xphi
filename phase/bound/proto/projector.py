@@ -4,7 +4,7 @@
 ## @lineage: arch.model.surface.projector
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Any, Optional
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("proto.projector")
 

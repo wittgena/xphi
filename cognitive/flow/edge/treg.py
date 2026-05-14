@@ -8,7 +8,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 from cognitive.flow.edge.trajectory import SignatureBound, TrajectoryXor
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from phase.bound.resolver import find_current_self
 
 SELF_ROOT = find_current_self()

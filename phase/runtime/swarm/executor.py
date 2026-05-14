@@ -12,8 +12,8 @@ from typing import Callable, Any
 from arch.model.event.psi import PsiEvent, PsiCarrier
 from arch.model.event.next import next_id, LogEvent
 from dataclasses import asdict
-from meta.plane.surface import surface
-from meta.plane.emitter import get_logger, flow_scope
+from phase.plane.surface import surface
+from phase.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from phase.bound.executor import BaseExecutor
 from phase.runtime.cli.executor import _GenericCliExecutor

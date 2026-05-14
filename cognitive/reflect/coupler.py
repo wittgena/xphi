@@ -3,7 +3,7 @@
 ## @lineage: cognitive.coupler
 import asyncio
 from typing import Optional
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from arch.model.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.interpreter import PhaseJudgment
 from arch.contract.state.aggregator import KernelStateAggregator, InternalContext

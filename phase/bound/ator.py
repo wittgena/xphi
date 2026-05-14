@@ -7,7 +7,7 @@ import uuid
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from meta.plane.emitter import get_logger
+from phase.plane.emitter import get_logger
 from phase.bound.proto.flow import (
     ProtoFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather

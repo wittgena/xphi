@@ -7,7 +7,7 @@ import re
 import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
-from meta.plane.emitter import get_logger
+from phase.plane.emitter import get_logger
 from phase.bound.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.project.block.parser.md import MdAstParser

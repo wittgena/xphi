@@ -4,7 +4,7 @@ import asyncio
 import enum 
 import logging
 from typing import List, Tuple, Any, Optional, Dict
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
 from phase.bound.proto.flow import ProtoFlow, FlowState
 from arch.contract.state.spec import TransRule, PhaseSpec, NodeType

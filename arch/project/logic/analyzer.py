@@ -12,7 +12,7 @@ from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
 from arch.model.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from phase.bound.resolver import resolve_path
 from arch.project.logic.transformer import LogicTransformer
 

@@ -22,7 +22,7 @@ from arch.model.event.psi import PsiEvent
 from arch.model.event.bus import AsyncEventBus
 from cognitive.rhythm.coupler import RhythmCoupler
 from arch.contract.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
-from meta.plane.surface import SurfacePlane
+from phase.plane.surface import SurfacePlane
 
 class SimpleKernel(IDynamicsKernel):
     """내부 장력(Tension)의 감쇠와 위상 전이를 계산하는 커널"""

@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Set
 from collections import defaultdict
 from phase.bound.resolver import find_current_self, resolve_path
 from anchor.around import discover_repos
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from arch.contract.registry.unified import contract
 from arch.contract.registry.path import path_registry, path_contract
 

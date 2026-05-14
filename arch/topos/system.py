@@ -22,7 +22,7 @@ from arch.topos.node.proxy import DistributedNodePool
 from arch.topos.organizer import ToposOrganizer
 from arch.topos.node.state import inject_pr_signal, StateNode, NodeType
 from arch.topos.runtime import StateRuntime
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("topos.system")
 

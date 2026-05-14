@@ -15,8 +15,8 @@ from pathlib import Path
 from arch.model.event.psi import PsiEvent, PsiCarrier
 from arch.model.event.next import next_id, LogEvent
 from phase.runtime.surface.sensor import REDIS_URL
-from meta.plane.emitter import get_emitter, flow_scope
-from meta.plane.surface import surface
+from phase.plane.emitter import get_emitter, flow_scope
+from phase.plane.surface import surface
 from phase.bound.resolver import get_invoker
 from arch.contract.registry.unified import registry
 from phase.runtime.cli.task import TaskSummaryEvent, TaskDetailRecord

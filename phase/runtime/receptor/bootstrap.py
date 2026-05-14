@@ -9,7 +9,7 @@ from phase.watcher.tracer.kernel import TracerKernel
 from phase.bound.resolver import find_current_self
 from phase.runtime.receptor.topos import ReceptorTopos
 from phase.runtime.surface.sink import RedisSink 
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("receptor.bootstrap")
 SELF_ROOT = find_current_self()

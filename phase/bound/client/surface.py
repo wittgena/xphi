@@ -15,7 +15,7 @@ import traceback
 import sys
 import os
 import redis
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("client.system")
 

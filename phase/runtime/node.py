@@ -12,7 +12,7 @@ from arch.model.event.psi import PsiEvent, PsiCarrier
 from arch.model.event.bus import AsyncEventBus
 from arch.model.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once, REDIS_URL
 from phase.runtime.dispatcher import Dispatcher
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow

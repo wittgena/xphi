@@ -13,7 +13,7 @@ from typing import List, Iterator
 from contextlib import contextmanager
 import uuid
 from arch.model.event.psi import PsiCarrier
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from phase.runtime.interpreter import NodeInterpreter, AnchoredIR, AnchorFlow
 
 log = get_emitter("state.node0")

@@ -12,7 +12,7 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.model.event.psi import PsiEvent, PsiCarrier
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 class ToposManifold(type):
     """

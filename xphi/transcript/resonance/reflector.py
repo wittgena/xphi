@@ -9,7 +9,7 @@ from typing import Any, Dict
 from xphi.ator.runtime import AtorRuntime
 from phase.bound.proto.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
 from arch.contract.registry.unified import contract
-from meta.plane.emitter import get_logger
+from phase.plane.emitter import get_logger
 
 log = get_logger('ator.reflector')
 

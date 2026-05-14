@@ -16,7 +16,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional
 from arch.project.topic.registry import TopicRegistry, TopicMap
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter('topic.tracer')
 

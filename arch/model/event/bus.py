@@ -6,7 +6,7 @@ import asyncio
 from typing import Dict, Any, List, Optional
 from arch.model.event.psi import PsiEvent
 from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 class AsyncEventBus(IEventBus):
     """@desc: Actor isolation + bounded fan-out"""

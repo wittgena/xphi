@@ -11,7 +11,7 @@ from pathlib import Path
 from watchdog.events import FileSystemEventHandler
 from typing import Dict, List, Optional
 from phase.runtime.receptor.topos import ReceptorTopos
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("tracer.source")
 

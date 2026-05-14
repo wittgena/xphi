@@ -2,7 +2,7 @@
 ## @lineage: phase.reflect.client.local.lm
 import dspy
 from phase.bound.client.engine.local import LLMEngine
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 
 log = get_emitter("local.lm")
 

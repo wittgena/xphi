@@ -2,7 +2,7 @@
 ## @lineage: phase.reflect.cognitive.worker
 ## @lineage: cognitive.worker
 import asyncio
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from phase.bound.client.engine.local import LLMEngine
 from arch.contract.state.aggregator import InternalContext
 from arch.context.assembler import ContextAssembler

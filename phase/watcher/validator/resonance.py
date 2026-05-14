@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Dict
 from phase.bound.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from arch.contract.registry.unified import contract
-from meta.plane.emitter import get_logger
+from phase.plane.emitter import get_logger
 
 log = get_logger('resonance.validator')
 

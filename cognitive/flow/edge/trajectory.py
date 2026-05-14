@@ -4,7 +4,7 @@
 import json
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Set
-from meta.plane.emitter import get_logger
+from phase.plane.emitter import get_logger
 
 log = get_logger("edge.trajectory")
 

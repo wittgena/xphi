@@ -5,7 +5,7 @@ import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 from phase.bound.proto.flow import ProtoFlow, FlowState, Transduction, Align
-from meta.plane.emitter import get_logger
+from phase.plane.emitter import get_logger
 from dataclasses import dataclass, field
 from phase.bound.resolver import find_current_self, resolve_path
 from arch.contract.registry.unified import registry, contract

@@ -8,7 +8,7 @@
 """
 import asyncio
 from enum import Enum
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from cognitive.node.gan import Message, GanNode
 from cognitive.flow.transition import EdgeFlow
 

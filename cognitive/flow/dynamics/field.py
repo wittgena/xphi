@@ -14,8 +14,8 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.model.event.psi import PsiEvent, PsiCarrier
-from meta.plane.surface import SurfacePlane
-from meta.plane.emitter import get_emitter
+from phase.plane.surface import SurfacePlane
+from phase.plane.emitter import get_emitter
 from cognitive.rhythm.bridge import RhythmBridge
 from arch.model.manifold.particle import ToposManifold, Particle
 from arch.model.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion

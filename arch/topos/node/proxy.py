@@ -7,7 +7,7 @@ import logging
 import random
 import json
 from typing import Optional, Any
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from arch.model.event.psi import PsiEvent
 from phase.bound.proto.flow import ProtoFlow
 

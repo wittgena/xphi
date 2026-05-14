@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from meta.plane.emitter import get_logger
+from phase.plane.emitter import get_logger
 from phase.bound.resolver import find_current_self, resolve_path
 from arch.project.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 from arch.project.block.parser.md import MdAstParser

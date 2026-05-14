@@ -4,7 +4,7 @@ import time
 import asyncio
 import redis.asyncio as redis_async
 from typing import Dict, Any
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from phase.runtime.node import NodeRuntime
 from arch.contract.protocol import get_proto
 from phase.bound.proto.flow import ProtoFlow, FlowState

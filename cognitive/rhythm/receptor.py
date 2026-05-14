@@ -3,7 +3,7 @@
 import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from cognitive.rhythm.psi import RhythmPsi, RhythmSignature
 
 log = get_emitter("rhythm.receptor")

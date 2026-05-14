@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from enum import Enum
 from arch.model.event.next import LogEvent
-from meta.plane.emitter import get_emitter
+from phase.plane.emitter import get_emitter
 from arch.model.event.psi import PsiCarrier, PhaseField
 
 log = get_emitter("node.interpreter")
