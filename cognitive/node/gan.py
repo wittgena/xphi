@@ -8,7 +8,7 @@ import asyncio
 from typing import Optional, Set
 from meta.plane.emitter import get_emitter
 
-log = get_emitter("nerve.message")
+log = get_emitter("node.gan")
 
 class Message:
     """
