@@ -36,7 +36,8 @@ def _contains_forbidden_imports(py_file: Path, forbidden_libs: Set[str]) -> bool
 def discover_modules(
     root: Path, 
     forbidden_libs: Optional[Set[str]] = None,
-    exclude_files: Optional[Set[str]] = None
+    exclude_files: Optional[Set[str]] = None,
+    force_reload: bool = False
 ) -> None:
     """
     고정된 root를 기준으로 모듈을 탐색하여 일관된 FQN(Fully Qualified Name)을 생성
@@ -71,14 +72,30 @@ def discover_modules(
             print(f"[Discover] Ignored (heavy dependency found): {py_file.name}")
             continue
 
+        # ## @rule.C: 모듈 동적 로딩 및 핫 리로딩(Hot Reloading) 지원
+        # try:
+        #     relative = py_file.relative_to(root)
+        #     module_path = ".".join(relative.with_suffix("").parts)
+        #     if module_path:
+        #         if module_path in sys.modules:
+        #             # 이미 캐시된 위상(모듈)인 경우, 파일의 수정 사항을 반영하기 위해 강제 리로드
+        #             importlib.reload(sys.modules[module_path])
+        #         else:
+        #             # 최초 진입하는 위상인 경우 정상 로드
+        #             importlib.import_module(module_path)
+        
         ## @rule.C: 모듈 동적 로딩 및 핫 리로딩(Hot Reloading) 지원
         try:
             relative = py_file.relative_to(root)
             module_path = ".".join(relative.with_suffix("").parts)
             if module_path:
                 if module_path in sys.modules:
-                    # 이미 캐시된 위상(모듈)인 경우, 파일의 수정 사항을 반영하기 위해 강제 리로드
-                    importlib.reload(sys.modules[module_path])
+                    # 플래그가 켜져 있을 때만 명시적 리로드 수행
+                    if force_reload:
+                        importlib.reload(sys.modules[module_path])
+                    else:
+                        # 이미 로드된 모듈은 안전하게 패스 (멱등성 보장)
+                        pass 
                 else:
                     # 최초 진입하는 위상인 경우 정상 로드
                     importlib.import_module(module_path)

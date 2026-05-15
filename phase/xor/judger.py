@@ -1,4 +1,5 @@
-# xphi.xor.judger
+# phase.xor.judger
+## @lineage: xphi.xor.judger
 import time
 from typing import List, Tuple
 from dataclasses import dataclass, field

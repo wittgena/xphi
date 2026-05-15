@@ -1,14 +1,15 @@
-# arch.context.assembler
+# arch.contract.context.assembler
+## @lineage: arch.context.assembler
 ## @lineage: cognitive.context.assembler
 import json
 import yaml
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
-from meta.xphi.xearch import Xor, SearchResult
+from xphi.flow.xearch import Xor, SearchResult
 from phase.plane.emitter import get_logger
 from phase.bound.resolver import find_current_self, resolve_path
-from arch.context.prompt.input import InputBundle, build_prompt 
+from arch.contract.context.prompt.input import InputBundle, build_prompt 
 
 log = get_logger("context.assembler")
 

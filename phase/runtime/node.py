@@ -27,7 +27,7 @@ from cognitive.reflect.coupler import CognitiveCoupler
 from cognitive.reflect.worker import CognitiveWorker
 from arch.contract.state.aggregator import KernelStateAggregator
 from phase.bound.client.engine.local import LLMEngine
-from arch.context.assembler import ContextAssembler
+from arch.contract.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 

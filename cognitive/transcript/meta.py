@@ -1,4 +1,5 @@
-# xphi.transcript.meta
+# cognitive.transcript.meta
+## @lineage: xphi.transcript.meta
 import asyncio
 import logging
 import inspect

@@ -1,4 +1,5 @@
-# xphi.transcript.resonance.feedback
+# cognitive.transcript.resonance.feedback
+## @lineage: xphi.transcript.resonance.feedback
 ## @lineage: topos.bound.ator.feedback
 import asyncio
 import inspect

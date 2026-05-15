@@ -1,4 +1,5 @@
-# xphi.transcript.resonance.reflector
+# cognitive.transcript.resonance.reflector
+## @lineage: xphi.transcript.resonance.reflector
 ## @lineage: topos.bound.resonator.reflector
 ## @lineage: phase.reflect.resonator.reflector
 import ast

@@ -1,4 +1,5 @@
-# xphi.transcript.resonance.aligner
+# cognitive.transcript.resonance.aligner
+## @lineage: xphi.transcript.resonance.aligner
 ## @lineage: topos.bound.resonator.aligner
 ## @lineage: phase.reflect.resonator.aligner
 import httpx

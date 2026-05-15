@@ -1,4 +1,5 @@
-# xphi.transcript.resonance.judgment
+# cognitive.transcript.resonance.judgment
+## @lineage: xphi.transcript.resonance.judgment
 import asyncio
 from arch.contract.registry.unified import contract
 from phase.bound.proto.flow import Judgment

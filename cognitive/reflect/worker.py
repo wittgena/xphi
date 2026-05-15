@@ -5,7 +5,7 @@ import asyncio
 from phase.plane.emitter import get_emitter
 from phase.bound.client.engine.local import LLMEngine
 from arch.contract.state.aggregator import InternalContext
-from arch.context.assembler import ContextAssembler
+from arch.contract.context.assembler import ContextAssembler
 
 log = get_emitter('cognitive.worker')
 
