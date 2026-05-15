@@ -23,10 +23,9 @@ from arch.contract.registry.unified import registry
 from arch.contract.discover import discover_modules
 from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from cognitive.reflect.coupler import CognitiveCoupler
 from cognitive.reflect.worker import CognitiveWorker
+from cognitive.reflect.coupler import CognitiveCoupler
 from arch.contract.state.aggregator import KernelStateAggregator
-from phase.bound.client.engine.local import LLMEngine
 from arch.contract.context.assembler import ContextAssembler
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -117,6 +116,8 @@ class NodeRuntime(IPhaseAtor):
         return handler
 
     async def start(self):
+        from phase.bound.client.engine.local import LLMEngine
+
         loop = asyncio.get_running_loop()
         loop.set_exception_handler(self._handle_exception)
         self.log.info(f"Starting RuntimeNode [{self.node_id}]")

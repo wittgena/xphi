@@ -86,7 +86,14 @@ class UnifiedRegistry:
 
     def register_component(self, category: str, name: str, cls: Type):
         target = getattr(self, f"_{category}s")
-        target[name.lower()] = cls
+        name_key = name.lower()
+
+        if name_key in target and target[name_key].__name__ == cls.__name__:
+            ## 핫 리로드 혹은 중복 임포트 상황. 조용히 넘어감.
+            target[name_key] = cls
+            return
+            
+        target[name_key] = cls
         print(f"[Registry] Component Registered: [{category}] {name} -> {cls.__name__}")
 
     def create_component(self, category: str, config: Any, **extra_kwargs):
