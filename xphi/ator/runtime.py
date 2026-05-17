@@ -27,7 +27,6 @@ class AtorRuntime:
         self.nodes = nodes
         self.engine = runtime_node
         
-        # [개선 1] 로컬 위상 제어를 위한 캡슐화된 상태 (Orthogonality 확보)
         self.psi_queue = asyncio.Queue()
         self._tasks: List[asyncio.Task] = []
         self._is_active = False

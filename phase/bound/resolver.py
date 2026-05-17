@@ -14,7 +14,7 @@ BOUND = "bound.json"
 ## @detect.self.root
 def is_self_root(path: Path) -> bool:
     """self 기준면 여부 확인 - 디렉토리 이름이 self이고 하위에 anchor 디렉토리가 존재하는지 검증"""
-    return path.name == ANCHOR_DIR and (path / ".anchor").is_dir()
+    return path.name == ANCHOR_DIR and (path / "anchor").is_dir()
 
 # @lru_cache(maxsize=1)
 def find_current_self(start: Path | None = None) -> Path:
@@ -42,8 +42,8 @@ def get_invoker(path: Path):
 
 ## @handling.bound
 def load_bound(self_root: Path) -> dict:
-    """self/.anchor/bound.json 로드 - 최소 유효성 검증 포함"""
-    bound = self_root / ".anchor" / BOUND 
+    """self/anchor/bound.json 로드 - 최소 유효성 검증 포함"""
+    bound = self_root / "anchor" / BOUND 
     
     if not bound.exists():
         return {}
@@ -78,7 +78,7 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
     ## lru_cache 히트율을 위해 start 인자 정규화
     effective_start = start.resolve() if start else Path.cwd().resolve()
     self_root = find_current_self(effective_start)
-    anchor_root = self_root / ".anchor"
+    anchor_root = self_root / "anchor"
     
     ## 입력을 깨끗하게 정렬
     clean_name = _clean_subpath(self_root.name, name)
