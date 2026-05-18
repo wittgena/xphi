@@ -1,10 +1,8 @@
-# phase.bound.client.engine.local
-## @lineage: phase.reflect.client.engine.local
-## @lineage: phase.reflect.client.local.engine
 import os
 import time
 import subprocess
 import requests
+import json  # [FIX] JSON 모듈 추가
 from arch.model.resonance import BridgeEvent
 from phase.plane.emitter import get_emitter
 
@@ -40,26 +38,29 @@ class LLMEngine:
             r = requests.get(self.health_url, timeout=2)
             return r.status_code == 200
         except Exception:
-            log.error('[error] is_alive fail')
+            # 상태 체크 중 발생하는 에러는 정상적인 대기 과정일 수 있으므로 디버그 레벨로 낮춤
+            log.debug('[monitor] llama-server not ready yet...')
             return False
 
     def ensure_server(self):
         if self.is_alive():
             return
 
+        log.info("[*] Starting llama-server process...")
         self._process = subprocess.Popen(
             LLAMA_SERVER_CMD,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
-        for _ in range(15):
+        for _ in range(30): # 대기 시간을 좀 더 넉넉히(15->30초) 부여
             if self.is_alive():
+                log.info("[+] llama-server is online.")
                 return
             time.sleep(1)
 
         self._process.terminate()
-        raise RuntimeError("llama-server failed to start")
+        raise RuntimeError("llama-server failed to start within timeout.")
 
     def ask(self, prompt: str, callback: callable = None) -> str:
         """기존 chat을 대체/확장: 스트리밍 및 루처(Rupture) 지원"""
@@ -72,24 +73,33 @@ class LLMEngine:
         }
 
         full_text = ""
-        ## requests.post에 stream=True 추가
-        with requests.post(self.server_url, json=payload, stream=True, timeout=60) as r:
-            r.raise_for_status()
-            for line in r.iter_lines():
-                if not line: continue
-                
-                ## SSE 데이터 파싱
-                line_str = line.decode('utf-8')
-                if line_str.startswith("data: "):
-                    content = line_str[6:]
-                    if content == "[DONE]": break
-                    try:
-                        chunk = json.loads(content)["choices"][0]["delta"].get("content", "")
-                        full_text += chunk
-                        if callback:
-                            # 'text' 대신 공통 규격인 'content'를 사용하여 전달
-                            callback(BridgeEvent(content=chunk))
-                    except: continue
+        try:
+            with requests.post(self.server_url, json=payload, stream=True, timeout=60) as r:
+                r.raise_for_status()
+                for line in r.iter_lines():
+                    if not line: continue
+                    
+                    line_str = line.decode('utf-8')
+                    if line_str.startswith("data: "):
+                        content = line_str[6:]
+                        if content == "[DONE]": break
+                        
+                        try:
+                            # [FIX] JSON 모듈을 사용해 정상 파싱
+                            chunk = json.loads(content)["choices"][0]["delta"].get("content", "")
+                            if chunk:
+                                full_text += chunk
+                                if callback:
+                                    # [FIX] analyzer가 무시하지 않도록 source="agent" 지정 
+                                    # [FIX] 파편(chunk)이 아닌 누적된 전체 텍스트(full_text)를 전달
+                                    callback(BridgeEvent(source="agent", content=full_text))
+                        except Exception as e:
+                            # [FIX] 무지성 continue 대신 파싱 에러 로깅
+                            log.error(f"SSE JSON parsing error: {e}, Payload: {content}")
+                            continue
+        except Exception as e:
+            log.error(f"Failed during LLM ask request: {e}")
+            
         return full_text
 
     def chat(self, system_prompt: str, user_prompt: str, timeout: int = 30) -> str:
