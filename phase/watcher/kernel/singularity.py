@@ -1,7 +1,4 @@
 # phase.watcher.kernel.singularity
-## @lineage: topos.watcher.kernel.singularity
-## @lineage: cognitive.watcher.kernel.singularity
-## @lineage: topos.bound.watcher.kernel.singularity
 from typing import List, Dict, Optional, Any
 from arch.contract.registry.unified import contract
 from arch.contract.interface import ICriticalDetector, IPhaseField

@@ -1,8 +1,8 @@
-# phase.watcher.resonator
+# cognitive.resonator
+## @lineage: phase.watcher.resonator
 ## @lineage: topos.watcher.resonator
 ## @lineage: cognitive.watcher.resonator
 ## @lineage: cognitive.field.resonator
-## @lineage: cognitive.resonator
 """
 @flow:
   Ψ (event)

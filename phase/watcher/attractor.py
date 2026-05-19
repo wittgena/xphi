@@ -1,4 +1,4 @@
-# phase.watcher.kernel.resonance
+# phase.watcher.attractor
 from __future__ import annotations
 import asyncio
 import json
@@ -13,43 +13,14 @@ from cognitive.flow.dynamics.carrier import LoopCarrier
 from cognitive.flow.dynamics.executor import DynamicsExecutor
 from arch.contract.interface import IDynamicsKernel
 
-@contract.kernel("kernel.resonance")
-class KernelResonance(IDynamicsKernel):
-    """@role: Kuramoto(물리적 동량화)와 AtorSensor(인지적 파벌 형성)의 힘을 중첩(Superposition)"""
-    def __init__(self, **kwargs):
-        ## 내부적으로 두 개의 독립된 세계(Kernel)를 생성
-        self.kuramoto = registry.create_component("kernel", {"type": "kuramoto", "params": kwargs.get("kuramoto_params", {})})
-        self.ator = registry.create_component("kernel", {"type": "ator", "params": kwargs.get("ator_params", {})})
-        ## 물리적 인력(Kuramoto)과 인지적 인력(Ator)의 반영 비율 (0.0 ~ 1.0)
-        self.alpha = kwargs.get("alpha", 0.5) 
-
-    def compute_step(self, states, dt):
-        ## 각각의 세계에서 다음 틱(dt)의 변화량을 계산
-        k_deltas = self.kuramoto.compute_step(states, dt)
-        a_deltas = self.ator.compute_step(states, dt)
-
-        deltas = {}
-        for node_id in states:
-            ## 위상 중첩: 물리적 중력과 인지적 파벌의 벡터 합산
-            d_phase = (k_deltas[node_id]["d_phase"] * self.alpha) + (a_deltas[node_id]["d_phase"] * (1.0 - self.alpha))
-            ## 텐션 누적: 두 세계에서 발생하는 스트레스를 합산하여 극대화
-            tension = k_deltas[node_id]["target_tension"] + a_deltas[node_id]["target_tension"]
-            deltas[node_id] = {"d_phase": d_phase, "target_tension": tension}
-        return deltas
-
-    def render_state(self, states):
-        ## 시각화는 인지적 가설(AtorSensor의 🟦🟩🟨🟥) 방식을 차용
-        return self.ator.render_state(states)
-
-
 async def main():
     discover_modules(find_current_self())
-    log = get_emitter("rhythm.watcher", phase="BOOT")
+    log = get_emitter("watcher.attractor", phase="BOOT")
     
     ## 보정된 컴포넌트들을 완벽히 매핑한 JSON Payload
     redis_payload = """
     {
-      "system_type": "DUAL_RESONANCE_ATTRACTOR",
+      "system_type": "WATCHER_ATTRACTOR",
       "runtime": { "seed": 99, "max_ticks": 1000, "sleep_interval": 0.05, "dt": 0.1 },
       "kernel": { 
           "type": "kernel.resonance", 
@@ -64,7 +35,7 @@ async def main():
           "params": { "size": 30, "init_phase_range": [0, 6.28], "omega_range": [0.2, 0.5] } 
       },
       "watcher": { 
-          "type": "singularity.watcher",
+          "type": "inversion.watcher",
           "params": { "candidate_limit": 10.0, "rupture_limit": 30.0 } 
       },
       "regime": { 
