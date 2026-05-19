@@ -1,9 +1,5 @@
-# meta.phase.observer
-## @lineage: meta.resolver.phase.observer
-## @lineage: meta.debug.phase.observer
-## @lineage: bridge.actor.phase.observer
-## @lineage: center.actor.phase.observer
-## @lineage: meta.observer.phase
+# meta.scan.phase
+## @lineage: meta.phase.observer
 import asyncio
 import json
 import time
@@ -12,9 +8,9 @@ from typing import Optional, Dict, Any
 from phase.bound.resolver import resolve_channel
 from phase.plane.emitter import get_emitter
 
-class PhaseObserver:
+class PhaseScanner:
     """
-    @role: Systemic Panopticon / Phase Observer
+    @role: Phase Scanner
     @desc:
     - 분산된 NodeRuntime 매니폴드의 활성 상태(State)와 심박(Heartbeat) 스캔
     - Perturbator의 교란이나 내부 압력에 의한 구조적 파열(Rupture) 관측
@@ -98,7 +94,7 @@ class PhaseObserver:
 
 if __name__ == "__main__":
     async def main():
-        obs = PhaseObserver()
+        obs = PhaseScanner()
         await obs.connect()
         await obs.watch(scan_interval=10.0)
 
