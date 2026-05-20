@@ -1,4 +1,4 @@
-# meta.scan.fragment
+# meta.scan.spec
 ## @lineage: loop.debug.fragment.detect
 """
 @phase: Topos Reflection & Fragment Isolation
@@ -18,7 +18,7 @@ from arch.contract.registry.unified import contract
 from phase.plane.emitter import get_emitter
 from phase.runtime.cli.executor import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local
 
-log = get_emitter("scan.fragment")
+log = get_emitter("scan.spec")
 
 try:
     SELF_ROOT = find_current_self()
