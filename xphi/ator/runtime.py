@@ -4,7 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from phase.plane.emitter import get_logger
-from phase.bound.proto.flow import ProtoFlow, FlowState
+from phase.bind.proto.flow import ProtoFlow, FlowState
 from arch.contract.protocol import get_proto
 from arch.model.event.psi import PhaseField, PsiCarrier, CarrierType
 from arch.contract.state.node0 import enter_node0

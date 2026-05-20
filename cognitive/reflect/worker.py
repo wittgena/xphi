@@ -3,7 +3,7 @@
 ## @lineage: cognitive.worker
 import asyncio
 from phase.plane.emitter import get_emitter
-from phase.bound.client.engine.local import LLMEngine
+from phase.bind.client.engine.local import LLMEngine
 from arch.contract.state.aggregator import InternalContext
 from arch.contract.context.assembler import ContextAssembler
 

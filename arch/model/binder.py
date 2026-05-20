@@ -13,7 +13,7 @@ from pathlib import Path
 from collections import defaultdict, Counter
 from tqdm import tqdm
 from phase.plane.emitter import get_logger
-from phase.bound.resolver import find_current_self, resolve_path
+from phase.bind.resolver import find_current_self, resolve_path
 from arch.model.resonance import ResonanceGraph, ResonanceNode, NodeRelation
 from arch.model.pos.sensor import PosSensor
 

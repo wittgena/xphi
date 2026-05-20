@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 from arch.model.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
-from phase.bound.executor import BaseExecutor
+from phase.bind.executor import BaseExecutor
 from arch.contract.registry.unified import registry
 
 class PhaseField(type(BaseExecutor)):

@@ -13,7 +13,7 @@ import functools
 from pathlib import Path
 from typing import Any, Callable
 from phase.plane.emitter import get_logger, get_emitter
-from phase.bound.proto.flow import ProtoFlow, FlowState
+from phase.bind.proto.flow import ProtoFlow, FlowState
 
 log = get_logger("flow.monitor")
 monitor_emitter = get_emitter("flow.monitor", phase="observe", boundary="telemetry")

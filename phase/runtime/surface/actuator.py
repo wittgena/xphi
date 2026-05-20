@@ -5,7 +5,7 @@ import random
 import time
 import re
 from arch.model.event.psi import PsiType
-from phase.bound.resolver import resolve_pattern
+from phase.bind.resolver import resolve_pattern
 from phase.plane.emitter import get_emitter
 
 class SurfaceActuator:

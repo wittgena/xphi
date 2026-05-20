@@ -18,7 +18,7 @@ from phase.runtime.dispatcher import Dispatcher
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
 from phase.runtime.surface.actuator import SurfaceActuator
 from phase.runtime.surface.sink import RedisSink
-from phase.bound.resolver import resolve_path, find_current_self
+from phase.bind.resolver import resolve_path, find_current_self
 from arch.contract.registry.unified import registry
 from arch.contract.discover import discover_modules
 from phase.runtime.swarm.executor import SwarmExecutor
@@ -116,7 +116,7 @@ class NodeRuntime(IPhaseAtor):
         return handler
 
     async def start(self):
-        from phase.bound.client.engine.local import LLMEngine
+        from phase.bind.client.engine.local import LLMEngine
 
         loop = asyncio.get_running_loop()
         loop.set_exception_handler(self._handle_exception)

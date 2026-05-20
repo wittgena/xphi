@@ -3,7 +3,7 @@ import os
 import sys
 import argparse
 from pathlib import Path
-from phase.bound.resolver import find_current_self
+from phase.bind.resolver import find_current_self
 from arch.contract.registry.unified import contract
 from phase.plane.emitter import get_emitter
 from phase.runtime.cli.executor import CliTaskAdapter, parse_local, dispatch_cli

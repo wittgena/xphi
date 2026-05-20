@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from arch.model.event.next import next_id
 from arch.model.repo.node import RepoNode, AnchorNode
-from phase.bound.resolver import resolve_path
+from phase.bind.resolver import resolve_path
 
 DEFAULT_ID = "0000000"
 

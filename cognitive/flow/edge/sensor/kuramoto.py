@@ -7,7 +7,7 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
 from arch.contract.interface import IDynamicsKernel
 from arch.contract.registry.unified import contract
-from phase.watcher.config import KernelConfig
+from meta.watcher.config import KernelConfig
 
 @contract.kernel("kuramoto")
 class KuramotoSensor(IDynamicsKernel):

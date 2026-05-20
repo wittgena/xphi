@@ -13,7 +13,7 @@ from collections import defaultdict, Counter
 from gensim import corpora, models
 from phase.plane.emitter import get_emitter
 from arch.project.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
-from phase.bound.resolver import find_current_self, resolve_path
+from phase.bind.resolver import find_current_self, resolve_path
 from arch.project.block.parser.topos import ToposAstParser
 
 log = get_emitter("topic.modeler")

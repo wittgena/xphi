@@ -11,14 +11,14 @@ from typing import Dict, Any
 from arch.contract.registry.path import path_registry
 from arch.model.event.psi import PsiCarrier, PsiEvent
 from phase.plane.emitter import get_emitter
-from phase.bound.resolver import find_current_self
+from phase.bind.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from arch.contract.discover import discover_modules
 from cognitive.flow.dynamics.carrier import LoopCarrier
 from cognitive.flow.dynamics.executor import DynamicsExecutor
 from cognitive.flow.edge.treg import FrameRegistry, TregEdge, PhaseState
 from cognitive.flow.edge.trajectory import SignatureBound, TrajectoryXor
-from phase.watcher.validator.contract import ContractValidator
+from meta.watcher.validator.contract import ContractValidator
 from arch.contract.proposer import execute_proposer
 
 class ExchangeSystem:

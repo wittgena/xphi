@@ -17,10 +17,10 @@ from arch.model.event.next import next_id, LogEvent
 from phase.runtime.surface.sensor import REDIS_URL
 from phase.plane.emitter import get_emitter, flow_scope
 from phase.plane.surface import surface
-from phase.bound.resolver import get_invoker
+from phase.bind.resolver import get_invoker
 from arch.contract.registry.unified import registry
 from phase.runtime.cli.task import TaskSummaryEvent, TaskDetailRecord
-from phase.bound.executor import BaseExecutor
+from phase.bind.executor import BaseExecutor
 
 log = get_emitter("executor.cli")
 

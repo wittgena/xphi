@@ -17,10 +17,10 @@ from typing import List, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass, field
 from phase.plane.emitter import get_emitter
-from phase.bound.resolver import find_current_self, resolve_path
+from phase.bind.resolver import find_current_self, resolve_path
 from xphi.runtime import XPhiRuntime
-from phase.bound.client.stream import StreamClient
-from phase.bound.client.surface import RedisClient, SurfaceClient
+from phase.bind.client.stream import StreamClient
+from phase.bind.client.surface import RedisClient, SurfaceClient
 from arch.project.block.schema import Contract
 
 log = get_emitter("xphi.ktory")

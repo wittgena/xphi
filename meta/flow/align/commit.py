@@ -5,7 +5,7 @@ import subprocess
 from typing import List, Callable, Any
 from pathlib import Path
 from phase.plane.emitter import get_emitter
-from phase.bound.resolver import find_current_self, get_invoker
+from phase.bind.resolver import find_current_self, get_invoker
 from arch.model.repo.node import RepoNode, AnchorNode
 from arch.model.repo.protocol import anchor_commit_protocol
 from arch.model.repo.scanner import NodeScanner, NodeCommit

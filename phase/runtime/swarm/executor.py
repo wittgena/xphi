@@ -15,7 +15,7 @@ from dataclasses import asdict
 from phase.plane.surface import surface
 from phase.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
-from phase.bound.executor import BaseExecutor
+from phase.bind.executor import BaseExecutor
 from phase.runtime.cli.executor import _GenericCliExecutor
 from cognitive.flow.executor import _FlowExecutor
 

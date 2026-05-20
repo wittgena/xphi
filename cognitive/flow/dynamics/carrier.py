@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from arch.model.event.next import next_id
 from typing import List, Dict, Optional, Any
-from phase.bound.executor import BaseExecutor
+from phase.bind.executor import BaseExecutor
 from arch.model.manifold.cont import XeCont
 
 class LoopCarrier(BaseExecutor):

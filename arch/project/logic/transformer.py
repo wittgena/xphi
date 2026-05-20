@@ -12,7 +12,7 @@ from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
 from phase.plane.emitter import get_emitter
-from phase.bound.resolver import resolve_path
+from phase.bind.resolver import resolve_path
 
 class LogicTransformer:
     """

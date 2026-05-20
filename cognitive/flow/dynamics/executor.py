@@ -7,7 +7,7 @@ import asyncio
 from arch.model.event.psi import PsiEvent
 from arch.model.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
-from phase.bound.executor import BaseExecutor
+from phase.bind.executor import BaseExecutor
 from cognitive.flow.executor import _FlowExecutor
 from arch.contract.registry.unified import registry
 from arch.model.manifold.cont import XeCont

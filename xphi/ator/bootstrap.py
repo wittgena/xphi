@@ -10,14 +10,14 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from phase.plane.emitter import get_logger
-from phase.bound.proto.flow import ProtoFlow, FlowState, Transduction
+from phase.bind.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.contract.discover import discover_modules
-from cognitive.transcript.phi import TranscriptPhi
-from cognitive.transcript.spec import TranscriptSpec
+from meta.transcript.phi import TranscriptPhi
+from meta.transcript.spec import TranscriptSpec
 from xphi.ator.runtime import AtorRuntime
 from phase.runtime.node import NodeRuntime
-from phase.bound.resolver import find_current_self, resolve_path, load_bound
+from phase.bind.resolver import find_current_self, resolve_path, load_bound
 
 log = get_logger("ator.bootstrap")
 SELF_ROOT = find_current_self()
