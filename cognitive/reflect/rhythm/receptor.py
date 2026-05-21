@@ -1,4 +1,5 @@
-# cognitive.rhythm.receptor
+# cognitive.reflect.rhythm.receptor
+## @lineage: cognitive.rhythm.receptor
 ## @lineage: cognitive.rhythm.receptor.aura
 import math
 from dataclasses import dataclass, field

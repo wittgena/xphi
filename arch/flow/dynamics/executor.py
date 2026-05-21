@@ -1,4 +1,5 @@
-# cognitive.flow.dynamics.executor
+# arch.flow.dynamics.executor
+## @lineage: cognitive.flow.dynamics.executor
 ## @lineage: cognitive.dynamics.executor
 ## @lineage: topos.dynamics.executor
 from __future__ import annotations

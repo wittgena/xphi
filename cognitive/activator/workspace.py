@@ -1,4 +1,5 @@
-# phase.activator.workspace
+# cognitive.activator.workspace
+## @lineage: phase.activator.workspace
 ## @lineage: phase.bound.activator.workspace
 ## @lineage: arch.activator.workspace
 import os

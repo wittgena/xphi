@@ -1,4 +1,5 @@
-# cognitive.flow.exchange
+# arch.flow.exchange
+## @lineage: cognitive.flow.exchange
 ## @lineage: cognitive.edge.exchange
 ## @lineage: cognitive.exchange
 from __future__ import annotations
@@ -18,7 +19,7 @@ from arch.flow.dynamics.carrier import LoopCarrier
 from arch.flow.dynamics.executor import DynamicsExecutor
 from arch.flow.edge.treg import FrameRegistry, TregEdge, PhaseState
 from arch.flow.edge.trajectory import SignatureBound, TrajectoryXor
-from meta.watcher.validator.contract import ContractValidator
+from phase.watcher.validator.contract import ContractValidator
 from arch.contract.proposer import execute_proposer
 
 class ExchangeSystem:

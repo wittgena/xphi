@@ -1,4 +1,5 @@
-# cognitive.flow.transition
+# arch.flow.transition
+## @lineage: cognitive.flow.transition
 ## @lineage: bridge.node.flow
 import uuid
 from enum import Enum

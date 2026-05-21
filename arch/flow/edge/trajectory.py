@@ -1,4 +1,5 @@
-# cognitive.flow.edge.trajectory
+# arch.flow.edge.trajectory
+## @lineage: cognitive.flow.edge.trajectory
 ## @lineage: cognitive.edge.trajectory
 ## @lineage: foldbox.trace.trajectory
 import json

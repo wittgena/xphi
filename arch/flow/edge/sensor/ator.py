@@ -1,4 +1,5 @@
-# cognitive.flow.edge.sensor.ator
+# arch.flow.edge.sensor.ator
+## @lineage: cognitive.flow.edge.sensor.ator
 ## @lineage: cognitive.edge.sensor.ator
 ## @lineage: topos.bound.watcher.sensor.ator
 import math
@@ -7,7 +8,7 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
 from arch.contract.interface import IDynamicsKernel
 from arch.contract.registry.unified import contract
-from meta.watcher.config import KernelConfig
+from phase.watcher.config import KernelConfig
 
 @contract.kernel("ator")
 class AtorSensor(IDynamicsKernel):

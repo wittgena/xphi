@@ -1,4 +1,5 @@
-# cognitive.flow.edge.sensor.exchange
+# arch.flow.edge.sensor.exchange
+## @lineage: cognitive.flow.edge.sensor.exchange
 ## @lineage: cognitive.edge.sensor.exchange
 ## @lineage: cognitive.edge.sensor.field
 ## @lineage: topos.bound.watcher.sensor.field
@@ -8,7 +9,7 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
 from arch.contract.interface import IDynamicsKernel
 from arch.contract.registry.unified import contract
-from meta.watcher.config import KernelConfig
+from phase.watcher.config import KernelConfig
 
 @contract.kernel("cognitive.exchange")
 class ExchangeSensor(IDynamicsKernel):

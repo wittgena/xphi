@@ -1,4 +1,5 @@
-# cognitive.flow.edge.sensor.kuramoto
+# arch.flow.edge.sensor.kuramoto
+## @lineage: cognitive.flow.edge.sensor.kuramoto
 ## @lineage: cognitive.edge.sensor.kuramoto
 ## @lineage: topos.bound.watcher.sensor.kuramoto
 import math
@@ -7,7 +8,7 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field, asdict
 from arch.contract.interface import IDynamicsKernel
 from arch.contract.registry.unified import contract
-from meta.watcher.config import KernelConfig
+from phase.watcher.config import KernelConfig
 
 @contract.kernel("kuramoto")
 class KuramotoSensor(IDynamicsKernel):

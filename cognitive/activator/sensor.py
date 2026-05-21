@@ -1,4 +1,5 @@
-# phase.activator.sensor
+# cognitive.activator.sensor
+## @lineage: phase.activator.sensor
 ## @lineage: phase.bound.activator.sensor
 ## @lineage: arch.activator.sensor
 """

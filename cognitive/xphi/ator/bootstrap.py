@@ -1,4 +1,5 @@
-# xphi.ator.bootstrap
+# cognitive.xphi.ator.bootstrap
+## @lineage: xphi.ator.bootstrap
 ## @lineage: topos.bound.ator.bootstrap
 ## @signal: 505
 """@flow: PHI(Φ_declared) → reflect → Ψ → materialize → Φ_materialized → entry(anchor)"""
@@ -13,8 +14,8 @@ from phase.plane.emitter import get_logger
 from phase.bind.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.contract.discover import discover_modules
-from meta.transcript.phi import TranscriptPhi
-from meta.transcript.spec import TranscriptSpec
+from cognitive.xphi.transcript.phi import TranscriptPhi
+from cognitive.xphi.transcript.spec import TranscriptSpec
 from cognitive.xphi.ator.runtime import AtorRuntime
 from phase.runtime.node import NodeRuntime
 from phase.bind.resolver import find_current_self, resolve_path, load_bound

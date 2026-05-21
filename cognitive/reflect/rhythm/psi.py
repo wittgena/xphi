@@ -1,4 +1,5 @@
-# cognitive.rhythm.psi
+# cognitive.reflect.rhythm.psi
+## @lineage: cognitive.rhythm.psi
 ## @lineage: cognitive.context.aura.psi
 import math
 from dataclasses import dataclass, field

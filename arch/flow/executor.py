@@ -1,4 +1,5 @@
-# cognitive.flow.executor
+# arch.flow.executor
+## @lineage: cognitive.flow.executor
 ## @lineage: phase.executor.flow
 ## @lineage: arch.executor.flow
 import os

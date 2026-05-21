@@ -1,4 +1,5 @@
-# cognitive.rhythm.bridge
+# cognitive.reflect.rhythm.bridge
+## @lineage: cognitive.rhythm.bridge
 ## @lineage: topos.bound.rhythm.bridge
 ## @lineage: phase.reflect.rhythm.bridge
 import json

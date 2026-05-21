@@ -1,4 +1,5 @@
-# cognitive.flow.edge.treg
+# arch.flow.edge.treg
+## @lineage: cognitive.flow.edge.treg
 ## @lineage: cognitive.edge.treg
 ## @lineage: cognitive.frame.gate
 import time

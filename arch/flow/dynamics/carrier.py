@@ -1,4 +1,5 @@
-# cognitive.flow.dynamics.carrier
+# arch.flow.dynamics.carrier
+## @lineage: cognitive.flow.dynamics.carrier
 ## @lineage: cognitive.dynamics.carrier
 ## @lineage: topos.dynamics.carrier
 from __future__ import annotations

@@ -1,4 +1,5 @@
-# cognitive.rhythm.coupler
+# cognitive.reflect.rhythm.coupler
+## @lineage: cognitive.rhythm.coupler
 import json
 from typing import Optional
 from phase.plane.emitter import get_emitter
