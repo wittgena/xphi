@@ -19,7 +19,7 @@ import unittest
 import time
 from phase.plane.emitter import get_emitter, flow_scope, _flow_context
 from phase.plane.surface import SurfacePlane
-from meta.flow.monitor import flow_monitor
+from arch.flow.monitor import flow_monitor
 
 class ToposVariants(unittest.TestCase):
     def setUp(self):

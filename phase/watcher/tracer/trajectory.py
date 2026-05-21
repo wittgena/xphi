@@ -8,7 +8,7 @@ import uuid
 from typing import List, Dict, Any, Callable
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from meta.watcher.tracer.metrics import (
+from phase.watcher.tracer.metrics import (
     trend_slope,
     acceleration,
     range_amplitude,
