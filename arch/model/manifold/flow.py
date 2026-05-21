@@ -12,7 +12,7 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.model.event.psi import PsiEvent, PsiCarrier
-from cognitive.rhythm.bridge import RhythmBridge
+from cognitive.reflect.rhythm.bridge import RhythmBridge
 from phase.plane.surface import default_plane
 from phase.plane.emitter import get_emitter
 from arch.model.manifold.particle import ToposManifold, Particle

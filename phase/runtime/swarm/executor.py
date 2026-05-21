@@ -17,7 +17,7 @@ from phase.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from phase.bind.executor import BaseExecutor
 from phase.runtime.cli.executor import _GenericCliExecutor
-from cognitive.flow.executor import _FlowExecutor
+from arch.flow.executor import _FlowExecutor
 
 log = get_logger("executor.swarm")
 

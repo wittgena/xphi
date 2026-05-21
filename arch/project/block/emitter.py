@@ -9,7 +9,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from phase.plane.emitter import get_logger
-from xphi.flow.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
+from cognitive.xphi.flow.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.project.block.extractor import extract_block_from_file, Block
 

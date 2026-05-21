@@ -13,7 +13,7 @@ import redis.asyncio as redis_async
 from arch.model.event.next import next_id, next_phase_id
 from arch.model.event.psi import PsiEvent, PsiCarrier
 from arch.model.event.bus import AsyncEventBus
-from cognitive.rhythm.coupler import RhythmCoupler
+from cognitive.reflect.rhythm.coupler import RhythmCoupler
 from arch.contract.interface import IPhaseField, IPhaseAtor, IEventBus, IDynamicsKernel
 from phase.plane.surface import SurfacePlane
 from phase.plane.emitter import get_emitter

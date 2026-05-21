@@ -10,7 +10,7 @@ import asyncio
 from enum import Enum
 from phase.plane.emitter import get_emitter
 from cognitive.node.gan import Message, GanNode
-from cognitive.flow.transition import EdgeFlow
+from arch.flow.transition import EdgeFlow
 
 log = get_emitter("node.handshake")
 
