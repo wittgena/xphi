@@ -5,8 +5,8 @@ import os
 from typing import Any, Dict, List, Optional
 from phase.plane.emitter import get_logger
 from arch.contract.registry.unified import contract
-from arch.project.block.parser.md import MdAstParser
-from arch.project.block.extractor import BlockExtractor
+from arch.model.code.block.parser.md import MdAstParser
+from arch.model.code.block.extractor import BlockExtractor
 from cognitive.xphi.transcript.phi import TranscriptBase
 
 log = get_logger("transcript.spec")

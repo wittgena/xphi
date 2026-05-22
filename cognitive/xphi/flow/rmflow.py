@@ -180,7 +180,7 @@ def rmflow_entry(cli_args: list = None, **payload):
     return RMFlow(host, phase, state, max_steps=steps)
 
 if __name__ == "__main__":
-    from arch.flow.executor import dispatch_flow_cli
+    from arch.dynamics.flow.executor import dispatch_flow_cli
     dispatch_flow_cli(
         command_name="rmflow", 
         entry_func=rmflow_entry, 

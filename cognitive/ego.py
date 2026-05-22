@@ -5,8 +5,8 @@ import time
 import json
 import redis.asyncio as redis_async
 from phase.plane.emitter import get_emitter
-from arch.model.event.psi import PsiEvent, PsiCarrier
-from arch.model.event.next import next_id, next_phase_id
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.next import next_id, next_phase_id
 
 log = get_emitter('cognitive.ego')
 

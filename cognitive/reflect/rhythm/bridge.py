@@ -5,7 +5,7 @@
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.model.event.next import next_id, next_phase_id
+from arch.contract.event.next import next_id, next_phase_id
 
 class RhythmBridge:
     """

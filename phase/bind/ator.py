@@ -9,7 +9,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from phase.plane.emitter import get_logger
-from phase.bind.proto.flow import (
+from arch.proto.flow import (
     ProtoFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather
 )

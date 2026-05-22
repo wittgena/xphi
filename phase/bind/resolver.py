@@ -11,6 +11,7 @@ from functools import lru_cache
 ## @config
 ANCHOR_DIR = "self"
 BOUND = "bound.json"
+CORE_REPOS = {"surgent", "theoria"}
 
 ## @detect.self.root
 def is_self_root(path: Path) -> bool:
@@ -168,13 +169,12 @@ def resolve_pattern(start: Path | None = None) -> str:
 
     return pattern
 
-
-# =====================================================================
-# @flow: around logic integration
-# =====================================================================
-def around(base_dir: Path, max_depth: int = 2) -> list:
-    """@flow: Φ(base) → ∂Φ(local scan) → Φ_git[]"""
-    found_repos = []
+def around(base_dir: Path, max_depth: int = 2) -> dict:
+    """
+    @flow: Φ(base) → ∂Φ(local scan) → Φ_git_map{}
+    @desc: 단순 리스트 반환이 아닌, 각 Repo의 특권(Privilege) 상태를 함께 반환합니다.
+    """
+    found_repos = {}
     def _search(current_path: Path, current_depth: int):
         ## @phase: bounded recursion (local ∂Φ)
         if current_depth > max_depth:
@@ -182,7 +182,14 @@ def around(base_dir: Path, max_depth: int = 2) -> list:
 
         ## @detect: Φ_git emergence
         if (current_path / '.git').exists():
-            found_repos.append(str(current_path))
+            repo_name = current_path.name
+            ## 레포지토리 이름이 CORE_REPOS에 포함되어 있으면 권한 부여
+            is_core = repo_name in CORE_REPOS
+            found_repos[repo_name] = {
+                "path": str(current_path),
+                "is_core": is_core,
+                "allow_side_effects": is_core ## 핵심 레포는 부수 효과 허용
+            }
 
         try:
             for child in current_path.iterdir():
@@ -194,7 +201,7 @@ def around(base_dir: Path, max_depth: int = 2) -> list:
             pass
 
     _search(base_dir, 0)
-    return sorted(found_repos)
+    return found_repos
 
 def run_around():
     try:
@@ -216,7 +223,7 @@ def run_around():
         print(f"[Error] JSON 형식이 올바르지 않습니다: {json_path}")
         return
 
-    ## @flow: Φ → ∂Φ → Φ_local
+    ## @flow: Φ → ∂Φ → Φ_local (딕셔너리 형태로 업데이트)
     repos = around(base_dir, max_depth=2)
     data['around'] = repos
 

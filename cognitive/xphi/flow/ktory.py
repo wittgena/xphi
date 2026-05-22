@@ -22,7 +22,7 @@ from phase.bind.resolver import find_current_self, resolve_path
 from cognitive.xphi.runtime import XPhiRuntime
 from phase.bind.client.stream import StreamClient
 from phase.bind.client.surface import RedisClient, SurfaceClient
-from arch.project.block.schema import Contract
+from arch.model.code.block.schema import Contract
 
 log = get_emitter("xphi.ktory")
 

@@ -5,7 +5,7 @@ import time
 import subprocess
 import requests
 import json  # [FIX] JSON 모듈 추가
-from arch.model.resonance import BridgeEvent
+from arch.proto.task.model.resonance import BridgeEvent
 from phase.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')

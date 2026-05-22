@@ -9,15 +9,15 @@ import asyncio
 import subprocess
 import importlib
 from typing import Callable, Any
-from arch.model.event.psi import PsiEvent, PsiCarrier
-from arch.model.event.next import next_id, LogEvent
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.next import next_id, LogEvent
 from dataclasses import asdict
 from phase.plane.surface import surface
 from phase.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from phase.bind.executor import BaseExecutor
 from phase.runtime.cli.executor import _GenericCliExecutor
-from arch.flow.executor import _FlowExecutor
+from arch.dynamics.flow.executor import _FlowExecutor
 
 log = get_logger("executor.swarm")
 

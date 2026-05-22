@@ -7,7 +7,7 @@ import logging
 import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
-from phase.bind.proto.flow import ProtoFlow, FlowState, Transduction, Align
+from arch.proto.flow import ProtoFlow, FlowState, Transduction, Align
 from phase.plane.emitter import get_logger
 from dataclasses import dataclass, field
 from phase.bind.resolver import find_current_self, resolve_path

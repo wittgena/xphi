@@ -7,7 +7,7 @@ import logging
 from typing import List, Tuple, Any, Optional, Dict
 from phase.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
-from phase.bind.proto.flow import ProtoFlow, FlowState
+from arch.proto.flow import ProtoFlow, FlowState
 from arch.contract.state.spec import TransRule, PhaseSpec, NodeType
 
 log = get_emitter("state.node")

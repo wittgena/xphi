@@ -1,4 +1,5 @@
-# phase.plane.topos.tester
+# phase.plane.tester
+## @lineage: phase.plane.topos.tester
 ## @lineage: meta.project.topos.tester
 ## @lineage: meta.topos.tester
 ## @lineage: meta.resolver.topos.tester
@@ -19,7 +20,7 @@ import unittest
 import time
 from phase.plane.emitter import get_emitter, flow_scope, _flow_context
 from phase.plane.surface import SurfacePlane
-from arch.flow.monitor import flow_monitor
+from arch.dynamics.flow.monitor import flow_monitor
 
 class ToposVariants(unittest.TestCase):
     def setUp(self):

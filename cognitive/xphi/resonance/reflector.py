@@ -10,7 +10,7 @@ import inspect
 from pathlib import Path
 from typing import Any, Dict
 from cognitive.xphi.ator.runtime import AtorRuntime
-from phase.bind.proto.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
+from arch.proto.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
 from arch.contract.registry.unified import contract
 from phase.plane.emitter import get_logger
 

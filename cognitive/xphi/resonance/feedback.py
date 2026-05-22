@@ -7,7 +7,7 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from phase.bind.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
+from arch.proto.flow import ProtoFlow, FlowState, Transduction, Resonance, Judgment, Align
 from arch.contract.registry.unified import contract
 from phase.plane.emitter import get_logger
 

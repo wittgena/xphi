@@ -12,8 +12,8 @@ import redis.asyncio as redis_async
 from dataclasses import asdict
 from typing import Callable, Any
 from pathlib import Path
-from arch.model.event.psi import PsiEvent, PsiCarrier
-from arch.model.event.next import next_id, LogEvent
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.next import next_id, LogEvent
 from phase.runtime.surface.sensor import REDIS_URL
 from phase.plane.emitter import get_emitter, flow_scope
 from phase.plane.surface import surface

@@ -3,7 +3,7 @@
 import asyncio
 import json
 import redis.asyncio as redis_async
-from arch.model.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.psi import PsiEvent, PsiCarrier
 
 async def rhythm_loop_tick(event_bus, redis_url: str = "redis://redis:6379", channel: str = "rhythm.heart"):
     """@desc: Redis에서 심장 박동 이벤트를 수신하여 내부 EventBus로 중계"""

@@ -8,7 +8,7 @@ from typing import List, Tuple, Any, Optional, Dict
 from dataclasses import field
 from phase.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
-from phase.bind.proto.flow import ProtoFlow, FlowState
+from arch.proto.flow import ProtoFlow, FlowState
 from arch.contract.state.spec import TransRule, NodeType
 from phase.topos.node.state import LinkerNode, InversionNode, StateNode, ResidueType
 

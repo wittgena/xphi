@@ -9,8 +9,8 @@ from typing import Optional
 import redis.asyncio as redis_async
 from phase.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once
-from arch.model.event.psi import PsiEvent, PsiCarrier
-from arch.model.event.bus import AsyncEventBus
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.bus import AsyncEventBus
 from phase.runtime.dispatcher import Dispatcher
 from phase.runtime.receptor.bootstrap import receptor_bootstrap
 

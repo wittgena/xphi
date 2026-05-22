@@ -4,14 +4,14 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from arch.model.event.psi import PsiCarrier, PsiEvent
+from arch.contract.event.psi import PsiCarrier, PsiEvent
 from phase.plane.emitter import get_emitter
 from phase.bind.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from arch.contract.registry.unified import registry, contract
 from arch.contract.discover import discover_modules
-from arch.flow.dynamics.carrier import LoopCarrier
-from arch.flow.dynamics.executor import DynamicsExecutor
+from arch.proto.loop.carrier import LoopCarrier
+from arch.dynamics.executor import DynamicsExecutor
 from arch.contract.interface import IDynamicsKernel
 
 async def main():

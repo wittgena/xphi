@@ -11,10 +11,10 @@ import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 from phase.plane.emitter import get_logger
-from phase.bind.proto.flow import ProtoFlow, FlowState, Transduction
+from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
-from arch.project.block.parser.md import MdAstParser
-from arch.project.block.extractor import BlockExtractor
+from arch.model.code.block.parser.md import MdAstParser
+from arch.model.code.block.extractor import BlockExtractor
 
 log = get_logger("transcript.phi")
 

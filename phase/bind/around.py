@@ -18,6 +18,9 @@ CURRENT_DIR = CURRENT_SCRIPT.parent
 SELF_ROOT = Path.cwd()
 PTH_FILENAME = "self.around.pth"
 
+# @config: 시스템의 뇌/신경망에 해당하는 핵심 레포지토리 (부수효과 면제 특권 부여)
+CORE_REPOS = {"surgent", "theoria", "bound", "meta"}
+
 def ignore_hidden(dir, files):
     """@helper: 숨김 파일 및 디렉토리를 복사 대상에서 제외"""
     return [f for f in files if f.startswith('.')]
@@ -26,22 +29,16 @@ def replicate_and_relaunch() -> None:
     if os.getenv("PYTH_REPLICATED") == "1":
         return
 
-    ## 논리적 경로: 심볼릭 링크를 추적하지 않은 '실행 시점'의 경로
     logical_script = Path(__file__).absolute()
     logical_dir = logical_script.parent
     
-    ## 물리적 경로: 심볼릭 링크를 추적한 원본 파일의 경로 (필요시 참고용)
-    ## physical_dir = Path(__file__).resolve().parent 
-
     if logical_dir.name == "anchor":   
-        ## [Case A] self/meta/anchor/around.py로 실행된 경우 -> 복사 실행
         if logical_dir.parent.name == "meta":
             self_dir = logical_dir.parent.parent
             dst_dir = self_dir / "anchor"
             
             log.info(f"[Phase: Copy] Replicating: {logical_dir} -> {dst_dir}")
             try:
-                ## symlinks=True는 심볼릭 링크 자체를 복사
                 shutil.copytree(logical_dir, dst_dir, dirs_exist_ok=True, ignore=ignore_hidden, symlinks=True)
             except Exception as e:
                 log.error(f"[Error] Unexpected error during copy: {e}")
@@ -52,7 +49,6 @@ def replicate_and_relaunch() -> None:
             new_script = dst_dir / logical_script.name
             os.execvp(sys.executable, [sys.executable, str(new_script)] + sys.argv[1:])
             
-        ## [Case B] self/anchor/around.py 로 실행된 경우 (symlink 포함) -> 복사 생략
         else:
             log.info("[Phase: Skip Copy] Executed from 'anchor' directly (or via symlink).")
             pass
@@ -67,7 +63,6 @@ def discover_repos(base_dir: Path, max_depth: int = 1) -> list[Path]:
         try:
             for child in current.iterdir():
                 if child.is_dir() and child.name not in exclude:
-                    ## .git이 있거나 특정 기준을 만족하면 레포로 간주
                     if (child / '.git').exists():
                         found.append(child)
                     else:
@@ -79,7 +74,10 @@ def discover_repos(base_dir: Path, max_depth: int = 1) -> list[Path]:
     return sorted(list(set(found)))
 
 def update_bound_config(repos: list[Path]) -> None:
-    """@task: anchor/bound.json 파일이 있고 'around' 키가 존재할 경우 repo 경로 업데이트"""
+    """
+    @task: anchor/bound.json 파일 업데이트
+    @desc: 단순 리스트를 덮어쓰던 방식에서, '특권(Privilege)' 정보를 포함한 딕셔너리로 승격시킵니다.
+    """
     bound_path = SELF_ROOT / "anchor" / "bound.json"
     if not bound_path.exists():
         return
@@ -88,11 +86,25 @@ def update_bound_config(repos: list[Path]) -> None:
         with open(bound_path, 'r', encoding='utf-8') as f:
             config = json.load(f)
 
+        # "around" 키가 존재하거나, 기존 구조가 리스트(List)라면 딕셔너리(Dict)로 마이그레이션
         if "around" in config:
-            config["around"] = [str(p.resolve()) for p in repos]
+            new_around_map = {}
+            for p in repos:
+                repo_name = p.name
+                is_core = repo_name in CORE_REPOS
+                
+                # 딕셔너리 구조로 데이터 영속화
+                new_around_map[repo_name] = {
+                    "path": str(p.resolve()),
+                    "is_core": is_core,
+                    "allow_side_effects": is_core  # 핵심 레포는 AST 부수효과 검사 면제
+                }
+                
+            config["around"] = new_around_map
+            
             with open(bound_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
-            log.info(f"[Phase: Sync] Updated 'around' paths in: {bound_path}")
+            log.info(f"[Phase: Sync] Updated 'around' topology (Dict Mode) in: {bound_path}")
         else:
             log.info(f"[Phase: Sync] Skip: 'around' key not found in {bound_path}")
 
@@ -108,10 +120,11 @@ def project_self() -> list[Path]:
             log.error("[Error] No valid repositories found.")
             return []
         
+        # json 업데이트 (Dict 구조로 기록)
         update_bound_config(repos)
+        
+        # .pth 파일 기록 (경로 리스트 기반)
         pth_content = "\n".join(str(p.resolve()) for p in repos)
-
-        ## .pth 파일 쓰기 - site.getsitepackages()가 여러 개일 수 있으므로 첫 번째(보통 시스템/유저 메인) 사용
         sp_paths = site.getsitepackages()
         site_packages = Path(sp_paths[0])
         pth_path = site_packages / PTH_FILENAME
@@ -119,8 +132,9 @@ def project_self() -> list[Path]:
 
         log.info(f"[Phase: Bootstrap] {len(repos)} topos projected to: {pth_path}")
         for r in repos:
-            log.info(f"  + {r.name}")
-        return repos # 찾은 경로 리스트 반환
+            is_core = "*" if r.name in CORE_REPOS else " "
+            log.info(f"  + [{is_core}] {r.name}")
+        return repos 
     except PermissionError:
         log.error("[Error] Permission denied: Run with elevated privileges (sudo/admin).")
         sys.exit(1)
@@ -142,10 +156,8 @@ for p in sys.path:
     subprocess.run([sys.executable, "-c", script], check=True)
 
 if __name__ == "__main__":
-    ## 복사 및 재실행 판단 (meta/anchor -> anchor)
     replicate_and_relaunch()
     
-    ## 복사된 위치(또는 원래 위치)에서 본래 작업 수행
     found_repos = project_self()
     if found_repos:
         verify_projection(found_repos)
