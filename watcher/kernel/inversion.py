@@ -1,4 +1,5 @@
-# phase.watcher.kernel.inversion
+# watcher.kernel.inversion
+## @lineage: phase.watcher.kernel.inversion
 ## @lineage: meta.watcher.kernel.inversion
 from typing import List, Dict, Optional, Any
 from arch.contract.registry.unified import contract

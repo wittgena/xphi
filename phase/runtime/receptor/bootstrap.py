@@ -4,8 +4,8 @@
 import asyncio
 from pathlib import Path
 from watchdog.observers import Observer
-from phase.watcher.tracer.source import TracerSource
-from phase.watcher.tracer.kernel import TracerKernel
+from watcher.tracer.source import TracerSource
+from watcher.tracer.kernel import TracerKernel
 from phase.bind.resolver import find_current_self
 from phase.runtime.receptor.topos import ReceptorTopos
 from phase.runtime.surface.sink import RedisSink 

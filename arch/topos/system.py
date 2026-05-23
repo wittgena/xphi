@@ -1,5 +1,5 @@
-# phase.topos.system
-## @lineage: arch.topos.system
+# arch.topos.system
+## @lineage: phase.topos.system
 ## @lineage: topos.system
 """
 @desc: A unified runtime model where Flow (Dynamics), Substate (Observation), and Organizer (Materialization) resonate and rupture through the Manifold.

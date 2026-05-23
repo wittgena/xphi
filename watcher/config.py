@@ -1,4 +1,5 @@
-# phase.watcher.config
+# watcher.config
+## @lineage: phase.watcher.config
 ## @lineage: meta.watcher.config
 ## @lineage: topos.watcher.config
 ## @lineage: cognitive.watcher.config

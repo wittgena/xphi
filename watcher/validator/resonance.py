@@ -1,4 +1,5 @@
-# phase.watcher.validator.resonance
+# watcher.validator.resonance
+## @lineage: phase.watcher.validator.resonance
 ## @lineage: meta.watcher.validator.resonance
 ## @lineage: topos.validator.resonance
 ## @lineage: topos.bound.resonator.validator

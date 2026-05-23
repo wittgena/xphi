@@ -1,4 +1,5 @@
-# phase.watcher.tracer.kernel
+# watcher.tracer.kernel
+## @lineage: phase.watcher.tracer.kernel
 ## @lineage: meta.watcher.tracer.kernel
 ## @lineage: phase.receptor.tracer.kernel
 ## @lineage: cognitive.receptor.tracer.kernel
@@ -9,7 +10,7 @@ from datetime import datetime
 from watchdog.events import FileSystemEventHandler
 from typing import Dict, List
 from phase.runtime.receptor.topos import ReceptorTopos
-from phase.watcher.tracer.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
+from watcher.tracer.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 class TracerKernel:
     """@desc: SourceTracer가 뿜어낸 파동(Ψ)을 스트리밍으로 받아 Lens(Φ')를 통해 실시간 위상 장력을 평가하고 붕괴를 판단"""
