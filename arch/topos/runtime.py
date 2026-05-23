@@ -10,7 +10,7 @@ from phase.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
 from arch.proto.flow import ProtoFlow, FlowState
 from arch.contract.state.spec import TransRule, NodeType
-from phase.topos.node.state import LinkerNode, InversionNode, StateNode, ResidueType
+from arch.topos.node.state import LinkerNode, InversionNode, StateNode, ResidueType
 
 log = get_emitter("state.runtime")
 

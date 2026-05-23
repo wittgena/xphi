@@ -19,10 +19,10 @@ from phase.runtime.node import NodeRuntime
 from arch.proto.flow import ProtoFlow, FlowState
 from arch.proto.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 from arch.proto.manifold.particle import ToposManifold
-from phase.topos.node.proxy import DistributedNodePool
-from phase.topos.organizer import ToposOrganizer
-from phase.topos.node.state import inject_pr_signal, StateNode, NodeType
-from phase.topos.runtime import StateRuntime
+from arch.topos.node.proxy import DistributedNodePool
+from arch.topos.organizer import ToposOrganizer
+from arch.topos.node.state import inject_pr_signal, StateNode, NodeType
+from arch.topos.runtime import StateRuntime
 from phase.plane.emitter import get_emitter
 
 log = get_emitter("topos.system")

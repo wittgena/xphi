@@ -5,7 +5,7 @@ from typing import Optional
 from cognitive.node.gan import Message, GanNode
 from phase.plane.emitter import get_emitter
 from arch.contract.state.spec import TransRule
-from phase.topos.node.state import NodeType
+from arch.topos.node.state import NodeType
 
 log = get_emitter('nerve.synapse')
 
