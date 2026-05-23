@@ -1,18 +1,22 @@
 # phase.plane.emitter
-## @lineage: meta.plane.emitter
-## @lineage: topos.bound.plane.emitter
 """@flow: Context -> Event -> Control -> Projection"""
 import logging
 import os
 import sys
 import traceback
-from typing import Any, Dict, Optional, Callable
+from typing import Any, Dict, Optional, Callable, List
 from contextvars import ContextVar
 from contextlib import contextmanager
 from arch.contract.event.next import LogEvent
 from phase.plane.surface import default_plane
 
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})
+_event_interceptors: List[Callable[[LogEvent], None]] = []
+
+def register_interceptor(interceptor: Callable[[LogEvent], None]):
+    """외부 시스템에서 LogEvent를 가로채어 확장할 수 있도록 등록"""
+    if interceptor not in _event_interceptors:
+        _event_interceptors.append(interceptor)
 
 @contextmanager
 def flow_scope(auto_flush=False, **kwargs):
@@ -77,6 +81,14 @@ class SurfaceEmitter:
             context=unified_context,       # 데이터 응집
             parent_id=ctx.get("parent_id") # 흐름 추적 연결
         )
+
+        for interceptor in _event_interceptors:
+            try:
+                interceptor(event)
+            except Exception:
+                ## 외부 로직 실패가 코어 로깅을 중단시키지 않도록 보호
+                pass
+
         self._handler(event)
 
     ## 표준 logging.Logger 완벽 호환 인터페이스 (Adapter)
