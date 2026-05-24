@@ -1,4 +1,5 @@
-# cognitive.resonator
+# watcher.cognitive.resonator
+## @lineage: cognitive.resonator
 """
 @flow: Ψ (event) -> Φ′ (ator evaluation) -> {accept | transform | reject} -> Φ (state ego) -> Ψ′ (next emission)
 @tick.step: $xe$ -> 파동 생성 -> 필터링(경계) -> 장(Field) 형성 -> Redis 기록 -> 붕괴/재구축

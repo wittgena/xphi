@@ -1,4 +1,5 @@
-# foldbox.scope.module.redirector
+# phase.bind.module.redirector
+## @lineage: foldbox.scope.module.redirector
 import sys
 import importlib.util
 from pathlib import Path
