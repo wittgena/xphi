@@ -1,10 +1,9 @@
 # phase.bind.client.engine.local
-## @lineage: phase.bound.client.engine.local
 import os
 import time
 import subprocess
 import requests
-import json  # [FIX] JSON 모듈 추가
+import json
 from arch.proto.task.model.resonance import BridgeEvent
 from phase.plane.emitter import get_emitter
 
