@@ -8,7 +8,7 @@ import inspect
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 from arch.proto.flow import ProtoFlow, FlowState, Transduction, Align
-from phase.plane.emitter import get_logger
+from watcher.plane.emitter import get_logger
 from dataclasses import dataclass, field
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.contract.registry.unified import registry, contract

@@ -5,7 +5,7 @@ import subprocess
 import requests
 import json
 from arch.proto.task.model.resonance import BridgeEvent
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')
 MODEL_HF = os.getenv("LLAMA_MODEL_HF", "ggml-org/gemma-3-1b-it-GGUF")

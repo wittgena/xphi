@@ -3,7 +3,7 @@
 import asyncio
 from typing import Optional
 from cognitive.node.gan import Message, GanNode
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from arch.contract.state.spec import TransRule
 from arch.topos.node.state import NodeType
 

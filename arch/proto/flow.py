@@ -17,7 +17,7 @@ import uuid
 import enum
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from phase.plane.emitter import get_logger
+from watcher.plane.emitter import get_logger
 
 log = get_logger("proto.flow")
 

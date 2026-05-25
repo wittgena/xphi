@@ -11,7 +11,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
 
 class LogicTransformer:

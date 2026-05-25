@@ -6,9 +6,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from enum import Enum
-from arch.contract.event.next import LogEvent
-from phase.plane.emitter import get_emitter
-from arch.contract.event.psi import PsiCarrier, PhaseField
+from arch.event.next import LogEvent
+from watcher.plane.emitter import get_emitter
+from arch.event.psi import PsiCarrier, PhaseField
 
 log = get_emitter("node.interpreter")
 

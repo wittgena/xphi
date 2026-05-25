@@ -10,7 +10,7 @@ import ast
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from phase.plane.emitter import get_logger
+from watcher.plane.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.contract.discover import discover_modules

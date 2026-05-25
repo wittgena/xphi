@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Union
 from phase.bind.resolver import find_current_self, load_bound, resolve_path as legacy_resolve
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter('contract.path')
 

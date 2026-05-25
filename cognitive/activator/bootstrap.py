@@ -85,7 +85,7 @@ class Activator:
             self._setup_physical_boundary()
 
             ## 동적 임포트 (통합 레지스트리로 변경)
-            from phase.plane.emitter import get_emitter
+            from watcher.plane.emitter import get_emitter
             from arch.contract.registry.unified import registry
             from arch.contract.discover import discover_modules
             from phase.bind.resolver import load_bound, find_current_self

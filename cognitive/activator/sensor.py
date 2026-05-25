@@ -16,7 +16,7 @@ import logging
 from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from arch.contract.registry.unified import cli_contract
 from phase.bind.resolver import find_current_self, resolve_path, load_bound
 

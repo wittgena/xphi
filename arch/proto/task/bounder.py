@@ -7,7 +7,7 @@ import argparse
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Union
-from phase.plane.emitter import get_logger
+from watcher.plane.emitter import get_logger
 from phase.bind.resolver import resolve_path, get_invoker
 from arch.proto.task.model.graph import EntryNode, RenderingData, _extract_rel_attr, EntryTemplate
 from arch.proto.task.model.resonance import ResonanceGraph, ResonanceNode

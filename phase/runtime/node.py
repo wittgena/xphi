@@ -1,6 +1,6 @@
 # phase.runtime.node
 ## @lineage: phase.node.runtime
-import phase.plane.sieve
+import watcher.plane.sieve
 import asyncio
 import signal
 import time
@@ -9,11 +9,11 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.contract.event.psi import PsiEvent, PsiCarrier
-from arch.contract.event.bus import AsyncEventBus
-from arch.contract.event.next import next_id
+from arch.event.psi import PsiEvent, PsiCarrier
+from arch.event.bus import AsyncEventBus
+from arch.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once, REDIS_URL
 from phase.runtime.dispatcher import Dispatcher
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
@@ -24,8 +24,8 @@ from arch.contract.registry.unified import registry
 from arch.contract.discover import discover_modules
 from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from cognitive.reflect.worker import CognitiveWorker
-from cognitive.reflect.coupler import CognitiveCoupler
+from phase.reflect.worker import CognitiveWorker
+from phase.reflect.coupler import CognitiveCoupler
 from arch.contract.state.aggregator import KernelStateAggregator
 from arch.contract.context.assembler import ContextAssembler
 

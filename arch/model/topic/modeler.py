@@ -12,7 +12,7 @@ from pathlib import Path
 from tqdm import tqdm
 from collections import defaultdict, Counter
 from gensim import corpora, models
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from arch.model.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.model.code.block.parser.topos import ToposAstParser

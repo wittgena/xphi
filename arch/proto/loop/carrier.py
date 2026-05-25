@@ -5,7 +5,7 @@
 ## @lineage: topos.dynamics.carrier
 from __future__ import annotations
 import asyncio
-from arch.contract.event.next import next_id
+from arch.event.next import next_id
 from typing import List, Dict, Optional, Any
 from phase.bind.executor import BaseExecutor
 from arch.proto.manifold.cont import XeCont

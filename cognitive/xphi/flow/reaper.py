@@ -18,7 +18,7 @@ import json
 import urllib.parse
 import os
 from redis import Redis
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from phase.runtime.node import NodeRuntime
 
 class Reaper:

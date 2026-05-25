@@ -11,7 +11,7 @@ from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
 from arch.proto.task.model.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
 from arch.model.code.logic.transformer import LogicTransformer
 from arch.proto.task.logic.analyzer import LogicAnalyzer

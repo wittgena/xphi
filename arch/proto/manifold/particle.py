@@ -12,8 +12,8 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.contract.event.psi import PsiEvent, PsiCarrier
-from phase.plane.emitter import get_emitter
+from arch.event.psi import PsiEvent, PsiCarrier
+from watcher.plane.emitter import get_emitter
 
 class ToposManifold(type):
     """

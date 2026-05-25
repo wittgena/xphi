@@ -4,9 +4,9 @@ import asyncio
 import random
 import time
 import re
-from arch.contract.event.psi import PsiType
+from arch.event.psi import PsiType
 from phase.bind.resolver import resolve_pattern
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 
 class SurfaceActuator:
     KEY_PARTS = [

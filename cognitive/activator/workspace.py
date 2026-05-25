@@ -5,7 +5,7 @@
 import os
 from pathlib import Path
 from arch.contract.registry.unified import contract
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter('core.workspace')
 

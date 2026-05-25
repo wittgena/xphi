@@ -6,7 +6,7 @@
 import asyncio
 import logging
 import torch
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter("xor.tensor")
 

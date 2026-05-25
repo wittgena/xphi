@@ -17,7 +17,7 @@ import urllib.parse
 from typing import List, Optional, Generator
 from pathlib import Path
 from dataclasses import dataclass, field
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import find_current_self, resolve_path
 from cognitive.xphi.runtime import XPhiRuntime
 from phase.bind.client.stream import StreamClient

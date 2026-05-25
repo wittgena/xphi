@@ -12,8 +12,8 @@ import sys
 from typing import List, Set, Any, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
-from arch.contract.event.psi import PsiType
-from phase.plane.emitter import get_logger
+from arch.event.psi import PsiType
+from watcher.plane.emitter import get_logger
 from phase.bind.resolver import find_current_self, resolve_path
 from phase.runtime.node import NodeRuntime
 from phase.bind.executor import BaseExecutor

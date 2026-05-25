@@ -11,7 +11,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import List, Optional
-from phase.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter("repo.scanner", mode="SLIM")
 
