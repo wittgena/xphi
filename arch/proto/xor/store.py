@@ -1,8 +1,4 @@
 # arch.proto.xor.store
-## @lineage: arch.xor.store
-## @lineage: meta.xor.store
-## @lineage: phase.xor.store
-## @lineage: xphi.xor.store
 """@flow: ψ → ResidueExecutor(Buffer → Minimal Tension Eval) → ResidueStore(rocks.db)"""
 import asyncio
 import time
@@ -18,7 +14,7 @@ from phase.bind.resolver import find_current_self, resolve_path
 from phase.runtime.node import NodeRuntime
 from phase.bind.executor import BaseExecutor
 
-log = get_logger("residue.store")
+log = get_logger("xor.store")
 
 try:
     SELF_ROOT = find_current_self()
@@ -27,7 +23,7 @@ except Exception as e:
     log.error(f"[Critical] 시스템 경로 로드 실패: {e}")
     sys.exit(1)
 
-ROCKS_PATH = XOR_ROOT / "residue.rocks.db"
+ROCKS_PATH = XOR_ROOT / "xor.rocks.db"
 
 @dataclass
 class ResidueBlock:
