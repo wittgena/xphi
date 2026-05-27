@@ -1,10 +1,4 @@
 # cognitive.resonance.aligner
-## @lineage: cognitive.xphi.resonance.aligner
-## @lineage: meta.transcript.resonance.aligner
-## @lineage: cognitive.transcript.resonance.aligner
-## @lineage: xphi.transcript.resonance.aligner
-## @lineage: topos.bound.resonator.aligner
-## @lineage: phase.reflect.resonator.aligner
 import httpx
 import json
 import asyncio
@@ -62,7 +56,7 @@ class FileWriter(Align):
 
 @contract.ator("http.probe.aligner")
 class HttpProbeAligner(Align):
-    """@flow: 외부 시스템(OpenHands)의 물리적 계약(OpenAPI)을 내부 상태(Φ)로 동기화"""
+    """@flow: 외부 시스템의 계약(OpenAPI)을 내부 상태(Φ)로 동기화"""
     def align(self, flow: ProtoFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
         context = spec.get("context", {})
         endpoint = context.get("endpoint", "http://0.0.0.0:8000/openapi.json")

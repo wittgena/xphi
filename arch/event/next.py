@@ -1,24 +1,18 @@
 # arch.event.next
-## @lineage: arch.contract.event.next
-## @lineage: arch.model.event.next
-## @lineage: topos.contract.event.next
-## @lineage: phase.runtime.contract.event.next
 import asyncio
 import time
 import threading
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
+from phase.bind.resolver import resolve_identity
 
-class SnowflakeGenerator:
-    def __init__(self, worker_id: int = 1, datacenter_id: int = 1):
+class ToposGenerator:
+    def __init__(self, vertex_id: int = 1, manifold_id: int = 1):
         # 파라미터 제약 조건 (각 5비트이므로 0~31)
-        self.worker_id = worker_id & 0x1F
-        self.datacenter_id = datacenter_id & 0x1F
+        self.worker_id = vertex_id & 0x1F
+        self.datacenter_id = manifold_id & 0x1F
         self.sequence = 0
-        
-        # Epoch 설정 (2026-01-01 기준 예시)
         self.epoch = 1767225600000 
-        
         self.last_timestamp = -1
         self._lock = threading.Lock()
 
@@ -28,7 +22,6 @@ class SnowflakeGenerator:
     def generate(self) -> int:
         with self._lock:
             timestamp = self._timestamp()
-
             if timestamp < self.last_timestamp:
                 raise Exception("Clock moved backwards!")
 
@@ -40,7 +33,6 @@ class SnowflakeGenerator:
                         timestamp = self._timestamp()
             else:
                 self.sequence = 0
-
             self.last_timestamp = timestamp
 
             # 비트 시프트 결합
@@ -50,8 +42,8 @@ class SnowflakeGenerator:
                    (self.worker_id << 12) | \
                    self.sequence
 
-## 전역 싱글톤 인스턴스 (환경변수 등에서 ID를 받아오도록 확장 가능)
-generator = SnowflakeGenerator(worker_id=1, datacenter_id=1)
+_manifold_id, _vertex_id = resolve_identity()
+generator = ToposGenerator(vertex_id=_vertex_id, manifold_id=_manifold_id)
 
 def next_id() -> str:
     """PsiEvent에 사용하기 좋게 문자열로 반환"""
@@ -168,26 +160,25 @@ class LogEvent:
     @event.contract: Telemetry counterpart to PsiEvent
     Identity(2) + Origin(3) + Content(3) + Metrics(3)
     """
-    ## 1. Identity (PsiEvent 호환)
+    ## Identity (PsiEvent 호환)
     event_id: str = field(default_factory=next_id)
     phase_id: int = 0               # 신규 추가: 32bit ΔΨ 신호
     parent_id: Optional[str] = None  # 어떤 PsiEvent에 의해 발생한 로그인지 추적 가능
     
-    ## 2. Origin & Temporal (PsiEvent 호환)
+    ## Origin & Temporal (PsiEvent 호환)
     source_id: str = "unknown"       # 기존 source -> source_id 로 변경
     scope: str = "LOG"               # 기본 스코프
     tick: Optional[int] = None       # 시간축
     
-    ## 3. Content (Log 고유)
+    ## Content (Log 고유)
     level: str = "INFO"
     kind: str = "log"                # "log" or "summary" (carrier.kind 역할)
     message: str = ""
     
-    ## 4. Context (PsiEvent 호환 - 분산된 메타데이터 응집)
-    # 기존 flow_id, phase, bound, payload가 모두 이 안으로 통합됩니다.
+    ## Context (PsiEvent 호환 - 분산된 메타데이터 응집)
     context: Dict[str, Any] = field(default_factory=dict)
     
-    ## 5. Plane Metrics (BoundPlane 전용 제어 상태 - 동적 할당 방지)
+    ## Plane Metrics (BoundPlane 전용 제어 상태 - 동적 할당 방지)
     density: float = 0.0
     gain: float = 1.0
     fold_count: int = 1

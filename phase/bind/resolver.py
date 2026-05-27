@@ -31,6 +31,21 @@ def find_current_self(start: Path | None = None) -> Path:
 
     raise RuntimeError(f"No self root found from {start}")
 
+@lru_cache(maxsize=1)
+def resolve_identity(start: Path | None = None) -> tuple[int, int]:
+    """
+    @desc: 시스템의 고유 위상 식별자(Manifold, Vertex)를 해석하여 반환
+    @returns: (manifold_id, vertex_id)
+    """
+    self_root = find_current_self(start)
+    bound = load_bound(self_root)
+    identity = bound.get("identity", {})
+    # 기본값은 1로 설정하며, 5비트(0~31) 제약을 여기서 선제적으로 방어할 수도 있습니다.
+    manifold_id = identity.get("manifold_id", 1) & 0x1F
+    vertex_id = identity.get("vertex_id", 1) & 0x1F
+    
+    return manifold_id, vertex_id
+
 def get_invoker(path: Path):
     try:
         rel = path.relative_to(find_current_self()).with_suffix("")
