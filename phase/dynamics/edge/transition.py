@@ -1,11 +1,8 @@
 # phase.dynamics.edge.transition
-## @lineage: arch.dynamics.edge.transition
-## @lineage: arch.flow.transition
-## @lineage: cognitive.flow.transition
-## @lineage: bridge.node.flow
 import uuid
 from enum import Enum
 from typing import List, Optional, Dict, Any
+from arch.event.next import next_id
 
 class EdgeFlow(Enum):
     ZERO = "0"           # 구조적 정체성의 공백 (Void)
@@ -16,7 +13,7 @@ class EdgeFlow(Enum):
 
 class FlowTransition:
     def __init__(self, origin: str = "0"):
-        self.id: uuid.UUID = uuid.uuid4()
+        self.id: str = next_id()
         self.origin: str = origin
         self.edge: EdgeFlow = EdgeFlow.ZERO
         self.reflective: bool = True
