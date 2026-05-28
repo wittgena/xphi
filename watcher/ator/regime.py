@@ -8,7 +8,7 @@ import random
 from typing import Optional
 from arch.contract.registry.unified import contract
 from arch.contract.interface import ISystemRegime, IPhaseField, IPhaseAtor
-from arch.event.psi import PsiEvent
+from phase.bind.event.psi import PsiEvent
 
 @contract.regime("node.regime")
 class NodeRegime(ISystemRegime):

@@ -16,12 +16,12 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.event.psi import PsiEvent, PsiCarrier
+from phase.bind.event.psi import PsiEvent, PsiCarrier
 from watcher.plane.surface import SurfacePlane
 from watcher.plane.emitter import get_emitter
 from phase.reflect.rhythm.bridge import RhythmBridge
-from arch.proto.manifold.particle import ToposManifold, Particle
-from arch.proto.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from phase.dynamics.manifold.particle import ToposManifold, Particle
+from phase.dynamics.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("dynamics.field")
 

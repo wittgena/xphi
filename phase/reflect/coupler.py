@@ -5,7 +5,7 @@
 import asyncio
 from typing import Optional
 from watcher.plane.emitter import get_emitter
-from arch.event.psi import PsiEvent, PsiCarrier
+from phase.bind.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.interpreter import PhaseJudgment
 from arch.contract.state.aggregator import KernelStateAggregator, InternalContext
 from phase.reflect.worker import CognitiveWorker

@@ -4,7 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import TypeVar
-from arch.event.next import next_id
+from phase.bind.event.next import next_id
 from watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)

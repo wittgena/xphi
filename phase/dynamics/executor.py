@@ -2,13 +2,13 @@
 from __future__ import annotations
 import json
 import asyncio
-from arch.event.psi import PsiEvent
-from arch.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
+from phase.bind.event.psi import PsiEvent
+from phase.bind.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
 from phase.bind.executor import BaseExecutor
 from phase.dynamics.flow.executor import _FlowExecutor
 from arch.contract.registry.unified import registry
-from arch.proto.manifold.cont import XeCont
+from phase.dynamics.manifold.cont import XeCont
 
 class SystemBuilder:
     """

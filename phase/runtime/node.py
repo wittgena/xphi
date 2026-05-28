@@ -9,9 +9,9 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
-from arch.event.psi import PsiEvent, PsiCarrier
-from arch.event.bus import AsyncEventBus
-from arch.event.next import next_id
+from phase.bind.event.psi import PsiEvent, PsiCarrier
+from phase.bind.event.bus import AsyncEventBus
+from phase.bind.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
 from watcher.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once, REDIS_URL

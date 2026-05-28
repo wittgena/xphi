@@ -8,8 +8,8 @@ import asyncio
 import math
 import random
 from typing import List, Dict, Optional, Any, Type, Callable
-from arch.event.bus import AsyncEventBus
-from arch.event.psi import PsiCarrier, PsiEvent
+from phase.bind.event.bus import AsyncEventBus
+from phase.bind.event.psi import PsiCarrier, PsiEvent
 from arch.contract.interface import IPhaseAtor, IPhaseField, ICriticalDetector, ISystemRegime
 from watcher.plane.emitter import get_emitter
 from arch.contract.registry.unified import registry, contract 
