@@ -1,9 +1,4 @@
 # phase.dynamics.executor
-## @lineage: arch.dynamics.executor
-## @lineage: arch.flow.dynamics.executor
-## @lineage: cognitive.flow.dynamics.executor
-## @lineage: cognitive.dynamics.executor
-## @lineage: topos.dynamics.executor
 from __future__ import annotations
 import json
 import asyncio
@@ -75,58 +70,3 @@ class DynamicsExecutor(BaseExecutor):
     async def execute(self, psi: Any) -> List[Any]:
         """@flow: 외부의 LoopCarrier로부터 틱(Tick)을 받아 내부 _xe로 전달 (Psi 흡수 및 전이)"""
         return await self._xe.execute(psi)
-
-# class DynamicsExecutor(_FlowExecutor):
-#     def __init__(self, config_dict: dict):
-#         self.config_dict = config_dict
-#         # 1. 내부 엔진 조립 (기본 기능)
-#         self.bound = SystemBuilder.build(self.config_dict)
-#         self._xe = XeCont(bound=self.bound, ex="dynamics.init", origin="system.boot")
-        
-#         # 2. 부모(_FlowExecutor)의 기능을 활성화 (자신을 스트림 공급자로 등록)
-#         super().__init__(flow_instance=self, completion_signal=asyncio.Event())
-
-#     async def execute(self, psi: PsiEvent) -> list:
-#         """
-#         이 메서드가 '기존 방식'과 'Flow 방식'을 가르는 판별기입니다.
-#         """
-#         # Flow CLI에서 보낸 응답 채널이 있는가?
-#         response_channel = psi.context.get("response_channel")
-        
-#         if response_channel:
-#             # [Flow 모드] 부모 클래스의 execute를 실행하여 실시간 중계 시작
-#             # 부모는 내부적으로 아래의 'stream()' 제너레이터를 호출합니다.
-#             return await super().execute(psi) 
-#         else:
-#             # [레거시 모드] 기존 방식대로 1개 틱만 처리하고 리스트 반환
-#             # LoopCarrier는 이 반환값을 받고 예전처럼 아무 일 없었다는 듯 돌아갑니다.
-#             return await self._xe.execute(psi)
-
-#     async def stream(self):
-#         """
-#         부모 클래스가 실시간 중계를 위해 내부적으로 호출하는 제너레이터입니다.
-#         """
-#         count = 0
-#         max_ticks = self.config_dict.get("runtime", {}).get("max_ticks", 100)
-        
-#         while count < max_ticks:
-#             count += 1
-#             # 1틱 실행 (내부 엔진 직접 제어)
-#             await self._xe.step_execute() 
-            
-#             # 부모가 Redis로 쏠 수 있게 데이터 공급
-#             yield FlowEvent(
-#                 phase="DYNAMICS_EVOLUTION",
-#                 psi=type('obj', (object,), {'name': f"tick-{count}"}),
-#                 phi=type('obj', (object,), {'name': f"vix-{self.bound.get_vix():.2f}"}),
-#                 boundary=type('obj', (object,), {'name': self.bound.__class__.__name__}),
-#                 surface=type('obj', (object,), {'name': "stable"}) if count == max_ticks else None
-#             )
-
-#     @property
-#     def states(self):
-#         return self.bound.states if hasattr(self.bound, 'states') else {}
-
-#     @property
-#     def phase_id(self):
-#         return getattr(self._xe, 'phase_id', 0)

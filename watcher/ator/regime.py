@@ -1,4 +1,5 @@
-# surface.ator.regime
+# watcher.ator.regime
+## @lineage: surface.ator.regime
 ## @lineage: xyz.surface.ator.regime
 ## @lineage: xyz.subst.ator.regime
 ## @lineage: foldbox.manager.workspace.regime
