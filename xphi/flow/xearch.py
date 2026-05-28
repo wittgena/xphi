@@ -1,5 +1,5 @@
-# cognitive.xphi.flow.xearch
-## @lineage: xphi.flow.xearch
+# xphi.flow.xearch
+## @lineage: cognitive.xphi.flow.xearch
 ## @lineage: meta.xphi.xearch
 ## @lineage: xphi.xearch
 ## @lineage: meta.ops.xphi.xearch
@@ -18,7 +18,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from phase.bind.resolver import find_current_self, resolve_path
 from watcher.plane.emitter import get_emitter
-from cognitive.xphi.runtime import XPhiRuntime
+from xphi.runtime import XPhiRuntime
 from phase.bind.client.stream import StreamClient
 from phase.bind.client.surface import RedisClient, SurfaceClient
 

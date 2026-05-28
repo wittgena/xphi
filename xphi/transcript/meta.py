@@ -1,7 +1,7 @@
-# cognitive.xphi.transcript.meta
+# xphi.transcript.meta
+## @lineage: cognitive.xphi.transcript.meta
 ## @lineage: meta.transcript.meta
 ## @lineage: cognitive.transcript.meta
-## @lineage: xphi.transcript.meta
 import asyncio
 import logging
 import inspect
@@ -12,8 +12,8 @@ from watcher.plane.emitter import get_logger
 from dataclasses import dataclass, field
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.contract.registry.unified import registry, contract
-from cognitive.xphi.ator.runtime import AtorRuntime
-from cognitive.xphi.ator.bootstrap import bootstrap
+from xphi.ator.runtime import AtorRuntime
+from xphi.ator.bootstrap import bootstrap
 from phase.runtime.node import NodeRuntime
 
 SPEC_ROOT = resolve_path("spec")

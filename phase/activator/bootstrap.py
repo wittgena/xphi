@@ -1,5 +1,5 @@
-# cognitive.activator.bootstrap
-## @lineage: phase.activator.bootstrap
+# phase.activator.bootstrap
+## @lineage: cognitive.activator.bootstrap
 ## @lineage: phase.bound.activator.bootstrap
 ## @lineage: arch.activator.bootstrap
 """@flow: Φ₀ (physical) -> Workspace Setup (pth) -> Dynamic Discovery -> Manifold Bootstrap (Φ*)"""

@@ -1,4 +1,5 @@
-# cognitive.xphi.transcript.spec
+# xphi.transcript.spec
+## @lineage: cognitive.xphi.transcript.spec
 import re
 import yaml
 import os
@@ -7,7 +8,7 @@ from watcher.plane.emitter import get_logger
 from arch.contract.registry.unified import contract
 from arch.model.code.block.parser.md import MdAstParser
 from arch.model.code.block.extractor import BlockExtractor
-from cognitive.xphi.transcript.phi import TranscriptBase
+from xphi.transcript.phi import TranscriptBase
 
 log = get_logger("transcript.spec")
 

@@ -1,5 +1,5 @@
-# cognitive.xphi.flow.rmflow
-## @lineage: xphi.flow.rmflow
+# xphi.flow.rmflow
+## @lineage: cognitive.xphi.flow.rmflow
 ## @lineage: meta.xphi.rmflow
 ## @lineage: xphi.rmflow
 ## @lineage: meta.ops.xphi.rmflow

@@ -7,7 +7,7 @@ import inspect
 import functools
 import logging
 from typing import Dict, Any
-from cognitive.xphi.transcript.spec import TranscriptSpec
+from xphi.transcript.spec import TranscriptSpec
 
 log = logging.getLogger("bind.folding")
 

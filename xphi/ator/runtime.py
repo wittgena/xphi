@@ -1,5 +1,5 @@
-# cognitive.xphi.ator.runtime
-## @lineage: xphi.ator.runtime
+# xphi.ator.runtime
+## @lineage: cognitive.xphi.ator.runtime
 ## @lineage: topos.bound.ator.runtime
 import asyncio
 from abc import ABC, abstractmethod

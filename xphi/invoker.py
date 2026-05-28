@@ -1,5 +1,5 @@
-# cognitive.xphi.invoker
-## @lineage: xphi.invoker
+# xphi.invoker
+## @lineage: cognitive.xphi.invoker
 ## @lineage: phase.reflect.xphi.invoker
 """
 @phase:
@@ -21,7 +21,7 @@ from watcher.plane.emitter import get_logger
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
 from arch.event.psi import PsiEvent
-from cognitive.xphi.runtime import XPhiRuntime
+from xphi.runtime import XPhiRuntime
 from phase.bind.client.stream import StreamClient
 from phase.bind.client.surface import RedisClient, SurfaceClient
 

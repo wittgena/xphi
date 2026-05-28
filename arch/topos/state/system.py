@@ -1,4 +1,5 @@
-# topos.medium.subst.system
+# arch.topos.state.system
+## @lineage: topos.medium.subst.system
 ## @lineage: topos.bridge.medium.subst.system
 ## @lineage: bound.bridge.medium.subst.system
 ## @lineage: surface.medium.subst.system

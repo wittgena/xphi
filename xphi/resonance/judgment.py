@@ -1,4 +1,5 @@
-# cognitive.resonance.judgment
+# xphi.resonance.judgment
+## @lineage: cognitive.resonance.judgment
 ## @lineage: cognitive.xphi.resonance.judgment
 ## @lineage: meta.transcript.resonance.judgment
 ## @lineage: cognitive.transcript.resonance.judgment

@@ -1,4 +1,5 @@
-# cognitive.resonance.reflector
+# xphi.resonance.reflector
+## @lineage: cognitive.resonance.reflector
 ## @lineage: cognitive.xphi.resonance.reflector
 ## @lineage: meta.transcript.resonance.reflector
 ## @lineage: cognitive.transcript.resonance.reflector
@@ -10,7 +11,7 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from cognitive.xphi.ator.runtime import AtorRuntime
+from xphi.ator.runtime import AtorRuntime
 from arch.proto.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
 from arch.contract.registry.unified import contract
 from watcher.plane.emitter import get_logger

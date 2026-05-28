@@ -1,5 +1,5 @@
-# cognitive.xphi.runtime
-## @lineage: xphi.runtime
+# xphi.runtime
+## @lineage: cognitive.xphi.runtime
 ## @lineage: phase.reflect.xphi.runtime
 import os
 import sys

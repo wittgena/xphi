@@ -10,7 +10,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from watcher.plane.emitter import get_logger
-from cognitive.xphi.flow.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
+from xphi.flow.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.model.code.block.extractor import extract_block_from_file, Block
 

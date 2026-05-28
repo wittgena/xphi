@@ -1,4 +1,5 @@
-# topos.medium.subst.disc
+# arch.topos.state.disc
+## @lineage: topos.medium.subst.disc
 import inspect
 import logging
 import threading

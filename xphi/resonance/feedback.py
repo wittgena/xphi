@@ -1,4 +1,5 @@
-# cognitive.resonance.feedback
+# xphi.resonance.feedback
+## @lineage: cognitive.resonance.feedback
 ## @lineage: cognitive.xphi.resonance.feedback
 ## @lineage: meta.transcript.resonance.feedback
 ## @lineage: cognitive.transcript.resonance.feedback

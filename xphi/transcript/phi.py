@@ -1,7 +1,7 @@
-# cognitive.xphi.transcript.phi
+# xphi.transcript.phi
+## @lineage: cognitive.xphi.transcript.phi
 ## @lineage: meta.transcript.phi
 ## @lineage: cognitive.transcript.phi
-## @lineage: xphi.transcript.phi
 import asyncio
 import json
 import inspect
