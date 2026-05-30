@@ -1,4 +1,5 @@
-# arch.model.code.block.parser.md
+# arch.code.block.parser.md
+## @lineage: arch.model.code.block.parser.md
 ## @lineage: arch.project.block.parser.md
 ## @lineage: xphi.code.block.parser.md
 ## @lineage: topos.arch.block.parser.md
@@ -7,7 +8,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.model.code.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
+from arch.code.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 
 ## Markdown → AST
 class MdAstParser:

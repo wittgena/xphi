@@ -1,4 +1,5 @@
-# arch.xphi.xor.judger
+# xe.xor.judger
+## @lineage: arch.xphi.xor.judger
 ## @lineage: arch.proto.xor.judger
 ## @lineage: arch.xor.judger
 ## @lineage: meta.xor.judger

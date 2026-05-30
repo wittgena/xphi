@@ -1,4 +1,5 @@
-# arch.xphi.flow.xearch
+# xe.flow.xearch
+## @lineage: arch.xphi.flow.xearch
 """@desc: Bound → Resolver → Surface orchestration for xphi (Echolocation Routing)"""
 import os
 import sys

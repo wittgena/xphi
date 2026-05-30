@@ -1,4 +1,5 @@
-# arch.model.code.block.parser.kt
+# arch.code.block.parser.kt
+## @lineage: arch.model.code.block.parser.kt
 ## @lineage: arch.project.block.parser.kt
 ## @lineage: xphi.code.block.parser.kt
 ## @lineage: topos.arch.block.parser.kt
@@ -6,7 +7,7 @@
 import re
 from pathlib import Path
 from typing import List, Tuple
-from arch.model.code.block.schema import MdDocument, MdSection, CodeBlock, Paragraph, Contract
+from arch.code.block.schema import MdDocument, MdSection, CodeBlock, Paragraph, Contract
 
 class KtAstParser:
     def __init__(self, path: Path, contracts: List[Contract] = None):

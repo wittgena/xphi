@@ -1,4 +1,5 @@
-# arch.model.code.imports.transformer
+# arch.code.imports.transformer
+## @lineage: arch.model.code.imports.transformer
 ## @lineage: arch.project.imports.transformer
 ## @lineage: xphi.code.imports.transformer
 ## @lineage: topos.arch.code.imports.transformer

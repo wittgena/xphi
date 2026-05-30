@@ -1,4 +1,5 @@
-# phase.ator.transcript.phi
+# xe.ator.transcript.phi
+## @lineage: phase.ator.transcript.phi
 ## @lineage: xphi.transcript.phi
 ## @lineage: cognitive.xphi.transcript.phi
 ## @lineage: meta.transcript.phi
@@ -14,8 +15,8 @@ from typing import Any, Dict, List, Tuple
 from watcher.plane.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
-from arch.model.code.block.parser.md import MdAstParser
-from arch.model.code.block.extractor import BlockExtractor
+from arch.code.block.parser.md import MdAstParser
+from arch.code.block.extractor import BlockExtractor
 
 log = get_logger("transcript.phi")
 

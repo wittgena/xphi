@@ -1,4 +1,5 @@
-# arch.xphi.runtime
+# xe.xphi.runtime
+## @lineage: arch.xphi.runtime
 ## @lineage: xphi.runtime
 ## @lineage: cognitive.xphi.runtime
 ## @lineage: phase.reflect.xphi.runtime

@@ -1,4 +1,5 @@
-# arch.model.code.block.parser.py
+# arch.code.block.parser.py
+## @lineage: arch.model.code.block.parser.py
 ## @lineage: arch.project.block.parser.py
 ## @lineage: xphi.code.block.parser.py
 ## @lineage: topos.arch.block.parser.py
@@ -8,7 +9,7 @@ import ast
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.model.code.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
+from arch.code.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
 
 ## Python → AST (using Python builtin ast module)
 class PyAstParser:

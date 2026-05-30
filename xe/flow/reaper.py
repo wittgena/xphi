@@ -1,4 +1,5 @@
-# arch.xphi.flow.reaper
+# xe.flow.reaper
+## @lineage: arch.xphi.flow.reaper
 ## @lineage: xphi.flow.reaper
 ## @lineage: cognitive.xphi.flow.reaper
 ## @lineage: meta.xphi.reaper

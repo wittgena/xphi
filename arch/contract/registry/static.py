@@ -1,3 +1,4 @@
+# arch.contract.registry.static
 import ast
 import shutil
 import time

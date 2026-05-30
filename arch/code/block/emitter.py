@@ -1,4 +1,5 @@
-# arch.model.code.block.emitter
+# arch.code.block.emitter
+## @lineage: arch.model.code.block.emitter
 ## @lineage: arch.project.block.emitter
 ## @lineage: meta.project.block.emitter
 ## @lineage: meta.flow.emit.block
@@ -12,7 +13,7 @@ from typing import List, Optional, Union, Dict
 from watcher.plane.emitter import get_logger
 from xe.flow.ktory import EmissionRunner, KotlinPSITool, RipgrepTool
 from phase.bind.resolver import find_current_self, resolve_path
-from arch.model.code.block.extractor import extract_block_from_file, Block
+from arch.code.block.extractor import extract_block_from_file, Block
 
 log = get_logger("block.emitter")
 

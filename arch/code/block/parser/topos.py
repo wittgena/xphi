@@ -1,4 +1,5 @@
-# arch.model.code.block.parser.topos
+# arch.code.block.parser.topos
+## @lineage: arch.model.code.block.parser.topos
 ## @lineage: arch.project.block.parser.topos
 ## @lineage: xphi.code.block.parser.topos
 ## @lineage: topos.arch.block.parser.topos
@@ -10,7 +11,7 @@ import io
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.model.code.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
+from arch.code.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
 
 class ToposAstParser:
     """

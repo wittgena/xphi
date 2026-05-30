@@ -1,4 +1,5 @@
-# arch.model.code.imports.aligner
+# arch.code.imports.aligner
+## @lineage: arch.model.code.imports.aligner
 ## @lineage: arch.project.imports.aligner
 ## @lineage: xphi.code.imports.aligner
 ## @lineage: topos.arch.code.imports.aligner
@@ -11,7 +12,7 @@ from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
 from arch.proto.aligner import FieldAligner, AlignRecord
 from watcher.plane.emitter import get_emitter, flow_scope
-from arch.model.code.imports.transformer import ImportTransformer
+from arch.code.imports.transformer import ImportTransformer
 
 def generate_diff(original: str, modified: str, filename: str) -> str:
     return "\n".join(

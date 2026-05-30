@@ -1,4 +1,5 @@
-# arch.model.code.logic.transformer
+# arch.code.logic.transformer
+## @lineage: arch.model.code.logic.transformer
 ## @lineage: arch.project.logic.transformer
 ## @lineage: xphi.code.logic.transformer
 ## @lineage: topos.arch.code.logic.transformer

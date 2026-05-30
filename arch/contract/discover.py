@@ -1,6 +1,4 @@
 # arch.contract.discover
-## @lineage: topos.contract.discover
-## @lineage: phase.runtime.contract.discover
 import sys
 import importlib
 import ast
@@ -110,7 +108,7 @@ def discover_modules(
     if core_paths:
         print(f"[Discover] Active Core Repos (Bypassing side-effects): {[name for name, _ in core_paths]}")
 
-    forbidden_set = forbidden_libs or {"openhands", "dspy"}
+    forbidden_set = forbidden_libs or ["dspy"]
     exclude_set = exclude_files or {"registry.py", "scanner.py", "discover.py"}
 
     root_path_str = str(root.resolve())

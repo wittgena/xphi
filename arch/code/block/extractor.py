@@ -1,4 +1,5 @@
-# arch.model.code.block.extractor
+# arch.code.block.extractor
+## @lineage: arch.model.code.block.extractor
 ## @lineage: arch.project.block.extractor
 ## @lineage: xphi.code.block.extractor
 ## @lineage: topos.arch.block.extractor
@@ -11,10 +12,10 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from watcher.plane.emitter import get_logger
 from phase.bind.resolver import find_current_self, resolve_path
-from arch.model.code.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
-from arch.model.code.block.parser.md import MdAstParser
-from arch.model.code.block.parser.py import PyAstParser
-from arch.model.code.block.parser.kt import KtAstParser 
+from arch.code.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
+from arch.code.block.parser.md import MdAstParser
+from arch.code.block.parser.py import PyAstParser
+from arch.code.block.parser.kt import KtAstParser 
 
 log = get_logger("block.extractor")
 

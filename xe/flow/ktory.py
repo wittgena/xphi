@@ -1,4 +1,5 @@
-# arch.xphi.flow.ktory
+# xe.flow.ktory
+## @lineage: arch.xphi.flow.ktory
 ## @lineage: xphi.flow.ktory
 ## @lineage: cognitive.xphi.flow.ktory
 ## @lineage: meta.xphi.ktory
@@ -23,7 +24,7 @@ from phase.bind.resolver import find_current_self, resolve_path
 from xe.xphi.runtime import XPhiRuntime
 from phase.bind.client.stream import StreamClient
 from phase.bind.client.surface import RedisClient, SurfaceClient
-from arch.model.code.block.schema import Contract
+from arch.code.block.schema import Contract
 
 log = get_emitter("xphi.ktory")
 

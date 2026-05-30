@@ -1,4 +1,5 @@
-# arch.xphi.invoker
+# xe.xphi.invoker
+## @lineage: arch.xphi.invoker
 ## @lineage: xphi.invoker
 ## @lineage: cognitive.xphi.invoker
 ## @lineage: phase.reflect.xphi.invoker

@@ -1,4 +1,5 @@
-# arch.xphi.xor.tensor
+# xe.xor.tensor
+## @lineage: arch.xphi.xor.tensor
 ## @lineage: arch.proto.xor.tensor
 ## @lineage: arch.xor.tensor
 ## @lineage: meta.xor.vm

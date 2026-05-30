@@ -1,4 +1,5 @@
-# arch.model.code.block.schema
+# arch.code.block.schema
+## @lineage: arch.model.code.block.schema
 ## @lineage: arch.project.block.schema
 ## @lineage: xphi.code.block.schema
 ## @lineage: topos.arch.block.schema
