@@ -19,7 +19,7 @@ SELF_ROOT = Path.cwd()
 PTH_FILENAME = "self.around.pth"
 
 # @config: 시스템의 뇌/신경망에 해당하는 핵심 레포지토리 (부수효과 면제 특권 부여)
-CORE_REPOS = {"surgent", "theoria", "bound", "meta"}
+CORE_REPOS = {"nexus", "surgent", "theoria"}
 
 def ignore_hidden(dir, files):
     """@helper: 숨김 파일 및 디렉토리를 복사 대상에서 제외"""

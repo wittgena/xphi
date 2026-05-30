@@ -21,7 +21,7 @@ SENSOR_PREFIX = "sensor:watcher"
 SENSOR_KEYLIST = f"{SENSOR_PREFIX}:keylist"
 
 SELF_ROOT = find_current_self()
-REDIS_ROOT = resolve_path("io") / "redis"
+REDIS_ROOT = resolve_path("surface") / "redis"
 
 watcher_pattern = resolve_pattern()
 watcher_regex = re.compile(watcher_pattern)

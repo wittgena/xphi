@@ -6,7 +6,7 @@ import yaml
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
-from arch.xphi.flow.xearch import Xor, SearchResult
+from xe.flow.xearch import Xor, SearchResult
 from watcher.plane.emitter import get_logger
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.contract.context.prompt.input import InputBundle, build_prompt 

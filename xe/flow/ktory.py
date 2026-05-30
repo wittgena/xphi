@@ -20,7 +20,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import find_current_self, resolve_path
-from arch.xphi.runtime import XPhiRuntime
+from xe.xphi.runtime import XPhiRuntime
 from phase.bind.client.stream import StreamClient
 from phase.bind.client.surface import RedisClient, SurfaceClient
 from arch.model.code.block.schema import Contract

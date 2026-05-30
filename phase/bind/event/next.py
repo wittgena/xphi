@@ -24,7 +24,12 @@ class ToposGenerator:
         with self._lock:
             timestamp = self._timestamp()
             if timestamp < self.last_timestamp:
-                raise Exception("Clock moved backwards!")
+                offset = self.last_timestamp - timestamp
+                if offset <= 5: # 5ms 이하의 미세한 시간 역행인 경우
+                    time.sleep((offset + 1) / 1000.0) # 시간이 따라잡힐 때까지 잠깐 대기
+                    timestamp = self._timestamp() # 시간 재측정
+                else:
+                    raise Exception(f"Clock moved backwards significantly! Refusing to generate id for {offset} milliseconds")
 
             if timestamp == self.last_timestamp:
                 self.sequence = (self.sequence + 1) & 0xFFF # 12비트 마스크

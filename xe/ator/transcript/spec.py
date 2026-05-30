@@ -9,7 +9,7 @@ from watcher.plane.emitter import get_logger
 from arch.contract.registry.unified import contract
 from arch.model.code.block.parser.md import MdAstParser
 from arch.model.code.block.extractor import BlockExtractor
-from phase.ator.transcript.phi import TranscriptBase
+from xe.ator.transcript.phi import TranscriptBase
 
 log = get_logger("transcript.spec")
 

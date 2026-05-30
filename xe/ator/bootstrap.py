@@ -15,9 +15,9 @@ from watcher.plane.emitter import get_logger
 from arch.proto.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.contract.discover import discover_modules
-from phase.ator.transcript.phi import TranscriptPhi
-from phase.ator.transcript.spec import TranscriptSpec
-from phase.ator.runtime import AtorRuntime
+from xe.ator.transcript.phi import TranscriptPhi
+from xe.ator.transcript.spec import TranscriptSpec
+from xe.ator.runtime import AtorRuntime
 from phase.runtime.node import NodeRuntime
 from phase.bind.resolver import find_current_self, resolve_path, load_bound
 
