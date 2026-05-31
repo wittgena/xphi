@@ -1,8 +1,4 @@
 # xe.xphi.runtime
-## @lineage: arch.xphi.runtime
-## @lineage: xphi.runtime
-## @lineage: cognitive.xphi.runtime
-## @lineage: phase.reflect.xphi.runtime
 import os
 import sys
 import json
@@ -30,6 +26,13 @@ class XPhiRuntime:
     """activate resolver when boundary has no handler"""
     def __init__(self, jar_root: Path = LIB_ROOT):
         self.jar_root = jar_root
+        
+        # [3안 보조] Redis 클라이언트 초기화 
+        redis_host = os.getenv("REDIS_HOST", "localhost")
+        self.redis = redis.Redis(host=redis_host, decode_responses=True)
+        
+        # [2안 메인] 식별을 위한 프로세스 고유 이름
+        self.process_name = "surgent-xphi-node" 
 
     def ensure(self):
         jars = sorted(self.jar_root.glob("xphi-*.jar"))
@@ -39,10 +42,26 @@ class XPhiRuntime:
         jar = jars[-1]
         log.info(f"[bootstrap] start xphi: {jar}")
 
-        subprocess.Popen(
-            ["java", "-jar", str(jar)],
+        ## exec -a를 통한 OS 레벨 프로세스명 변경 및 JVM 프로퍼티 태깅
+        cmd = [
+            "bash", "-c",
+            f"exec -a {self.process_name} java -Dreaper.tag={self.process_name} -jar {jar}"
+        ]
+
+        proc = subprocess.Popen(
+            cmd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
+
+        pid = proc.pid
+        
+        ## 띄운 직후 PID를 규격화된 Redis Set에 등록
+        try:
+            self.redis.sadd("system:xphi:pids", pid)
+            log.info(f"[bootstrap] Registered PID {pid} to Redis Registry (system:xphi:pids)")
+        except Exception as e:
+            log.warning(f"[bootstrap] Failed to register PID to Redis (Continuing anyway): {e}")
+
         log.info("[bootstrap] Waiting for resonance (3s)...")
         time.sleep(3)
