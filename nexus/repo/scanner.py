@@ -1,4 +1,5 @@
-# arch.model.repo.scanner
+# nexus.repo.scanner
+## @lineage: arch.model.repo.scanner
 ## @lineage: topos.model.repo.scanner
 ## @lineage: topos.arch.repo.scanner
 """

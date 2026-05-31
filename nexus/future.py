@@ -1,4 +1,6 @@
-# nexus.exp
+# nexus.future
+## @lineage: nexus.exp.gov
+## @lineage: nexus.exp
 """
 @desc: Nexus Governance Expansion Blueprint - Local Self-Contained Edition
 - Specification for expanding the core engine (gov.manager) into a single-node or local cluster architecture.
@@ -6,7 +8,7 @@
 """
 from __future__ import annotations
 from typing import Protocol, Any
-from nexus.exp.promise import future, NotYetCrystallized
+from arch.code.exp.promise import future, NotYetCrystallized
 
 @future(
     "Local Middleware Interceptor: Injected directly into the agent's internal "

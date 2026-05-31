@@ -1,4 +1,5 @@
 # nexus.swarm.drop
+## @lineage: nexus.exp.swarm.drop
 ## @lineage: swarm.drop
 ## @lineage: swarm.hub.drop
 """
@@ -6,7 +7,7 @@
 @intersection: Cloud APIs, File Systems
 """
 from __future__ import annotations
-from nexus.exp.promise import future
+from arch.code.exp.promise import future
 
 class DeadDrop:
     """

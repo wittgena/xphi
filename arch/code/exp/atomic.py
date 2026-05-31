@@ -1,4 +1,6 @@
-# arch.code.frag.jsonl
+# arch.code.exp.atomic
+## @lineage: nexus.exp.atomic
+## @lineage: arch.code.frag.jsonl
 ## @lineage: xor.block.frag.jsonl
 import calendar
 import hashlib

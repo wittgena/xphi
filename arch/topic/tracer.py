@@ -1,4 +1,5 @@
-# arch.model.topic.tracer
+# arch.topic.tracer
+## @lineage: arch.model.topic.tracer
 ## @lineage: arch.project.topic.tracer
 """
 @flow:

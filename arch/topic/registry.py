@@ -1,4 +1,5 @@
-# arch.model.topic.registry
+# arch.topic.registry
+## @lineage: arch.model.topic.registry
 ## @lineage: arch.project.topic.registry
 ## @lineage: xphi.code.topic.registry
 ## @lineage: topos.arch.code.topic.registry

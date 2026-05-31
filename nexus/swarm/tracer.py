@@ -1,10 +1,11 @@
-# nexus.exp.bound.tracer
+# nexus.swarm.tracer
+## @lineage: nexus.exp.tracer
 import time
 from dataclasses import dataclass, field
 from typing import List, Optional
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("bound.tracer")
+log = get_emitter("swarm.tracer")
 
 ## 기저 어휘 및 엔티티 (Lexicon & Entities)
 @dataclass

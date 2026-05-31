@@ -1,4 +1,5 @@
-# arch.model.topic.modeler
+# arch.topic.modeler
+## @lineage: arch.model.topic.modeler
 ## @lineage: arch.project.topic.modeler
 ## @lineage: xphi.code.topic.modeler
 ## @lineage: topos.arch.code.topic.modeler

@@ -1,4 +1,6 @@
-# nexus.swarm.manager
+# nexus.swarm.comm
+## @lineage: nexus.exp.swarm.manager
+## @lineage: nexus.swarm.manager
 ## @lineage: swarm.manager
 """
 @desc: Autopoietic Swarm Manager
@@ -17,9 +19,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Any, Dict, List, Optional, Union
 from watcher.plane.emitter import get_emitter
-from nexus.exp.promise import future
-from nexus.exp.swarm.drop import DeadDrop
-from nexus.exp.swarm.genetics import SwarmMutator, DataSharder, TribunalValidator
+from arch.code.exp.promise import future
+from nexus.swarm.drop import DeadDrop
+from nexus.swarm.genetics import SwarmMutator, DataSharder, TribunalValidator
 
 log = get_emitter("swarm.manager")
 

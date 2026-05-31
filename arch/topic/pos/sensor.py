@@ -1,4 +1,5 @@
-# arch.model.pos.sensor
+# arch.topic.pos.sensor
+## @lineage: arch.model.pos.sensor
 ## @lineage: topos.model.pos.sensor
 """
 @role: Class-based Boundary-driven Model Binder

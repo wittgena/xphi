@@ -1,4 +1,5 @@
 # nexus.swarm.genetics
+## @lineage: nexus.exp.swarm.genetics
 ## @lineage: swarm.genetics
 ## @lineage: swarm.hub.genetics
 """
@@ -10,7 +11,7 @@ import json
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Protocol
-from nexus.exp.promise import (
+from arch.code.exp.promise import (
     future,
     Promise,
     NotYetCrystallized,

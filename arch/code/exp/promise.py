@@ -1,5 +1,5 @@
-# arch.code.conv.promise
-## @lineage: arch.model.conv.promise
+# arch.code.exp.promise
+## @lineage: nexus.exp.promise
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, NewType, Protocol

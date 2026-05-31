@@ -1,4 +1,5 @@
-# arch.model.repo.protocol
+# nexus.repo.protocol
+## @lineage: arch.model.repo.protocol
 ## @lineage: topos.model.repo.protocol
 ## @lineage: topos.arch.repo.protocol
 """
