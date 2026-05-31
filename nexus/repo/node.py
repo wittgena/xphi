@@ -13,7 +13,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from phase.bind.event.next import next_id
-from arch.model.repo.commit import RepoCommit, AnchorCommit
+from nexus.repo.commit import RepoCommit, AnchorCommit
 from phase.bind.resolver import resolve_path
 
 DEFAULT_ID = "0000000"

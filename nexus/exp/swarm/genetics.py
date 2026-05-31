@@ -10,7 +10,7 @@ import json
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Protocol
-from arch.code.conv.promise import (
+from nexus.exp.promise import (
     future,
     Promise,
     NotYetCrystallized,

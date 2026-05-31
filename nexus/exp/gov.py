@@ -6,7 +6,7 @@
 """
 from __future__ import annotations
 from typing import Protocol, Any
-from arch.code.conv.promise import future, NotYetCrystallized
+from nexus.exp.promise import future, NotYetCrystallized
 
 @future(
     "Local Middleware Interceptor: Injected directly into the agent's internal "

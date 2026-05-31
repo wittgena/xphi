@@ -6,7 +6,7 @@
 @intersection: Cloud APIs, File Systems
 """
 from __future__ import annotations
-from arch.code.conv.promise import future
+from nexus.exp.promise import future
 
 class DeadDrop:
     """

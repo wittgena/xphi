@@ -1,8 +1,4 @@
 # nexus.harvester.residue
-## @lineage: swarm.harvest.residue
-## @lineage: hub.residue.harvester
-## @lineage: residue.harvester
-## @lineage: iso.model.residue.harvester
 from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -10,7 +6,7 @@ from pathlib import Path
 from typing import Any, Iterable, Optional
 from xe.xor.store import ResidueStore
 from watcher.plane.emitter import get_emitter
-from arch.code.frag.jsonl import sha256_file, sha256_text, atomic_write_json, atomic_write_jsonl, read_json, now_iso, parse_iso
+from nexus.exp.atomic import sha256_file, sha256_text, atomic_write_json, atomic_write_jsonl, read_json, now_iso, parse_iso
 
 log = get_emitter("residue.harvester")
 

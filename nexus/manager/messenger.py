@@ -16,7 +16,7 @@ from typing import Annotated, Optional, Union, Literal
 import tyro
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import find_current_self, resolve_path
-from arch.code.frag.jsonl import sha256_file, read_json, atomic_write_text, atomic_write_json, now_iso, now_compact
+from nexus.exp.atomic import sha256_file, read_json, atomic_write_text, atomic_write_json, now_iso, now_compact
 
 log = get_emitter("messenger.alone")
 

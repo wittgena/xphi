@@ -17,14 +17,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Any, Dict, List, Optional, Union
 from watcher.plane.emitter import get_emitter
-from arch.code.conv.promise import future
-from swarm.drop import DeadDrop
-from swarm.genetics import SwarmMutator, DataSharder, TribunalValidator
+from nexus.exp.promise import future
+from nexus.exp.swarm.drop import DeadDrop
+from nexus.exp.swarm.genetics import SwarmMutator, DataSharder, TribunalValidator
 
 log = get_emitter("swarm.manager")
 
 @dataclass
-class ScatterCommand:
+class ScatterComm:
     """@desc: Generates new mutated packets and deploys them to the Dead Drop"""
     base_config: Path
     corpus: Path
@@ -45,7 +45,7 @@ class ScatterCommand:
 
 
 @dataclass
-class HarvestCommand:
+class HarvestComm:
     """@desc: Collects completed adapters, verifies integrity, and reallocates dead tasks"""
     dead_drop_uri: str
     inbox_dir: Path = Path("./inbox")
@@ -67,7 +67,7 @@ class HarvestCommand:
 
 
 @dataclass
-class PruneCommand:
+class PruneComm:
     """@desc: Thermodynamically deletes isolated or forgotten nodes (Tombstoning)"""
     older_than_days: int = 7
 
@@ -77,15 +77,15 @@ class PruneCommand:
         pass
 
 SwarmApp = Union[
-    Annotated[ScatterCommand, tyro.conf.subcommand("scatter")],
-    Annotated[HarvestCommand, tyro.conf.subcommand("harvest")],
-    Annotated[PruneCommand, tyro.conf.subcommand("prune")],
+    Annotated[ScatterComm, tyro.conf.subcommand("scatter")],
+    Annotated[HarvestComm, tyro.conf.subcommand("harvest")],
+    Annotated[PruneComm, tyro.conf.subcommand("prune")],
 ]
 
 def main():
     try:
-        command = tyro.cli(SwarmApp)
-        command.execute()
+        comm = tyro.cli(SwarmApp)
+        comm.execute()
     except NotImplementedError as e:
         log.warning(e)
     except Exception as e:

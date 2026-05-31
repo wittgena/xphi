@@ -16,7 +16,7 @@ import signal
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional
-from arch.model.topic.registry import TopicRegistry, TopicMap
+from arch.topic.registry import TopicRegistry, TopicMap
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter('topic.tracer')
