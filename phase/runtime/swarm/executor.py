@@ -9,17 +9,17 @@ import asyncio
 import subprocess
 import importlib
 from typing import Callable, Any
-from phase.bind.event.psi import PsiEvent, PsiCarrier
-from phase.bind.event.next import next_id, LogEvent
+from arch.proto.event.psi import PsiEvent, PsiCarrier
+from arch.proto.event.next import next_id, LogEvent
 from dataclasses import asdict
 from watcher.plane.surface import surface
 from watcher.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
-from phase.bind.executor import BaseExecutor
+from arch.contract.base.executor import BaseExecutor
 from phase.runtime.cli.executor import _GenericCliExecutor
 from phase.dynamics.flow.executor import _FlowExecutor
 
-log = get_logger("executor.swarm")
+log = get_logger("runtime.swarm")
 
 class SwarmExecutor(BaseExecutor):
     """특정 인스턴스가 아닌, 레지스트리에서 태스크를 동적으로 찾아 실행하는 스웜용 실행기"""

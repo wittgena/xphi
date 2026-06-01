@@ -15,13 +15,13 @@ import redis.asyncio as redis_async
 from typing import Callable, Any, AsyncGenerator
 from pathlib import Path
 from dataclasses import asdict
-from phase.bind.event.psi import PsiEvent, PsiCarrier
-from phase.bind.event.next import next_id, LogEvent
+from arch.proto.event.psi import PsiEvent, PsiCarrier
+from arch.proto.event.next import next_id, LogEvent
 from phase.runtime.surface.sensor import REDIS_URL
 from watcher.plane.emitter import get_emitter, flow_scope
 from watcher.plane.surface import surface
 from phase.bind.resolver import get_invoker
-from phase.bind.executor import BaseExecutor
+from arch.contract.base.executor import BaseExecutor
 
 log = get_emitter("executor.flow")
 

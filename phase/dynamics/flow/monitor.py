@@ -16,7 +16,7 @@ import functools
 from pathlib import Path
 from typing import Any, Callable
 from watcher.plane.emitter import get_logger, get_emitter
-from arch.proto.flow import ProtoFlow, FlowState
+from arch.proto.phase.flow import ProtoFlow, FlowState
 
 log = get_logger("flow.monitor")
 monitor_emitter = get_emitter("flow.monitor", phase="observe", boundary="telemetry")

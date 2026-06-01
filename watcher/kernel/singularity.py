@@ -4,7 +4,7 @@
 from typing import List, Dict, Optional, Any
 from arch.contract.registry.unified import contract
 from arch.contract.interface import ICriticalDetector, IPhaseField
-from phase.bind.event.psi import PsiEvent, PsiCarrier
+from arch.proto.event.psi import PsiEvent, PsiCarrier
 
 @contract.watcher("singularity.watcher")
 class SingularityWatcher(ICriticalDetector):

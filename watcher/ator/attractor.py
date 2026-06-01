@@ -11,7 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import math
-from phase.bind.event.psi import PsiCarrier, PsiEvent
+from arch.proto.event.psi import PsiCarrier, PsiEvent
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import find_current_self
 from phase.runtime.node import NodeRuntime

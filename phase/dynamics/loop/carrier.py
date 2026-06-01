@@ -6,9 +6,9 @@
 ## @lineage: topos.dynamics.carrier
 from __future__ import annotations
 import asyncio
-from phase.bind.event.next import next_id
+from arch.proto.event.next import next_id
 from typing import List, Dict, Optional, Any
-from phase.bind.executor import BaseExecutor
+from arch.contract.base.executor import BaseExecutor
 from phase.dynamics.manifold.cont import XeCont
 
 class LoopCarrier(BaseExecutor):

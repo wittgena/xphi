@@ -6,9 +6,9 @@
 ## @lineage: topos.dynamics.xe
 from __future__ import annotations
 import asyncio
-from phase.bind.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
+from arch.proto.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
 from typing import List, Dict, Optional, Any
-from phase.bind.executor import BaseExecutor
+from arch.contract.base.executor import BaseExecutor
 from arch.contract.registry.unified import registry
 
 class PhaseField(type(BaseExecutor)):

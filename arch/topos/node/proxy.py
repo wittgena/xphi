@@ -9,8 +9,8 @@ import random
 import json
 from typing import Optional, Any
 from watcher.plane.emitter import get_emitter
-from phase.bind.event.psi import PsiEvent
-from arch.proto.flow import ProtoFlow
+from arch.proto.event.psi import PsiEvent
+from arch.proto.phase.flow import ProtoFlow
 
 log = get_emitter("state.proxy")
 

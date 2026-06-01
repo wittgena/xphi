@@ -13,7 +13,7 @@ import random
 import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
-from phase.bind.event.psi import PsiEvent, PsiCarrier
+from arch.proto.event.psi import PsiEvent, PsiCarrier
 from phase.reflect.rhythm.bridge import RhythmBridge
 from watcher.plane.surface import default_plane
 from watcher.plane.emitter import get_emitter

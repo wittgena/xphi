@@ -11,7 +11,7 @@ import time
 import re
 import redis.asyncio as redis_async
 from typing import Optional
-from phase.bind.event.psi import PsiEvent, PsiCarrier
+from arch.proto.event.psi import PsiEvent, PsiCarrier
 from phase.bind.resolver import resolve_channel, resolve_pattern
 from watcher.plane.emitter import get_emitter
 

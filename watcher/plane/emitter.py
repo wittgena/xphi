@@ -8,7 +8,7 @@ import traceback
 from typing import Any, Dict, Optional, Callable, List
 from contextvars import ContextVar
 from contextlib import contextmanager
-from phase.bind.event.next import LogEvent
+from arch.proto.event.next import LogEvent
 from watcher.plane.surface import default_plane
 
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})
