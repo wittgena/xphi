@@ -11,7 +11,6 @@ Phi = TypeVar('Phi')           ## phi: shared topology (state / memory)
 R = TypeVar('R')               
 EventId = TypeVar('EventId')   ## psi identifier
 
-
 class EventDisperser(ABC, Generic[Psi, R, Phi]):
     """@flow: ψ -> {ψ₁..ψₙ} -> {R₁..Rₙ} -> Φ_merged"""
 

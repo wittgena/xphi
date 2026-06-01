@@ -16,7 +16,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol
 from arch.proto.event.psi import PsiEvent
-from arch.proto.event.network import EventAligner, EventRouter, EventDisperser
 
 class IPhaseField(ABC):
     """Φ-field: shared phase space where system tension accumulates"""
@@ -85,11 +84,6 @@ class ISystemRegime(ABC):
 
     @abstractmethod
     def filter_event(self, event: PsiEvent) -> Optional[PsiEvent]:
-        pass
-
-class ToposEventBus(IEventBus, EventRouter[PsiEvent, IPhaseField, str]):
-    """ψ topos router - Routes events through the ator network using field-aware routing rules derived from Φ"""
-    def dispatch(self, task: PsiEvent) -> List[IPhaseAtor]:
         pass
 
 class IDynamicsKernel(Protocol):

@@ -1,11 +1,4 @@
 # hub.xor.judger
-## @lineage: xe.xor.judger
-## @lineage: arch.xphi.xor.judger
-## @lineage: arch.proto.xor.judger
-## @lineage: arch.xor.judger
-## @lineage: meta.xor.judger
-## @lineage: phase.xor.judger
-## @lineage: xphi.xor.judger
 import time
 from typing import List, Tuple
 from dataclasses import dataclass, field
