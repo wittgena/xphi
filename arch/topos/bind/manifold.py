@@ -1,4 +1,5 @@
-# arch.topos.binder
+# arch.topos.bind.manifold
+## @lineage: arch.topos.binder
 ## @lineage: arch.proto.task.binder
 ## @lineage: arch.task.binder
 """

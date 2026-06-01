@@ -1,6 +1,4 @@
-# arch.topos.organizer
-## @lineage: phase.topos.organizer
-## @lineage: topos.organizer
+# gov.state.organizer
 import time
 import asyncio
 import redis.asyncio as redis_async
