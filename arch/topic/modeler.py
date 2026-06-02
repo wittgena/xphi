@@ -16,7 +16,7 @@ from gensim import corpora, models
 from watcher.plane.emitter import get_emitter
 from arch.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
 from phase.bind.resolver import find_current_self, resolve_path
-from hub.xor.block.parser.topos import ToposAstParser
+from arch.xor.block.parser.topos import ToposAstParser
 
 log = get_emitter("topic.modeler")
 

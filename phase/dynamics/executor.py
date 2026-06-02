@@ -8,7 +8,7 @@ from typing import List, Dict, Optional, Any
 from arch.contract.base.executor import BaseExecutor
 from phase.dynamics.flow.executor import _FlowExecutor
 from arch.contract.registry.unified import registry
-from phase.dynamics.manifold.cont import XeCont
+from arch.xor.manifold.cont import XeCont
 
 class SystemBuilder:
     """

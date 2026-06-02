@@ -6,7 +6,7 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from hub.ator.runtime import AtorRuntime
+from phase.hub.ator.runtime import AtorRuntime
 from arch.proto.phase.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
 from arch.contract.registry.unified import contract
 from watcher.plane.emitter import get_logger

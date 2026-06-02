@@ -19,9 +19,9 @@ import redis.asyncio as redis_async
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from watcher.plane.surface import SurfacePlane
 from watcher.plane.emitter import get_emitter
-from phase.reflect.rhythm.bridge import RhythmBridge
-from phase.dynamics.manifold.particle import ToposManifold, Particle
-from phase.dynamics.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from phase.dynamics.rhythm.bridge import RhythmBridge
+from arch.xor.manifold.particle import ToposManifold, Particle
+from arch.xor.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
 log = get_emitter("dynamics.field")
 

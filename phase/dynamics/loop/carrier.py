@@ -9,7 +9,7 @@ import asyncio
 from arch.proto.event.next import next_id
 from typing import List, Dict, Optional, Any
 from arch.contract.base.executor import BaseExecutor
-from phase.dynamics.manifold.cont import XeCont
+from arch.xor.manifold.cont import XeCont
 
 class LoopCarrier(BaseExecutor):
     """
