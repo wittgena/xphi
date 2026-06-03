@@ -1,8 +1,4 @@
 # arch.contract.base.executor
-## @lineage: phase.bind.executor
-## @lineage: phase.bound.executor
-## @lineage: phase.executor.base
-## @lineage: arch.executor.base
 from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
