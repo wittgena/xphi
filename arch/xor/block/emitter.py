@@ -1,11 +1,4 @@
 # arch.xor.block.emitter
-## @lineage: hub.xor.block.emitter
-## @lineage: arch.code.block.emitter
-## @lineage: arch.model.code.block.emitter
-## @lineage: arch.project.block.emitter
-## @lineage: meta.project.block.emitter
-## @lineage: meta.flow.emit.block
-## @lineage: meta.ops.block.emitter
 import re
 import sys
 import json

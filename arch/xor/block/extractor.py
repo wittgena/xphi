@@ -1,11 +1,4 @@
 # arch.xor.block.extractor
-## @lineage: hub.xor.block.extractor
-## @lineage: arch.code.block.extractor
-## @lineage: arch.model.code.block.extractor
-## @lineage: arch.project.block.extractor
-## @lineage: xphi.code.block.extractor
-## @lineage: topos.arch.block.extractor
-## @lineage: arch.model.block.extractor
 import re
 import sys
 import json
