@@ -1,4 +1,5 @@
-# xor.adapter.manifold.sign.signature
+# arch.xor.manifold.sign.signature
+## @lineage: xor.adapter.manifold.sign.signature
 import ast
 import importlib
 import inspect

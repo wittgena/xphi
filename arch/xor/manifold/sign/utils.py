@@ -1,4 +1,5 @@
-# xor.adapter.manifold.sign.utils
+# arch.xor.manifold.sign.utils
+## @lineage: xor.adapter.manifold.sign.utils
 from typing import Literal
 from pydantic.fields import FieldInfo
 

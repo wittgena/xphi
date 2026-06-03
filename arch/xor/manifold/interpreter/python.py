@@ -1,4 +1,5 @@
-# gov.scope.interpreter.python
+# arch.xor.manifold.interpreter.python
+## @lineage: gov.scope.interpreter.python
 """
 Local interpreter for secure Python code execution using Deno/Pyodide.
 

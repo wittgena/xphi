@@ -1,12 +1,16 @@
 # arch.proto.event.next
-## @lineage: phase.bind.event.next
-## @lineage: arch.event.next
+import os
+import shutil
+import stat
 import asyncio
 import time
 import threading
+from pathlib import Path
 from dataclasses import dataclass, field
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Annotated
 from phase.bind.resolver import resolve_identity
+from datetime import UTC, datetime
+from pydantic import Field
 
 class ToposGenerator:
     def __init__(self, vertex_id: int = 1, manifold_id: int = 1):
@@ -190,3 +194,43 @@ class LogEvent:
     gain: float = 1.0
     fold_count: int = 1
 
+def safe_rmtree(path: str | Path | None, description: str = "directory") -> bool:
+    """Safely remove a directory tree, handling permission errors gracefully."""
+    if not path or not os.path.exists(path):
+        return True
+
+    def handle_remove_readonly(func, path, _exc):
+        """Error handler for removing read-only files."""
+        if os.path.exists(path):
+            try:
+                os.chmod(path, stat.S_IWRITE)
+                func(path)
+            except (OSError, PermissionError) as e:
+                logger.warning(f"Failed to remove read-only file {path}: {e}")
+
+    try:
+        shutil.rmtree(path, onerror=handle_remove_readonly)
+        logger.debug(f"Successfully removed {description}: {path}")
+        return True
+    except (OSError, PermissionError) as e:
+        logger.warning(
+            f"Failed to remove {description} at {path}: {e}. "
+            f"This may leave temporary files on disk but won't affect functionality."
+        )
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error removing {description} at {path}: {e}")
+        return False
+
+
+def utc_now():
+    """Return the current time in UTC format (Since datetime.utcnow is deprecated)"""
+    return datetime.now(UTC)
+
+ToposId = Annotated[
+    str, 
+    Field(
+        # default_factory=next_id, 
+        description="Topological Snowflake ID (Replaces legacy UUID)"
+    )
+]

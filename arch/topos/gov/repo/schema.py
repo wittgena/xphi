@@ -1,4 +1,5 @@
-# gov.state.repo.schema
+# arch.topos.gov.repo.schema
+## @lineage: gov.state.repo.schema
 ## @lineage: gov.state.system.repo.schema
 ## @lineage: gov.repo.commit
 from dataclasses import dataclass, asdict, field

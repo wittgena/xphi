@@ -1,4 +1,5 @@
-# gov.scope.interpreter.code
+# arch.xor.manifold.interpreter.code
+## @lineage: gov.scope.interpreter.code
 from typing import Any, Callable, Protocol, runtime_checkable
 
 SIMPLE_TYPES = (str, int, float, bool, list, dict, type(None))

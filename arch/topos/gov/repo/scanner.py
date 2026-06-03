@@ -1,4 +1,5 @@
-# gov.state.repo.scanner
+# arch.topos.gov.repo.scanner
+## @lineage: gov.state.repo.scanner
 ## @lineage: gov.state.system.repo.scanner
 ## @lineage: gov.repo.scanner
 ## @lineage: nexus.repo.scanner

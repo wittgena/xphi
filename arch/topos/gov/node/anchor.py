@@ -1,4 +1,5 @@
-# gov.state.node.anchor
+# arch.topos.gov.node.anchor
+## @lineage: gov.state.node.anchor
 ## @lineage: gov.state.system.node.anchor
 ## @lineage: gov.repo.node.anchor
 """

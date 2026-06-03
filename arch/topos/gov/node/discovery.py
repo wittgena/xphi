@@ -1,4 +1,5 @@
-# gov.state.node.discovery
+# arch.topos.gov.node.discovery
+## @lineage: gov.state.node.discovery
 ## @lineage: gov.state.system.node.discovery
 ## @lineage: gov.repo.node.discovery
 """
