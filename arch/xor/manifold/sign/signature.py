@@ -173,7 +173,7 @@ class SignatureMeta(type(BaseModel)):
     def _validate_fields(cls):
         for name, field in cls.model_fields.items():
             extra = field.json_schema_extra or {}
-            field_type = extra.get("__spi_field_type")
+            field_type = extra.get("__meta_field_type")
             if field_type not in ["input", "output"]:
                 raise TypeError(
                     f"Field `{name}` in `{cls.__name__}` must be declared with InputField or OutputField, but "
@@ -209,7 +209,7 @@ class SignatureMeta(type(BaseModel)):
         return f"{input_fields} -> {output_fields}"
 
     def _get_fields_with_type(cls, field_type) -> dict[str, FieldInfo]:
-        return {k: v for k, v in cls.model_fields.items() if v.json_schema_extra["__spi_field_type"] == field_type}
+        return {k: v for k, v in cls.model_fields.items() if v.json_schema_extra["__meta_field_type"] == field_type}
 
     def __repr__(cls):
         field_reprs = []
@@ -260,14 +260,14 @@ class Signature(BaseModel, metaclass=SignatureMeta):
         output_fields = list(cls.output_fields.items())
 
         # Choose the list to insert into based on the field type
-        lst = input_fields if field.json_schema_extra["__spi_field_type"] == "input" else output_fields
+        lst = input_fields if field.json_schema_extra["__meta_field_type"] == "input" else output_fields
         # We support negative insert indices
         if index < 0:
             index += len(lst) + 1
         if index < 0 or index > len(lst):
             raise ValueError(
                 f"Invalid index to insert: {index}, index must be in the range of [{len(lst) - 1}, {len(lst)}] for "
-                f"{field.json_schema_extra['__spi_field_type']} fields, but received: {index}.",
+                f"{field.json_schema_extra['__meta_field_type']} fields, but received: {index}.",
             )
         lst.insert(index, (name, (type_, field)))
 

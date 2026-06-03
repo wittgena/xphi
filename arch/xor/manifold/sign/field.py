@@ -3,7 +3,7 @@ import warnings
 import pydantic
 
 IS_TYPE_UNDEFINED = "IS_TYPE_UNDEFINED"
-SPI_FIELD_ARG_NAMES = ["desc", "prefix", "format", "parser", "__spi_field_type", IS_TYPE_UNDEFINED]
+SPI_FIELD_ARG_NAMES = ["desc", "prefix", "format", "parser", "__meta_field_type", IS_TYPE_UNDEFINED]
 _DEPRECATED_FIELD_ARGS = {
     "prefix": (
         "The 'prefix' argument in InputField/OutputField is deprecated and has no effect in spi. "
@@ -65,16 +65,16 @@ def _warn_deprecated_field_args(**kwargs):
 
 def InputField(**kwargs): # noqa: N802
     _warn_deprecated_field_args(**kwargs)
-    return pydantic.Field(**move_kwargs(**kwargs, __spi_field_type="input"))
+    return pydantic.Field(**move_kwargs(**kwargs, __meta_field_type="input"))
 
 
 def OutputField(**kwargs): # noqa: N802
     _warn_deprecated_field_args(**kwargs)
-    return pydantic.Field(**move_kwargs(**kwargs, __spi_field_type="output"))
+    return pydantic.Field(**move_kwargs(**kwargs, __meta_field_type="output"))
 
 
 def new_to_old_field(field):
-    return (OldInputField if field.json_schema_extra["__spi_field_type"] == "input" else OldOutputField)(
+    return (OldInputField if field.json_schema_extra["__meta_field_type"] == "input" else OldOutputField)(
         prefix=field.json_schema_extra["prefix"],
         desc=field.json_schema_extra["desc"],
         format=field.json_schema_extra.get("format"),
