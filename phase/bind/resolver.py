@@ -1,6 +1,4 @@
 # phase.bind.resolver
-## @lineage: phase.bound.resolver
-## @lineage: topos.bound.resolver
 import os
 import json
 import re
