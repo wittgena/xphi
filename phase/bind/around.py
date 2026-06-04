@@ -1,6 +1,4 @@
 # phase.bind.around
-## @lineage: phase.bound.around
-## @lineage: around
 import os
 import sys
 import shutil
@@ -17,9 +15,7 @@ CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
 SELF_ROOT = Path.cwd()
 PTH_FILENAME = "self.around.pth"
-
-# @config: 시스템의 뇌/신경망에 해당하는 핵심 레포지토리 (부수효과 면제 특권 부여)
-CORE_REPOS = {"nexus", "surgent", "theoria"}
+CORES = {"surgent", "theoria"}
 
 def ignore_hidden(dir, files):
     """@helper: 숨김 파일 및 디렉토리를 복사 대상에서 제외"""
@@ -91,7 +87,7 @@ def update_bound_config(repos: list[Path]) -> None:
             new_around_map = {}
             for p in repos:
                 repo_name = p.name
-                is_core = repo_name in CORE_REPOS
+                is_core = repo_name in CORES
                 
                 # 딕셔너리 구조로 데이터 영속화
                 new_around_map[repo_name] = {
@@ -132,7 +128,7 @@ def project_self() -> list[Path]:
 
         log.info(f"[Phase: Bootstrap] {len(repos)} topos projected to: {pth_path}")
         for r in repos:
-            is_core = "*" if r.name in CORE_REPOS else " "
+            is_core = "*" if r.name in CORES else " "
             log.info(f"  + [{is_core}] {r.name}")
         return repos 
     except PermissionError:

@@ -17,7 +17,7 @@ from typing import Any, Dict, List, Tuple
 from watcher.plane.emitter import get_logger
 from arch.proto.phase.flow import ProtoFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
-from arch.contract.discover import discover_modules
+from arch.contract.discovery import discover_modules
 from phase.hub.ator.transcript.phi import TranscriptPhi
 from phase.hub.ator.transcript.spec import TranscriptSpec
 from phase.hub.ator.runtime import AtorRuntime

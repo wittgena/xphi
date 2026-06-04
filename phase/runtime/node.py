@@ -21,7 +21,7 @@ from phase.runtime.surface.actuator import SurfaceActuator
 from phase.runtime.surface.sink import RedisSink
 from phase.bind.resolver import resolve_path, find_current_self
 from arch.contract.registry.unified import registry
-from arch.contract.discover import discover_modules
+from arch.contract.discovery import discover_modules
 from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
 from phase.hub.reflect.worker import CognitiveWorker

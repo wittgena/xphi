@@ -10,7 +10,7 @@ from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
 from arch.contract.registry.unified import registry, contract
-from arch.contract.discover import discover_modules
+from arch.contract.discovery import discover_modules
 from phase.dynamics.loop.carrier import LoopCarrier
 from phase.dynamics.executor import DynamicsExecutor
 from arch.contract.interface import IDynamicsKernel
