@@ -25,7 +25,7 @@ from watcher.plane.emitter import get_logger
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.contract.interface import IEventBus, IPhaseField, IPhaseAtor
 from arch.proto.event.psi import PsiEvent
-from watcher.gateway.xphi.runtime import XPhiRuntime
+from watcher.kernel.xphi.runtime import XPhiRuntime
 from phase.bind.client.stream import StreamClient
 from phase.bind.client.surface import RedisClient, SurfaceClient
 
