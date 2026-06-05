@@ -7,7 +7,7 @@ from typing import Optional, Set
 from phase.bind.resolver import load_bound, find_current_self
 
 SAFE_TOP_LEVEL_CALLS = {
-    "get_emitter", "resolve_path", "Path", "os.getenv", 
+    "get_logger", "get_emitter", "resolve_path", "find_current_self", "Path", "os.getenv", 
     "load_dotenv", "dict", "set", "list", "tuple", "SynapticRouter"
 }
 
