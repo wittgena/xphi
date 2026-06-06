@@ -4,7 +4,7 @@ import time
 import subprocess
 import requests
 import json
-from arch.proto.resonance import BridgeEvent
+from arch.proto.schema.resonance import BridgeEvent
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')

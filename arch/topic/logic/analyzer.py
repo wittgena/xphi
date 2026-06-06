@@ -10,7 +10,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from arch.proto.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
+from arch.proto.schema.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
 from arch.topic.logic.transformer import LogicTransformer

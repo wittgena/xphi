@@ -1,4 +1,5 @@
-# arch.proto.interpreter.code
+# arch.proto.wrapper.code
+## @lineage: arch.proto.interpreter.code
 ## @lineage: gov.sandbox.debugger.interpreter.code
 from typing import Any, Callable, Protocol, runtime_checkable
 

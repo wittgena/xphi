@@ -2,7 +2,7 @@
 ## @lineage: phase.bound.client.engine.base
 ## @lineage: phase.reflect.client.engine.base
 from abc import ABC, abstractmethod
-from arch.proto.resonance import BridgeEvent
+from arch.proto.schema.resonance import BridgeEvent
 
 class BaseEngine(ABC):
     @abstractmethod

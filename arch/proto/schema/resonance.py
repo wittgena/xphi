@@ -1,8 +1,5 @@
-# arch.proto.resonance
-## @lineage: arch.proto.task.model.resonance
-## @lineage: arch.task.model.resonance
-## @lineage: arch.model.resonance
-## @lineage: topos.model.resonance
+# arch.proto.schema.resonance
+## @lineage: arch.proto.resonance
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Set, Optional
 

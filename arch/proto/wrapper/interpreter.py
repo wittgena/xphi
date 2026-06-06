@@ -1,4 +1,5 @@
-# arch.proto.interpreter.python
+# arch.proto.wrapper.interpreter
+## @lineage: arch.proto.interpreter.python
 ## @lineage: gov.sandbox.debugger.interpreter.python
 """Local interpreter for secure Python code execution using Deno/Pyodide"""
 import functools
@@ -11,7 +12,7 @@ import subprocess
 import threading
 from os import PathLike
 from typing import Any, Callable
-from arch.proto.interpreter.code import SIMPLE_TYPES, CodeInterpreterError, FinalOutput
+from arch.proto.wrapper.code import SIMPLE_TYPES, CodeInterpreterError, FinalOutput
 
 __all__ = ["PythonInterpreter", "FinalOutput", "CodeInterpreterError"]
 

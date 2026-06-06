@@ -1,8 +1,5 @@
-# arch.proto.graph
-## @lineage: arch.proto.task.model.graph
-## @lineage: arch.task.model.graph
-## @lineage: arch.model.graph
-## @lineage: topos.model.graph
+# arch.proto.schema.graph
+## @lineage: arch.proto.graph
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict, field
 

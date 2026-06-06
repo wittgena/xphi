@@ -1,5 +1,4 @@
-# arch.proto.ator
-## @lineage: phase.bind.ator
+# arch.proto.phase.ator
 import uuid
 import asyncio
 from abc import ABC, abstractmethod
@@ -12,9 +11,9 @@ from arch.proto.phase.flow import (
 from arch.contract.protocol import Proto, proto
 from arch.contract.registry.unified import manifold_node, registry
 
-log = get_logger('ator.manifold')
+log = get_logger('phase.ator')
 
-class ProtoAtor:
+class PhaseAtor:
     """
     @desc: Ator Adapters
     @invariant: 모든 하위 노드는 run(flow, operator, ctx) 시그니처를 따른다.
@@ -24,7 +23,7 @@ class ProtoAtor:
 
 @manifold_node(name="ator", requires=[], emits=["transduction"])
 @proto(Proto((PhaseFlow, Transduction, "List[Tuple]"), kind="transduction"))
-class TransAtor(ProtoAtor):
+class TransAtor(PhaseAtor):
     def __init__(self, spec):
         self.role = spec["role"]
         self.next = spec["next"]
@@ -52,7 +51,7 @@ class TransAtor(ProtoAtor):
 
 @manifold_node(name="aligner", requires=[], emits=["aligner"])
 @proto(Proto((PhaseFlow, Align, "State"), kind="aligner"))
-class AlignAtor(ProtoAtor):
+class AlignAtor(PhaseAtor):
     def __init__(self, spec):
         self.next = spec["next"]
         self.spec = spec
@@ -68,7 +67,7 @@ class AlignAtor(ProtoAtor):
 
 @manifold_node(name="judgment", requires=[], emits=["judgment"])
 @proto(Proto((PhaseFlow, Judgment, "str"), kind="judgment"))
-class JudgmentAtor(ProtoAtor):
+class JudgmentAtor(PhaseAtor):
     def __init__(self, spec):
         self.rules = spec["rules"]
         op_name = spec.get("operator", "default_judgment")
@@ -82,7 +81,7 @@ class JudgmentAtor(ProtoAtor):
 
 @manifold_node(name="dispersion", requires=[], emits=["dispersion"])
 @proto(Proto((PhaseFlow, Dispersion, "List[ProtoFlow]"), kind="dispersion"))
-class DispersionAtor(ProtoAtor):
+class DispersionAtor(PhaseAtor):
     def __init__(self, spec):
         self.aspects = spec["aspects"]
         self.next = spec["next"]
@@ -94,7 +93,7 @@ class DispersionAtor(ProtoAtor):
 
 @manifold_node(name="gather", requires=[], emits=["gather"])
 @proto(Proto((PhaseFlow, Gather, "List[ProtoFlow]"), kind="gather"))
-class GatherAtor(ProtoAtor):
+class GatherAtor(PhaseAtor):
     """Operator 클래스로 분리했다고 가정하거나 기본 Operator를 만듬"""
     def __init__(self, spec):
         self.next = spec["next"]
@@ -116,7 +115,7 @@ class GatherAtor(ProtoAtor):
 
 @manifold_node(name="resonance", requires=[], emits=["resonance"])
 @proto(Proto((PhaseFlow, Resonance, "ProtoFlow"), kind="resonance"))
-class ResonanceAtor(ProtoAtor):
+class ResonanceAtor(PhaseAtor):
     def __init__(self, spec):
         self.next = spec["next"]
         self.buffer = {}
