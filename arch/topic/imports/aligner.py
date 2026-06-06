@@ -1,9 +1,4 @@
 # arch.topic.imports.aligner
-## @lineage: arch.code.imports.aligner
-## @lineage: arch.model.code.imports.aligner
-## @lineage: arch.project.imports.aligner
-## @lineage: xphi.code.imports.aligner
-## @lineage: topos.arch.code.imports.aligner
 import os
 import sys
 import difflib
@@ -11,7 +6,7 @@ import argparse
 import libcst as cst
 from typing import List, Dict, Any, Tuple, Callable
 from pathlib import Path
-from arch.proto.phase.aligner import FieldAligner, AlignRecord
+from arch.proto.phase.aligner import PhaseAligner, AlignRecord
 from watcher.plane.emitter import get_emitter, flow_scope
 from arch.topic.imports.transformer import ImportTransformer
 
@@ -26,7 +21,7 @@ def generate_diff(original: str, modified: str, filename: str) -> str:
         )
     )
 
-class ImportAligner(FieldAligner):
+class ImportAligner(PhaseAligner):
     def __init__(self, root_dir: str, old_prefix: str, new_prefix: str):
         super().__init__(root_dir)
         self.old_prefix = old_prefix

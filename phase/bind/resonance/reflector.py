@@ -6,8 +6,8 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from phase.hub.ator.runtime import AtorRuntime
-from arch.proto.phase.flow import ProtoFlow, FlowState, Align, Resonance, Transduction
+from phase.ator.runtime import AtorRuntime
+from arch.proto.phase.flow import PhaseFlow, FlowState, Align, Resonance, Transduction
 from arch.contract.registry.unified import contract
 from watcher.plane.emitter import get_logger
 
@@ -15,7 +15,7 @@ log = get_logger('ator.reflector')
 
 @contract.ator("ator.reflector")
 class AtorReflector(Transduction):
-    def transduce(self, flow: ProtoFlow, ator_node: Any) -> ProtoFlow:
+    def transduce(self, flow: PhaseFlow, ator_node: Any) -> PhaseFlow:
         # 1. 포장지(raw_input) 내부로 진입
         raw = flow.payload.get("raw_input", {})
         file_path = raw.get("source_path")
@@ -55,7 +55,7 @@ class AtorReflector(Transduction):
 class RuntimeAligner(Align):
     """@flow: Φ(runtime_nodes) → Φ(bound runtime)"""
 
-    def align(self, flow: ProtoFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
+    def align(self, flow: PhaseFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
         runtime_nodes = flow.payload
 
         if not isinstance(runtime_nodes, dict) or not runtime_nodes:

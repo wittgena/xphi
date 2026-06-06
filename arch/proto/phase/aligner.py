@@ -1,10 +1,4 @@
 # arch.proto.phase.aligner
-## @lineage: arch.proto.aligner
-## @lineage: phase.bind.proto.aligner
-## @lineage: phase.bound.proto.aligner
-## @lineage: topos.bound.proto.aligner
-## @lineage: phase.reflect.proto.aligner
-## @lineage: arch.model.surface.aligner
 import abc
 from typing import List, Dict, Any, Tuple, Callable
 from collections import defaultdict
@@ -28,7 +22,7 @@ def group_by(
     ]
 
 ## Base Template
-class FieldAligner(abc.ABC):
+class PhaseAligner(abc.ABC):
     """
     Alignment pipeline의 공통 구조.
     - ψ: drift 관측 상태

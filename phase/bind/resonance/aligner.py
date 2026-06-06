@@ -11,7 +11,7 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from arch.proto.phase.flow import ProtoFlow, FlowState, Align
+from arch.proto.phase.flow import PhaseFlow, FlowState, Align
 from arch.contract.registry.unified import contract
 from watcher.plane.emitter import get_logger
 
@@ -20,7 +20,7 @@ log = get_logger('resonance.aligner')
 @contract.ator("file.writer")
 class FileWriter(Align):
     """@flow: 내부의 ψ를 물리적 Φ(파일)로 투영"""
-    def align(self, flow: ProtoFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
+    def align(self, flow: PhaseFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
         code = flow.payload.get("code")
         target_path = (spec.get("target") or spec.get("context", {}).get("target"))
         if not code or not target_path:
@@ -63,7 +63,7 @@ class FileWriter(Align):
 @contract.ator("http.probe.aligner")
 class HttpProbeAligner(Align):
     """@flow: 외부 시스템의 계약(OpenAPI)을 내부 상태(Φ)로 동기화"""
-    def align(self, flow: ProtoFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
+    def align(self, flow: PhaseFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
         context = spec.get("context", {})
         endpoint = context.get("endpoint", "http://0.0.0.0:8000/openapi.json")
         timeout = context.get("timeout", 5.0)
@@ -98,7 +98,7 @@ class HttpProbeAligner(Align):
 @contract.ator("spec.projection.aligner")
 class SpecProjectionAligner(Align):
     """@flow: 내부 메모리에 바인딩된 계약(Spec)을 콘솔 표면에 투영하여 인간의 개입 유도"""
-    def align(self, flow: ProtoFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
+    def align(self, flow: PhaseFlow, spec: Dict[str, Any]) -> Dict[str, Any]:
         payload = flow.payload
         openapi_spec = payload.get("openapi_spec", {})
         

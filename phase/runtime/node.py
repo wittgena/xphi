@@ -24,8 +24,8 @@ from arch.contract.registry.unified import registry
 from arch.contract.discovery import discover_modules
 from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from phase.hub.reflect.worker import CognitiveWorker
-from phase.hub.reflect.coupler import CognitiveCoupler
+from phase.ator.reflect.worker import CognitiveWorker
+from phase.ator.reflect.coupler import CognitiveCoupler
 from arch.contract.state.aggregator import KernelStateAggregator
 from arch.contract.context.assembler import ContextAssembler
 

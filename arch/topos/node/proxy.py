@@ -10,7 +10,7 @@ import json
 from typing import Optional, Any
 from watcher.plane.emitter import get_emitter
 from arch.proto.event.psi import PsiEvent
-from arch.proto.phase.flow import ProtoFlow
+from arch.proto.phase.flow import PhaseFlow
 
 log = get_emitter("state.proxy")
 
@@ -21,7 +21,7 @@ class StateProxy:
         self.runtime = runtime
         self.main_loop = main_loop
 
-    async def _dispatch_async(self, flow: ProtoFlow):
+    async def _dispatch_async(self, flow: PhaseFlow):
         try:
             # PsiEvent를 활용한 메시지 패키징 (시스템의 PIR 인터페이스 규격에 맞게 조정 가능)
             event_payload = json.dumps({
@@ -40,7 +40,7 @@ class StateProxy:
             log.error(f"[RemoteProxy] Dispatch failed for {self.target_node_id}: {e}")
             raise
 
-    def __call__(self, flow: ProtoFlow):
+    def __call__(self, flow: PhaseFlow):
         future = asyncio.run_coroutine_threadsafe(
             self._dispatch_async(flow),
             self.main_loop

@@ -1,7 +1,7 @@
-# phase.hub.ator.transcript.phi
+# phase.ator.transcript.phi
+## @lineage: phase.hub.ator.transcript.phi
 ## @lineage: hub.ator.transcript.phi
 ## @lineage: xe.ator.transcript.phi
-## @lineage: phase.ator.transcript.phi
 ## @lineage: xphi.transcript.phi
 ## @lineage: cognitive.xphi.transcript.phi
 ## @lineage: meta.transcript.phi
@@ -15,7 +15,7 @@ import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 from watcher.plane.emitter import get_logger
-from arch.proto.phase.flow import ProtoFlow, FlowState, Transduction
+from arch.proto.phase.flow import PhaseFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.xor.block.parser.md import MdAstParser
 from arch.xor.block.extractor import BlockExtractor
@@ -34,7 +34,7 @@ class TranscriptBase(Transduction):
             "role": self.role
         }
 
-    def transduce(self, flow: ProtoFlow, ator_node: Any) -> ProtoFlow:
+    def transduce(self, flow: PhaseFlow, ator_node: Any) -> PhaseFlow:
         """@phase: Projection (Ψ_reflect)"""
         file_path = flow.payload
         log.info(f"  [Projection] Reflecting source: {file_path}")

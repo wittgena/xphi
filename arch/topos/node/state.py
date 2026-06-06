@@ -7,7 +7,7 @@ import logging
 from typing import List, Tuple, Any, Optional, Dict
 from watcher.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
-from arch.proto.phase.flow import ProtoFlow, FlowState
+from arch.proto.phase.flow import PhaseFlow, FlowState
 from arch.contract.state.spec import TransRule, PhaseSpec, NodeType
 
 log = get_emitter("state.node")
@@ -20,7 +20,7 @@ class BaseNode:
         self.spec = spec
         self.pool = pool 
 
-    async def run(self, flow: ProtoFlow, operator: Any, ctx: FlowState) -> List[Tuple[str, FlowState]]:
+    async def run(self, flow: PhaseFlow, operator: Any, ctx: FlowState) -> List[Tuple[str, FlowState]]:
         pass
 
 class StateOperator:
@@ -56,7 +56,7 @@ class Inversion:
 
         return residues
 
-@proto(Proto((ProtoFlow, StateOperator, "State"), kind="phase"))
+@proto(Proto((PhaseFlow, StateOperator, "State"), kind="phase"))
 class StateNode(BaseNode):
     def __init__(self, spec: dict, pool: Any = None, **kwargs):
         super().__init__(spec, pool, **kwargs)
@@ -67,17 +67,17 @@ class StateNode(BaseNode):
         self.children: Dict[str, 'ToposNode'] = spec.get("children", {})
         self.next = spec.get("next", "END")
 
-    async def run(self, flow: ProtoFlow, operator: StateOperator, ctx: FlowState) -> List[Tuple[str, FlowState]]:
+    async def run(self, flow: PhaseFlow, operator: StateOperator, ctx: FlowState) -> List[Tuple[str, FlowState]]:
         log.info(f"  [ToposNode] Processing state -> Name: {self.name}, Kind: {self.kind}")
         return [(self.next, ctx)]
 
-@proto(Proto((ProtoFlow, Inversion, "State"), kind="linker"))
+@proto(Proto((PhaseFlow, Inversion, "State"), kind="linker"))
 class LinkerNode(BaseNode):
     def __init__(self, spec: dict, pool: Any = None, **kwargs):
         super().__init__(spec, pool, **kwargs)
         self.next = spec.get("next", "END")
 
-    async def run(self, flow: ProtoFlow, operator: Inversion, ctx: FlowState) -> List[tuple]:
+    async def run(self, flow: PhaseFlow, operator: Inversion, ctx: FlowState) -> List[tuple]:
         log.info("  [LinkerNode] Synthesizing internal & external rules...")
         phase = ctx.state.get("phase_root")
         
@@ -133,13 +133,13 @@ def inject_pr_signal(ctx: FlowState, pr_signal: Dict):
     ctx.state["external_rules"] = rules
     return ctx
 
-@proto(Proto((ProtoFlow, Inversion, "State"), kind="inversion"))
+@proto(Proto((PhaseFlow, Inversion, "State"), kind="inversion"))
 class InversionNode(BaseNode):
     def __init__(self, spec: dict, pool: Any = None, **kwargs):
         super().__init__(spec, pool, **kwargs)
         self.next = spec.get("next", "END")
 
-    async def run(self, flow: ProtoFlow, operator: Inversion, ctx: FlowState) -> List[tuple]:
+    async def run(self, flow: PhaseFlow, operator: Inversion, ctx: FlowState) -> List[tuple]:
         target_spec = flow.payload.get("target_spec")
         phase = ctx.state.get("phase_root")
 

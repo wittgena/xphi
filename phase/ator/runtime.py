@@ -1,7 +1,7 @@
-# phase.hub.ator.runtime
+# phase.ator.runtime
+## @lineage: phase.hub.ator.runtime
 ## @lineage: hub.ator.runtime
 ## @lineage: xe.ator.runtime
-## @lineage: phase.ator.runtime
 ## @lineage: xphi.ator.runtime
 ## @lineage: cognitive.xphi.ator.runtime
 ## @lineage: topos.bound.ator.runtime
@@ -9,7 +9,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from watcher.plane.emitter import get_logger
-from arch.proto.phase.flow import ProtoFlow, FlowState
+from arch.proto.phase.flow import PhaseFlow, FlowState
 from arch.contract.protocol import get_proto
 from arch.proto.event.psi import PhaseField, PsiCarrier, CarrierType
 from arch.contract.state.node0 import enter_node0
@@ -54,7 +54,7 @@ class AtorRuntime:
             "default": NodeInterpreter(self.global_anchor)
         }
 
-    def _flow_to_carrier(self, flow: ProtoFlow, node_type: str) -> PsiCarrier:
+    def _flow_to_carrier(self, flow: PhaseFlow, node_type: str) -> PsiCarrier:
         field_map = {
             "ator": PhaseField.COHERENT,
             "router": PhaseField.EVALUATION,

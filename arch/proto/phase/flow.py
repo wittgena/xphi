@@ -1,5 +1,4 @@
 # arch.proto.phase.flow
-## @lineage: arch.proto.flow
 """
 @phase
 - ψ: event signal resonance around
@@ -15,9 +14,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from watcher.plane.emitter import get_logger
 
-log = get_logger("proto.flow")
+log = get_logger("phase.flow")
 
-class ProtoFlow:
+class PhaseFlow:
     """
     @flow.model:
     - ψ: dynamic flow unit
@@ -35,7 +34,7 @@ class ProtoFlow:
 
 class FlowState:
     """coupling of ψ and Φ during runtime traversal"""
-    def __init__(self, flow: ProtoFlow, state: Dict[str, Any]):
+    def __init__(self, flow: PhaseFlow, state: Dict[str, Any]):
         self.flow = flow
         self.state = state
 
@@ -44,13 +43,13 @@ class Dispersion:
     @flow: ψ → {ψ₁..ψₙ}
     @phase: dispersion / fan-out
     """
-    def scatter(self, flow: ProtoFlow, aspects: List[str]) -> List[ProtoFlow]:
+    def scatter(self, flow: PhaseFlow, aspects: List[str]) -> List[PhaseFlow]:
         log.info(f"  [Dispersion] '{flow.id}'를 {aspects}로 분화합니다.")
-        return [ProtoFlow(payload=flow.payload, aspect=a, id=f"{flow.id}_{a}") for a in aspects]
+        return [PhaseFlow(payload=flow.payload, aspect=a, id=f"{flow.id}_{a}") for a in aspects]
 
 class Judgment:
     """@flow: ψ → judgment → ψ_k"""
-    def judge(self, flow: ProtoFlow, rules: List[Dict]) -> str:
+    def judge(self, flow: PhaseFlow, rules: List[Dict]) -> str:
         for rule in rules:
             cond = rule["if"]
             if "aspect" in cond and cond["aspect"] == flow.aspect:
@@ -64,12 +63,12 @@ class Transduction:
     @flow: ψ_open → (project) → (close ⊕ kernel) → ψ_closed
     @desc: 상위 레벨에서의 폐합(Closure) 연산자
     """
-    def transduce(self, flow: ProtoFlow, ator_node: Any) -> ProtoFlow:
+    def transduce(self, flow: PhaseFlow, ator_node: Any) -> PhaseFlow:
         log.debug(f"## Current Instance Type: {type(self)}")
         projected_payload = self._project(flow, ator_node)
         return self._close(projected_payload, flow, ator_node)
 
-    def _project(self, flow: ProtoFlow, ator_node: Any) -> dict:
+    def _project(self, flow: PhaseFlow, ator_node: Any) -> dict:
         """기본형은 변화 없이(Identity) 페이로드를 반환"""
         return flow.payload
 
@@ -79,7 +78,7 @@ class Transduction:
             ator_node.node_context.get("instruction", "")
         )
         log.info(f"  [Closure] Binding kernel at the moment of closing ψ:{flow.id}")
-        return ProtoFlow(
+        return PhaseFlow(
             payload=transformed,
             id=flow.id,
             aspect=f"transduced_{ator_node.role}",
@@ -95,7 +94,7 @@ class Align:
     @flow: ψ → ∂Φ → Φ'
     @phase: state alignment
     """
-    def align(self, flow: ProtoFlow, state: Dict[str, Any]):
+    def align(self, flow: PhaseFlow, state: Dict[str, Any]):
         log.info(f"  [Alignment] '{flow.aspect}' 결과를 상태 공간에 동기화합니다.")
         state[flow.id] = flow.payload
         return state
@@ -113,13 +112,13 @@ class Gather:
     @flow: {ψ₁..ψₙ} → gather → ψ_merged
     @phase: synchronization / fan-in
     """
-    def merge(self, flows: List[ProtoFlow], root: str) -> ProtoFlow:
+    def merge(self, flows: List[PhaseFlow], root: str) -> PhaseFlow:
         """동일한 root를 가진 여러 ProtoFlow들을 하나로 병합 - 각 flow의 aspect를 key로 하여 payload를 딕셔너리 형태"""
         log.info(f"  [Gather] {len(flows)}개의 흐름을 하나로 병합 (root: {root})")
         
         ## 각 파편의 aspect(예: 'tech', 'market')를 키로 사용하여 페이로드 병합
         merged_payload = {f.aspect: f.payload for f in flows}
-        return ProtoFlow(
+        return PhaseFlow(
             payload=merged_payload,
             id=root,
             aspect="merged",

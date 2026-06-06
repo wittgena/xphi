@@ -1,9 +1,4 @@
 # phase.dynamics.flow.monitor
-## @lineage: arch.dynamics.flow.monitor
-## @lineage: arch.flow.monitor
-## @lineage: meta.flow.monitor
-## @lineage: meta.debug.issue.monitor
-## @lineage: meta.logtail.monitor
 """
 @flow: Ψ(Runtime Context) → Inspect → Φ(Adaptive Wrapper) → Direct/Intercept
 @intent: Ator 비동기 큐 엔진과 동기식 테스트 환경(unittest) 모두에서 주석 명세(@phase, @flow, @invariant)를 인지하고 위상 상태를 동기화하는 범용 어댑티브 모니터
@@ -16,7 +11,7 @@ import functools
 from pathlib import Path
 from typing import Any, Callable
 from watcher.plane.emitter import get_logger, get_emitter
-from arch.proto.phase.flow import ProtoFlow, FlowState
+from arch.proto.phase.flow import PhaseFlow, FlowState
 
 log = get_logger("flow.monitor")
 monitor_emitter = get_emitter("flow.monitor", phase="observe", boundary="telemetry")
@@ -84,7 +79,7 @@ def _monitor_fracture(e: Exception, func: Callable, args: tuple, kwargs: dict) -
 
     ## 인자 더미에서 AtorRuntime이 사용하는 FlowState(ctx)와 ProtoFlow 객체가 있는지 탐색
     ctx: FlowState = next((arg for arg in args if isinstance(arg, FlowState)), None)
-    flow: ProtoFlow = next((arg for arg in args if isinstance(arg, ProtoFlow)), None)
+    flow: PhaseFlow = next((arg for arg in args if isinstance(arg, PhaseFlow)), None)
     
     ## AtorRuntime 제어 하에 비동기 큐로 구동 중인 프로덕션 환경인 경우
     if ctx is not None:

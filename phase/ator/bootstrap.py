@@ -1,7 +1,7 @@
-# phase.hub.ator.bootstrap
+# phase.ator.bootstrap
+## @lineage: phase.hub.ator.bootstrap
 ## @lineage: hub.ator.bootstrap
 ## @lineage: xe.ator.bootstrap
-## @lineage: phase.ator.bootstrap
 ## @lineage: xphi.ator.bootstrap
 ## @lineage: cognitive.xphi.ator.bootstrap
 ## @lineage: topos.bound.ator.bootstrap
@@ -15,12 +15,12 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from watcher.plane.emitter import get_logger
-from arch.proto.phase.flow import ProtoFlow, FlowState, Transduction
+from arch.proto.phase.flow import PhaseFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.contract.discovery import discover_modules
-from phase.hub.ator.transcript.phi import TranscriptPhi
-from phase.hub.ator.transcript.spec import TranscriptSpec
-from phase.hub.ator.runtime import AtorRuntime
+from phase.ator.transcript.phi import TranscriptPhi
+from phase.ator.transcript.spec import TranscriptSpec
+from phase.ator.runtime import AtorRuntime
 from phase.runtime.node import NodeRuntime
 from phase.bind.resolver import find_current_self, resolve_path, load_bound
 
@@ -96,7 +96,7 @@ async def bootstrap(
 
     discover_modules(find_current_self())
     base_node = NodeRuntime(redis_url=redis_url, executor=None)
-    bootstrap_flow = ProtoFlow(payload=topology_path, aspect="bootstrap")
+    bootstrap_flow = PhaseFlow(payload=topology_path, aspect="bootstrap")
 
     transcript_cls = TranscriptSpec if is_spec else TranscriptPhi
     transcript = transcript_cls(base_node)
@@ -120,7 +120,7 @@ async def main():
             "requirement": "User profile update API with rate limiting",
             "security_level": "High"
         }
-        initial_ctx = FlowState(ProtoFlow(payload=initial_payload, aspect="init"), state={})
+        initial_ctx = FlowState(PhaseFlow(payload=initial_payload, aspect="init"), state={})
         log.info(f"Submitting task {initial_payload['task_id']} to the local field...")
         
         ## 거시 엔진이 아닌 국소 흐름 제어기에 직접 자극(Task) 주입

@@ -1,4 +1,5 @@
-# phase.activator.bootstrap
+# phase.ator.activator
+## @lineage: phase.activator.bootstrap
 ## @lineage: phase.bind.activator.bootstrap
 """@flow: Φ₀ (physical) -> Workspace Setup (pth) -> Dynamic Discovery -> Manifold Bootstrap (Φ*)"""
 import sys

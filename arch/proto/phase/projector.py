@@ -12,7 +12,7 @@ T_Context = TypeVar('T_Context') ## Ψ_ctx: The lens / perspective (focus, depth
 T_Rep = TypeVar('T_Rep')         ## R: projected representation
 T_Surface = TypeVar('T_Surface') ## Φs: assembled surface structure
 
-class ProtoProjector(ABC, Generic[T_Node, T_Context, T_Rep, T_Surface]):
+class PhaseProjector(ABC, Generic[T_Node, T_Context, T_Rep, T_Surface]):
     """
     Abstract pipeline projecting topology (Φ) into a contextual surface structure (Φs).
     """

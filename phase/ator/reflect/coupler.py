@@ -1,4 +1,5 @@
-# phase.hub.reflect.coupler
+# phase.ator.reflect.coupler
+## @lineage: phase.hub.reflect.coupler
 ## @lineage: phase.reflect.coupler
 ## @lineage: cognitive.reflect.coupler
 ## @lineage: phase.reflect.cognitive.coupler
@@ -9,7 +10,7 @@ from watcher.plane.emitter import get_emitter
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from phase.runtime.interpreter import PhaseJudgment
 from arch.contract.state.aggregator import KernelStateAggregator, InternalContext
-from phase.hub.reflect.worker import CognitiveWorker
+from phase.ator.reflect.worker import CognitiveWorker
 
 class CognitiveCoupler:
     """

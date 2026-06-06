@@ -1,17 +1,4 @@
 # arch.proto.wrapper.asyncer
-## @lineage: gov.field.executor.asyncer
-## @lineage: bound.field.executor.asyncer
-## @lineage: xor.field.executor.asyncer
-## @lineage: ator.call.executor.asyncer
-## @lineage: bound.langcom.call.executor.asyncer
-## @lineage: bound.bridge.executor.asyncer
-## @lineage: meta.bridge.executor.asyncer
-## @lineage: agent.bridge.executor.asyncer
-## @lineage: meta.loop.executor.asyncer
-## @lineage: topos.bridge.delegator.asyncer
-## @lineage: bound.bridge.delegator.asyncer
-## @lineage: agent.delegator.asyncer
-## @lineage: foldbox.agent.delegator.asyncer
 import atexit
 import inspect
 import threading

@@ -1,7 +1,7 @@
-# phase.hub.ator.transcript.spec
+# phase.ator.transcript.spec
+## @lineage: phase.hub.ator.transcript.spec
 ## @lineage: hub.ator.transcript.spec
 ## @lineage: xe.ator.transcript.spec
-## @lineage: phase.ator.transcript.spec
 ## @lineage: xphi.transcript.spec
 ## @lineage: cognitive.xphi.transcript.spec
 import re
@@ -12,7 +12,7 @@ from watcher.plane.emitter import get_logger
 from arch.contract.registry.unified import contract
 from arch.xor.block.parser.md import MdAstParser
 from arch.xor.block.extractor import BlockExtractor
-from phase.hub.ator.transcript.phi import TranscriptBase
+from phase.ator.transcript.phi import TranscriptBase
 
 log = get_logger("transcript.spec")
 

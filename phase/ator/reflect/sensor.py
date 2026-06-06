@@ -1,4 +1,5 @@
-# phase.activator.sensor
+# phase.ator.reflect.sensor
+## @lineage: phase.activator.sensor
 ## @lineage: phase.bind.activator.sensor
 ## @lineage: cognitive.activator.sensor
 ## @lineage: phase.bound.activator.sensor

@@ -1,11 +1,11 @@
-# phase.activator.workspace
-## @lineage: phase.bind.activator.workspace
+# phase.ator.reflect.workspace
+## @lineage: phase.activator.reflect.workspace
 import os
 from pathlib import Path
 from arch.contract.registry.unified import contract
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter('activator.workspace')
+log = get_emitter('reflect.workspace')
 
 @contract.cli(
     name="materialize_workspace",

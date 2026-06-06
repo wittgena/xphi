@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from watcher.plane.emitter import get_logger
 from arch.proto.phase.flow import (
-    ProtoFlow, FlowState, Dispersion, Judgment, 
+    PhaseFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather
 )
 from arch.contract.protocol import Proto, proto
@@ -19,11 +19,11 @@ class ProtoAtor:
     @desc: Ator Adapters
     @invariant: 모든 하위 노드는 run(flow, operator, ctx) 시그니처를 따른다.
     """
-    async def run(self, flow: ProtoFlow, operator: Any, ctx: FlowState) -> List[Tuple[str, FlowState]]:
+    async def run(self, flow: PhaseFlow, operator: Any, ctx: FlowState) -> List[Tuple[str, FlowState]]:
         raise NotImplementedError()
 
 @manifold_node(name="ator", requires=[], emits=["transduction"])
-@proto(Proto((ProtoFlow, Transduction, "List[Tuple]"), kind="transduction"))
+@proto(Proto((PhaseFlow, Transduction, "List[Tuple]"), kind="transduction"))
 class TransAtor(ProtoAtor):
     def __init__(self, spec):
         self.role = spec["role"]
@@ -31,7 +31,7 @@ class TransAtor(ProtoAtor):
         self.node_context = spec.get("context", {})
         self.spec = spec
 
-    async def run(self, flow: ProtoFlow, operator: Transduction, ctx: FlowState):
+    async def run(self, flow: PhaseFlow, operator: Transduction, ctx: FlowState):
         log.info(f"    [TransAtor] '{self.role}' initiates self-transmutation")
         ## Context 주입 (Projection을 위한 준비)
         injected_state = {k: ctx.state.get(k) for k in self.node_context.get("inject_state", [])}
@@ -51,13 +51,13 @@ class TransAtor(ProtoAtor):
         return [(self.next, ctx)]
 
 @manifold_node(name="aligner", requires=[], emits=["aligner"])
-@proto(Proto((ProtoFlow, Align, "State"), kind="aligner"))
+@proto(Proto((PhaseFlow, Align, "State"), kind="aligner"))
 class AlignAtor(ProtoAtor):
     def __init__(self, spec):
         self.next = spec["next"]
         self.spec = spec
 
-    async def run(self, flow: ProtoFlow, operator: Align, ctx: FlowState):
+    async def run(self, flow: PhaseFlow, operator: Align, ctx: FlowState):
         log.info(f"    [AlignAtor] reconcile ψ:{flow.id}")
         # ctx.state = operator.align(flow, ctx.state)
         result = operator.align(flow, self.spec)
@@ -67,33 +67,33 @@ class AlignAtor(ProtoAtor):
         return [(self.next, ctx)]
 
 @manifold_node(name="judgment", requires=[], emits=["judgment"])
-@proto(Proto((ProtoFlow, Judgment, "str"), kind="judgment"))
+@proto(Proto((PhaseFlow, Judgment, "str"), kind="judgment"))
 class JudgmentAtor(ProtoAtor):
     def __init__(self, spec):
         self.rules = spec["rules"]
         op_name = spec.get("operator", "default_judgment")
         self.custom_op = registry.create_component("ator", {"type": op_name})
 
-    async def run(self, flow: ProtoFlow, operator: Judgment, ctx: FlowState):
+    async def run(self, flow: PhaseFlow, operator: Judgment, ctx: FlowState):
         ator = self.custom_op or base_operator
         target = ator.dispatch(flow, self.rules)
         log.info(f"    [JudgmentAtor] ψ:{flow.id} → {target}")
         return [(target, ctx)]
 
 @manifold_node(name="dispersion", requires=[], emits=["dispersion"])
-@proto(Proto((ProtoFlow, Dispersion, "List[ProtoFlow]"), kind="dispersion"))
+@proto(Proto((PhaseFlow, Dispersion, "List[ProtoFlow]"), kind="dispersion"))
 class DispersionAtor(ProtoAtor):
     def __init__(self, spec):
         self.aspects = spec["aspects"]
         self.next = spec["next"]
 
-    async def run(self, flow: ProtoFlow, operator: Dispersion, ctx: FlowState):
+    async def run(self, flow: PhaseFlow, operator: Dispersion, ctx: FlowState):
         log.info(f"    [DispersionAtor] scatter ψ:{flow.id}")
         flows = operator.scatter(flow, self.aspects)
         return [(self.next, FlowState(f, ctx.state)) for f in flows]
 
 @manifold_node(name="gather", requires=[], emits=["gather"])
-@proto(Proto((ProtoFlow, Gather, "List[ProtoFlow]"), kind="gather"))
+@proto(Proto((PhaseFlow, Gather, "List[ProtoFlow]"), kind="gather"))
 class GatherAtor(ProtoAtor):
     """Operator 클래스로 분리했다고 가정하거나 기본 Operator를 만듬"""
     def __init__(self, spec):
@@ -101,7 +101,7 @@ class GatherAtor(ProtoAtor):
         self.buffer = {}
         self.expected = spec.get("expected_count", 2)
 
-    async def run(self, flow: ProtoFlow, operator: Gather, ctx: FlowState):
+    async def run(self, flow: PhaseFlow, operator: Gather, ctx: FlowState):
         root = flow.root
         slot = self.buffer.setdefault(root, [])
         slot.append(flow)
@@ -115,7 +115,7 @@ class GatherAtor(ProtoAtor):
         return [(self.next, FlowState(new_flow, ctx.state))]
 
 @manifold_node(name="resonance", requires=[], emits=["resonance"])
-@proto(Proto((ProtoFlow, Resonance, "ProtoFlow"), kind="resonance"))
+@proto(Proto((PhaseFlow, Resonance, "ProtoFlow"), kind="resonance"))
 class ResonanceAtor(ProtoAtor):
     def __init__(self, spec):
         self.next = spec["next"]
@@ -123,7 +123,7 @@ class ResonanceAtor(ProtoAtor):
         op_name = spec.get("operator", "default_resonance")
         self.custom_op = registry.create_component("ator", {"type": op_name})
 
-    async def run(self, flow: ProtoFlow, operator: Resonance, ctx: FlowState):
+    async def run(self, flow: PhaseFlow, operator: Resonance, ctx: FlowState):
         root = flow.root
         tag = flow.aspect
 
@@ -136,5 +136,5 @@ class ResonanceAtor(ProtoAtor):
         data = self.buffer.pop(root)
         active_operator = self.custom_op or base_operator
         payload = active_operator.interfere(data["code"], data["logic"])
-        new_flow = ProtoFlow(payload=payload, id=root, aspect="resonated", root=root)
+        new_flow = PhaseFlow(payload=payload, id=root, aspect="resonated", root=root)
         return [(self.next, FlowState(new_flow, ctx.state))]

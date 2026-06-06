@@ -7,7 +7,7 @@ from typing import Dict, Any
 from watcher.plane.emitter import get_emitter
 from phase.runtime.node import NodeRuntime
 from arch.contract.protocol import get_proto
-from arch.proto.phase.flow import ProtoFlow, FlowState
+from arch.proto.phase.flow import PhaseFlow, FlowState
 from arch.topos.node.proxy import DistributedNodePool
 from arch.contract.state.spec import TransRule
 from arch.topos.node.state import LinkerNode, InversionNode, StateNode, NodeType
@@ -107,7 +107,7 @@ async def main():
         ]
 
         ## 자가 유도 활성화 - payload에 'target_spec'이 없으므로 LinkerNode가 'legacy_symlink'를 스스로 서치
-        initial_flow = ProtoFlow(payload={}, aspect="root")
+        initial_flow = PhaseFlow(payload={}, aspect="root")
         if not hasattr(initial_flow, 'id'):
             import uuid
             initial_flow.id = uuid.uuid4().hex
