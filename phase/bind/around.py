@@ -15,7 +15,7 @@ CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
 SELF_ROOT = Path.cwd()
 PTH_FILENAME = "self.around.pth"
-CORES = ["nexus", "surgent", "theoria"]
+CORES = ["brane", "surgent", "theoria"]
 
 def ignore_hidden(dir, files):
     """@helper: 숨김 파일 및 디렉토리를 복사 대상에서 제외"""
