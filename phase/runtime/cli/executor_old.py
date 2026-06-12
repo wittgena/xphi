@@ -59,26 +59,28 @@ class _GenericCliExecutor(BaseExecutor):
     async def execute(self, psi) -> list:
         command = psi.carrier.tag if hasattr(psi, 'carrier') else "CLI_TASK"
         task_id = getattr(psi, 'event_id', f"task-{next_id()}")
+        ## task_id = f"task-{snowflake_id}"
 
         detail_key = f"{command.lower()}:cli:{task_id}"
         latest_pointer_key = f"{command.lower()}:cli:latest"
         self.log.info(f"[exec] Executing CLI task: {command} ({task_id})")
+        print(f"[exec] Executing CLI task: {command} ({task_id})")
         
         with flow_scope(flow_id=task_id, phase="EXECUTION"):
             self.log.info(f"[exec] Starting flow: {task_id}")
+            print(f"[exec] Starting flow: {task_id}")
             try:
                 ## 태스크 실행
                 raw_result = self.task_instance.run() or {}
-                # raw_result = await asyncio.to_thread(self.task_instance.run)
-                # raw_result = raw_result or {}
 
-                ## 결과 레코드 생성
+                ## 결과 레코드 생성 (저장하기 전에 먼저 생성!)
                 detail_record = TaskDetailRecord(
                     task_id=task_id,
                     command=command,
                     status=raw_result.get("status", "SUCCESS"),
                     artifacts=raw_result.get("artifacts", {}),
-                    metrics=raw_result.get("metrics", {})
+                    metrics=raw_result.get("metrics", {}),
+                    # details=raw_result.get("details", {})
                 )
 
                 ## 요약 이벤트 생성
@@ -95,10 +97,12 @@ class _GenericCliExecutor(BaseExecutor):
 
                 ## Redis 저장 및 공명(Reflection) 발행
                 if self.node and self.node.redis:
+                    ## 상세 기록 저장
                     await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
                     await self.node.redis.set(latest_pointer_key, detail_key, ex=3600)
                     await asyncio.sleep(0.05)
 
+                    ## 발화자(Proxy)에게 응답 전송
                     response_channel = psi.context.get("response_channel")
                     if response_channel:
                         await self.node.redis.publish(response_channel, summary_event.to_json())
@@ -107,7 +111,12 @@ class _GenericCliExecutor(BaseExecutor):
                     self.log.info(f"[exec] Detailed artifacts saved -> Redis[{detail_key}]")
 
                 ## 내부 버스용 결과 이벤트 발행
-                result_carrier = PsiCarrier(kind="RESULT", tag=command, payload=asdict(summary_event))
+                result_carrier = PsiCarrier(
+                    kind="RESULT", 
+                    tag=command, 
+                    payload=asdict(summary_event),
+                )
+                
                 result_event = PsiEvent(
                     event_id=f"res-{task_id}",
                     parent_id=getattr(psi, 'event_id', None),
@@ -145,7 +154,7 @@ def _project_to_stdout(summary_event: TaskSummaryEvent):
         pass
 
 class CliTaskAdapter:
-    """순수 비즈니스 로직을 _GenericCliExecutor가 요구하는 표준 딕셔너리로 변환해주는 범용 어댑터"""
+    """순수 비즈니스 로직을 _GenericCliExecutor가 요구하는 표준 딕셔너리(status, artifacts, metrics 등)로 변환해주는 범용 어댑터"""
     def __init__(self, target_func: Callable, **kwargs):
         self.target_func = target_func
         self.kwargs = kwargs
@@ -172,62 +181,39 @@ class CliTaskAdapter:
 async def _async_run_in_node(task_instance, command_name: str, payload: dict):
     r = redis_async.from_url(REDIS_URL, decode_responses=True)
     
-    # -------------------------------------------------------------------------
-    # [정밀 개선 구간] Live Check 및 스마트 스포닝 로직
-    # -------------------------------------------------------------------------
-    ## 1. 스웜의 실질적 가용성 정밀 파악
-    # 모호한 'heartbeat' 키 대신, 실제 레지스트리에 등록된 'node'의 개수를 측정합니다.
-    active_node_keys = await r.keys("runtime:node:*")
-    node_count = len(active_node_keys)
+    ## 스웜 감지 (하트비트 확인)
+    active_node_keys = await r.keys("runtime:heartbeat:*")
+    # 2. 실질적 가용성 확인 (큐 적체 여부 확인)
     queue_len = await r.llen("runtime:queue")
     
-    ## 2. 동적 부하율(Load Factor) 기반 스포닝 조건 판단
-    MAX_LOAD_PER_NODE = 3  # 노드 1개당 감당할 큐의 최대 적체량
-    is_overloaded = node_count > 0 and (queue_len / node_count) >= MAX_LOAD_PER_NODE
-    
-    should_spawn = (node_count == 0) or is_overloaded
-    
+    # 노드 키는 있는데 큐가 너무 많이 쌓여있다면(예: 5개 이상), 노드가 멈춘 것으로 간주하고 새로 띄움
+    should_spawn = not active_node_keys or queue_len > 5
     if should_spawn:
-        ## 3. 분산 락(Distributed Lock)을 통한 '스폰 폭풍(Spawn Storm)' 방어
-        # 여러 CLI가 0.1초 차이로 동시에 실행되어도 딱 1개의 프로세스만 노드를 스포닝하도록 10초짜리 락을 설정
-        lock_acquired = await r.set("runtime:spawn_lock", "LOCKED", nx=True, ex=10)
-        
-        if lock_acquired:
-            if node_count == 0:
-                log.info("[CLI] No active nodes detected. Spawning background Ambient Node...")
-            else:
-                log.warn(f"[CLI] High load detected (Queue: {queue_len}, Nodes: {node_count}). Spawning additional Node...")
-            
-            ## 노드 프로세스 생성 (터미널 출력 차단, 데몬 형태 유지)
-            subprocess.Popen(
-                [sys.executable, "-m", "plane.node.runtime"],
-                stdout=subprocess.DEVNULL, 
-                stderr=subprocess.DEVNULL,
-                start_new_session=True,    
-                env=os.environ.copy()      
-            )
-            
-            ## 4. 확정적 부팅 대기 (Deterministic Boot Wait)
-            # 노드가 실제로 부팅되어 레지스트리에 추가될 때까지 기다림
-            for _ in range(15):  # 최대 7.5초 대기
-                await asyncio.sleep(0.5)
-                current_nodes = await r.keys("runtime:node:*")
-                if len(current_nodes) > node_count:
-                    break
+        if queue_len > 5:
+            log.warn(f"[CLI] Node seems stalled (Queue: {queue_len}). Forcing fresh spawn...")
         else:
-            ## 이미 다른 프로세스가 노드를 띄우고 있다면 새로 띄우지 않고 대기
-            log.info("[CLI] Another process is spawning a node. Waiting for boot sequence...")
-            for _ in range(15):
-                await asyncio.sleep(0.5)
-                if not await r.exists("runtime:spawn_lock"):
-                    break
-    # -------------------------------------------------------------------------
-    
+            log.info("[CLI] No active nodes. Spawning background Ambient Node...")
+        
+        ## -m plane.node.runtime으로 실행하면 노드는 순수 대기 상태로 시작
+        subprocess.Popen(
+            [sys.executable, "-m", "plane.node.runtime"],
+            stdout=subprocess.DEVNULL, # 터미널 출력을 끊음
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,    # CLI가 종료되어도 노드가 살아남게 함
+            env=os.environ.copy()      # 현재 환경변수 전달
+        )
+        
+        # 대기 로직에서 'active' 키가 생성되는지 감시
+        for _ in range(10):
+            await asyncio.sleep(0.5)
+            if await r.keys("runtime:active"): # 노드가 준비 완료되면 'active' 키를 생성하도록 설계 권장
+                break
+
     ## 결과 수신을 위한 채널 준비
     task_id = f"task-{uuid.uuid4().hex[:8]}"
     with flow_scope(flow_id=task_id, phase="CLI"):
         response_channel = f"res:{task_id}"
-        log_channel = f"log:{task_id}"
+        log_channel = f"log:{task_id}" ## 로그 채널 정의
 
         pubsub = r.pubsub()
         await pubsub.subscribe(response_channel, log_channel)
@@ -271,15 +257,16 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
                             event = LogEvent(**clean_data)
                             surface.update(event)
                         except Exception:
-                            continue 
+                            continue # 로그 파싱 실패가 전체 로직을 멈추지 않게 함
                     elif channel == response_channel:
                         try:
                             data = json.loads(msg["data"])
                             print_formatted_result(data)
+                            # [핵심] 성공적으로 출력했다면 즉시 루프 탈출
                             return 
                         except Exception as e:
                             log.error(f"[CLI] Failed to parse result data: {e}")
-                            break 
+                            break # 에러 시에도 무한 대기 방지를 위해 탈출
         except TimeoutError:
             log.error(f"[CLI] Task timed out. Node failed to reflect within 60s.")
         finally:
@@ -317,6 +304,7 @@ def print_formatted_result(data: dict):
                 print(f"\n └─ [{category}] ({len(items)} items)")
                 for item in items[:5]:
                     if isinstance(item, dict):
+                        # 리포지토리 경로나 태그 등 주요 정보 출력
                         ns = item.get('namespace') or item.get('path') or str(item)
                         print(f"    - {ns}")
                 if len(items) > 5:
