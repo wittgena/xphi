@@ -1,4 +1,5 @@
-# gov.gateway.io.base
+# arch.xor.file.io
+## @lineage: gov.gateway.io.base
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from contextlib import contextmanager

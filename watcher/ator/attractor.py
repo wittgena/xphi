@@ -1,12 +1,4 @@
 # watcher.ator.attractor
-## @lineage: surface.ator.attractor
-## @lineage: xyz.surface.ator.attractor
-## @lineage: xyz.subst.ator.attractor
-## @lineage: foldbox.manager.workspace.attractor
-## @lineage: xyz.workspace.attractor
-## @lineage: xyz.field.attractor
-## @lineage: phase.watcher.attractor
-## @lineage: meta.watcher.attractor
 from __future__ import annotations
 import asyncio
 import json

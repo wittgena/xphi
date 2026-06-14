@@ -9,25 +9,30 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
+
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from arch.proto.event.bus import AsyncEventBus
 from arch.proto.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
-from watcher.plane.emitter import get_emitter
+from arch.contract.registry.unified import registry
+from arch.contract.discovery import discover_modules
+
 from phase.runtime.surface.sensor import sense_once, REDIS_URL
 from phase.runtime.dispatcher import Dispatcher
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
 from phase.runtime.surface.actuator import SurfaceActuator
 from phase.runtime.surface.sink import RedisSink
-from phase.bind.resolver import resolve_path, find_current_self
-from arch.contract.registry.unified import registry
-from arch.contract.discovery import discover_modules
 from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from phase.ator.reflect.worker import CognitiveWorker
-from phase.ator.reflect.coupler import CognitiveCoupler
-from arch.contract.state.aggregator import KernelStateAggregator
-from arch.contract.context.assembler import ContextAssembler
+from phase.runtime.builder import CouplerBuilder
+from phase.ator.reflect.coupler import ReflectCoupler
+from phase.bind.resolver import resolve_path, find_current_self
+
+# from phase.ator.reflect.worker import ReflectWorker
+# from arch.contract.state.aggregator import KernelStateAggregator
+# from arch.contract.context.assembler import ContextAssembler
+
+from watcher.plane.emitter import get_emitter
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
@@ -53,7 +58,7 @@ class NodeRuntime(IPhaseAtor):
         self.interpreter = None
         self.dispatcher = None
         self.actuator = None
-        self.coupler = None  # 교량(Coupler) 전역 상태 추가
+        self.coupler = None
         
         self.bus.subscribe(self)
 
@@ -96,7 +101,7 @@ class NodeRuntime(IPhaseAtor):
             except Exception as e:
                 self.log.error(f"Failed to push event to Redis queue: {e}")
 
-    def _create_phase_handler(self, coupler: CognitiveCoupler):
+    def _create_phase_handler(self, coupler: ReflectCoupler):
         async def handler(psi: PsiEvent):
             ## 반사계의 판단 (Sync)
             judgment = self.interpreter.process(psi.carrier)
@@ -148,12 +153,12 @@ class NodeRuntime(IPhaseAtor):
 
         ## 인지 코어(Worker) 및 교량(Coupler) 조립
         try:
-            engine = LLMEngine()
-            assembler = ContextAssembler()
-            worker = CognitiveWorker(engine, assembler)
-            aggregator = KernelStateAggregator(self.interpreter, self.redis)
-            
-            self.coupler = CognitiveCoupler(aggregator, worker)
+            # engine = LLMEngine()
+            # assembler = ContextAssembler()
+            # worker = ReflectWorker(engine, assembler)
+            # aggregator = KernelStateAggregator(self.interpreter, self.redis)
+            # self.coupler = ReflectCoupler(aggregator, worker)
+            self.coupler = CouplerBuilder.build(self.interpreter, self.redis)
             await self.coupler.start()
             self.log.info("Cognitive Coupler successfully attached.")
         except Exception as e:

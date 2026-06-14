@@ -1,10 +1,4 @@
-# meta.xor.manifold.block.truncate
-## @lineage: meta.xor.adapter.manifold.block.truncate
-## @lineage: meta.ops.trainer.block.truncate
-## @lineage: xor.block.truncate
-## @lineage: xor.residue.truncate
-## @lineage: xor.block.residue.truncate
-## @lineage: xyz.code.truncate
+# arch.topos.bind.block.truncate
 import hashlib
 from pathlib import Path
 from watcher.plane.emitter import get_logger
@@ -18,7 +12,7 @@ DEFAULT_TEXT_CONTENT_LIMIT = 50_000
 DEFAULT_TRUNCATE_NOTICE = (
     "<response clipped><NOTE>Due to the max output limit, only part of the full "
     "response has been shown to you.</NOTE>"
-)  # 113 chars
+)
 
 DEFAULT_TRUNCATE_NOTICE_WITH_PERSIST = (
     "<response clipped><NOTE>Due to the max output limit, only part of the full "

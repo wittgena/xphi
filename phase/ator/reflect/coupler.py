@@ -1,23 +1,19 @@
 # phase.ator.reflect.coupler
-## @lineage: phase.hub.reflect.coupler
-## @lineage: phase.reflect.coupler
-## @lineage: cognitive.reflect.coupler
-## @lineage: phase.reflect.cognitive.coupler
-## @lineage: cognitive.coupler
 import asyncio
 from typing import Optional
-from watcher.plane.emitter import get_emitter
-from arch.proto.event.psi import PsiEvent, PsiCarrier
-from phase.runtime.interpreter import PhaseJudgment
-from arch.contract.state.aggregator import KernelStateAggregator, InternalContext
-from phase.ator.reflect.worker import CognitiveWorker
 
-class CognitiveCoupler:
+from arch.proto.event.psi import PsiEvent, PsiCarrier
+from arch.contract.state.aggregator import KernelStateAggregator, InternalContext
+from phase.runtime.interpreter import PhaseJudgment
+from phase.ator.reflect.worker import ReflectWorker
+from watcher.plane.emitter import get_emitter
+
+class ReflectCoupler:
     """
     @topos.fiber_bundle: 척수(Dispatcher)와 대뇌(LLM Worker)를 잇는 비동기 위상 교량
     @flow: PhaseJudgment(Sync) -> Queue -> State Aggregation(Async) -> Worker Projection
     """
-    def __init__(self, aggregator: KernelStateAggregator, worker: CognitiveWorker):
+    def __init__(self, aggregator: KernelStateAggregator, worker: ReflectWorker):
         self.aggregator = aggregator
         self.worker = worker
         self.tension_queue = asyncio.Queue() # 압력을 흡수하는 버퍼 공간
@@ -28,8 +24,8 @@ class CognitiveCoupler:
     async def start(self):
         """교량 점화 (NodeRuntime의 start 시점에 함께 호출됨)"""
         self.running = True
-        self._task = asyncio.create_task(self._consume_loop(), name="CognitiveCoupler")
-        self.log.info("Cognitive Coupler bound and listening.")
+        self._task = asyncio.create_task(self._consume_loop(), name="ReflectCoupler")
+        self.log.info("Reflect Coupler bound and listening.")
 
     async def stop(self):
         self.running = False

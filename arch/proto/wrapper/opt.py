@@ -1,7 +1,6 @@
 # arch.proto.wrapper.opt
 ## @lineage: gov.field.executor.opt
 import contextlib
-import copy
 import logging
 import signal
 import sys
@@ -15,29 +14,31 @@ from watcher.plane.emitter import get_emitter
 log = get_emitter(__name__)
 
 class OptExecutor:
+    """
+    @role: Theoria's universal parallel execution manifold.
+    @invariant: 
+    - Must remain agnostic to domain-specific frameworks
+    - Thread context is delegated to the injected `context_propagator`
+    """
     def __init__(
         self,
-        num_threads=None,
-        max_errors=None,
+        num_threads=8,             # Pure defaults replacing DSPy settings
+        max_errors=10,
         disable_progress_bar=False,
-        provide_traceback=None,
+        provide_traceback=False,
         compare_results=False,
         timeout=120,
         straggler_limit=3,
+        context_propagator=None    # [Injected] Hook for passing thread-local states from Brane/Surgent
     ):
-        """
-        Offers isolation between the tasks (settings) irrespective of whether num_threads == 1 or > 1.
-        Handles also straggler timeouts.
-        """
-        from gov.scope.dsp import settings
-
-        self.num_threads = num_threads or settings.num_threads
-        self.max_errors = settings.max_errors if max_errors is None else max_errors
+        self.num_threads = num_threads
+        self.max_errors = max_errors
         self.disable_progress_bar = disable_progress_bar
-        self.provide_traceback = provide_traceback if provide_traceback is not None else settings.provide_traceback
+        self.provide_traceback = provide_traceback
         self.compare_results = compare_results
         self.timeout = timeout
         self.straggler_limit = straggler_limit
+        self.context_propagator = context_propagator
 
         self.error_count = 0
         self.error_lock = threading.Lock()
@@ -113,27 +114,19 @@ class OptExecutor:
         resubmitted = set()
 
         # This is the worker function each thread will run.
-        def worker(parent_overrides, submission_id, index, item):
+        def worker(submission_id, index, item):
             if self.cancel_jobs.is_set():
                 return index, job_cancelled
+            
             # Record actual start time
             with start_time_lock:
                 start_time_map[submission_id] = time.time()
 
-            # Apply parent's thread-local overrides
-            from gov.scope.dsp import thread_local_overrides
-
-            original = thread_local_overrides.get()
-            new_overrides = {**original, **parent_overrides.copy()}
-            if new_overrides.get("usage_tracker"):
-                # Usage tracker needs to be deep copied across threads so that each thread tracks its own usage
-                new_overrides["usage_tracker"] = copy.deepcopy(new_overrides["usage_tracker"])
-            token = thread_local_overrides.set(new_overrides)
-
-            try:
+            # Delegate context propagation to the injected hook (if provided)
+            ctx = self.context_propagator() if self.context_propagator else contextlib.nullcontext()
+            
+            with ctx:
                 return index, function(item)
-            finally:
-                thread_local_overrides.reset(token)
 
         # Handle Ctrl-C in the main thread
         @contextlib.contextmanager
@@ -157,16 +150,12 @@ class OptExecutor:
         executor = ThreadPoolExecutor(max_workers=self.num_threads)
         try:
             with interrupt_manager():
-                from gov.scope.dsp import thread_local_overrides
-
-                parent_overrides = thread_local_overrides.get().copy()
-
                 futures_map = {}
                 futures_set = set()
                 submission_counter = 0
 
                 for idx, item in enumerate(data):
-                    f = executor.submit(worker, parent_overrides, submission_counter, idx, item)
+                    f = executor.submit(worker, submission_counter, idx, item)
                     futures_map[f] = (submission_counter, idx, item)
                     futures_set.add(f)
                     submission_counter += 1
@@ -195,7 +184,7 @@ class OptExecutor:
                             if outcome != job_cancelled and results[index] is None:
                                 self._process_outcome(results, index, outcome)
 
-                            self._report_progress(pbar, results, len(data))
+                        self._report_progress(pbar, results, len(data))
 
                     if all_done():
                         break
@@ -212,7 +201,6 @@ class OptExecutor:
                                     resubmitted.add(f)
                                     nf = executor.submit(
                                         worker,
-                                        parent_overrides,
                                         submission_counter,
                                         idx,
                                         item,

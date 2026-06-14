@@ -1,7 +1,4 @@
-# meta.xor.manifold.block.residue
-## @lineage: meta.xor.adapter.manifold.block.residue
-## @lineage: meta.ops.trainer.block.residue
-## @lineage: xor.block.residue
+# arch.topos.bind.block.residue
 from __future__ import annotations
 import warnings
 from collections.abc import Callable

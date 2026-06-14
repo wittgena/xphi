@@ -1,18 +1,13 @@
 # phase.ator.reflect.worker
-## @lineage: phase.hub.reflect.worker
-## @lineage: phase.reflect.worker
-## @lineage: cognitive.reflect.worker
-## @lineage: phase.reflect.cognitive.worker
-## @lineage: cognitive.worker
 import asyncio
-from watcher.plane.emitter import get_emitter
-from phase.bind.client.engine.local import LLMEngine
 from arch.contract.state.aggregator import InternalContext
 from arch.contract.context.assembler import ContextAssembler
+from phase.bind.client.engine.local import LLMEngine
+from watcher.plane.emitter import get_emitter
 
-log = get_emitter('cognitive.worker')
+log = get_emitter('reflect.worker')
 
-class CognitiveWorker:
+class ReflectWorker:
     """@topos.worker: Cognitive Coupler로부터 InternalContext를 받아, 조립(Assemble)하고 판단(LLM)을 내리는 비동기 대뇌 피질"""
     def __init__(self, engine: LLMEngine, assembler: ContextAssembler):
         self.engine = engine
@@ -29,7 +24,6 @@ class CognitiveWorker:
                 query=query_text,
                 anchor="당신은 meta.self의 핵심 인지 판단 코어입니다.",
                 state=[f"Phase={context.state.phase}", f"Version={context.state.version}"],
-                ## surface_signals를 Xor 검색의 키워드로 활용하거나 YAML로 넘길 수 있음
                 use_xor=True 
             )
 

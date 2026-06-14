@@ -1,4 +1,5 @@
-# gov.gate._uuid
+# arch.proto.phase.gate
+## @lineage: gov.gate._uuid
 ## @lineage: gate._uuid
 ## @lineage: blm._uuid
 """
