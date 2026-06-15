@@ -1,7 +1,9 @@
 # arch.proto.phase.aligner
 import abc
+from pathlib import Path
 from typing import List, Dict, Any, Tuple, Callable
 from collections import defaultdict
+from watcher.plane.emitter import get_emitter, flow_scope
 
 ## alignment 과정에서 다루는 최소 단위 상태
 AlignRecord = Dict[str, Any]
@@ -30,8 +32,9 @@ class PhaseAligner(abc.ABC):
     - Φ′: axis 기준으로 grouping된 topology
     - Φ: 외부로 표현된 closure
     """
-    def __init__(self, root_dir: str):
+    def __init__(self, root_dir: str, emitter_name: str = "phase.aligner"):
         self.root_dir = root_dir
+        self.emitter = get_emitter(emitter_name, boundary=root_dir)
 
     @abc.abstractmethod
     def scan(self, **kwargs) -> Tuple[List[AlignRecord], int, int]:
@@ -41,10 +44,30 @@ class PhaseAligner(abc.ABC):
         """
         pass
 
-    @abc.abstractmethod
     def align(self, mismatches: List[AlignRecord], **kwargs) -> List[AlignRecord]:
-        ## Alignment stage.
-        pass
+        apply_changes = kwargs.get("apply", False)
+        results = []
+
+        with flow_scope(phase="ALIGN", mode="apply" if apply_changes else "dry_run"):
+            for record in mismatches:
+                path_str = record["path"]
+                modified_code = record["modified"]
+                
+                if apply_changes:
+                    try:
+                        Path(path_str).write_text(modified_code, encoding="utf-8")
+                        record["status"] = "applied"
+                        self.emitter.crit(f"Updated: {path_str}") 
+                    except Exception as e:
+                        record["status"] = f"failed: {e}"
+                        self.emitter.error(f"Failed to write {path_str}: {e}")
+                else:
+                    record["status"] = "dry_run"
+                    self.emitter.info(f"Dry-run, would update: {path_str}")
+                
+                results.append(record)
+
+        return results
 
     def analyze(
         self, 

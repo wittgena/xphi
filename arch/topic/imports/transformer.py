@@ -45,3 +45,31 @@ class ImportTransformer(cst.CSTTransformer):
                 new_names.append(alias)
         return updated_node.with_changes(names=new_names)
 
+class RelativeImportTransformer(cst.CSTTransformer):
+    def __init__(self, current_package: str):
+        """:param current_package: 현재 파일이 속한 패키지의 절대 경로 (예: "title.a.b")"""
+        self.current_package = current_package
+
+    def leave_ImportFrom(self, original_node: cst.ImportFrom, updated_node: cst.ImportFrom) -> cst.CSTNode:
+        if not original_node.relative:
+            return updated_node
+
+        if not self.current_package:
+            return updated_node
+
+        dots = len(original_node.relative)
+        parts = self.current_package.split(".")
+        if dots > len(parts) + 1:
+            return updated_node
+
+        slice_idx = len(parts) - (dots - 1)
+        base_pkg_parts = parts[:slice_idx]
+        module_str = node_to_str(original_node.module) if original_node.module else ""
+        if module_str:
+            base_pkg_parts.append(module_str)
+
+        absolute_module_name = ".".join(base_pkg_parts)
+        return updated_node.with_changes(
+            relative=[],
+            module=cst.parse_expression(absolute_module_name) if absolute_module_name else None
+        )
