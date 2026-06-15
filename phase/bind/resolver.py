@@ -6,10 +6,8 @@ import argparse
 from pathlib import Path
 from functools import lru_cache
 
-## @config
 ANCHOR_DIR = "self"
 BOUND = "bound.json"
-CORE_REPOS = {"surgent", "theoria"}
 
 ## @detect.self.root
 def is_self_root(path: Path) -> bool:

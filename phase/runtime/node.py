@@ -26,12 +26,7 @@ from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
 from phase.runtime.builder import CouplerBuilder
 from phase.ator.reflect.coupler import ReflectCoupler
-from phase.bind.resolver import resolve_path, find_current_self
-
-# from phase.ator.reflect.worker import ReflectWorker
-# from arch.contract.state.aggregator import KernelStateAggregator
-# from arch.contract.context.assembler import ContextAssembler
-
+from phase.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -151,13 +146,7 @@ class NodeRuntime(IPhaseAtor):
         self.interpreter = NodeInterpreter(anchor)
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")
 
-        ## 인지 코어(Worker) 및 교량(Coupler) 조립
         try:
-            # engine = LLMEngine()
-            # assembler = ContextAssembler()
-            # worker = ReflectWorker(engine, assembler)
-            # aggregator = KernelStateAggregator(self.interpreter, self.redis)
-            # self.coupler = ReflectCoupler(aggregator, worker)
             self.coupler = CouplerBuilder.build(self.interpreter, self.redis)
             await self.coupler.start()
             self.log.info("Cognitive Coupler successfully attached.")
