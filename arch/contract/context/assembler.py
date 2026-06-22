@@ -27,9 +27,10 @@ class ContextAssembler:
     """
     def __init__(self):
         self.self_root = find_current_self()
-        self.blocks_root = resolve_path("blocks")
-        self.schema_root = resolve_path("schemas")
-        self.config_root = resolve_path("configs")
+        self.workspace = resolve_path("workspace") / "context"
+        self.blocks_root = self.workspace / "blocks"
+        self.schema_root = self.workspace / "schemas"
+        self.config_root = self.workspace / "configs"
 
         self._providers: Dict[str, IResidueProvider] = {}
 

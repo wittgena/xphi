@@ -3,9 +3,13 @@
 import sys
 import importlib
 import ast
+import os
+import traceback
 from pathlib import Path
 from typing import Optional, Set
 from phase.bind.resolver import load_bound, find_current_self
+
+_TRACEBACK_PRINTED = False
 
 SAFE_TOP_LEVEL_CALLS = {
     "get_logger", "get_emitter", "resolve_path", "find_current_self", "Path", "os.getenv", 
@@ -161,3 +165,6 @@ def discover_modules(
                     importlib.import_module(module_path)
         except Exception as e:
             print(f"[Discover] Failed to load {rel_path_str}: {e}")
+            global _TRACEBACK_PRINTED
+            if not _TRACEBACK_PRINTED and os.getenv("DEBUG_DISCOVERY") == "1" and isinstance(e, (ImportError, AttributeError)):
+                traceback.print_exc()
