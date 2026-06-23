@@ -5,15 +5,12 @@ from typing import List, Dict, Any, Tuple, Callable
 from collections import defaultdict
 from watcher.plane.emitter import get_emitter, flow_scope
 
-## alignment 과정에서 다루는 최소 단위 상태
 AlignRecord = Dict[str, Any]
 
-## @group_by: Axis projection
 def group_by(
     records: List[AlignRecord],
     key_fn: Callable[[AlignRecord], str],
 ) -> List[Dict[str, Any]]:
-    ## aligner가 공유하는 공통 그룹화 원형
     clusters = defaultdict(list)
     for r in records:
         clusters[key_fn(r)].append(r)
@@ -23,7 +20,6 @@ def group_by(
         for k, v in sorted(clusters.items())
     ]
 
-## Base Template
 class PhaseAligner(abc.ABC):
     """
     Alignment pipeline의 공통 구조.

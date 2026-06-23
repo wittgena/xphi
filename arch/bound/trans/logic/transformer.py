@@ -1,4 +1,5 @@
-# arch.topic.logic.transformer
+# arch.bound.trans.logic.transformer
+## @lineage: arch.topic.logic.transformer
 ## @lineage: arch.code.logic.transformer
 ## @lineage: arch.model.code.logic.transformer
 ## @lineage: arch.project.logic.transformer

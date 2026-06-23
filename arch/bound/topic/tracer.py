@@ -1,4 +1,5 @@
-# arch.topic.tracer
+# arch.bound.topic.tracer
+## @lineage: arch.topic.tracer
 ## @lineage: arch.model.topic.tracer
 ## @lineage: arch.project.topic.tracer
 """
@@ -17,7 +18,7 @@ import signal
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional
-from arch.topic.registry import TopicRegistry, TopicMap
+from arch.bound.topic.registry import TopicRegistry, TopicMap
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter('topic.tracer')

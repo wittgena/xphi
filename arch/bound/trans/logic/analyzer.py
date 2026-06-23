@@ -1,4 +1,5 @@
-# arch.topic.logic.analyzer
+# arch.bound.trans.logic.analyzer
+## @lineage: arch.topic.logic.analyzer
 ## @lineage: arch.proto.task.logic.analyzer
 ## @lineage: arch.task.logic.analyzer
 import ast
@@ -13,7 +14,7 @@ from dataclasses import dataclass, asdict
 from arch.proto.schema.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
-from arch.topic.logic.transformer import LogicTransformer
+from arch.bound.trans.logic.transformer import LogicTransformer
 
 CODE_ROOT = resolve_path("code")
 log = get_emitter("logic.analyzer")

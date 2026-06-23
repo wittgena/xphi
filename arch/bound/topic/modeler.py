@@ -1,4 +1,5 @@
-# arch.topic.modeler
+# arch.bound.topic.modeler
+## @lineage: arch.topic.modeler
 ## @lineage: arch.model.topic.modeler
 ## @lineage: arch.project.topic.modeler
 ## @lineage: xphi.code.topic.modeler
@@ -14,7 +15,7 @@ from tqdm import tqdm
 from collections import defaultdict, Counter
 from gensim import corpora, models
 from watcher.plane.emitter import get_emitter
-from arch.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
+from arch.bound.topic.registry import TopicMap, TopicMetadata, ToposSpace, CoreModuleInfo
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.xor.block.parser.topos import ToposAstParser
 

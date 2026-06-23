@@ -1,10 +1,11 @@
+# arch.bound.trans.imports.aligner
 import os
 import difflib
 import libcst as cst
 from typing import List, Tuple
 from pathlib import Path
 from arch.proto.phase.aligner import PhaseAligner, AlignRecord
-from arch.topic.imports.transformer import ImportTransformer, RelativeImportTransformer
+from arch.bound.trans.imports.transformer import ImportTransformer, RelativeImportTransformer
 from watcher.plane.emitter import get_emitter, flow_scope
 
 def generate_diff(original: str, modified: str, filename: str) -> str:
@@ -18,39 +19,6 @@ def generate_diff(original: str, modified: str, filename: str) -> str:
             lineterm=""
         )
     )
-
-# class BaseImportAligner(PhaseAligner):
-#     """Import 정렬기들의 공통 기능을 제공하는 베이스 클래스"""
-#     def __init__(self, root_dir: str, emitter_name: str = "imports.aligner"):
-#         super().__init__(root_dir)
-#         self.emitter = get_emitter(emitter_name, boundary=root_dir)
-
-#     def align(self, mismatches: List[AlignRecord], **kwargs) -> List[AlignRecord]:
-#         """두 Aligner가 공통으로 사용하는 실제 파일 수정 로직"""
-#         apply_changes = kwargs.get("apply", False)
-#         results = []
-
-#         with flow_scope(phase="ALIGN", mode="apply" if apply_changes else "dry_run"):
-#             for record in mismatches:
-#                 path_str = record["path"]
-#                 modified_code = record["modified"]
-                
-#                 if apply_changes:
-#                     try:
-#                         Path(path_str).write_text(modified_code, encoding="utf-8")
-#                         record["status"] = "applied"
-#                         self.emitter.crit(f"Updated: {path_str}") 
-#                     except Exception as e:
-#                         record["status"] = f"failed: {e}"
-#                         self.emitter.error(f"Failed to write {path_str}: {e}")
-#                 else:
-#                     record["status"] = "dry_run"
-#                     self.emitter.info(f"Dry-run, would update: {path_str}")
-                
-#                 results.append(record)
-
-#         return results
-
 
 class PrefixImportAligner(PhaseAligner):
     """절대 경로 간의 Prefix 치환(old -> new)을 담당하는 클래스"""

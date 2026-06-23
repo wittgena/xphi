@@ -1,4 +1,5 @@
-# arch.topic.pos.sensor
+# arch.bound.pos.sensor
+## @lineage: arch.topic.pos.sensor
 ## @lineage: arch.model.pos.sensor
 ## @lineage: topos.model.pos.sensor
 """

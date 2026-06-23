@@ -17,7 +17,7 @@ from tqdm import tqdm
 from watcher.plane.emitter import get_logger
 from phase.bind.resolver import find_current_self, resolve_path
 from arch.proto.schema.resonance import ResonanceGraph, ResonanceNode, NodeRelation
-from arch.topic.pos.sensor import PosSensor
+from arch.bound.pos.sensor import PosSensor
 
 log = get_logger("model.binder")
 
