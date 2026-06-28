@@ -1,10 +1,12 @@
 # phase.bind.redirector
-## @lineage: gov.router.module.redirector
 import sys
 import importlib.util
 from pathlib import Path
 from typing import Optional, Union
 from phase.bind.resolver import find_current_self
+from watcher.plane.emitter import get_emitter
+
+log = get_emitter("bind.redirector")
 
 SELF_ROOT = find_current_self()
 
