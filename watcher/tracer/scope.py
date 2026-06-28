@@ -20,7 +20,7 @@ _scope_stack: contextvars.ContextVar[Tuple[ScopeNode, ...]] = contextvars.Contex
 )
 
 class scope_trace:
-    """스코프 진입 및 이탈을 추적하는 컨텍스트 매니저"""
+    """스코프 진입 및 이탈을 추적하는 컨텍스트 매니저 (동기/비동기 모두 지원)"""
     def __init__(self, name: str, facet: str, **metadata):
         self.node = ScopeNode(name=name, facet=facet, metadata=metadata)
         self._token = None
@@ -34,7 +34,17 @@ class scope_trace:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # 스코프 종료 시 이전 상태로 롤백
-        _scope_stack.reset(self._token)
+        if self._token is not None:
+            _scope_stack.reset(self._token)
+
+    # === 비동기 컨텍스트 매니저 프로토콜 추가 ===
+    async def __aenter__(self):
+        """비동기 컨텍스트 진입 (동기 메서드 위임)"""
+        return self.__enter__()
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """비동기 컨텍스트 이탈 (동기 메서드 위임)"""
+        return self.__exit__(exc_type, exc_val, exc_tb)
 
 def get_current_trace_path() -> str:
     """현재 중첩된 스코프 경로를 반환 (예: '[infra:was] -> [logical:dphi] -> [execution:thch]')"""

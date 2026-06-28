@@ -1,4 +1,5 @@
-# phase.dynamics.rhythm.receptor
+# phase.rhythm.receptor
+## @lineage: phase.dynamics.rhythm.receptor
 ## @lineage: phase.reflect.rhythm.receptor
 ## @lineage: cognitive.reflect.rhythm.receptor
 ## @lineage: cognitive.rhythm.receptor
@@ -7,7 +8,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from watcher.plane.emitter import get_emitter
-from phase.dynamics.rhythm.psi import RhythmPsi, RhythmSignature
+from phase.rhythm.psi import RhythmPsi, RhythmSignature
 
 log = get_emitter("rhythm.receptor")
 

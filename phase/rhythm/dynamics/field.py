@@ -1,4 +1,5 @@
-# phase.dynamics.field
+# phase.rhythm.dynamics.field
+## @lineage: phase.dynamics.field
 ## @lineage: arch.dynamics.field
 ## @lineage: arch.flow.dynamics.field
 ## @lineage: cognitive.flow.dynamics.field
@@ -19,7 +20,7 @@ import redis.asyncio as redis_async
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from watcher.plane.surface import SurfacePlane
 from watcher.plane.emitter import get_emitter
-from phase.dynamics.rhythm.bridge import RhythmBridge
+from phase.rhythm.bridge import RhythmBridge
 from arch.xor.manifold.particle import ToposManifold, Particle
 from arch.xor.manifold.flow import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 

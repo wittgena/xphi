@@ -1,9 +1,5 @@
-# phase.dynamics.loop.carrier
-## @lineage: arch.proto.loop.carrier
-## @lineage: arch.flow.dynamics.carrier
-## @lineage: cognitive.flow.dynamics.carrier
-## @lineage: cognitive.dynamics.carrier
-## @lineage: topos.dynamics.carrier
+# phase.rhythm.loop.carrier
+## @lineage: phase.dynamics.loop.carrier
 from __future__ import annotations
 import asyncio
 from arch.proto.event.next import next_id

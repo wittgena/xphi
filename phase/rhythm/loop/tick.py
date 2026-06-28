@@ -1,7 +1,5 @@
-# phase.dynamics.loop.tick
-## @lineage: phase.reflect.loop.tick
-## @lineage: cognitive.reflect.loop.tick
-## @lineage: cognitive.rhythm.loop.tick
+# phase.rhythm.loop.tick
+## @lineage: phase.dynamics.loop.tick
 import asyncio
 import json
 import redis.asyncio as redis_async

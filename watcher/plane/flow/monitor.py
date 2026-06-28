@@ -1,4 +1,5 @@
-# phase.dynamics.flow.monitor
+# watcher.plane.flow.monitor
+## @lineage: phase.dynamics.flow.monitor
 """
 @flow: Ψ(Runtime Context) → Inspect → Φ(Adaptive Wrapper) → Direct/Intercept
 @intent: Ator 비동기 큐 엔진과 동기식 테스트 환경(unittest) 모두에서 주석 명세(@phase, @flow, @invariant)를 인지하고 위상 상태를 동기화하는 범용 어댑티브 모니터

@@ -76,7 +76,7 @@ class MultiEventFlow(ABC, Generic[Psi, Phi]):
         self.shared_state: Optional[Phi] = None
 
     @abstractmethod
-    def execute_flow(self, initial_flow: Psi) -> Phi:
+    def execute(self, initial_flow: Psi) -> Phi:
         """
         @flow: ψ → dispersion → routing → transduction → alignment → resonance → Φ
         - Execute the full multi-ator flow cycle.

@@ -13,7 +13,7 @@ import unittest
 import time
 from watcher.plane.emitter import get_emitter, flow_scope, _flow_context
 from watcher.plane.surface import SurfacePlane
-from phase.dynamics.flow.monitor import flow_monitor
+from watcher.plane.flow.monitor import flow_monitor
 
 class ToposVariants(unittest.TestCase):
     def setUp(self):

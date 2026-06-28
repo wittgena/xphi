@@ -11,7 +11,7 @@ from watcher.plane.emitter import get_emitter
 from phase.runtime.surface.sensor import sense_once
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from arch.proto.event.bus import AsyncEventBus
-from phase.runtime.dispatcher import Dispatcher
+from phase.runtime.task.dispatcher import Dispatcher
 from phase.runtime.receptor.bootstrap import receptor_bootstrap
 
 SENSOR_INTERVAL = 1.0

@@ -17,7 +17,7 @@ from arch.contract.registry.unified import registry
 from arch.contract.discovery import discover_modules
 
 from phase.runtime.surface.sensor import sense_once, REDIS_URL
-from phase.runtime.dispatcher import Dispatcher
+from phase.runtime.task.dispatcher import Dispatcher
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
 from phase.runtime.surface.actuator import SurfaceActuator
 from phase.runtime.surface.sink import RedisSink

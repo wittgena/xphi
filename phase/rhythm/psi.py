@@ -1,4 +1,5 @@
-# phase.dynamics.rhythm.psi
+# phase.rhythm.psi
+## @lineage: phase.dynamics.rhythm.psi
 ## @lineage: phase.reflect.rhythm.psi
 ## @lineage: cognitive.reflect.rhythm.psi
 ## @lineage: cognitive.rhythm.psi

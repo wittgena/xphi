@@ -15,7 +15,7 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.proto.event.psi import PsiEvent, PsiCarrier
-from phase.dynamics.rhythm.bridge import RhythmBridge
+from phase.rhythm.bridge import RhythmBridge
 from watcher.plane.surface import default_plane
 from watcher.plane.emitter import get_emitter
 from arch.xor.manifold.particle import ToposManifold, Particle

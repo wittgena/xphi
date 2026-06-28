@@ -1,19 +1,20 @@
 # watcher.kernel.resonance
-## @lineage: phase.watcher.kernel.resonance
-## @lineage: meta.watcher.kernel.resonance
 from __future__ import annotations
 import asyncio
 import json
 import math
+
 from arch.proto.event.psi import PsiCarrier, PsiEvent
-from watcher.plane.emitter import get_emitter
-from phase.bind.resolver import find_current_self
-from phase.runtime.node import NodeRuntime
 from arch.contract.registry.unified import registry, contract
 from arch.contract.discovery import discover_modules
-from phase.dynamics.loop.carrier import LoopCarrier
-from phase.dynamics.executor import DynamicsExecutor
 from arch.contract.interface import IDynamicsKernel
+
+from phase.bind.resolver import find_current_self
+from phase.runtime.node import NodeRuntime
+from phase.rhythm.loop.carrier import LoopCarrier
+from phase.rhythm.dynamics.executor import DynamicsExecutor
+
+from watcher.plane.emitter import get_emitter
 
 @contract.kernel("kernel.resonance")
 class KernelResonance(IDynamicsKernel):

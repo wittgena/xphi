@@ -1,4 +1,5 @@
-# phase.dynamics.rhythm.coupler
+# phase.rhythm.coupler
+## @lineage: phase.dynamics.rhythm.coupler
 ## @lineage: phase.reflect.rhythm.coupler
 ## @lineage: cognitive.reflect.rhythm.coupler
 ## @lineage: cognitive.rhythm.coupler
@@ -17,11 +18,10 @@ class RhythmCoupler:
     async def start(self):
         pubsub = self.redis.pubsub()
 
-        # 기존 구독 채널 + 자아(Ego)의 발작 채널 추가
+        ## 기존 구독 채널 + 자아(Ego)의 발작 채널 추가
         await pubsub.subscribe("rhythm.heart")
         await pubsub.subscribe("phase:decision")
-        await pubsub.subscribe("ego:action") # 👈 Ego의 마찰 채널 구독
-
+        await pubsub.subscribe("ego:action")
         log.info("  [Coupler] RhythmCoupler started. Listening to 'rhythm.heart', 'phase:decision', 'ego:action'")
 
         async for msg in pubsub.listen():

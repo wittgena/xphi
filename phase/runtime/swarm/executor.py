@@ -15,7 +15,6 @@ from watcher.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from arch.contract.base.executor import BaseExecutor
 from phase.runtime.cli.executor import _GenericCliExecutor
-from phase.dynamics.flow.executor import _FlowExecutor
 
 log = get_logger("swarm.executor")
 
@@ -68,12 +67,8 @@ class SwarmExecutor(BaseExecutor):
                 ## 내부 실행기를 위한 독립적인 완료 시그널 생성
                 sub_completion_signal = asyncio.Event()
                 
-                if task_type == "flow":
-                    internal_executor = _FlowExecutor(task_instance, sub_completion_signal)
-                    self.log.info(f"[Swarm] Allocated _FlowExecutor for {command}")
-                else:
-                    internal_executor = _GenericCliExecutor(task_instance, sub_completion_signal)
-                    self.log.info(f"[Swarm] Allocated _GenericCliExecutor for {command}")
+                internal_executor = _GenericCliExecutor(task_instance, sub_completion_signal)
+                self.log.info(f"[Swarm] Allocated _GenericCliExecutor for {command}")
 
                 if self.node:
                     internal_executor.node = self.node

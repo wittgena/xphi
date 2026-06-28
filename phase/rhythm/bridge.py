@@ -1,4 +1,5 @@
-# phase.dynamics.rhythm.bridge
+# phase.rhythm.bridge
+## @lineage: phase.dynamics.rhythm.bridge
 ## @lineage: phase.reflect.rhythm.bridge
 ## @lineage: cognitive.reflect.rhythm.bridge
 ## @lineage: cognitive.rhythm.bridge
