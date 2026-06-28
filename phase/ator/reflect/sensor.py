@@ -18,9 +18,10 @@ import logging
 from datetime import datetime
 from abc import ABC, abstractmethod
 from pathlib import Path
-from watcher.plane.emitter import get_emitter
+
 from arch.contract.registry.unified import cli_contract
 from phase.bind.resolver import find_current_self, resolve_path, load_bound
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter('reflect.sensor')
 
@@ -62,11 +63,11 @@ class RuntimeSensor(Sensor):
 
     """Captures execution identity; hashes artifacts as stable signatures"""
     def sense(self) -> dict:
-        jars = sorted(self.lib_root.glob("xphi-*.jar"))
+        jars = sorted(self.lib_root.glob("dphi-*.jar"))
         if not jars:
-            raise RuntimeError("xphi jar not found")
+            raise RuntimeError("dphi jar not found")
 
-        bins = { "xphi": jars[-1] }
+        bins = { "dphi": jars[-1] }
         identity = {}
         for name, path in bins.items():
             if path and path.exists():
