@@ -4,7 +4,9 @@ import time
 import subprocess
 import requests
 import json
+
 from arch.proto.schema.resonance import BridgeEvent
+from arch.proto.phase.gate import uuid4
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')
@@ -39,7 +41,6 @@ class LLMEngine:
             r = requests.get(self.health_url, timeout=2)
             return r.status_code == 200
         except Exception:
-            # 상태 체크 중 발생하는 에러는 정상적인 대기 과정일 수 있으므로 디버그 레벨로 낮춤
             log.debug('[monitor] llama-server not ready yet...')
             return False
 
@@ -63,10 +64,12 @@ class LLMEngine:
         self._process.terminate()
         raise RuntimeError("llama-server failed to start within timeout.")
 
-    def ask(self, prompt: str, callback: callable = None) -> str:
+    def ask(self, prompt: str, callback: callable = None, req_id: str = None) -> str:
         """기존 chat을 대체/확장: 스트리밍 및 루처(Rupture) 지원"""
+        req_id = req_id or str(uuid4())[:8]
+        log.debug(f"[Engine-{req_id}] 🌊 ask (stream) START | model={self.model_name}")
+        
         self.ensure_server()
-
         payload = {
             "model": self.model_name,
             "messages": [{"role": "user", "content": prompt}],
@@ -75,6 +78,7 @@ class LLMEngine:
 
         full_text = ""
         try:
+            log.debug(f"[Engine-{req_id}] 📡 Sending Streaming POST to {self.server_url}")
             with requests.post(self.server_url, json=payload, stream=True, timeout=60) as r:
                 r.raise_for_status()
                 for line in r.iter_lines():
@@ -86,24 +90,23 @@ class LLMEngine:
                         if content == "[DONE]": break
                         
                         try:
-                            # [FIX] JSON 모듈을 사용해 정상 파싱
                             chunk = json.loads(content)["choices"][0]["delta"].get("content", "")
                             if chunk:
                                 full_text += chunk
                                 if callback:
-                                    # [FIX] analyzer가 무시하지 않도록 source="agent" 지정 
-                                    # [FIX] 파편(chunk)이 아닌 누적된 전체 텍스트(full_text)를 전달
                                     callback(BridgeEvent(source="agent", content=full_text))
                         except Exception as e:
-                            # [FIX] 무지성 continue 대신 파싱 에러 로깅
-                            log.error(f"SSE JSON parsing error: {e}, Payload: {content}")
+                            log.error(f"[Engine-{req_id}] SSE JSON parsing error: {e}, Payload: {content}")
                             continue
+            log.debug(f"[Engine-{req_id}] ✅ ask SUCCESS | total_length={len(full_text)}")
         except Exception as e:
-            log.error(f"Failed during LLM ask request: {e}")
+            log.error(f"[Engine-{req_id}] 🚨 Failed during LLM ask request: {e}", exc_info=True)
             
         return full_text
 
-    def chat(self, system_prompt: str, user_prompt: str, timeout: int = 30) -> str:
+    def chat(self, system_prompt: str, user_prompt: str, timeout: int = 30, req_id: str = None) -> str:
+        req_id = req_id or str(uuid4())[:8]
+        log.debug(f"[Engine-{req_id}] ⚡ chat START | timeout={timeout}s, model={self.model_name}")
         self.ensure_server()
 
         payload = {
@@ -114,11 +117,18 @@ class LLMEngine:
             ],
         }
 
-        r = requests.post(self.server_url, json=payload, timeout=timeout)
-        r.raise_for_status()
+        try:
+            log.debug(f"[Engine-{req_id}] 📡 Sending POST to {self.server_url}")
+            r = requests.post(self.server_url, json=payload, timeout=timeout)
+            r.raise_for_status()
 
-        data = r.json()
-        return data["choices"][0]["message"]["content"]
+            data = r.json()
+            content = data["choices"][0]["message"]["content"]
+            log.debug(f"[Engine-{req_id}] ✅ chat SUCCESS | response_len={len(content)}")
+            return content
+        except Exception as e:
+            log.error(f"[Engine-{req_id}] 🚨 chat FAILED: {e}", exc_info=True)
+            raise e
 
 if __name__ == "__main__":
     client = LLMEngine()
@@ -126,10 +136,10 @@ if __name__ == "__main__":
         log.info("Starting LLM Client test...")
         system_msg = "You are a concise assistant."
         user_msg = "Hello, tell me a short joke about robots."
-        print(f"\n[Requesting to {MODEL_NAME}...]")
+        log.info(f"\n[Requesting to {MODEL_NAME}...]")
         
         response = client.chat(system_msg, user_msg)
-        print(f"Response:\n{response}")
+        log.info(f"Response:\n{response}")
     except KeyboardInterrupt:
         log.info("Stopped by user.")
     except Exception as e:

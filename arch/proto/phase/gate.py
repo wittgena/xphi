@@ -1,7 +1,4 @@
 # arch.proto.phase.gate
-## @lineage: gov.gate._uuid
-## @lineage: gate._uuid
-## @lineage: blm._uuid
 """
 @desc: Internal unified UUID helper.
 Acts as a proxy that wraps the 64-bit ToposId into a standard 128-bit UUIDv4 format.
@@ -13,7 +10,6 @@ import uuid as _std_uuid
 import random
 from arch.proto.event.next import generator
 
-## 기존에 uuid 모듈 자체를 참조하던 코드들을 위한 프록시 (fastuuid 호환 유지)
 uuid = _std_uuid
 
 def uuid4() -> _std_uuid.UUID:
