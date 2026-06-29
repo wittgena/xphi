@@ -8,13 +8,18 @@ import os
 import subprocess
 import threading
 from os import PathLike
+from pathlib import Path
 from typing import Any, Callable, Mapping
 from arch.proto.wrapper.code import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
 from arch.proto.wrapper.jsonrpc import JsonRpcMessage, JsonRpcErrorCode
+from phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter(__name__)
+SANDBOX_ROOT = resolve_path("sandbox") ## workspace/sandbox
 LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
+
+_invoker_full, MODULE_NAMESPACE = get_invoker(Path(__file__))
+log = get_emitter(MODULE_NAMESPACE, phase="SYSTEM")
 
 class PythonInterpreter:
     def __init__(
@@ -96,7 +101,7 @@ class PythonInterpreter:
 
     def _get_runner_path(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(current_dir, "runner.js")
+        return os.path.join(SANDBOX_ROOT, "runner.js")
 
     def _mount_files(self):
         if self._mounted_files:
