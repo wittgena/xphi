@@ -1,5 +1,4 @@
 # watcher.plane.emitter
-## @lineage: phase.plane.emitter
 """@flow: Context -> Event -> Control -> Projection"""
 import logging
 import os
@@ -29,18 +28,19 @@ def flow_scope(auto_flush=False, **kwargs):
             default_plane.flush()
         _flow_context.reset(token)
 
+
 class SurfaceEmitter:
     def __init__(
         self, 
         name: str, 
         phase: Optional[str] = None, 
-        bound: Optional[str] = None, 
+        boundary: Optional[str] = None, # 💡 기존 생성자 signature 인자 명칭 보정 (bound -> boundary 호환 보장)
         handler: Optional[Callable[[LogEvent], None]] = None,
         mode: str = "NORMAL"
     ):
         self.name = name
         self.phase = phase
-        self.bound = bound
+        self.bound = boundary
         self._handler = handler or default_plane.handle
         self.mode = mode.upper()
 
@@ -50,7 +50,6 @@ class SurfaceEmitter:
         return self
 
     def _format_msg(self, msg: str, *args) -> str:
-        """표준 logging의 % 포맷팅(*args)을 지원하기 위한 헬퍼"""
         if args:
             try:
                 return str(msg) % args
@@ -60,7 +59,6 @@ class SurfaceEmitter:
 
     def _log(self, level: str, msg: str, *args, **kwargs):
         ctx = _flow_context.get()
-        current_phase = self.phase or ctx.get("phase")
         exc_info = kwargs.pop("exc_info", None)
         formatted_msg = self._format_msg(msg, *args)
 
@@ -76,18 +74,17 @@ class SurfaceEmitter:
         }
 
         event = LogEvent(
-            source_id=self.name,           # 매핑 변경
+            source_id=self.name,
             message=formatted_msg,
             level=level,
-            context=unified_context,       # 데이터 응집
-            parent_id=ctx.get("parent_id") # 흐름 추적 연결
+            context=unified_context,
+            parent_id=ctx.get("parent_id")
         )
 
         for interceptor in _event_interceptors:
             try:
                 interceptor(event)
             except Exception:
-                ## 외부 로직 실패가 코어 로깅을 중단시키지 않도록 보호
                 pass
 
         self._handler(event)
@@ -97,43 +94,38 @@ class SurfaceEmitter:
     def trace(self, msg, *args, **kwargs): self._log("TRACE", msg, *args, **kwargs)
     def info(self, msg, *args, **kwargs): self._log("INFO", msg, *args, **kwargs)
     def warning(self, msg, *args, **kwargs): self._log("WARN", msg, *args, **kwargs)
-    def warn(self, msg, *args, **kwargs): self.warning(msg, *args, **kwargs) # alias
+    def warn(self, msg, *args, **kwargs): self.warning(msg, *args, **kwargs)
     def error(self, msg, *args, **kwargs): self._log("ERROR", msg, *args, **kwargs)
     def critical(self, msg, *args, **kwargs): self._log("CRIT", msg, *args, **kwargs)
-    def crit(self, msg, *args, **kwargs): self.critical(msg, *args, **kwargs) # alias
+    def crit(self, msg, *args, **kwargs): self.critical(msg, *args, **kwargs)
     
     def exception(self, msg, *args, **kwargs):
-        """logger.exception() 처리용 (자동으로 스택트레이스 첨부)"""
         kwargs["exc_info"] = True
         self._log("ERROR", msg, *args, **kwargs)
 
     def signal(self, msg, *args, **kwargs): 
-        """SurfaceEmitter 고유 확장 메서드"""
         self._log("SIGNAL", msg, *args, **kwargs)
 
     def flush(self):
         default_plane.flush()
 
+
 def get_emitter(name: str, phase: Optional[str] = None, boundary: Optional[str] = None, mode: str = "NORMAL") -> SurfaceEmitter:
     return SurfaceEmitter(name, phase, boundary, mode=mode)
 
+
+# Legacy 호환을 위한 네이티브 파이썬 로깅 백업 셋업
 _LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 DEBUG = True
 
 def _create_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
-
     if logger.handlers:
-        return logger  # 중복 핸들러 방지
-
+        return logger
     logger.setLevel(_LEVEL)
-
     handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        "[%(levelname)s] %(name)s: %(message)s"
-    )
+    formatter = logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
     handler.setFormatter(formatter)
-
     logger.addHandler(handler)
     logger.propagate = False
     return logger

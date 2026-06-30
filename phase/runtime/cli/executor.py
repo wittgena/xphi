@@ -21,7 +21,7 @@ from phase.bind.resolver import get_invoker
 from phase.runtime.task.event import TaskSummaryEvent, TaskDetailRecord
 
 from watcher.plane.emitter import get_emitter, flow_scope
-from watcher.plane.surface import surface
+from watcher.plane.surface import console_surface
 
 log = get_emitter("cli.executor")
 
@@ -275,7 +275,7 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
                             clean_data = {k: v for k, v in log_data.items() if k in valid_fields}
                             
                             event = LogEvent(**clean_data)
-                            surface.update(event)
+                            console_surface.update(event)
                         except Exception:
                             continue 
                             

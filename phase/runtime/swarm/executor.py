@@ -10,7 +10,6 @@ from typing import Callable, Any
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from arch.proto.event.next import next_id, LogEvent
 from dataclasses import asdict
-from watcher.plane.surface import surface
 from watcher.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from arch.contract.base.executor import BaseExecutor
