@@ -24,7 +24,7 @@ from phase.runtime.surface.sink import RedisSink
 from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
 from phase.runtime.builder import CouplerBuilder
-from phase.ator.reflect.coupler import ReflectCoupler
+from watcher.reflect.coupler import ReflectCoupler
 from phase.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter
 

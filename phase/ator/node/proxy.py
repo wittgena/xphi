@@ -1,4 +1,5 @@
-# arch.topos.node.proxy
+# phase.ator.node.proxy
+## @lineage: arch.topos.node.proxy
 ## @lineage: phase.topos.node.proxy
 ## @lineage: topos.state.proxy
 import time
@@ -10,7 +11,7 @@ import json
 from typing import Optional, Any
 from watcher.plane.emitter import get_emitter
 from arch.proto.event.psi import PsiEvent
-from arch.proto.phase.flow import PhaseFlow
+from phase.gov.proto.flow import PhaseFlow
 
 log = get_emitter("state.proxy")
 

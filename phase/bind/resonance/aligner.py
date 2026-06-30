@@ -11,7 +11,7 @@ import asyncio
 import inspect
 from pathlib import Path
 from typing import Any, Dict
-from arch.proto.phase.flow import PhaseFlow, FlowState, Align
+from phase.gov.proto.flow import PhaseFlow, FlowState, Align
 from arch.contract.registry.unified import contract
 from watcher.plane.emitter import get_logger
 

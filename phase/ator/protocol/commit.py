@@ -1,4 +1,5 @@
-# phase.hub.protocol.commit
+# phase.ator.protocol.commit
+## @lineage: phase.hub.protocol.commit
 ## @lineage: anchor.surface.protocol.commit
 ## @lineage: gov.protocol.git
 ## @lineage: gov.protocol.channel.git
@@ -12,7 +13,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from arch.proto.event.next import next_id
-from arch.topos.gov.node.anchor import ActorNode, EpochManager
+from phase.gov.node.anchor import ActorNode, EpochManager
 from phase.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 

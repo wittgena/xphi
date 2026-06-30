@@ -1,4 +1,5 @@
-# arch.topos.node.state
+# phase.ator.node.state
+## @lineage: arch.topos.node.state
 ## @lineage: phase.topos.node.state
 ## @lineage: topos.state.node
 import asyncio
@@ -7,7 +8,7 @@ import logging
 from typing import List, Tuple, Any, Optional, Dict
 from watcher.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
-from arch.proto.phase.flow import PhaseFlow, FlowState
+from phase.gov.proto.flow import PhaseFlow, FlowState
 from arch.contract.state.spec import TransRule, PhaseSpec, NodeType
 
 log = get_emitter("state.node")

@@ -9,7 +9,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from watcher.plane.emitter import get_logger
-from arch.proto.phase.flow import PhaseFlow, FlowState
+from phase.gov.proto.flow import PhaseFlow, FlowState
 from arch.contract.protocol import get_proto
 from arch.proto.event.psi import PhaseField, PsiCarrier, CarrierType
 from arch.contract.state.node0 import enter_node0

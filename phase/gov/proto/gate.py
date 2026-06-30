@@ -1,4 +1,5 @@
-# arch.proto.phase.gate
+# phase.gov.proto.gate
+## @lineage: arch.proto.phase.gate
 """
 @desc: Internal unified UUID helper.
 Acts as a proxy that wraps the 64-bit ToposId into a standard 128-bit UUIDv4 format.

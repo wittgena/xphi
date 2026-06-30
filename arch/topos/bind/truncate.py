@@ -1,4 +1,5 @@
-# arch.topos.bind.block.truncate
+# arch.topos.bind.truncate
+## @lineage: arch.topos.bind.block.truncate
 import hashlib
 from pathlib import Path
 from watcher.plane.emitter import get_logger

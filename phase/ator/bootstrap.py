@@ -15,7 +15,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 from watcher.plane.emitter import get_logger
-from arch.proto.phase.flow import PhaseFlow, FlowState, Transduction
+from phase.gov.proto.flow import PhaseFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.contract.discovery import discover_modules
 from phase.ator.transcript.phi import TranscriptPhi

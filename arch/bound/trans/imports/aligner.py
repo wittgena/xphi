@@ -4,7 +4,7 @@ import difflib
 import libcst as cst
 from typing import List, Tuple
 from pathlib import Path
-from arch.proto.phase.aligner import PhaseAligner, AlignRecord
+from phase.gov.proto.aligner import PhaseAligner, AlignRecord
 from arch.bound.trans.imports.transformer import ImportTransformer, RelativeImportTransformer
 from watcher.plane.emitter import get_emitter, flow_scope
 

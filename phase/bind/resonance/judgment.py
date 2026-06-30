@@ -11,7 +11,7 @@
 ## @lineage: xphi.transcript.resonance.judgment
 import asyncio
 from arch.contract.registry.unified import contract
-from arch.proto.phase.flow import Judgment
+from phase.gov.proto.flow import Judgment
 
 @contract.ator("resonance.judgment")
 class ResonanceJudgment(Judgment):

@@ -3,8 +3,8 @@ from typing import Callable, Dict, Any
 from arch.contract.context.assembler import ContextAssembler
 from arch.contract.state.aggregator import KernelStateAggregator
 from phase.bind.client.engine.local import LLMEngine
-from phase.ator.reflect.worker import ReflectWorker
-from phase.ator.reflect.coupler import ReflectCoupler
+from watcher.reflect.worker import ReflectWorker
+from watcher.reflect.coupler import ReflectCoupler
 
 class CouplerBuilder:
     """

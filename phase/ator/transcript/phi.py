@@ -1,11 +1,4 @@
 # phase.ator.transcript.phi
-## @lineage: phase.hub.ator.transcript.phi
-## @lineage: hub.ator.transcript.phi
-## @lineage: xe.ator.transcript.phi
-## @lineage: xphi.transcript.phi
-## @lineage: cognitive.xphi.transcript.phi
-## @lineage: meta.transcript.phi
-## @lineage: cognitive.transcript.phi
 import asyncio
 import json
 import inspect
@@ -14,11 +7,12 @@ import re
 import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
-from watcher.plane.emitter import get_logger
-from arch.proto.phase.flow import PhaseFlow, FlowState, Transduction
+
+from phase.gov.proto.flow import PhaseFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.xor.block.parser.md import MdAstParser
 from arch.xor.block.extractor import BlockExtractor
+from watcher.plane.emitter import get_logger
 
 log = get_logger("transcript.phi")
 

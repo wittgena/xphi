@@ -1,4 +1,5 @@
-# arch.topos.bind.block.residue
+# arch.topos.bind.residue
+## @lineage: arch.topos.bind.block.residue
 from __future__ import annotations
 import warnings
 from collections.abc import Callable

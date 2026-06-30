@@ -1,4 +1,5 @@
-# arch.topos.node.gan
+# phase.ator.node.gan
+## @lineage: arch.topos.node.gan
 ## @lineage: meta.reflector.cognitive.gan
 ## @lineage: bound.reflect.cognitive.gan
 ## @lineage: cognitive.node.gan

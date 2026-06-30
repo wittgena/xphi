@@ -1,13 +1,14 @@
-# arch.topos.gov.node.connector
+# phase.gov.node.connector
+## @lineage: arch.topos.gov.node.connector
 ## @lineage: gov.state.node.connector
 ## @lineage: gov.state.system.node.connector
 ## @lineage: gov.node.connector
 import asyncio
 from typing import Optional
-from arch.topos.node.gan import Message, GanNode
+from phase.ator.node.gan import Message, GanNode
 from watcher.plane.emitter import get_emitter
 from arch.contract.state.spec import TransRule
-from arch.topos.node.state import NodeType
+from phase.ator.node.state import NodeType
 
 log = get_emitter('node.connector')
 

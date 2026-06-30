@@ -6,7 +6,7 @@ import requests
 import json
 
 from arch.proto.schema.resonance import BridgeEvent
-from arch.proto.phase.gate import uuid4
+from phase.gov.proto.gate import uuid4
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')

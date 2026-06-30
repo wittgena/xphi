@@ -1,4 +1,5 @@
-# arch.topos.gov.node.anchor
+# phase.gov.node.anchor
+## @lineage: arch.topos.gov.node.anchor
 ## @lineage: gov.state.node.anchor
 ## @lineage: gov.state.system.node.anchor
 ## @lineage: gov.repo.node.anchor
@@ -14,7 +15,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from arch.proto.event.next import next_id
-from arch.topos.gov.repo.schema import RepoCommit, AnchorCommit
+from phase.gov.repo.schema import RepoCommit, AnchorCommit
 from phase.bind.resolver import resolve_path
 
 DEFAULT_ID = "0000000"

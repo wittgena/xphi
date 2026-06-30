@@ -1,4 +1,5 @@
-# meta.ator.trans
+# arch.bound.trans.schema
+## @lineage: meta.ator.trans
 ## @lineage: meta.ator.transductor
 ## @lineage: meta.flow.transductor
 import sys

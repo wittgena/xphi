@@ -1,10 +1,11 @@
-# arch.proto.phase.ator
+# phase.gov.proto.ator
+## @lineage: arch.proto.phase.ator
 import uuid
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
 from watcher.plane.emitter import get_logger
-from arch.proto.phase.flow import (
+from phase.gov.proto.flow import (
     PhaseFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather
 )

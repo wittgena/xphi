@@ -1,11 +1,12 @@
-# phase.ator.reflect.coupler
+# watcher.reflect.coupler
+## @lineage: phase.ator.reflect.coupler
 import asyncio
 from typing import Optional
 
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from arch.contract.state.aggregator import KernelStateAggregator, InternalContext
 from phase.runtime.interpreter import PhaseJudgment
-from phase.ator.reflect.worker import ReflectWorker
+from watcher.reflect.worker import ReflectWorker
 from watcher.plane.emitter import get_emitter
 
 class ReflectCoupler:

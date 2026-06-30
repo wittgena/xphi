@@ -9,9 +9,9 @@ from typing import List, Tuple, Any, Optional, Dict
 from dataclasses import field
 from watcher.plane.emitter import get_emitter
 from arch.contract.protocol import proto, get_proto, Proto
-from arch.proto.phase.flow import PhaseFlow, FlowState
+from phase.gov.proto.flow import PhaseFlow, FlowState
 from arch.contract.state.spec import TransRule, NodeType
-from arch.topos.node.state import LinkerNode, InversionNode, StateNode, ResidueType
+from phase.ator.node.state import LinkerNode, InversionNode, StateNode, ResidueType
 
 log = get_emitter("state.runtime")
 
