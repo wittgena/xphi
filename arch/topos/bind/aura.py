@@ -8,9 +8,9 @@
 import asyncio
 from typing import Dict, Any, Optional
 from watcher.plane.emitter import get_emitter
-from phase.ator.node.gan import Message, GanNode
-from phase.ator.node.state import StateNode
-from phase.ator.node.proxy import DistributedNodePool
+from arch.topos.node.gan import Message, GanNode
+from arch.topos.node.state import StateNode
+from arch.topos.node.proxy import DistributedNodePool
 
 log = get_emitter(__name__)
 

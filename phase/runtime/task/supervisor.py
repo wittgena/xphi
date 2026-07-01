@@ -1,6 +1,4 @@
 # phase.runtime.task.supervisor
-## @lineage: bound.transport.dispatcher.task.supervisor
-## @lineage: bound.bridge.supervisor
 from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable

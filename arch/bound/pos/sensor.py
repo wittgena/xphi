@@ -1,15 +1,10 @@
 # arch.bound.pos.sensor
-## @lineage: arch.topic.pos.sensor
-## @lineage: arch.model.pos.sensor
-## @lineage: topos.model.pos.sensor
-"""
-@role: Class-based Boundary-driven Model Binder
-"""
+"""@role: Class-based Boundary-driven Model Binder"""
+import re
 import json
 import sys
 from pathlib import Path
 from collections import defaultdict, Counter
-from konlpy.tag import Mecab
 
 class PosSensor:
     """∂Φ(Bound) 감지 및 Φ seed 추출을 담당하는 센서 계층"""
@@ -35,23 +30,30 @@ class PosSensor:
         "부터": {"group": "originative", "pos": "JX", "group_desc": "시작점 (source)"},
     }
 
-    def __init__(self, dic_path="/opt/homebrew/lib/mecab/dic/mecab-ko-dic"):
-        try:
-            self.mecab = Mecab(dic_path)
-        except Exception as e:
-            log.warn(f"Mecab load failed: {e}")
-            self.mecab = None
+    def __init__(self):
+        # 길이 순 정렬 (최장 일치 보장)
+        suffixes = sorted(self.POS_MAP.keys(), key=len, reverse=True)
+        
+        # 정규식 패턴: (한글/영문/숫자 1자 이상) + (맵에 정의된 조사 중 하나) + (문자열 끝)
+        # 예: ^([가-힣a-zA-Z0-9]+)(에서|으로|로써|까지|부터|...)$ 
+        pattern = rf"^([가-힣a-zA-Z0-9]+)({'|'.join(suffixes)})$"
+        self.regex = re.compile(pattern)
+        self.punctuation = """.,!?"'()[]{}>"""
 
     def sense(self, text):
-        """텍스트에서 (phi_seed, boundary_group) 쌍을 추출"""
-        if not self.mecab: return []
-        tokens = self.mecab.pos(text)
         candidates = []
-        for i in range(len(tokens) - 1):
-            cur_word, cur_tag = tokens[i]
-            next_word, next_tag = tokens[i+1]
-            meta = self.POS_MAP.get(next_word)
-            if cur_tag.startswith("NN") and meta and next_tag == meta["pos"]:
-                normalized_node = cur_word.strip().lower()
-                candidates.append((cur_word, meta["group"]))
+        words = text.split()
+        
+        for word in words:
+            clean_word = word.strip(self.punctuation)
+            match = self.regex.match(clean_word)
+            
+            if match:
+                stem = match.group(1)   # 명사(추정) 부분
+                suffix = match.group(2) # 매칭된 조사 부분
+                
+                normalized_node = stem.strip().lower()
+                meta = self.POS_MAP[suffix]
+                candidates.append((normalized_node, meta["group"]))
+                
         return candidates

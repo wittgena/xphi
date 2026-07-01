@@ -1,5 +1,9 @@
 # arch.contract.discovery
-## @lineage: arch.contract.discover
+"""
+@desc:
+- Dynamic module discovery and safe-loading mechanism using AST-based static analysis
+- Prevents unauthorized side-effects and heavy dependencies during bootstrap
+"""
 import sys
 import importlib
 import ast
@@ -8,6 +12,9 @@ import traceback
 from pathlib import Path
 from typing import Optional, Set
 from phase.bind.resolver import load_bound, find_current_self
+from watcher.plane.emitter import get_emitter
+
+log = get_emitter("contract.discovery")
 
 _TRACEBACK_PRINTED = False
 
@@ -17,7 +24,9 @@ SAFE_TOP_LEVEL_CALLS = {
 }
 
 def _has_top_level_side_effects(py_file: Path) -> bool:
-    """@internal: 모듈 임포트 시 원치 않는 코드가 즉시 실행되는지 AST로 검사."""
+    """
+    @internal: Analyzes AST to detect unwanted side-effects during module import.
+    """
     try:
         with open(py_file, "r", encoding="utf-8") as f:
             tree = ast.parse(f.read(), filename=py_file.name)
@@ -59,7 +68,9 @@ def _has_top_level_side_effects(py_file: Path) -> bool:
     return False
 
 def _contains_forbidden_imports(py_file: Path, forbidden_libs: Set[str]) -> bool:
-    """@internal: 특정 외부 패키지를 참조하는지 정적으로 검사"""
+    """
+    @internal: Statically verifies if a module references restricted external packages.
+    """
     if not forbidden_libs:
         return False
         
@@ -94,7 +105,7 @@ def discover_modules(
         print(f"[Discover] Root path {root} does not exist.")
         return
     
-    ## 1. 사전에 bound.json을 로드하여 '특권 레포지토리의 절대 경로 목록'을 캐싱
+    ## 1. Pre-load bound.json to cache absolute paths of privileged repositories
     core_paths = []
     try:
         self_root = find_current_self(root)
@@ -113,15 +124,17 @@ def discover_modules(
     if core_paths:
         print(f"[Discover] Active Core Repos (Bypassing side-effects): {[name for name, _ in core_paths]}")
 
-    forbidden_set = forbidden_libs or ["dspy"]
+    forbidden_set = forbidden_libs or {"dspy"}
     exclude_set = exclude_files or {"registry.py", "scanner.py", "discover.py"}
 
     root_path_str = str(root.resolve())
     if root_path_str not in sys.path:
         sys.path.insert(0, root_path_str)
 
+    ignored_files = [] # Gather ignored files for summary logging
+
     for py_file in root.rglob("*.py"):
-        ## 로깅용 상대 경로
+        ## Relative path for logging purposes
         try:
             rel_path_str = str(py_file.relative_to(root.parent))
         except ValueError:
@@ -132,28 +145,28 @@ def discover_modules(
             continue
 
         if _contains_forbidden_imports(py_file, forbidden_set):
-            print(f"[Discover] Ignored (Heavy Dependency) : {rel_path_str}")
+            ignored_files.append((rel_path_str, "Heavy Dependency"))
             continue
 
-        ## 개별 파일의 절대 경로를 검사하여 특권 레포지토리에 속하는지 판별
+        ## Verify absolute path to determine privileged repository status
         abs_py_file = str(py_file.resolve())
         is_core_file = False
         repo_label = "Periphery"
         
         for repo_name, core_path in core_paths:
-            # 파일 경로가 특권 레포지토리 경로로 시작하면 권한 면제
+            # Grant exemption if file resides within a privileged repository
             if abs_py_file.startswith(core_path):
                 is_core_file = True
                 repo_label = repo_name
                 break
 
-        ## @rule.C: 최상단 부수 효과 원천 차단 (특권이 없는 경우에만)
+        ## @rule.C: Block unprivileged top-level side-effects
         if not is_core_file:
             if _has_top_level_side_effects(py_file):
-                print(f"[Discover] Ignored (Top-level Side-effects) : {rel_path_str}")
+                ignored_files.append((rel_path_str, "Top-level Side-effects"))
                 continue
 
-        ## @rule.D: 모듈 동적 로딩
+        ## @rule.D: Dynamic module loading
         try:
             relative = py_file.relative_to(root)
             module_path = ".".join(relative.with_suffix("").parts)
@@ -164,7 +177,14 @@ def discover_modules(
                 else:
                     importlib.import_module(module_path)
         except Exception as e:
-            print(f"[Discover] Failed to load {rel_path_str}: {e}")
+            log.warn(f"[Discover] Failed to load {rel_path_str}: {e}")
             global _TRACEBACK_PRINTED
             if not _TRACEBACK_PRINTED and os.getenv("DEBUG_DISCOVERY") == "1" and isinstance(e, (ImportError, AttributeError)):
                 traceback.print_exc()
+                
+    ## Output summarized logs for ignored files
+    if ignored_files:
+        log.info(f"[Discover] Ignored {len(ignored_files)} modules during discovery phase.")
+        if os.getenv("DEBUG_DISCOVERY") == "1":
+            for path, reason in ignored_files:
+                log.info(f"  - Skipped: {path} (Reason: {reason})")

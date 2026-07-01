@@ -8,9 +8,9 @@ from watcher.plane.emitter import get_emitter
 from phase.runtime.node import NodeRuntime
 from arch.contract.protocol import get_proto
 from phase.gov.proto.flow import PhaseFlow, FlowState
-from phase.ator.node.proxy import DistributedNodePool
+from arch.topos.node.proxy import DistributedNodePool
 from arch.contract.state.spec import TransRule
-from phase.ator.node.state import LinkerNode, InversionNode, StateNode, NodeType
+from arch.topos.node.state import LinkerNode, InversionNode, StateNode, NodeType
 from arch.topos.state.runtime import StateRuntime
 
 log = get_emitter("topos.organizer")

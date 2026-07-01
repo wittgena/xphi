@@ -1,9 +1,4 @@
 # phase.ator.node.gan
-## @lineage: arch.topos.node.gan
-## @lineage: meta.reflector.cognitive.gan
-## @lineage: bound.reflect.cognitive.gan
-## @lineage: cognitive.node.gan
-## @lineage: cognitive.nerve.node.gan
 """
 @desc: Base communication module handling message passing and hierarchical event routing (bubbling) 
        between GanNodes, each possessing an independent asynchronous lifecycle within the topos.

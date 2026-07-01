@@ -1,5 +1,4 @@
 # phase.runtime.node
-## @lineage: phase.node.runtime
 import asyncio
 import signal
 import time
@@ -18,6 +17,7 @@ from arch.contract.discovery import discover_modules
 
 from phase.runtime.surface.sensor import sense_once, REDIS_URL
 from phase.runtime.task.dispatcher import Dispatcher
+from phase.runtime.task.supervisor import TaskSupervisor
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
 from phase.runtime.surface.actuator import SurfaceActuator
 from phase.runtime.surface.sink import RedisSink
@@ -45,6 +45,8 @@ class NodeRuntime(IPhaseAtor):
         
         self.running = True
         self.daemons: List[Any] = [] 
+        self.supervisor = TaskSupervisor(source=f"NodeRuntime-{self._id}")
+        self.supervisor.add_error_handler(self._global_task_error)
         
         self.bus = AsyncEventBus()
         self.log = get_emitter("node.runtime", phase="SYSTEM")
@@ -55,6 +57,16 @@ class NodeRuntime(IPhaseAtor):
         self.coupler = None
         
         self.bus.subscribe(self)
+        self._stop_event = asyncio.Event()
+
+    def _global_task_error(self, task: asyncio.Task[Any], exc: BaseException) -> None:
+        """Global handler invoked when an exception occurs in a task managed by the supervisor"""
+        self.log.crit(f"⚠️ Critical fault in Task [{task.get_name()}]: {exc}")
+        asyncio.create_task(self.shutdown())
+
+    def _on_daemon_error(self, task: asyncio.Task[Any], exc: BaseException) -> None:
+        """Dedicated error handler for specific daemons"""
+        self.log.error(f"❌ Daemon Task [{task.get_name()}] failed. Initiating panic recovery...")
 
     def _handle_exception(self, loop, context):
         msg = context.get("exception", context["message"])
@@ -89,18 +101,20 @@ class NodeRuntime(IPhaseAtor):
 
     async def react(self, event: PsiEvent, field: IPhaseField, bus: AsyncEventBus):
         if self.running and self.redis:
-            try:
-                await self.redis.lpush("runtime:queue", event.to_json())
-                self.log.trace(f"Event {event.symbol} escalated to global redis queue.")
-            except Exception as e:
-                self.log.error(f"Failed to push event to Redis queue: {e}")
+            async def push_task():
+                try:
+                    await self.redis.lpush("runtime:queue", event.to_json())
+                except Exception as e:
+                    self.log.error(f"Failed to push event: {e}")
+            
+            self.supervisor.create(push_task(), name=f"Escalate-{event.symbol}")
 
     def _create_phase_handler(self, coupler: ReflectCoupler):
         async def handler(psi: PsiEvent):
-            ## 반사계의 판단 (Sync)
+            ## Judgment by the reflex system (Sync)
             judgment = self.interpreter.process(psi.carrier)
             
-            ## 교량으로 이관 (Fire and Forget)
+            ## Transfer to the bridge (Fire and Forget)
             coupler.ingest(psi.carrier, judgment)
             if self.executor:
                 await self.executor.execute(psi)
@@ -128,9 +142,7 @@ class NodeRuntime(IPhaseAtor):
 
         watch_dir = find_current_self()
         discover_modules(watch_dir)
-        # self.local_manifold = registry.registered_nodes
         self.log.info(f"discovered {len(self.local_manifold)} local phasenodes.")
-
         await self.register_node()
 
         all_recepts = set()
@@ -140,7 +152,7 @@ class NodeRuntime(IPhaseAtor):
         if not all_recepts:
             all_recepts = {"system:signal", "system:ping"}
 
-        ## 척수(Interpreter) 구성
+        ## Configure the spinal cord (Interpreter)
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
         self.interpreter = NodeInterpreter(anchor)
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")
@@ -160,6 +172,7 @@ class NodeRuntime(IPhaseAtor):
             actuator=self.actuator,
         )
         await self.dispatcher.start()
+
         self.daemons = [
             SensorDaemon(self.redis, self.bus),
             CaptureDaemon(self.redis, self.dispatcher, self, self.idle_timeout),
@@ -168,31 +181,36 @@ class NodeRuntime(IPhaseAtor):
             ReceptorDaemon(self.redis, self.node_id, watch_dir)
         ]
 
-        tasks = []
         for daemon in self.daemons:
-            task = await daemon.start()
-            task.add_done_callback(self._on_task_done)
-            tasks.append(task)
-
-        await asyncio.gather(*tasks)
+            ## If daemon.start() is a coroutine, wrap it as a task inside the supervisor and auto-bind the error handler
+            self.supervisor.create(
+                daemon.start(), 
+                name=f"Daemon-{daemon.__class__.__name__}",
+                on_error=self._on_daemon_error
+            )
+        
+        self.log.info("All core daemons under TaskSupervisor orchestration")
 
     async def shutdown(self):
         if not self.running: return
 
         self.log.warn("Shutdown sequence initiated...")
         self.running = False
+
         await self.deregister_node()
+        await self.supervisor.shutdown()
 
-        ## 모든 데몬 종료 하달
-        stop_tasks = [daemon.stop() for daemon in self.daemons]
-        await asyncio.gather(*stop_tasks, return_exceptions=True)
-
-        ## 내부 컴포넌트 해제
+        ## @release: internal core components
         if self.coupler: await self.coupler.stop()
         if self.dispatcher: await self.dispatcher.stop()
         if self.actuator: await self.actuator.close()
         if self.redis: await self.redis.close()
+
         self.log.info("Teardown complete.")
+        self._stop_event.set()
+
+    async def wait_until_stopped(self):
+        await self._stop_event.wait()
 
     async def _recover_from_panic(self, toxic_psi: PsiCarrier, error: Exception):
         self.log.crit(f"Critical anomaly from Ψ({toxic_psi.symbol}). Reason: {error}")
@@ -205,7 +223,7 @@ class NodeRuntime(IPhaseAtor):
         
         self.interpreter = NodeInterpreter(stable_anchor)
         if self.dispatcher:
-            ## 패닉 복구 시에도 잃어버리지 않도록 교량을 다시 연결
+            ## @reconnect: bridge to prevent data loss even during panic recovery
             self.dispatcher.handler = self._create_phase_handler(self.coupler) 
         self.log.signal(f"System restored to Phase: {self.interpreter.phase}")
 
@@ -245,7 +263,7 @@ class NodeRuntime(IPhaseAtor):
         self.log.info("Node and capability indexes deregistered.")
 
 def install_os_signal(node: NodeRuntime):
-    """[Phase 3] OS 바인딩 및 부트스트랩"""
+    """@phase: OS binding and bootstrap"""
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
         try:
@@ -257,10 +275,13 @@ async def main_async():
     completion_signal = asyncio.Event()
     executor = SwarmExecutor(completion_signal)
     node = NodeRuntime(executor=executor)
-    install_os_signal(node)
+    
+    ## Set to call node.shutdown() upon receiving OS Signals (SIGINT, SIGTERM)
+    install_os_signal(node) 
     
     try:
         await node.start()
+        await node.wait_until_stopped()
     except asyncio.CancelledError:
         pass
 
