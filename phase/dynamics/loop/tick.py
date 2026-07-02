@@ -1,5 +1,5 @@
-# phase.rhythm.loop.tick
-## @lineage: phase.dynamics.loop.tick
+# phase.dynamics.loop.tick
+## @lineage: phase.rhythm.loop.tick
 import asyncio
 import json
 import redis.asyncio as redis_async

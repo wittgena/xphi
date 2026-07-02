@@ -1,5 +1,5 @@
-# phase.rhythm.coupler
-## @lineage: phase.dynamics.rhythm.coupler
+# phase.dynamics.rhythm.coupler
+## @lineage: phase.rhythm.coupler
 ## @lineage: phase.reflect.rhythm.coupler
 ## @lineage: cognitive.reflect.rhythm.coupler
 ## @lineage: cognitive.rhythm.coupler

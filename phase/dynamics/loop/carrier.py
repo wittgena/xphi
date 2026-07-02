@@ -1,5 +1,5 @@
-# phase.rhythm.loop.carrier
-## @lineage: phase.dynamics.loop.carrier
+# phase.dynamics.loop.carrier
+## @lineage: phase.rhythm.loop.carrier
 from __future__ import annotations
 import asyncio
 from arch.proto.event.next import next_id

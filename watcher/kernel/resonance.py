@@ -11,8 +11,8 @@ from arch.contract.interface import IDynamicsKernel
 
 from phase.bind.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
-from phase.rhythm.loop.carrier import LoopCarrier
-from phase.rhythm.dynamics.executor import DynamicsExecutor
+from phase.dynamics.loop.carrier import LoopCarrier
+from phase.dynamics.executor import DynamicsExecutor
 
 from watcher.plane.emitter import get_emitter
 
