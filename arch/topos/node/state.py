@@ -1,5 +1,5 @@
-# phase.ator.node.state
-## @lineage: arch.topos.node.state
+# arch.topos.node.state
+## @lineage: phase.ator.node.state
 ## @lineage: phase.topos.node.state
 ## @lineage: topos.state.node
 import asyncio

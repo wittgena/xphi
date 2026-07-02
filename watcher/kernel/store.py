@@ -11,7 +11,7 @@ from phase.bind.resolver import resolve_path
 
 log = get_emitter("kernel.store")
 
-LEDGER_DB_PATH = resolve_path("watcher") / "kernel.ledger.rocks.db"
+LEDGER_DB_PATH = resolve_path("xor") / "ledger.rocks.db"
 
 def deterministic_hash(data: Dict[str, Any]) -> str:
     """결정론적 직렬화를 통한 무결성 해시(SHA-256) 생성"""
@@ -34,13 +34,9 @@ class KernelCommit:
     stream_id: str
     executable_payload: Any
     tension_at_seal: float
-    blob_hashes: List[str]  # 이 커널이 완성되기까지 거친 상태 전이들의 해시
-    parent_hash: Optional[str] = None # 이전 밀봉된 커널(또는 베이스)의 해시
+    blob_hashes: List[str]
+    parent_hash: Optional[str] = None
     sealed_at: float = field(default_factory=time.time)
-
-## ---------------------------------------------------------
-## Kernel Storage Engine
-## ---------------------------------------------------------
 
 class KernelStore:
     """커널 위상 장부를 위한 전용 Content-Addressable Storage"""

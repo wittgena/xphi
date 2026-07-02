@@ -14,7 +14,7 @@ _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={
 _event_interceptors: List[Callable[[LogEvent], None]] = []
 
 def register_interceptor(interceptor: Callable[[LogEvent], None]):
-    """외부 시스템에서 LogEvent를 가로채어 확장할 수 있도록 등록"""
+    """Registers an external interceptor to hook and extend LogEvents."""
     if interceptor not in _event_interceptors:
         _event_interceptors.append(interceptor)
 
@@ -34,7 +34,7 @@ class SurfaceEmitter:
         self, 
         name: str, 
         phase: Optional[str] = None, 
-        boundary: Optional[str] = None, # 💡 기존 생성자 signature 인자 명칭 보정 (bound -> boundary 호환 보장)
+        boundary: Optional[str] = None,
         handler: Optional[Callable[[LogEvent], None]] = None,
         mode: str = "NORMAL"
     ):
@@ -45,7 +45,7 @@ class SurfaceEmitter:
         self.mode = mode.upper()
 
     def set_mode(self, mode: str):
-        """출력 모드를 동적으로 변경 (NORMAL, SLIM, MINIMAL, FULL 등)"""
+        """Dynamically override output layout (NORMAL, SLIM, MINIMAL, FULL, etc.)"""
         self.mode = mode.upper()
         return self
 
@@ -89,7 +89,7 @@ class SurfaceEmitter:
 
         self._handler(event)
 
-    ## 표준 logging.Logger 완벽 호환 인터페이스 (Adapter)
+    ## @compat: Fully compatible adapter interface for standard logging.Logger
     def debug(self, msg, *args, **kwargs): self._log("DEBUG", msg, *args, **kwargs)
     def trace(self, msg, *args, **kwargs): self._log("TRACE", msg, *args, **kwargs)
     def info(self, msg, *args, **kwargs): self._log("INFO", msg, *args, **kwargs)
@@ -114,18 +114,55 @@ def get_emitter(name: str, phase: Optional[str] = None, boundary: Optional[str] 
     return SurfaceEmitter(name, phase, boundary, mode=mode)
 
 
-# Legacy 호환을 위한 네이티브 파이썬 로깅 백업 셋업
+## @legacy.compat: Native Python logging fallback setup
 _LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 DEBUG = True
 
+class SurfacePlaneHandler(logging.Handler):
+    """@desc: Intercepts standard logging.Logger records and securely routes them to the new event pipeline (SurfacePlane)"""
+    def emit(self, record):
+        try:
+            ## @step.1: Map standard logging levels to Surface architecture topology
+            level_map = {
+                logging.CRITICAL: "CRIT",
+                logging.ERROR: "ERROR",
+                logging.WARNING: "WARN",
+                logging.INFO: "INFO",
+                logging.DEBUG: "DEBUG",
+                logging.NOTSET: "TRACE"
+            }
+            mapped_level = level_map.get(record.levelno, "INFO")
+            
+            ## @step.2: Format raw record payload
+            formatted_msg = self.format(record)
+            
+            ## @step.3: Assemble standard LogEvent and dispatch to Plane
+            ## @notice: record.name equals the registered logger namespace (e.g., "bound")
+            event = LogEvent(
+                source_id=record.name,
+                message=formatted_msg,
+                level=mapped_level,
+                context={"phase": "LEGACY"},
+                tick=None
+            )
+            default_plane.handle(event)
+            
+        except Exception as e:
+            sys.stderr.write(f"[SurfacePlaneHandler Anomaly] {e}\n")
+
 def _create_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
+    
     if logger.handlers:
         return logger
-    logger.setLevel(_LEVEL)
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter("[%(levelname)s] %(name)s: %(message)s")
+        
+    level_num = getattr(logging, _LEVEL, logging.INFO)
+    logger.setLevel(level_num)
+    handler = SurfacePlaneHandler()
+    
+    formatter = logging.Formatter("%(message)s") 
     handler.setFormatter(formatter)
+    
     logger.addHandler(handler)
     logger.propagate = False
     return logger

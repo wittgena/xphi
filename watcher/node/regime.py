@@ -1,8 +1,4 @@
-# watcher.ator.regime
-## @lineage: surface.ator.regime
-## @lineage: xyz.surface.ator.regime
-## @lineage: xyz.subst.ator.regime
-## @lineage: foldbox.manager.workspace.regime
+# watcher.node.regime
 import math
 import random
 from typing import Optional

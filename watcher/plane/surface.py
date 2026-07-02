@@ -3,12 +3,15 @@
 @manifold: Surface Event Projection Plane
 @desc: Manages multi-surface log event distribution (Console, File, Redis) 
        with granular independent level filtering and folding control.
-       Bulletproofed against NoneType formatting anomalies.
+       Bulletproofed against NoneType anomalies and frozen dataclasses.
+       Dynamically routes file logs based on execution phases.
 """
+import os
 import json
 import time
 import asyncio
 import sys
+import atexit
 from dataclasses import replace, asdict
 from typing import Dict, List, Protocol, Optional
 from collections import defaultdict, deque
@@ -22,14 +25,12 @@ try:
 except ImportError:
     redis_async = None
 
-
 class EventObserver(Protocol):
     def update(self, event: LogEvent) -> None:
         ...
 
-
 class RedisSurface(EventObserver):
-    """로그 이벤트를 Redis Pub/Sub으로 실시간 스트리밍"""
+    """@desc: Streams log events in real-time via Redis Pub/Sub."""
     def __init__(self, redis_client):
         self.redis = redis_client
 
@@ -50,9 +51,8 @@ class RedisSurface(EventObserver):
         except RuntimeError:
             pass
 
-
 class ConsoleSurface(EventObserver):
-    """콘솔 출력을 담당하며, 지정된 기본 최소 레벨 이상만 필터링하여 출력합니다."""
+    """@desc: Handles standard output with level-based filtering and rich formatting."""
     BYPASS_LEVELS = {"CRIT", "SIGNAL"}
     
     LEVEL_WEIGHTS = {
@@ -71,7 +71,6 @@ class ConsoleSurface(EventObserver):
         self.min_weight = self.LEVEL_WEIGHTS.get(self.min_level, 30)
 
     def update(self, event: LogEvent):
-        # 💡 None 유형 방어 가드 문자열 정형화
         event_level = str(event.level or "INFO").upper()
         
         if event_level not in self.BYPASS_LEVELS:
@@ -84,10 +83,12 @@ class ConsoleSurface(EventObserver):
             return
 
         p_mark = "🔥" if event.kind == "summary" else ""
-        gain = f" [G:{event.gain:.1f}]" if event.gain is not None and event.gain < 1.0 else ""
-        fold = f" (x{event.fold_count})" if event.fold_count and event.fold_count > 1 else ""
+        gain_val = getattr(event, "gain", None)
+        gain = f" [G:{gain_val:.1f}]" if gain_val is not None and gain_val < 1.0 else ""
         
-        # 💡 안전한 문자열 치환 가드 정렬 (None 유입 시 공백/기본값 대체)
+        fold_val = getattr(event, "fold_count", 0)
+        fold = f" (x{fold_val})" if fold_val and fold_val > 1 else ""
+        
         phase_val = event.context.get("phase") if event.context else None
         phase_str = str(phase_val if phase_val is not None else "SYSTEM")
         kind_str = str(event.kind or "LOG").upper()
@@ -99,19 +100,22 @@ class ConsoleSurface(EventObserver):
             print(f"{event.message}{fold}")
         else:
             try:
-                prefix = f"T-{int(event.tick):04d}" if event.tick is not None else f"{kind_str:^5}"
+                prefix = f"T-{int(event.tick):04d}" if getattr(event, "tick", None) is not None else f"{kind_str:^5}"
             except (ValueError, TypeError):
                 prefix = f"{kind_str:^5}"
                 
             print(f"{prefix}{p_mark}| {phase_str:^6} | {event_level:^5} | {gain} {source_str}: {event.message}{fold}")
 
-
 class FileSurface(EventObserver):
-    """로그 이벤트를 파일 시스템에 지속적으로 기록하는 물리 옵저버"""
-    def __init__(self, file_path: str | Path, min_level: str = "DEBUG"):
-        self.file_path = Path(file_path)
+    """
+    @desc: 
+    - Physically records log events to the filesystem
+    - Dynamically routes to different files based on the 'phase' context
+    """
+    def __init__(self, base_dir: str | Path, min_level: str = "DEBUG"):
+        self.base_dir = Path(base_dir)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
         self.min_level = min_level.upper()
-        self.file_path.parent.mkdir(parents=True, exist_ok=True)
         self.min_weight = ConsoleSurface.LEVEL_WEIGHTS.get(self.min_level, 20)
 
     def update(self, event: LogEvent):
@@ -123,23 +127,32 @@ class FileSurface(EventObserver):
 
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         
-        # 💡 키가 존재하되 내부가 None일 경우를 완벽하게 가드하기 위해 인라인 삼항 연산 사용
+        ## @step.1: Safely extract and sanitize phase for dynamic file routing
         ctx_phase = event.context.get("phase") if event.context else None
         phase_str = str(ctx_phase if ctx_phase is not None else "SYSTEM")
+        
+        ## Prevent path traversal and format cleanly (e.g., "SYSTEM" -> "system.log")
+        safe_phase = "".join(c for c in phase_str if c.isalnum() or c in "_-").lower()
+        if not safe_phase:
+            safe_phase = "system"
+            
+        target_file = self.base_dir / f"{safe_phase}.log"
+        
         source_str = str(event.source_id or "UNKNOWN")
-        fold = f" (x{event.fold_count})" if event.fold_count and event.fold_count > 1 else ""
+        fold_val = getattr(event, "fold_count", 0)
+        fold = f" (x{fold_val})" if fold_val and fold_val > 1 else ""
         
         log_line = f"[{timestamp}] [{event_level:^5}] [{phase_str:^8}] {source_str}: {event.message}{fold}\n"
         
         try:
-            with open(self.file_path, "a", encoding="utf-8") as f:
+            with open(target_file, "a", encoding="utf-8") as f:
                 f.write(log_line)
         except Exception as e:
-            sys.stderr.write(f"[FileSurface Error] Failed to write log grid: {e}\n")
+            sys.stderr.write(f"[FileSurface Error] Failed to write to {target_file.name}: {e}\n")
 
 
 class PressureMeter:
-    """슬라이딩 윈도우 기반 압력 측정"""
+    """@desc: Sliding window-based pressure and density measurement."""
     def __init__(self, window: float = 2.0):
         self.window = window
         self.history = defaultdict(deque)
@@ -154,9 +167,8 @@ class PressureMeter:
         q.append(now)
         return len(q) / self.window
 
-
 class SurfacePlane:
-    """인스턴스 기반의 이벤트 수집 및 라우팅 총괄 본체"""
+    """@desc: Instance-based event collector and routing orchestrator."""
     PRIORITY_LEVELS = {"CRIT", "SIGNAL"}
 
     def __init__(self, threshold: float = 5.0, meter_window: float = 2.0):
@@ -176,25 +188,31 @@ class SurfacePlane:
         msg_str = str(event.message or "")
         key = f"{phase_str}:{source_str}:{msg_str}"
         
-        event.density = self.meter.measure(key)
+        ## @step.1: Safely calculate density
+        density_val = self.meter.measure(key)
 
-        if event.density > self.threshold:
-            event.gain = self.threshold / event.density
+        ## @step.2: Fold repeated events securely (Bulletproofed against frozen Dataclasses)
+        if density_val > self.threshold:
+            gain_val = self.threshold / density_val
             
             if key in self.fold_cache:
-                self.fold_cache[key].fold_count += 1
+                old_event = self.fold_cache[key]
+                new_fold_count = getattr(old_event, "fold_count", 1) + 1
+                self.fold_cache[key] = replace(old_event, fold_count=new_fold_count, gain=gain_val)
                 return
                 
-            summary_event = replace(event, kind="summary", fold_count=1)
+            summary_event = replace(event, kind="summary", fold_count=1, density=density_val, gain=gain_val)
             self.fold_cache[key] = summary_event
             self._notify(summary_event)
         else:
             if key in self.fold_cache:
                 folded_event = self.fold_cache.pop(key)
-                if folded_event.fold_count > 1:
+                if getattr(folded_event, "fold_count", 0) > 1:
                     self._notify(folded_event)
             
-            self._notify(event)
+            # Forward the original event securely
+            ready_event = replace(event, density=density_val)
+            self._notify(ready_event)
 
     def _notify(self, event: LogEvent):
         for observer in self._observers:
@@ -210,7 +228,7 @@ class SurfacePlane:
     def flush(self):
         for key in list(self.fold_cache.keys()):
             folded_event = self.fold_cache.pop(key, None)
-            if folded_event and folded_event.fold_count > 1:
+            if folded_event and getattr(folded_event, "fold_count", 0) > 1:
                 self._notify(folded_event)
 
     def record(self, tick, phase, source, message, level="INFO"):
@@ -223,16 +241,23 @@ class SurfacePlane:
         )
         self.handle(event)
 
+"""Ecosystem Collector Network: Assembly & Deployment Region"""
+## @step: Sync global log level from Environment Variables
+GLOBAL_LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
-"""⚙️ 에코시스템 수집망 어댑터 초기 조립 배포 영역"""
 default_plane = SurfacePlane()
-console_surface = ConsoleSurface(mode="NORMAL", min_level="INFO")
+console_surface = ConsoleSurface(mode="NORMAL", min_level=GLOBAL_LOG_LEVEL)
 default_plane.attach(console_surface)
 
-LOG_OUTPUT_TARGET = resolve_path("res") / "log" / "brane.log"
-file_surface = FileSurface(file_path=LOG_OUTPUT_TARGET, min_level="DEBUG")
+## @step: Dynamic File Surface routing based on Target Directory
+LOG_BASE_DIR = resolve_path("log")
+file_min_level = "TRACE" if GLOBAL_LOG_LEVEL == "TRACE" else "DEBUG"
+
+file_surface = FileSurface(base_dir=LOG_BASE_DIR, min_level=file_min_level)
 default_plane.attach(file_surface)
 
+## @step: Register forced flush on process exit to prevent fold-cache evaporation
+atexit.register(default_plane.flush)
 if redis_async:
     try:
         redis_streamer = RedisSurface(redis_async.from_url("redis://localhost:6379", decode_responses=True))

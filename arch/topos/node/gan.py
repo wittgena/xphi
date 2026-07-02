@@ -1,4 +1,5 @@
-# phase.ator.node.gan
+# arch.topos.node.gan
+## @lineage: phase.ator.node.gan
 """
 @desc: Base communication module handling message passing and hierarchical event routing (bubbling) 
        between GanNodes, each possessing an independent asynchronous lifecycle within the topos.
