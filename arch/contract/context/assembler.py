@@ -13,9 +13,7 @@ log = get_logger("context.assembler")
 
 @runtime_checkable
 class IResidueProvider(Protocol):
-    """
-    @role: 외부의 물리적 도구(Xor, Scanner 등)가 Theoria에 결합되기 위해 지켜야 할 최소 규격
-    """
+    """@role: 외부의 물리적 도구(Xor, Scanner 등)가 Theoria에 결합되기 위해 지켜야 할 최소 규격"""
     def fetch(self, query: str, **kwargs) -> List[Any]:
         ...
 
@@ -27,7 +25,7 @@ class ContextAssembler:
     """
     def __init__(self):
         self.self_root = find_current_self()
-        self.workspace = resolve_path("workspace") / "context"
+        self.workspace = resolve_path("io") / "context"
         self.blocks_root = self.workspace / "blocks"
         self.schema_root = self.workspace / "schemas"
         self.config_root = self.workspace / "configs"

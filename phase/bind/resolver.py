@@ -9,14 +9,12 @@ from functools import lru_cache
 ANCHOR_DIR = "self"
 BOUND = "bound.json"
 
-## @detect.self.root
 def is_self_root(path: Path) -> bool:
-    """self 기준면 여부 확인 - 디렉토리 이름이 self이고 하위에 anchor 디렉토리가 존재하는지 검증"""
+    """Verify if the path is the self root - checks if the directory name is 'self' and contains an 'anchor' subdirectory."""
     return path.name == ANCHOR_DIR and (path / "anchor").is_dir()
 
-# @lru_cache(maxsize=1)
 def find_current_self(start: Path | None = None) -> Path:
-    """가장 가까운 self - cascading 탐색은 하지 않는다."""
+    """Find the nearest 'self' root - does not perform cascading searches."""
     if start is None:
         start = Path.cwd()
 
@@ -30,13 +28,12 @@ def find_current_self(start: Path | None = None) -> Path:
 @lru_cache(maxsize=1)
 def resolve_identity(start: Path | None = None) -> tuple[int, int]:
     """
-    @desc: 시스템의 고유 위상 식별자(Manifold, Vertex)를 해석하여 반환
+    @desc: Parse and return the system's unique topological identifiers (Manifold, Vertex).
     @returns: (manifold_id, vertex_id)
     """
     self_root = find_current_self(start)
     bound = load_bound(self_root)
     identity = bound.get("identity", {})
-    # 기본값은 1로 설정하며, 5비트(0~31) 제약을 여기서 선제적으로 방어할 수도 있습니다.
     manifold_id = identity.get("manifold_id", 1) & 0x1F
     vertex_id = identity.get("vertex_id", 1) & 0x1F
     
@@ -53,11 +50,9 @@ def get_invoker(path: Path):
         return "", ""
     return invoker, command
 
-## @handling.bound
 def load_bound(self_root: Path) -> dict:
-    """self/anchor/bound.json 로드 - 최소 유효성 검증 포함"""
+    """Load self/anchor/bound.json - includes minimal validation."""
     bound = self_root / "anchor" / BOUND 
-    
     if not bound.exists():
         return {}
 
@@ -70,74 +65,78 @@ def load_bound(self_root: Path) -> dict:
         raise RuntimeError(f"Invalid bound in {bound}: {e}")
 
 def _clean_subpath(root_name: str, sub_path_str: str) -> str:
-    """하위 경로에서 루트 디렉토리 이름이 중복되는 것을 방지"""
+    """Prevent duplication of the root directory name in subpaths."""
     pure_path = Path(sub_path_str)
-    # 경로의 첫 번째 조각이 root_name(예: 'self')과 같다면 제거
     if pure_path.parts and pure_path.parts[0] == root_name:
         return os.path.join(*pure_path.parts[1:]) if len(pure_path.parts) > 1 else "."
     return sub_path_str
 
 def _track_io_usage(name: str, target_path: Path):
-    """[NEW] 런타임 IO 추적용 훅 - 수정됨"""
+    """Runtime IO tracking hook"""
     try:
         from arch.contract.registry.path import path_registry
-        ## 메서드 이름을 log_access로 통일
+        ## Unify method name to log_access
         path_registry.log_access(name, target_path)
     except ImportError:
         pass
 
 @lru_cache(maxsize=32)
 def resolve_path(name: str, start: Path | None = None) -> Path:
-    ## lru_cache 히트율을 위해 start 인자 정규화
+    ## Normalize the 'start' argument to improve lru_cache hit rate
     effective_start = start.resolve() if start else Path.cwd().resolve()
     self_root = find_current_self(effective_start)
-    anchor_root = self_root / "anchor"
     
-    ## 입력을 깨끗하게 정렬
     clean_name = _clean_subpath(self_root.name, name)
-    
-    ## 직접 후보 확인 (물리적 디렉토리가 이미 존재하면 우선 반환)
     direct_candidate = (self_root / clean_name).resolve()
     if direct_candidate.exists() and direct_candidate.is_dir():
         return direct_candidate
 
-    ## 매핑 확인 및 Prefix 라우팅
     bound = load_bound(self_root)
     paths = bound.get("paths", {})
     
     if name in paths:
         raw_mapped = paths[name]
         
-        ## Prefix에 따른 라우팅 분기
-        if raw_mapped.startswith(":anchor:/"):
-            ## :anchor:/io -> self/anchor/io
-            sub_path = raw_mapped.replace(":anchor:/", "", 1)
-            target_path = (anchor_root / sub_path).resolve()
-        elif raw_mapped.startswith(":self:/"):
-            ## :self:/phase -> self/phase (명시적 self 루트)
-            sub_path = raw_mapped.replace(":self:/", "", 1)
-            target_path = (self_root / sub_path).resolve()
-            
+        ## Fully normalize the substitution dictionary into Path objects based on self_root
+        substitutions = {
+            "self": self_root,
+            "anchor": self_root / "anchor"
+        }
+        
+        ## Merge substitution from bound.json and align with self_root
+        for prefix_key, rel_path in bound.get("substitution", {}).items():
+            safe_rel_path = rel_path.lstrip("/") if isinstance(rel_path, str) else str(rel_path)
+            substitutions[prefix_key] = (self_root / safe_rel_path).resolve()
+        
+        ## Modified regex: Optionally match the slash (/) and sub-path
+        ## @ex: ":io:/log" -> prefix='io', sub_path='log'
+        ## @ex: ":io:" -> prefix='io', sub_path=''
+        match = re.match(r"^:([^:]+):(?:/(.*))?$", raw_mapped)
+        if match:
+            prefix = match.group(1)
+            sub_path = match.group(2) or ""
+            if prefix in substitutions:
+                target_path = (substitutions[prefix] / sub_path).resolve()
+            else:
+                raise RuntimeError(f"Unknown substitution prefix ':{prefix}:' in paths mapping '{name}: {raw_mapped}'")
         else:
-            ## Prefix가 없는 경우 (예: "phase/ext/model" 또는 레거시 "anchor/io")
+            ## Handling case of a normal path mapping without a prefix (e.g., "brane")
             mapped_subpath = _clean_subpath(self_root.name, raw_mapped)
             target_path = (self_root / mapped_subpath).resolve()
     else:
         target_path = direct_candidate
 
-    ## 최종 경로 생성 보장
     target_path.mkdir(parents=True, exist_ok=True)
     _track_io_usage(name, target_path)
     return target_path
 
 def resolve_channel(name: str, start: Path | None = None) -> str:
     """
-    Redis channel resolver
-
-    resolution order:
-    1 anchor mapping
-    2 namespace validation
-    3 return original
+    @phase: Redis channel resolver
+    @order:
+    - anchor mapping
+    - namespace validation
+    - return original
     """
     self_root = find_current_self(start)
     bound = load_bound(self_root)
@@ -164,12 +163,10 @@ def resolve_channel(name: str, start: Path | None = None) -> str:
             f"Channel namespace '{prefix}' not allowed. "
             f"Allowed: {', '.join(namespaces)}"
         )
-
     return name
 
-## @xphi.pattern
 def resolve_pattern(start: Path | None = None) -> str:
-    """xphi가 subscribe 해야 할 redis pattern 반환"""
+    """Return the Redis pattern that xphi should subscribe to."""
     self_root = find_current_self(start)
     bound = load_bound(self_root)
     channels = bound.get("channels", {})
@@ -183,7 +180,7 @@ def resolve_pattern(start: Path | None = None) -> str:
 def around(base_dir: Path, max_depth: int = 2) -> dict:
     """
     @flow: Φ(base) → ∂Φ(local scan) → Φ_git_map{}
-    @desc: 단순 리스트 반환이 아닌, 각 Repo의 특권(Privilege) 상태를 함께 반환합니다.
+    @desc: Returns the privilege state of each Repo, rather than just a simple list.
     """
     found_repos = {}
     def _search(current_path: Path, current_depth: int):
@@ -194,12 +191,12 @@ def around(base_dir: Path, max_depth: int = 2) -> dict:
         ## @detect: Φ_git emergence
         if (current_path / '.git').exists():
             repo_name = current_path.name
-            ## 레포지토리 이름이 CORE_REPOS에 포함되어 있으면 권한 부여
+            ## Grant privileges if the repository name is included in CORE_REPOS
             is_core = repo_name in CORE_REPOS
             found_repos[repo_name] = {
                 "path": str(current_path),
                 "is_core": is_core,
-                "allow_side_effects": is_core ## 핵심 레포는 부수 효과 허용
+                "allow_side_effects": is_core
             }
 
         try:
@@ -234,7 +231,7 @@ def run_around():
         print(f"[Error] JSON 형식이 올바르지 않습니다: {json_path}")
         return
 
-    ## @flow: Φ → ∂Φ → Φ_local (딕셔너리 형태로 업데이트)
+    ## @flow: Φ → ∂Φ → Φ_local
     repos = around(base_dir, max_depth=2)
     data['around'] = repos
 
@@ -250,16 +247,13 @@ def run_test():
         self_root = find_current_self(Path("."))
         print(f"[SELF ROOT] {self_root}")
 
-        ## bound 로드
         bound = load_bound(self_root)
-
         if bound:
             print("\n[BOUND FOUND]")
             print(json.dumps(bound, indent=2))
         else:
             print("\n[NO BOUND FOUND]")
 
-        ## PATH TEST
         print("\n## @path.resolution.test")
         paths = bound.get("paths", {})
         for name in paths.keys():
