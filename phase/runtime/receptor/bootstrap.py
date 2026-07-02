@@ -1,31 +1,42 @@
 # phase.runtime.receptor.bootstrap
-## @lineage: phase.receptor.bootstrap
-## @lineage: cognitive.receptor.bootstrap
+"""@flow: Sink(망) → Surface(위상장) → ReceptorKernel(다중 렌즈) → SourceTracer(감각/방어) 마운트"""
 import asyncio
 from pathlib import Path
 from watchdog.observers import Observer
-from watcher.tracer.source import TracerSource
-from watcher.tracer.kernel import TracerKernel
+from typing import List
+
 from phase.bind.resolver import find_current_self
-from phase.runtime.receptor.topos import ReceptorTopos
+from phase.runtime.receptor.topos import ReceptorTopos, build_system_topos
+from phase.runtime.receptor.kernel import ReceptorKernel
 from phase.runtime.surface.sink import RedisSink 
+
+from watcher.tracer.source import TracerSource
+from watcher.tracer.trajectory import TopologicalStructure
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("receptor.bootstrap")
+
 SELF_ROOT = find_current_self()
 
 async def receptor_bootstrap(watch_dir: str = SELF_ROOT):
     """
     @desc: Receptor Bootstrap Loop (시스템의 자가생성 부팅 시퀀스)
-    @flow: Sink(망) → Surface(위상장) → TraceKernel(인지) → SourceTracer(감각/방어) 마운트
     """
     sink = RedisSink() 
     surface = ReceptorTopos(sink)
 
-    kernel = TracerKernel(surface, window_steps=14, lens_preset="tail_risk")
+    # 안전하게 동적 생성된 위상 구조(Φ) 로드
+    system_topos = build_system_topos()
+
+    # 다중 렌즈 커널 마운트 (structures 주입)
+    kernel = ReceptorKernel(
+        surface=surface, 
+        window_steps=14, 
+        structures=system_topos
+    )
     await kernel.start_daemons()
 
-    ## watch_dir를 명시적으로 주입하여 FQN(논리적 위상) 추론이 가능하도록 지원
+    # watch_dir를 명시적으로 주입하여 FQN(논리적 위상) 추론이 가능하도록 지원
     main_loop = asyncio.get_running_loop()
     event_handler = TracerSource(surface, main_loop, watch_dir=watch_dir)
     
@@ -35,6 +46,7 @@ async def receptor_bootstrap(watch_dir: str = SELF_ROOT):
     
     current_phase = await surface.get_current_phase()
     print(f"\n[Singularity] Receptor Active -> observing {watch_dir} (Φ={current_phase})")
+    print(f"[Topology] Mounted structures: {[s.name for s in system_topos]}")
 
     try:
         while True:

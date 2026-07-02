@@ -1,16 +1,16 @@
-# phase.runtime.receptor.topos
-## @lineage: phase.receptor.topos
-## @lineage: cognitive.receptor.topos
 import time
 import json
-from typing import Optional, Dict
+from typing import Optional, Dict, List
+from contextlib import suppress
+
 from phase.runtime.surface.sink import EmitterSink
+from watcher.tracer.trajectory import TopologicalStructure
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("receptor.topos")
 
 class ReceptorTopos:
-    """@role: ∂Φ bound surface (Domain Layer) - 인프라(Redis, File, API)는 EmitterSink로 추상화되어 주입됨."""
+    """@role: ∂Φ bound surface (Domain Layer)"""
     def __init__(self, sink: EmitterSink):
         self.sink = sink
         self.state_key = "meta.self:state:current_phase"
@@ -25,15 +25,31 @@ class ReceptorTopos:
         await self.sink.set(self.state_key, phase)
 
     async def emit_psi(self, event_type: str, weight: int = 1, payload: Optional[Dict] = None):
-        """@desc: 외부의 파동(payload)을 수용하여 내부의 위상 좌표와 병합한 뒤 전파"""
-        ## Source에서 전달받은 파동 데이터 수용 (원본 보호를 위해 복사)
         merged_payload = payload.copy() if payload else {}
-        
-        ## Surface의 절대 좌표(event, ts 등) 강제 덮어쓰기 병합
         merged_payload.update({
             "event": event_type,
             "weight": weight,
             "ts": time.time()
         })
-        print(f"Ψ emit → {merged_payload}")
+        log.info(f"Ψ emit → {merged_payload}")
         await self.sink.publish(self.psi_channel, json.dumps(merged_payload))
+
+def build_system_topos() -> List[TopologicalStructure]:
+    structures = []
+    core = []
+    with suppress(ImportError): import phase.bind.resolver as m; core.append(m.__name__)
+    with suppress(ImportError): import phase.runtime.receptor.bootstrap as m; core.append(m.__name__)
+    with suppress(ImportError): import phase.runtime.receptor.kernel as m; core.append(m.__name__)
+
+    if core:
+        structures.append(TopologicalStructure(name="core.runtime", members=core))
+
+    tracer = []
+    with suppress(ImportError): import watcher.tracer.kernel as m; tracer.append(m.__name__)
+    with suppress(ImportError): import watcher.tracer.source as m; tracer.append(m.__name__)
+    with suppress(ImportError): import watcher.tracer.trajectory as m; tracer.append(m.__name__)
+
+    if tracer:
+        structures.append(TopologicalStructure(name="tracer.grid", members=tracer))
+
+    return structures

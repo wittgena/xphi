@@ -1,11 +1,6 @@
 # watcher.tracer.metrics
-## @lineage: phase.watcher.tracer.metrics
-## @lineage: meta.watcher.tracer.metrics
-## @lineage: phase.receptor.tracer.metrics
-## @lineage: cognitive.receptor.tracer.metrics
 import numpy as np
 
-## Kinematic (운동학)
 def trend_slope(values: np.ndarray) -> float:
     """1차 속도 (Velocity)"""
     return float(np.polyfit(range(len(values)), values, 1)[0])
