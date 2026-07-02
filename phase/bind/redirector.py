@@ -1,5 +1,6 @@
 # phase.bind.redirector
 import sys
+import types
 import importlib.util
 from pathlib import Path
 from typing import Optional, Union
@@ -18,12 +19,12 @@ class ModuleRedirector:
         self._is_installed = False
 
     def find_spec(self, fullname, path, target=None):
-        ## 대상 패키지 또는 그 하위 패키지인지 확인
+        ## Check if it matches the target package or its sub-packages
         if fullname == self.target_package or fullname.startswith(f"{self.target_package}."):
             rel_path = fullname[len(self.target_package):].lstrip(".").replace(".", "/")
             target_path = self.local_dir / rel_path
 
-            ## 패키지 형태 (__init__.py 존재) 확인
+            ## Check for package structure (presence of __init__.py)
             if target_path.is_dir():
                 init_file = target_path / "__init__.py"
                 if init_file.exists():
@@ -33,7 +34,7 @@ class ModuleRedirector:
                         submodule_search_locations=[str(target_path)]
                     )
             
-            ## 단일 파일 형태 (.py 존재) 확인
+            ## Check for single file structure (presence of .py)
             py_file = target_path.with_suffix(".py")
             if py_file.exists():
                 return importlib.util.spec_from_file_location(fullname, str(py_file))
@@ -41,7 +42,7 @@ class ModuleRedirector:
         return None
 
     def install(self):
-        """커스텀 파인더를 sys.meta_path의 최우선 순위로 등록"""
+        """Register the custom finder at the highest priority in sys.meta_path."""
         if self._is_installed:
             return
 
@@ -50,10 +51,10 @@ class ModuleRedirector:
 
         sys.meta_path.insert(0, self)
         self._is_installed = True
-        print(f"[Redirector] '{self.target_package}' -> '{self.local_dir}' mapping installed.")
+        log.info(f"[Redirector] '{self.target_package}' -> '{self.local_dir}' mapping installed.")
 
     def uninstall(self):
-        """등록된 커스텀 파인더를 제거"""
+        """Remove the registered custom finder."""
         if self in sys.meta_path:
             sys.meta_path.remove(self)
         
@@ -61,10 +62,10 @@ class ModuleRedirector:
             self._clear_sys_modules()
             
         self._is_installed = False
-        print(f"[Redirector] '{self.target_package}' mapping uninstalled.")
+        log.info(f"[Redirector] '{self.target_package}' mapping uninstalled.")
 
     def _clear_sys_modules(self):
-        """기존에 로드된 캐시 모듈을 삭제하여 재로드를 강제"""
+        """Delete previously loaded cached modules to force a reload."""
         keys_to_del = [
             key for key in sys.modules.keys() 
             if key == self.target_package or key.startswith(f"{self.target_package}.")
@@ -72,7 +73,7 @@ class ModuleRedirector:
         for key in keys_to_del:
             del sys.modules[key]
 
-    ## 컨텍스트 매니저 지원 (with 문 사용 가능)
+    ## Context manager support (enables 'with' statement)
     def __enter__(self):
         self.install()
         return self
@@ -82,37 +83,48 @@ class ModuleRedirector:
 
 class PhaseAirlock:
     """
-    @desc: 위상 경계(Boundary)에서 발생하는 네임스페이스 분열을 제어하는 에어록 장치
-    과거의 레거시 경로(Legacy)를 현재의 정규 위상(Canonical)으로 메모리 상에서 강제 동기화
+    @desc: An airlock mechanism controlling namespace fragmentation at phase boundaries.
+    Forces memory synchronization of the past legacy path (Legacy) to the current canonical phase (Canonical).
     """
 
     @classmethod
     def establish_resonance(cls, legacy_path: str, canonical_path: str, submodules: list[str] = None):
         """
-        sys.modules를 조작하여 두 네임스페이스의 메모리 ID를 일치 (분열 방지)
+        Manipulates sys.modules to match the memory IDs of two namespaces (preventing fragmentation).
+        If the canonical physical module does not exist, it synthesizes a dummy module in memory.
+        
         Args:
-            legacy_path: 외부 패키지가 찾으려고 시도하는 과거의 경로 (예: "tool")
-            canonical_path: 현재 시스템의 진짜 물리적 경로
-            submodules: 함께 묶어줄 하위 모듈 이름의 리스트
+            legacy_path: The legacy path external packages attempt to find (e.g., "vuln_lib").
+            canonical_path: The true physical path in the current system (or a blackhole target).
+            submodules: List of sub-module names to bind together.
         """
+        # 1. Load or Synthesize the Canonical Module
         try:
-            ## 진짜 위상(Canonical)을 메모리에 로드
             canonical_module = importlib.import_module(canonical_path)
-            
-            ## 과거의 궤적(Legacy)에 진짜 위상을 덮어쓰기
-            sys.modules[legacy_path] = canonical_module
-            log.info(f"[*] Resonance Established: {legacy_path} ➔ {canonical_path}")
-            
-            ## 명시된 하위 모듈들 동기화 (Pydantic 검증 우회를 위해 필수적임)
-            if submodules:
-                for sub in submodules:
-                    target_sub_path = f"{canonical_path}.{sub}"
-                    legacy_sub_path = f"{legacy_path}.{sub}"
-                    
+        except ImportError:
+            # Fallback: Create a synthetic module dynamically if physical module is missing
+            canonical_module = types.ModuleType(canonical_path)
+            canonical_module.__doc__ = f"Synthetic blackhole created by PhaseAirlock for '{legacy_path}'"
+            sys.modules[canonical_path] = canonical_module
+            log.warning(f"[!] PhaseAirlock: Physical module '{canonical_path}' not found. Synthesized a dummy module in memory.")
+
+        # 2. Override the legacy trajectory with the canonical/synthetic phase
+        sys.modules[legacy_path] = canonical_module
+        log.info(f"[*] Resonance Established: {legacy_path} ➔ {canonical_path}")
+        
+        # 3. Synchronize specified sub-modules (critical for bypassing Pydantic validation etc.)
+        if submodules:
+            for sub in submodules:
+                target_sub_path = f"{canonical_path}.{sub}"
+                legacy_sub_path = f"{legacy_path}.{sub}"
+                
+                try:
                     target_sub_module = importlib.import_module(target_sub_path)
-                    sys.modules[legacy_sub_path] = target_sub_module
-                    log.info(f"    ↳ Linked Submodule: {legacy_sub_path} ➔ {target_sub_path}")
+                except ImportError:
+                    ## Cascade synthesis to sub-modules
+                    target_sub_module = types.ModuleType(target_sub_path)
+                    sys.modules[target_sub_path] = target_sub_module
+                    log.warning(f"    ↳ Synthesized Submodule: {target_sub_path}")
                     
-        except ImportError as e:
-            log.error(f"[!] PhaseAirlock Failed: 정규 위상({canonical_path})을 로드할 수 없습니다. {e}")
-            raise
+                sys.modules[legacy_sub_path] = target_sub_module
+                log.info(f"    ↳ Linked Submodule: {legacy_sub_path} ➔ {target_sub_path}")
