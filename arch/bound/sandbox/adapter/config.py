@@ -1,4 +1,5 @@
-# arch.bound.sandbox.adapter
+# arch.bound.sandbox.adapter.config
+## @lineage: arch.bound.sandbox.adapter
 """
 @desc: Universal Infrastructure Adapter Base
 @flow: 시스템 전역의 MQ/State Store 연결 정보 파싱 및 프로토콜 규격을 정의합니다.
