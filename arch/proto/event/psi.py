@@ -1,10 +1,4 @@
 # arch.proto.event.psi
-## @lineage: phase.bind.event.psi
-## @lineage: arch.event.psi
-## @lineage: arch.contract.event.psi
-## @lineage: arch.model.event.psi
-## @lineage: topos.contract.event.psi
-## @lineage: phase.runtime.contract.event.psi
 """
 @flow:
 Ψ (carrier)

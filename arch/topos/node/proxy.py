@@ -3,13 +3,14 @@
 import time
 import uuid
 import asyncio
-import logging
 import random
 import json
 from typing import Optional, Any
-from watcher.plane.emitter import get_emitter
+
 from arch.proto.event.psi import PsiEvent
 from phase.gov.proto.flow import PhaseFlow
+from watcher.plane.emitter import get_emitter
+
 
 log = get_emitter("state.proxy")
 
@@ -69,21 +70,13 @@ class DistributedNodePool:
                 self._resolve_with_retry_or_spawn(role), 
                 self.main_loop
             )
-            
-            # 대기 시간(timeout)을 넉넉히 줍니다 (예: 최대 15초 대기)
             target_node_id = future.result(timeout=15.0) 
-            
             return StateProxy(role, target_node_id, self.runtime, self.main_loop)
-            
         except Exception as e:
             log.error(f"NodePool totally failed to provide capability '{role}': {e}")
             raise
 
     async def _resolve_with_retry_or_spawn(self, role: str, max_retries=3, delay=2.0) -> str:
-        """
-        [1] 일정 횟수만큼 Redis를 폴링하며 워커 등록대기
-        [2] 실패 시, Fallback 워커를 스스로 로드 (Cold Start).
-        """
         for attempt in range(max_retries):
             target = await self._resolve_target(role)
             if target:

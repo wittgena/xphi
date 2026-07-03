@@ -31,11 +31,14 @@ class IPhaseAtor(ABC):
     @property
     @abstractmethod
     def ator_id(self) -> str: pass
+
     @property
     @abstractmethod
     def state(self) -> Dict[str, Any]: pass
+
     @abstractmethod
     def set_state(self, new_state: str) -> None: pass # 캡슐화 메서드 추가
+    
     @abstractmethod
     async def react(self, event: PsiEvent, field: IPhaseField, bus: IEventBus) -> None:
         """Ator processes incoming ψ under current Φ conditions and emits derived ψ via the event bus"""

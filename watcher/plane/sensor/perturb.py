@@ -1,30 +1,26 @@
 # watcher.plane.sensor.perturb
-## @lineage: arch.dynamics.sensor.perturb
-## @lineage: arch.flow.edge.sensor.perturb
-## @lineage: cognitive.flow.edge.sensor.perturb
-## @lineage: cognitive.edge.perturb
-## @lineage: cognitive.nerve.perturb
 import asyncio
 import json
 import random
 import time
 import re
-import redis.asyncio as redis_async
-from typing import Optional
+from typing import Optional, Any
+
+import arch.bound.sandbox.tunnel as tunnel
 from arch.proto.event.psi import PsiEvent, PsiCarrier
 from phase.bind.resolver import resolve_channel, resolve_pattern
 from watcher.plane.emitter import get_emitter
 
 class SensorPerturb:
     """
-    @role: Bound Elicitor / state perturb
+    @role: Bound Elicitor / State Perturbator
     @desc:
     - node_id 기반이 아니라 prefix(domain) 기반 교란
     - xphi pattern을 통해 "현재 활성 경계"에만 작용
     """
-    def __init__(self, redis_url: str = "redis://localhost:6379/0"):
-        self.redis_url = redis_url
-        self.redis: Optional[redis_async.Redis] = None
+    def __init__(self, mq_url: str = "redis://localhost:6379/0"):
+        self.mq_url = mq_url
+        self.mq: Optional[Any] = None
         self.log = get_emitter("nerve.perturb", phase="nerve")
 
         ## xphi subscribe pattern
@@ -32,16 +28,12 @@ class SensorPerturb:
         self._compiled = re.compile(self.pattern)
 
     async def connect(self):
-        self.redis = await redis_async.from_url(self.redis_url, decode_responses=True)
+        """@flow: Tunnel 어댑터를 통해 백엔드(Redis/Kafka)에 투명하게 연결합니다."""
+        self.mq = await tunnel.from_url(self.mq_url)
         self.log.info(f"Perturbator online. pattern={self.pattern}")
 
     async def strike_domain_tension(self, namespace: str, intensity: float = 1.0):
-        """
-        특정 namespace 전체에 tension perturb을 가함
-        (node가 아니라 phase domain을 흔듦)
-        """
         channel = resolve_channel(f"{namespace}:intensity")
-
         payload = {
             "ts": time.time(),
             "kind": "PERTURB",
@@ -50,7 +42,7 @@ class SensorPerturb:
         }
 
         self.log.warn(f"⚡ Domain strike → {namespace} (intensity={intensity})")
-        await self.redis.publish(channel, json.dumps(payload))
+        await self.mq.publish(channel, event.to_json())
 
     async def inject_pattern_event(self):
         """
@@ -79,7 +71,7 @@ class SensorPerturb:
             ),
         )
         self.log.signal(f"Pattern inject → {channel}")
-        await self.redis.publish(channel, json.dumps(event.__dict__))
+        await self.mq.publish(channel, event.to_json())
 
     async def induce_execution_variance(self, variance: float = 1.0):
         """execution domain 전체에 variance를 주입 → 특정 node가 아니라 실행 위상 자체를 교란"""
@@ -91,35 +83,38 @@ class SensorPerturb:
         }
 
         self.log.warn(f"🐢 Execution variance injected ({variance})")
-        await self.redis.publish(channel, json.dumps(payload))
+        await self.mq.publish(channel, json.dumps(payload))
 
     async def observe_bound(self, duration: float = 5.0):
         """
-        perturb 이후 xphi 노드들이 내뿜는 'echo' 채널을 관측
+        @flow: perturb 이후 xphi 노드들이 내뿜는 'echo' 채널을 관측
         """
-        pubsub = self.redis.pubsub()
+        pubsub = self.mq.pubsub()
         # 자신이 던진 패턴이 아니라, xphi가 응답하는 echo 패턴을 구독
-        await pubsub.psubscribe("*:echo")
+        # (Tunnel 어댑터의 UniversalPubSub가 psubscribe를 처리)
+        await pubsub.subscribe("*:echo")
 
         self.log.info(f"Listening for echoes for {duration}s...")
         start = time.time()
 
         active = {}
 
-        while time.time() - start < duration:
-            msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
-            if not msg:
-                continue
+        try:
+            while time.time() - start < duration:
+                msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+                if not msg:
+                    continue
 
-            channel = msg["channel"]
-            if isinstance(channel, bytes):
-                channel = channel.decode()
+                channel = msg["channel"]
+                if isinstance(channel, bytes):
+                    channel = channel.decode()
 
-            ## channel format expected: "execution:echo", "psi:echo"
-            prefix = channel.split(":")[0]
-            active[prefix] = active.get(prefix, 0) + 1
-
-        await pubsub.close()
+                ## channel format expected: "execution:echo", "psi:echo"
+                prefix = channel.split(":")[0]
+                active[prefix] = active.get(prefix, 0) + 1
+        finally:
+            # 안전한 자원 해제
+            await pubsub.close()
 
         ## 가장 강하게 공명(Echo)한 prefix가 현재 시스템의 Main Boundary (활성 위상)
         if active:
@@ -136,6 +131,7 @@ class SensorPerturb:
         await self.inject_pattern_event()
         await asyncio.sleep(0.5)
         await self.observe_bound(duration=3.0)
+
 
 if __name__ == "__main__":
     async def main():

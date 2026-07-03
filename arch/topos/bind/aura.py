@@ -1,16 +1,11 @@
 # arch.topos.bind.aura
-## @lineage: gov.repo.node.aura
-## @lineage: meta.reflector.cognitive.aura
-## @lineage: bound.reflect.cognitive.aura
-## @lineage: cognitive.node.aura
-## @lineage: cognitive.aura.node
-## @lineage: cognitive.nerve.aura.node
 import asyncio
 from typing import Dict, Any, Optional
-from watcher.plane.emitter import get_emitter
+
 from arch.topos.node.gan import Message, GanNode
 from arch.topos.node.state import StateNode
 from arch.topos.node.proxy import DistributedNodePool
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
 
@@ -34,11 +29,10 @@ class LocalBoundary(Boundary):
 
 class RemoteBoundary(Boundary):
     """다른 프로세스/네트워크에 존재하는 노드 간의 경계 (기존 Redis psi_queue 방식)"""
-    def __init__(self, redis_pool: DistributedNodePool):
-        self.pool = redis_pool
+    def __init__(self, pool: DistributedNodePool):
+        self.pool = pool
 
     async def emit(self, target_id: str, payload: Any):
-        # Redis를 통해 원격 노드의 큐로 메시지/FlowState 전달
         await self.pool.base_node.psi_queue.put((target_id, payload))
 
 
