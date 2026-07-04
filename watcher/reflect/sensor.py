@@ -1,10 +1,4 @@
 # watcher.reflect.sensor
-## @lineage: phase.ator.reflect.sensor
-## @lineage: phase.activator.sensor
-## @lineage: phase.bind.activator.sensor
-## @lineage: cognitive.activator.sensor
-## @lineage: phase.bound.activator.sensor
-## @lineage: arch.activator.sensor
 """
 @desc: Lazy-binding environment observer; resolves local topology and binds external IO surfaces
 @flow: sense -> resolve -> select -> bind → emit
@@ -90,7 +84,7 @@ class RuntimeSensor(Sensor):
             return None
 
 class PythonSensor(Sensor):
-    """Local interpreter surface; minimal runtime context"""
+    """Local interpreter surface"""
     def sense(self) -> dict:
         return {
             "version": sys.version.split()[0],
