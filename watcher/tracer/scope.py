@@ -33,11 +33,9 @@ class scope_trace:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # 스코프 종료 시 이전 상태로 롤백
         if self._token is not None:
             _scope_stack.reset(self._token)
 
-    # === 비동기 컨텍스트 매니저 프로토콜 추가 ===
     async def __aenter__(self):
         """비동기 컨텍스트 진입 (동기 메서드 위임)"""
         return self.__enter__()
