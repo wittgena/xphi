@@ -11,7 +11,7 @@ from phase.bind.resolver import resolve_path
 
 log = get_emitter("kernel.store")
 
-LEDGER_DB_PATH = resolve_path("xor") / "ledger.rocks.db"
+LEDGER_DB_PATH = resolve_path("ledger")
 
 def deterministic_hash(data: Dict[str, Any]) -> str:
     """결정론적 직렬화를 통한 무결성 해시(SHA-256) 생성"""
