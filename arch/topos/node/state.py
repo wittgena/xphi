@@ -1,7 +1,4 @@
 # arch.topos.node.state
-## @lineage: phase.ator.node.state
-## @lineage: phase.topos.node.state
-## @lineage: topos.state.node
 import asyncio
 import enum 
 import logging
@@ -118,12 +115,8 @@ class LinkerNode(BaseNode):
         # ANCHOR 보호 및 존재 여부 확인 로직 (기존 로직 재사용)
         return True # (구현 생략)
 
-# 런타임 외부 로직
 def inject_pr_signal(ctx: FlowState, pr_signal: Dict):
-    """
-    외부 PR(Signal)을 받아 런타임이 이해할 수 있는 형태(external_rules)로
-    FlowState에 주입하는 어댑터 역할
-    """
+    """외부 PR(Signal)을 받아 런타임이 이해할 수 있는 형태(external_rules)로 FlowState에 주입하는 어댑터 역할"""
     # PR을 TransRule 객체 리스트로 변환
     rules = [
         TransRule(r['src'], r['dest'], NodeType[r['kind']]) 

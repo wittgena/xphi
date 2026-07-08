@@ -89,7 +89,6 @@ class TrajectoryXor:
         for basis in recent_bases:
             traces = basis.get("traces", [])
             for t in traces:
-                # [핵심 수정] score 조건 완전 삭제. 들어오는 모든 궤적에서 무조건 기호를 추출.
                 for step in t.get("steps", []):
                     payload = str(step.get("inputs", {}).get("payload", ""))
                     tokens = {word.lower() for word in payload.split() if len(word) > 3}

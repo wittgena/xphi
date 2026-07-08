@@ -1,8 +1,4 @@
 # phase.gov.node.connector
-## @lineage: arch.topos.gov.node.connector
-## @lineage: gov.state.node.connector
-## @lineage: gov.state.system.node.connector
-## @lineage: gov.node.connector
 import asyncio
 from typing import Optional
 from arch.topos.node.gan import Message, GanNode

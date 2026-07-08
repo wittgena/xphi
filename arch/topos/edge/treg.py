@@ -1,10 +1,4 @@
 # arch.topos.edge.treg
-## @lineage: phase.dynamics.edge.treg
-## @lineage: arch.dynamics.edge.treg
-## @lineage: arch.flow.edge.treg
-## @lineage: cognitive.flow.edge.treg
-## @lineage: cognitive.edge.treg
-## @lineage: cognitive.frame.gate
 import time
 import hashlib
 import argparse
@@ -18,7 +12,6 @@ from phase.bind.resolver import find_current_self
 SELF_ROOT = find_current_self()
 log = get_emitter("edge.treg")
 
-# --- [위상 규약] 언어(재질)별 헤더 형식 맵핑 ---
 TARGET_EXTENSIONS = {".md", ".py", ".kt"}
 FILE_FORMATS = {
     ".md": {"lineage": "@lineage:"},
