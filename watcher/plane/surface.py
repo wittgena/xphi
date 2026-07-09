@@ -1,10 +1,9 @@
 # watcher.plane.surface
 """
 @manifold: Surface Event Projection Plane
-@desc: Manages multi-surface log event distribution (Console, File, Redis) 
-       with granular independent level filtering and folding control.
+@desc: Manages multi-surface log event distribution (Console, File, Tunnel) 
+       with granular independent level filtering and dynamic telemetry folding.
        Bulletproofed against NoneType anomalies and frozen dataclasses.
-       Dynamically routes file logs based on execution phases.
 """
 import os
 import json
@@ -14,30 +13,22 @@ import sys
 import atexit
 from dataclasses import replace, asdict
 from typing import Dict, List, Protocol, Optional
-from collections import defaultdict, deque
 from pathlib import Path
 
 from arch.proto.event.next import LogEvent
 from phase.bind.resolver import resolve_path
-
-try:
-    import redis.asyncio as redis_async
-except ImportError:
-    redis_async = None
+from watcher.plane.meter import default_telemetry
 
 class EventObserver(Protocol):
     def update(self, event: LogEvent) -> None:
         ...
 
-class RedisSurface(EventObserver):
-    """@desc: Streams log events in real-time via Redis Pub/Sub."""
-    def __init__(self, redis_client):
-        self.redis = redis_client
+class TunnelSurface(EventObserver):
+    """@desc: Streams log events in real-time via the Universal Infrastructure Tunnel"""
+    def __init__(self):
+        pass
 
     def update(self, event: LogEvent):
-        if not self.redis:
-            return
-            
         flow_id = event.context.get("flow_id") or "global"
         if flow_id == "global":
             return
@@ -47,9 +38,17 @@ class RedisSurface(EventObserver):
 
         try:
             loop = asyncio.get_running_loop()
-            loop.create_task(self.redis.publish(channel, msg))
+            loop.create_task(self._async_publish(channel, msg))
         except RuntimeError:
             pass
+            
+    async def _async_publish(self, channel: str, msg: str):
+        from arch.bound.sandbox.tunnel import TunnelFactory
+        try:
+            tunnel = await TunnelFactory.get_default()
+            await tunnel.publish(channel, msg)
+        except Exception as e:
+            sys.stderr.write(f"[TunnelSurface Anomaly] {e}\n")
 
 class ConsoleSurface(EventObserver):
     """@desc: Handles standard output with level-based filtering and rich formatting."""
@@ -86,6 +85,9 @@ class ConsoleSurface(EventObserver):
         gain_val = getattr(event, "gain", None)
         gain = f" [G:{gain_val:.1f}]" if gain_val is not None and gain_val < 1.0 else ""
         
+        acc_val = event.context.get("acceleration") if event.context else None
+        acc_str = f" [Acc:{acc_val:.1f}]" if acc_val else ""
+        
         fold_val = getattr(event, "fold_count", 0)
         fold = f" (x{fold_val})" if fold_val and fold_val > 1 else ""
         
@@ -104,7 +106,7 @@ class ConsoleSurface(EventObserver):
             except (ValueError, TypeError):
                 prefix = f"{kind_str:^5}"
                 
-            print(f"{prefix}{p_mark}| {phase_str:^6} | {event_level:^5} | {gain} {source_str}: {event.message}{fold}")
+            print(f"{prefix}{p_mark}| {phase_str:^6} | {event_level:^5} | {gain}{acc_str} {source_str}: {event.message}{fold}")
 
 class FileSurface(EventObserver):
     """
@@ -127,11 +129,9 @@ class FileSurface(EventObserver):
 
         timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         
-        ## @step.1: Safely extract and sanitize phase for dynamic file routing
         ctx_phase = event.context.get("phase") if event.context else None
         phase_str = str(ctx_phase if ctx_phase is not None else "SYSTEM")
         
-        ## Prevent path traversal and format cleanly (e.g., "SYSTEM" -> "system.log")
         safe_phase = "".join(c for c in phase_str if c.isalnum() or c in "_-").lower()
         if not safe_phase:
             safe_phase = "system"
@@ -150,29 +150,13 @@ class FileSurface(EventObserver):
         except Exception as e:
             sys.stderr.write(f"[FileSurface Error] Failed to write to {target_file.name}: {e}\n")
 
-
-class PressureMeter:
-    """@desc: Sliding window-based pressure and density measurement."""
-    def __init__(self, window: float = 2.0):
-        self.window = window
-        self.history = defaultdict(deque)
-
-    def measure(self, key: str) -> float:
-        now = time.time()
-        q = self.history[key]
-        
-        while q and now - q[0] > self.window:
-            q.popleft()
-            
-        q.append(now)
-        return len(q) / self.window
-
 class SurfacePlane:
     """@desc: Instance-based event collector and routing orchestrator."""
     PRIORITY_LEVELS = {"CRIT", "SIGNAL"}
 
-    def __init__(self, threshold: float = 5.0, meter_window: float = 2.0):
-        self.meter = PressureMeter(window=meter_window)
+    def __init__(self, threshold: float = 5.0, telemetry_engine=None):
+        # [개선] PressureMeter를 직접 생성하지 않고 TelemetryEngine 주입
+        self.telemetry = telemetry_engine or default_telemetry
         self.threshold = threshold
         self.fold_cache: Dict[str, LogEvent] = {}
         self._observers: List[EventObserver] = []
@@ -188,20 +172,41 @@ class SurfacePlane:
         msg_str = str(event.message or "")
         key = f"{phase_str}:{source_str}:{msg_str}"
         
-        ## @step.1: Safely calculate density
-        density_val = self.meter.measure(key)
+        ## @step.1: Analyze multi-dimensional telemetry (Density & Kinematics)
+        # [개선] 단순 밀도 조회가 아닌 다차원 위협 분석 수행
+        tel_result = self.telemetry.analyze(key)
+        density_val = tel_result.get("density", 0.0)
+        is_bursting = tel_result.get("is_bursting", False)
+        metrics = tel_result.get("metrics", {})
 
-        ## @step.2: Fold repeated events securely (Bulletproofed against frozen Dataclasses)
-        if density_val > self.threshold:
-            gain_val = self.threshold / density_val
+        ## @step.2: Fold repeated events securely
+        # [개선] 임계치 초과 또는 가속도 기반 폭주(Burst) 감지 시 폴딩 발동
+        if density_val > self.threshold or is_bursting:
+            # 방어 강도(Gain) 설정 - 폭주 상태면 더 강하게 억제(0.1), 아니면 밀도 비례
+            gain_val = 0.1 if is_bursting else self.threshold / (density_val or 1)
             
+            # 이벤트 컨텍스트에 텔레메트리 흔적 남기기
+            enriched_context = {**(event.context or {}), **metrics}
+
             if key in self.fold_cache:
                 old_event = self.fold_cache[key]
                 new_fold_count = getattr(old_event, "fold_count", 1) + 1
-                self.fold_cache[key] = replace(old_event, fold_count=new_fold_count, gain=gain_val)
+                self.fold_cache[key] = replace(
+                    old_event, 
+                    fold_count=new_fold_count, 
+                    gain=gain_val,
+                    context=enriched_context
+                )
                 return
                 
-            summary_event = replace(event, kind="summary", fold_count=1, density=density_val, gain=gain_val)
+            summary_event = replace(
+                event, 
+                kind="summary", 
+                fold_count=1, 
+                density=density_val, 
+                gain=gain_val,
+                context=enriched_context
+            )
             self.fold_cache[key] = summary_event
             self._notify(summary_event)
         else:
@@ -210,7 +215,6 @@ class SurfacePlane:
                 if getattr(folded_event, "fold_count", 0) > 1:
                     self._notify(folded_event)
             
-            # Forward the original event securely
             ready_event = replace(event, density=density_val)
             self._notify(ready_event)
 
@@ -242,25 +246,27 @@ class SurfacePlane:
         self.handle(event)
 
 """Ecosystem Collector Network: Assembly & Deployment Region"""
-## @step: Sync global log level from Environment Variables
-GLOBAL_LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+default_plane = SurfacePlane(telemetry_engine=default_telemetry)
+console_surface = ConsoleSurface(
+    mode="NORMAL", 
+    min_level=os.environ.get("LOG_LEVEL", "INFO").upper()
+)
 
-default_plane = SurfacePlane()
-console_surface = ConsoleSurface(mode="NORMAL", min_level=GLOBAL_LOG_LEVEL)
-default_plane.attach(console_surface)
+def _assemble_collector_network():
+    """@desc: 내부 조립 부트스트래퍼."""
+    global_log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 
-## @step: Dynamic File Surface routing based on Target Directory
-LOG_BASE_DIR = resolve_path("log")
-file_min_level = "TRACE" if GLOBAL_LOG_LEVEL == "TRACE" else "DEBUG"
+    ## Console 부착
+    default_plane.attach(console_surface)
 
-file_surface = FileSurface(base_dir=LOG_BASE_DIR, min_level=file_min_level)
-default_plane.attach(file_surface)
+    ## File Surface 동적 라우팅 및 부착 (이 변수들은 밖으로 새어나가지 않습니다)
+    log_base_dir = resolve_path("log")
+    file_min_level = "TRACE" if global_log_level == "TRACE" else "DEBUG"
+    file_surface = FileSurface(base_dir=log_base_dir, min_level=file_min_level)
+    default_plane.attach(file_surface)
 
-## @step: Register forced flush on process exit to prevent fold-cache evaporation
-atexit.register(default_plane.flush)
-if redis_async:
-    try:
-        redis_streamer = RedisSurface(redis_async.from_url("redis://localhost:6379", decode_responses=True))
-        default_plane.attach(redis_streamer)
-    except Exception as e:
-        sys.stderr.write(f"[Redis Gateway Silent Bypass] {e}\n")
+    tunnel_streamer = TunnelSurface()
+    default_plane.attach(tunnel_streamer)
+    atexit.register(default_plane.flush)
+
+_assemble_collector_network()

@@ -2,17 +2,17 @@
 """
 @desc: Universal Message/State Tunnel (Async & Sync Implementation)
 @flow: 
-  비동기(Async) 처리를 기본으로 하되, 비동기 루프를 사용할 수 없는 
-  동기(Sync) 환경을 위한 최소한의 파사드를 함께 제공합니다.
+- Defaults to asynchronous processing, while providing a minimal 
+- facade for synchronous environments where an async event loop is unavailable
 """
 import redis
 import redis.asyncio as actual_redis
 import redis.exceptions
+import logging
 from typing import Optional, Any, List, Tuple
 from arch.bound.sandbox.adapter.config import BackendProtocol, resolve_default_config, parse_connection_urls
-from watcher.plane.emitter import get_emitter
 
-log = get_emitter("sandbox.tunnel")
+log = logging.getLogger("sandbox.tunnel")
 
 class UniversalPubSub:
     def __init__(self, protocol: BackendProtocol, actual_pubsub=None, mq_client=None):
@@ -38,9 +38,8 @@ class UniversalPubSub:
         if self.protocol == BackendProtocol.REDIS and hasattr(self.actual_pubsub, 'close'):
             await self.actual_pubsub.close()
 
-
 class UniversalFacade:
-    """@role: 상태(State), 큐(Queue), 스트림(Stream), 신호(PubSub)를 통합 라우팅하는 비동기 파사드"""
+    """@role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals"""
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol):
         self.state_store = actual_redis.from_url(state_url, decode_responses=True)
         self.mq_protocol = mq_protocol
@@ -76,14 +75,15 @@ class UniversalFacade:
         return UniversalPubSub(self.mq_protocol, actual_pubsub=self.state_store.pubsub())
     
     def __getattr__(self, name: str):
-        """명시되지 않은 모든 비동기 메서드(llen, keys, lpush 등)를 실제 Redis Async 클라이언트로 자동 위임"""
+        """Automatically delegates unmapped async methods (e.g., llen, keys, lpush) to the underlying Redis Async client."""
         return getattr(self.state_store, name)
 
 class UniversalFacadeSync:
     """
-    @role: 동기(Blocking) 방식 라우팅을 위한 파사드
-    @flow: 메서드 이름이 Redis 원본과 다르거나 예외 처리(BUSYGROUP)가 필요한 스트림(Stream) 메서드만 명시하고,
-           나머지 단순 패스스루(lpush, get, pubsub 등)는 __getattr__로 자동 위임합니다.
+    @role: Synchronous (Blocking) routing facade
+    @flow: 
+    - Explicitly defines stream methods that differ from standard Redis naming require custom exception handling (e.g., BUSYGROUP). 
+    - All other simple pass-through methods (lpush, get, pubsub, etc.) are automatically delegated via __getattr__.
     """
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol):
         self.state_store = redis.from_url(state_url, decode_responses=True)
@@ -118,14 +118,13 @@ class UniversalFacadeSync:
     def __getattr__(self, name: str):
         return getattr(self.state_store, name)
 
-
 class TunnelFactory:
     _async_instance: Optional[UniversalFacade] = None
     _sync_instance: Optional[UniversalFacadeSync] = None
 
     @classmethod
     async def get_default(cls) -> UniversalFacade:
-        """비동기 환경을 위한 기본 터널 (기존 await 호출 유지)"""
+        """Default tunnel for asynchronous environments (maintains standard await calls)"""
         if cls._async_instance is None:
             config = resolve_default_config()
             scheme, state_url, mq_url = parse_connection_urls(config.default_url)
@@ -135,14 +134,14 @@ class TunnelFactory:
 
     @classmethod
     async def get_isolated(cls) -> UniversalFacade:
-        """격리된 비동기 커넥션"""
+        """Isolated asynchronous connection"""
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
         return UniversalFacade(state_url, mq_url, scheme)
 
     @classmethod
     def get_sync(cls) -> UniversalFacadeSync:
-        """동기 환경(SurfaceMQ 등)을 위한 터널 (await 없이 호출)"""
+        """Tunnel for synchronous environments like SurfaceMQ (called without await)"""
         if cls._sync_instance is None:
             config = resolve_default_config()
             scheme, state_url, mq_url = parse_connection_urls(config.default_url)
@@ -152,14 +151,14 @@ class TunnelFactory:
 
     @classmethod
     def get_isolated_sync(cls) -> UniversalFacadeSync:
-        """격리된 동기 커넥션"""
+        """Isolated synchronous connection"""
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
         return UniversalFacadeSync(state_url, mq_url, scheme)
 
     @classmethod
     async def close_all(cls):
-        """전역 커넥션 풀 종료"""
+        """Terminates the global connection pool"""
         if cls._async_instance:
             await cls._async_instance.aclose()
             cls._async_instance = None
@@ -168,11 +167,11 @@ class TunnelFactory:
             cls._sync_instance = None
 
 async def from_url(url: str, **kwargs) -> UniversalFacade:
-    """@legacy: 명시적인 URL 주입이 필요한 특수 목적용 (Async)"""
+    """@legacy: Special-purpose Async builder requiring explicit URL injection"""
     scheme, state_url, mq_url = parse_connection_urls(url)
     return UniversalFacade(state_url=state_url, mq_url=mq_url, mq_protocol=scheme)
 
 def sync_from_url(url: str, **kwargs) -> UniversalFacadeSync:
-    """@legacy: 명시적인 URL 주입이 필요한 특수 목적용 (Sync)"""
+    """@legacy: Special-purpose Sync builder requiring explicit URL injection"""
     scheme, state_url, mq_url = parse_connection_urls(url)
     return UniversalFacadeSync(state_url=state_url, mq_url=mq_url, mq_protocol=scheme)

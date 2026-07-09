@@ -28,7 +28,6 @@ def flow_scope(auto_flush=False, **kwargs):
             default_plane.flush()
         _flow_context.reset(token)
 
-
 class SurfaceEmitter:
     def __init__(
         self, 
@@ -146,7 +145,6 @@ class SurfacePlaneHandler(logging.Handler):
                 tick=None
             )
             default_plane.handle(event)
-            
         except Exception as e:
             sys.stderr.write(f"[SurfacePlaneHandler Anomaly] {e}\n")
 

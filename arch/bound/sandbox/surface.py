@@ -49,14 +49,11 @@ class SurfaceMQ:
 
     def echolocate(self, source: str = "surface.probe", timeout: float = 2.0) -> Optional[str]:
         """@flow: Perturb system and listen for resonance (Active Discovery)"""
-        # [수정] 동기(Sync) 문맥이므로 get_isolated() 대신 get_isolated_sync() 사용
         listen_client = TunnelFactory.get_isolated_sync()
         pubsub = listen_client.pubsub()
         pubsub.subscribe("system:echo")
         
         log.info(f"[{source}] Perturbing system to find active boundary...")
-        
-        # [수정] 동기(Sync) 문맥이므로 get_default() 대신 get_sync() 사용
         publish_client = TunnelFactory.get_sync()
         publish_client.publish("system:ping", json.dumps({"ts": time.time(), "source": source}))
 
@@ -117,7 +114,6 @@ class SurfaceClient:
             )
             with urllib.request.urlopen(req, timeout=1.5) as response:
                 result = response.read().decode('utf-8').strip()
-                # [개선] 무의미한 중복 return 구조 단순화
                 if result == "accepted":
                     log.debug(f"[{self.source_name}] Psi event accepted by {base_url}")
                 return True
@@ -155,9 +151,7 @@ class SurfaceClient:
     def request(self, query_path: str = "", data: bytes = None, method: str = "GET", headers: dict = None, **kwargs) -> Generator:
         """@flow: Robust HTTP Dispatcher (Auto-healing injected)"""
         req_headers = headers or {}
-        max_retries = 2  # 1회 정상 시도 + 1회 예외 복구(치유) 시도
-
-        # [개선] 중복되던 URL 세팅과 Request 객체 생성 로직을 루프로 추상화하여 가독성/유지보수성 향상
+        max_retries = 2
         for attempt in range(max_retries):
             full_url = f"{self.ensure_boundary()}{query_path}"
             req = urllib.request.Request(full_url, data=data, method=method, headers=req_headers)

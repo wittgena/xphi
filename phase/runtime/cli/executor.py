@@ -6,7 +6,6 @@ import json
 import asyncio
 import argparse
 import subprocess
-import redis.asyncio as redis_async
 from dataclasses import asdict
 from typing import Callable, Any
 from pathlib import Path
@@ -16,7 +15,8 @@ from arch.proto.event.next import next_id, LogEvent
 from arch.contract.registry.unified import registry
 from arch.contract.base.executor import BaseExecutor
 
-from phase.runtime.surface.sensor import REDIS_URL
+# [개선] 직접적인 Redis 의존성 제거, 샌드박스 터널 도입
+from arch.bound.sandbox.tunnel import TunnelFactory
 from phase.bind.resolver import get_invoker
 from phase.runtime.task.event import TaskSummaryEvent, TaskDetailRecord
 
@@ -35,7 +35,7 @@ def parse_local(argv):
 def dispatch_cli(command_name: str, entry_func: Callable, file_path: str):
     """
     @role: Universal Execution Router
-    @desc: Routes CLI inputs to either local execution or injects them into the Topological Manifold (Redis).
+    @desc: Routes CLI inputs to either local execution or injects them into the Topological Manifold (Tunnel).
     """
     bound_args, remain = parse_local(sys.argv[1:])
     
@@ -79,6 +79,9 @@ class _GenericCliExecutor(BaseExecutor):
         
         self.log.info(f"[exec] Executing CLI task: {command} ({task_id})")
         
+        # [개선] 노드 의존성 대신 범용 비동기 터널 획득 (공용 환경)
+        tunnel = await TunnelFactory.get_default()
+        
         with flow_scope(flow_id=task_id, phase="EXECUTION"):
             self.log.info(f"[exec] Starting flow: {task_id}")
             try:
@@ -102,18 +105,18 @@ class _GenericCliExecutor(BaseExecutor):
 
                 _project_to_stdout(summary_event)
 
-                ## Store in Redis and publish reflection
-                if self.node and self.node.redis:
-                    await self.node.redis.set(detail_key, detail_record.to_json(), ex=3600)
-                    await self.node.redis.set(latest_pointer_key, detail_key, ex=3600)
-                    await asyncio.sleep(0.05)
+                ## Store in Universal Tunnel and publish reflection
+                # [개선] 인프라 백엔드(Redis/Kafka)와 무관하게 파사드를 통해 저장 및 발행
+                await tunnel.set(detail_key, detail_record.to_json(), ex=3600)
+                await tunnel.set(latest_pointer_key, detail_key, ex=3600)
+                await asyncio.sleep(0.05)
 
-                    response_channel = psi.context.get("response_channel")
-                    if response_channel:
-                        await self.node.redis.publish(response_channel, summary_event.to_json())
-                        self.log.info(f"[exec] Reflection published to {response_channel}")
-                    
-                    self.log.info(f"[exec] Detailed artifacts saved -> Redis[{detail_key}]")
+                response_channel = psi.context.get("response_channel")
+                if response_channel:
+                    await tunnel.publish(response_channel, summary_event.to_json())
+                    self.log.info(f"[exec] Reflection published to {response_channel}")
+                
+                self.log.info(f"[exec] Detailed artifacts saved -> Tunnel[{detail_key}]")
 
                 ## Publish result event to internal bus for swarm synchronization
                 result_carrier = PsiCarrier(kind="RESULT", tag=command, payload=asdict(summary_event))
@@ -181,16 +184,17 @@ class CliTaskAdapter:
 
 
 async def _async_run_in_node(task_instance, command_name: str, payload: dict):
-    r = redis_async.from_url(REDIS_URL, decode_responses=True)
+    # [개선] 외부 주입용 독립형(Isolated) 비동기 터널 획득
+    tunnel = await TunnelFactory.get_isolated()
     
     ## Extract dynamic timeout from payload (Defaults to 60s)
     timeout_sec = payload.get("_context", {}).get("timeout", 60.0)
     
     ## Ambient Node Spawning Logic
     ## @step.1: Assess swarm availability by counting registered nodes
-    active_node_keys = await r.keys("runtime:node:*")
+    active_node_keys = await tunnel.keys("runtime:node:*")
     node_count = len(active_node_keys)
-    queue_len = await r.llen("runtime:queue")
+    queue_len = await tunnel.llen("runtime:queue")
     
     ## @step.2: Determine spawn conditions based on dynamic load factor
     MAX_LOAD_PER_NODE = 3
@@ -199,7 +203,7 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
     
     if should_spawn:
         ## @step.3: Prevent spawn storms using a distributed lock (10s expiry)
-        lock_acquired = await r.set("runtime:spawn_lock", "LOCKED", nx=True, ex=10)
+        lock_acquired = await tunnel.set("runtime:spawn_lock", "LOCKED", nx=True, ex=10)
         
         if lock_acquired:
             if node_count == 0:
@@ -219,7 +223,7 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
             ## @step.4: Deterministic boot wait for node registration (Max 7.5s)
             for _ in range(15):  
                 await asyncio.sleep(0.5)
-                current_nodes = await r.keys("runtime:node:*")
+                current_nodes = await tunnel.keys("runtime:node:*")
                 if len(current_nodes) > node_count:
                     break
         else:
@@ -227,7 +231,7 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
             log.info("[CLI] Another process is spawning a node. Waiting for boot sequence...")
             for _ in range(15):
                 await asyncio.sleep(0.5)
-                if not await r.exists("runtime:spawn_lock"):
+                if not await tunnel.exists("runtime:spawn_lock"):
                     break
     
     task_id = f"task-{uuid.uuid4().hex[:8]}"
@@ -235,7 +239,8 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
         response_channel = f"res:{task_id}"
         log_channel = f"log:{task_id}"
 
-        pubsub = r.pubsub()
+        # [개선] 범용 PubSub 획득
+        pubsub = tunnel.pubsub()
         await pubsub.subscribe(response_channel, log_channel)
         log.info(f"[CLI] Listening on {response_channel} & {log_channel}...")
 
@@ -250,12 +255,13 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
             context={"response_channel": response_channel}
         )
         
-        ## Push event to the runtime queue
-        await r.lpush("runtime:queue", json.dumps(asdict(trigger_event)))
+        ## Push event to the runtime queue via Tunnel
+        await tunnel.lpush("runtime:queue", json.dumps(asdict(trigger_event)))
 
         try:
             ## Wait for node reflection with Dynamic Timeout
             async with asyncio.timeout(timeout_sec):
+                # [개선] UniversalPubSub의 제너레이터 사용
                 async for msg in pubsub.listen():
                     if msg["type"] != "message":
                         continue
@@ -291,8 +297,10 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
         except TimeoutError:
             log.error(f"[CLI] Task timed out. Node failed to reflect within {timeout_sec}s.")
         finally:
-            await pubsub.unsubscribe(response_channel)
-            await r.close()
+            # [개선] 안전한 자원 해제(Teardown)를 보장
+            await pubsub.close()
+            if hasattr(tunnel.state_store, 'aclose'):
+                await tunnel.state_store.aclose()
 
 
 def execute_cli_task(task_instance, command_name: str = "run", payload: dict = None):
@@ -332,4 +340,4 @@ def print_formatted_result(data: dict):
             else:
                 print(f" └─ {category}: {items}")
 
-    print(f"\n(Full artifacts saved at Redis -> {detail_key})")
+    print(f"\n(Full artifacts saved at Tunnel State Store -> {detail_key})")

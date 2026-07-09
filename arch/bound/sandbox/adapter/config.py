@@ -1,17 +1,13 @@
 # arch.bound.sandbox.adapter.config
-## @lineage: arch.bound.sandbox.adapter
-"""
-@desc: Universal Infrastructure Adapter Base
-@flow: 시스템 전역의 MQ/State Store 연결 정보 파싱 및 프로토콜 규격을 정의합니다.
-"""
+"""@desc: Universal Infrastructure Adapter Base"""
 import os
 import urllib.parse
+import logging
 from enum import Enum
 from dataclasses import dataclass
 from typing import Tuple
 
-from watcher.plane.emitter import get_emitter
-log = get_emitter("sandbox.adapter")
+log = logging.getLogger("sandbox.config")
 
 class BackendProtocol(str, Enum):
     """지원하는 백엔드 프로토콜 규격"""
@@ -60,7 +56,6 @@ def parse_connection_urls(target_url: str) -> Tuple[BackendProtocol, str, str]:
         state_url = target_url
         mq_url = target_url
     else:
-        # 이기종 인프라 라우팅 (Kafka는 MQ로, 상태 저장은 기존 Redis로 분리)
         state_url = os.getenv("STATE_STORE_URL", "redis://localhost:6379/0")
         mq_url = target_url
 
