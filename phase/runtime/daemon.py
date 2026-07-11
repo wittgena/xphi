@@ -1,5 +1,4 @@
 # phase.runtime.daemon
-## @lineage: phase.node.daemon
 import asyncio
 import json
 import time

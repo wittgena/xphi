@@ -1,4 +1,5 @@
-# arch.xor.file.io
+# arch.xor.store.file
+## @lineage: arch.xor.file.io
 ## @lineage: gov.gateway.io.base
 from abc import ABC, abstractmethod
 from collections.abc import Iterator

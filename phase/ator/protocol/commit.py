@@ -1,8 +1,4 @@
 # phase.ator.protocol.commit
-## @lineage: phase.hub.protocol.commit
-## @lineage: anchor.surface.protocol.commit
-## @lineage: gov.protocol.git
-## @lineage: gov.protocol.channel.git
 """
 @anchor: synchronization boundary across nodes (era frame)
 @commit: parent linkage under anchor-constrained selection
