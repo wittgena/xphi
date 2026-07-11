@@ -29,7 +29,7 @@ class ActorNode:
         self.store = KernelStore()
 
     def inscribe(self, anchor_id: str, parent_anchor_id: Optional[str], parent_commit_id: str, message: str, apply: bool = False) -> str:
-        """현재 세대의 계보를 모델링하여 각인함"""
+        """Models and inscribes the lineage of the current generation."""
         model = RepoCommit(
             anchor_id=anchor_id,
             parent_anchor_id=parent_anchor_id or DEFAULT_ID,
@@ -60,13 +60,12 @@ class EpochManager(ActorNode):
 
     def __init__(self, name: str, path: str, runner: Callable):
         super().__init__(name, path, runner)
-        # 💡 [FIX] protocol.commit 호환성을 위해 파일 대신 RocksDB의 전용 Key를 사용합니다.
         self.registry_key = f"legacy_registry:{self.name}".encode('utf-8')
 
     def load_history(self) -> List[Dict]:
         """
-        @desc: protocol.commit(외부 모듈) 호출을 위한 완벽한 하위 호환성 메서드.
-               RocksDB에서 기존 .registry.json과 동일한 배열 포맷을 추출하여 반환합니다.
+        @desc: Perfect backward compatibility method for external protocol.commit invocations.
+               Extracts and returns the legacy .registry.json array format directly from RocksDB.
         """
         if self.registry_key in self.store.db:
             try:
@@ -77,7 +76,7 @@ class EpochManager(ActorNode):
         return []
 
     def resolve(self, repo_name: str) -> str:
-        """KernelStore의 HEAD(최신 상태) 대신, 역사적 정합성을 위해 History 기반으로 Resolve"""
+        """Resolves the state based on historical consistency rather than the absolute HEAD from KernelStore."""
         history = self.load_history()
         for snapshot in reversed(history[-3:]):
             if repo_name in snapshot.get("repos", {}):
@@ -104,10 +103,10 @@ class EpochManager(ActorNode):
             cached_states=cached_states
         )
 
-        # 1. 자기 자신 Inscribe
+        ## Inscribe self (EpochManager's own repo)
         new_anchor_commit_id = super().inscribe(anchor_id, parent_anchor_id, self_parent_state, message, apply)
 
-        # 2. KernelStore 밀봉 및 History 호환성 유지
+        ## Seal KernelStore and maintain history compatibility
         if apply:
             commit = KernelCommit(
                 stream_id="global_era_anchor",
@@ -117,7 +116,7 @@ class EpochManager(ActorNode):
                 parent_hash=parent_anchor_id or DEFAULT_ID
             )
             
-            # KernelStore 위상 장부 기록
+            ## Record to the topological ledger (KernelStore)
             signature = self.store.save_kernel(commit)
             self.store.update_head("global_era_anchor", signature)
             for repo_name, repo_commit_hash in repos.items():
@@ -125,10 +124,10 @@ class EpochManager(ActorNode):
 
             full_history = history + [json.loads(model.to_json())]
             try:
-                # CLI 환경은 메인 루프(Leader) 위에서 작동하므로 안전하게 Write 가능
+                ## CLI environments operate on the main loop (Leader), making direct writes safe
                 self.store.db[self.registry_key] = json.dumps({"history": full_history}).encode('utf-8')
             except Exception as e:
-                # Follower 노드에서 강제 실행될 경우의 방어 코드
+                ## Defensive fallback in case it's forcibly executed on a Follower node
                 print(f"[EpochManager] Warning: Could not update legacy registry: {e}")
 
         return new_anchor_commit_id
