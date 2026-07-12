@@ -1,4 +1,3 @@
-# arch.topos.node.gan
 ## @lineage: phase.ator.node.gan
 """
 @desc: Base communication module handling message passing and hierarchical event routing (bubbling) 
@@ -15,10 +14,14 @@ class Message:
     @desc: Data payload for transmitting state changes or commands between nodes within the tree topos.
            Features a bubble-up attribute to propagate child node events up to the parent context.
     """
-    def __init__(self, name: str, bubble: bool = False):
+    def __init__(self, name: str, bubble: bool = False, **kwargs):
         self.name = name
         self.bubble = bubble
         self.sender: Optional['GanNode'] = None
+        
+        # 동적 속성 바인딩 (예: Message("execute", events=[...]))
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 class GanNode:
     """
@@ -50,6 +53,7 @@ class GanNode:
         """
         @desc: The primary event pump maintaining the node's lifecycle.
                Sequentially consumes messages and controls the event flow within the topos.
+               Equipped with a global safety net to prevent silent crashes and deadlocks.
         """
         self._running = True
         log.debug(f"[{self.name}] GanNode context activated (Started)")
@@ -60,9 +64,22 @@ class GanNode:
             # @flow: Handle safe context termination signal via Poison Pill pattern
             if message is None:  
                 break
-                
-            await self._dispatch_message(message)
-            self._queue.task_done()
+
+            try:
+                await self._dispatch_message(message)
+            except Exception as e:
+                log.error(f"[{self.name}] 💥 Unhandled exception during '{message.name}': {e}", exc_info=True)
+                if self.parent:
+                    error_msg = Message(
+                        name="node_error", 
+                        bubble=True, 
+                        error=e, 
+                        source_node=self.name, 
+                        failed_message=message.name
+                    )
+                    self.parent.post_message(error_msg)
+            finally:
+                self._queue.task_done()
             
         log.debug(f"[{self.name}] GanNode context terminated (Terminated)")
 

@@ -20,7 +20,7 @@ from pydantic import (
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
-from arch.topos.state.surge import SurgeBaseModel
+from arch.topos.state.surge.model import SurgeBaseModel
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
