@@ -1,5 +1,4 @@
-# arch.topos.node.proxy
-## @lineage: phase.ator.node.proxy
+# arch.topos.node.pool
 import time
 import uuid
 import asyncio
@@ -11,10 +10,9 @@ from arch.proto.event.psi import PsiEvent
 from phase.gov.proto.flow import PhaseFlow
 from watcher.plane.emitter import get_emitter
 
+log = get_emitter("node.pool")
 
-log = get_emitter("state.proxy")
-
-class StateProxy:
+class NodeProxy:
     def __init__(self, role: str, target_node_id: str, runtime, main_loop: asyncio.AbstractEventLoop):
         self.role = role
         self.target_node_id = target_node_id
@@ -47,7 +45,7 @@ class StateProxy:
         )
         return future
 
-class DistributedNodePool:
+class NodePool:
     def __init__(self, runtimeNode):
         self.runtime = runtimeNode
         try:
@@ -63,7 +61,7 @@ class DistributedNodePool:
             log.warning("[NodePool] Accessing redis before node.start().")
         return self.runtime.bus
 
-    def get(self, role: str) -> StateProxy:
+    def get(self, role: str) -> NodeProxy:
         try:
             # 기존 _resolve_target 대신, 대기/생성이 포함된 래퍼 코루틴 호출
             future = asyncio.run_coroutine_threadsafe(
@@ -71,7 +69,7 @@ class DistributedNodePool:
                 self.main_loop
             )
             target_node_id = future.result(timeout=15.0) 
-            return StateProxy(role, target_node_id, self.runtime, self.main_loop)
+            return NodeProxy(role, target_node_id, self.runtime, self.main_loop)
         except Exception as e:
             log.error(f"NodePool totally failed to provide capability '{role}': {e}")
             raise

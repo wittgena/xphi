@@ -8,7 +8,7 @@ from watcher.plane.emitter import get_emitter
 from phase.runtime.node import NodeRuntime
 from arch.contract.protocol import get_proto
 from phase.gov.proto.flow import PhaseFlow, FlowState
-from arch.topos.node.proxy import DistributedNodePool
+from arch.topos.node.pool import NodePool
 from arch.contract.state.spec import TransRule
 from arch.topos.node.state import LinkerNode, InversionNode, StateNode, NodeType
 from arch.topos.state.runtime import StateRuntime
@@ -22,7 +22,7 @@ NODE_REGISTRY = {
 }
 
 class ToposOrganizer:
-    def __init__(self, pool: DistributedNodePool):
+    def __init__(self, pool: NodePool):
         self.pool = pool
 
     def build_runtime_nodes(self, ir_specs: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
@@ -71,7 +71,7 @@ async def main():
         await base_node.redis.sadd("runtime:index:emits:capability:logic", dummy_worker_id)
         await base_node.redis.set(f"runtime:heartbeat:{dummy_worker_id}", int(time.time()), ex=60)
 
-        pool = DistributedNodePool(base_node)
+        pool = NodePool(base_node)
         organizer = ToposOrganizer(pool)
         runtime_nodes = organizer.build_runtime_nodes(specs)
         log.info(f"[Organizer] 성공적으로 {len(runtime_nodes)}개의 런타임 노드를 빌드했습니다.")
