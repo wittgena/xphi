@@ -1,10 +1,4 @@
 # arch.topos.edge.trajectory
-## @lineage: phase.dynamics.edge.trajectory
-## @lineage: arch.dynamics.edge.trajectory
-## @lineage: arch.flow.edge.trajectory
-## @lineage: cognitive.flow.edge.trajectory
-## @lineage: cognitive.edge.trajectory
-## @lineage: foldbox.trace.trajectory
 import json
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional, Set

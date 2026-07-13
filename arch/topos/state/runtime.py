@@ -1,7 +1,4 @@
 # arch.topos.state.runtime
-## @lineage: arch.topos.runtime
-## @lineage: phase.topos.runtime
-## @lineage: topos.state.runtime
 import asyncio
 import enum 
 import logging

@@ -1,8 +1,4 @@
 # arch.proto.event.bus
-## @lineage: phase.bind.event.bus
-## @lineage: arch.event.bus
-## @lineage: arch.contract.event.bus
-## @lineage: arch.model.event.bus
 import asyncio
 from typing import Dict, Any, List, Optional
 from arch.proto.event.psi import PsiEvent

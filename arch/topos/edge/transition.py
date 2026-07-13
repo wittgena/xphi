@@ -1,5 +1,4 @@
 # arch.topos.edge.transition
-## @lineage: phase.dynamics.edge.transition
 import uuid
 from enum import Enum
 from typing import List, Optional, Dict, Any

@@ -8,7 +8,7 @@ from arch.contract.protocol import proto, get_proto, Proto
 from phase.gov.proto.flow import PhaseFlow, FlowState
 from arch.contract.state.spec import TransRule, PhaseSpec, NodeType
 
-log = get_emitter("state.node")
+log = get_emitter("node.state")
 
 class ResidueType(enum.Enum):
     INFO, WARN, ERROR, TRANSITION = "INFO", "WARN", "ERROR", "TRANSITION"
