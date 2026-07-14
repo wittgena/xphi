@@ -1,6 +1,4 @@
 # phase.runtime.task.dispatcher
-## @lineage: phase.runtime.dispatcher
-## @lineage: phase.node.dispatcher
 import asyncio
 import time
 from typing import Callable, Optional
@@ -94,10 +92,7 @@ class Dispatcher:
 
     async def send(self, psi: PsiType):
         try:
-            # put_nowait 대신 put을 사용하되 timeout을 주거나,
-            # 현재 상태에서는 큐가 꽉 차면 대기(Backpressure)하도록 async로 기다리는 것이 좋습니다.
             await self.queue.put(psi) 
         except Exception as e:
             print(f"[Dispatcher] queue error: {e}")
-            # 여기서 데이터를 Drop하지 말고, 센서가 속도를 늦추도록 에러를 전파하는 것이 좋습니다.
             raise e
