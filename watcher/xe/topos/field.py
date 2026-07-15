@@ -1,5 +1,4 @@
-# phase.reflect.dynamics.field
-## @lineage: phase.dynamics.field
+# watcher.xe.topos.field
 """
 @phase: Autonomous topological oscillation and perturbation routing
 @flow: Tension Accumulation -> Projection -> Collapse -> Re-entry
@@ -13,15 +12,15 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-from watcher.plane.surface import SurfacePlane
+from watcher.plane.observer.surface import SurfacePlane
 from watcher.plane.emitter import get_emitter
 from phase.bind.rhythm.bridge import RhythmBridge
 from watcher.xe.topos.particle import ToposManifold, Particle
-from watcher.xe.topos.manifold import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
+from watcher.xe.topos.tension import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion
 
-log = get_emitter("dynamics.field")
+log = get_emitter("topos.field")
 
-class DynamicsField:
+class ToposField:
     def __init__(self, redis_url: str):
         self.redis_url = redis_url
         self.bridge: Optional[RhythmBridge] = None
@@ -111,16 +110,3 @@ class DynamicsField:
             await asyncio.gather(self.listener_task, self.dynamics_task)
         else:
             await self.listener_task
-
-async def main():
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--run", action="store_true", help="Start dynamics immediately")
-    parser.add_argument("--redis", default="redis://localhost:6379")
-    args = parser.parse_args()
-
-    orchestrator = DynamicsField(args.redis)
-    await orchestrator.start(auto_run=args.run)
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -1,5 +1,5 @@
-# watcher.xe.topos.manifold
-## @lineage: arch.xor.manifold.flow
+# watcher.xe.topos.tension
+## @lineage: watcher.xe.topos.manifold
 """@phase: Tension Accumulation $\rightarrow$ Projection $\rightarrow$ Collapse $\rightarrow$ Re-entry"""
 import asyncio
 import uuid
@@ -7,10 +7,10 @@ import time
 import random
 import json
 from typing import Dict, Any, Optional
-import redis.asyncio as redis_async
+
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from phase.bind.rhythm.bridge import RhythmBridge
-from watcher.plane.surface import default_plane
+from watcher.plane.observer.surface import default_plane
 from watcher.plane.emitter import get_emitter
 from watcher.xe.topos.particle import ToposManifold, Particle
 
@@ -30,6 +30,7 @@ class TensionAccumulator(Particle):
                 pulse_id = f"beat.{uuid.uuid4().hex[:4]}"
                 
                 ## 이벤트 발행 후 해당 ID를 인과성(parent_id) 추적을 위해 큐에 함께 담음
+                # (emit_external 내부에서 Tunnel(UniversalFacade)을 거쳐 전파됨)
                 event = await self.emit_external(kind="PULSE", tag="TOPOS:TENSION_NODE", payload={"pulse_id": pulse_id})
                 
                 ## @phase: 다음 노드가 포화(불응기) 상태라면 억지로 밀어넣지 않고 에너지 소멸(Drop)
@@ -94,16 +95,8 @@ class ReentryInversion(Particle):
         while True:
             data = await ToposManifold.collapse_field.get()
             await asyncio.sleep(0.3)
-
-            ## [자동 조절 - 항상성 유지] - 현재 void_gap(초기 텐션 대기열)의 포화도를 측정
             current_tension = ToposManifold.void_gap.qsize()
-            
-            ## 진공 상태(0)일수록 에너지를 많이 뿜어내고, 포화 상태일수록 재진입 억제
-            ## 예: 큐가 비어있으면 기본 3개의 reflow 생성, 큐가 3 이상이면 생성 0
-            ## base_reflow = max(0, 3 - current_tension) 
             base_reflow = 5
-            
-            ## 외부 계수(multiplier)를 곱하여 최종 재진입 개수 확정
             actual_reflow = int(base_reflow * self.reentry_multiplier)
 
             for _ in range(actual_reflow):
@@ -111,7 +104,6 @@ class ReentryInversion(Particle):
                 try:
                     ToposManifold.void_gap.put_nowait({"id": reflow_id, "parent_id": data["parent_id"]})
                 except asyncio.QueueFull:
-                    ## 큐가 가득 찼다면 즉시 잔여 재진입 에너지를 소멸시킴(Drop)
                     break 
 
             default_plane.record(

@@ -1,4 +1,4 @@
-# arch.topos.bound.sandbox.tunnel
+# arch.topos.bound.tunnel
 """
 @desc: Universal Message/State Tunnel (Async & Sync Implementation)
 @flow: 
@@ -26,6 +26,14 @@ class UniversalPubSub:
     async def psubscribe(self, *args, **kwargs):
         if self.protocol == BackendProtocol.REDIS: return await self.actual_pubsub.psubscribe(*args, **kwargs)
 
+    async def unsubscribe(self, *args, **kwargs):
+        if self.protocol == BackendProtocol.REDIS: 
+            return await self.actual_pubsub.unsubscribe(*args, **kwargs)
+
+    async def punsubscribe(self, *args, **kwargs):
+        if self.protocol == BackendProtocol.REDIS: 
+            return await self.actual_pubsub.punsubscribe(*args, **kwargs)
+
     async def get_message(self, *args, **kwargs):
         if self.protocol == BackendProtocol.REDIS: return await self.actual_pubsub.get_message(*args, **kwargs)
 
@@ -37,6 +45,11 @@ class UniversalPubSub:
     async def close(self):
         if self.protocol == BackendProtocol.REDIS and hasattr(self.actual_pubsub, 'close'):
             await self.actual_pubsub.close()
+
+    def __getattr__(self, name: str):
+        if self.protocol == BackendProtocol.REDIS and self.actual_pubsub:
+            return getattr(self.actual_pubsub, name)
+        raise AttributeError(f"'UniversalPubSub' object has no attribute '{name}'")
 
 class UniversalFacade:
     """@role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals"""

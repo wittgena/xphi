@@ -1,11 +1,4 @@
 # phase.ator.bootstrap
-## @lineage: phase.hub.ator.bootstrap
-## @lineage: hub.ator.bootstrap
-## @lineage: xe.ator.bootstrap
-## @lineage: xphi.ator.bootstrap
-## @lineage: cognitive.xphi.ator.bootstrap
-## @lineage: topos.bound.ator.bootstrap
-## @signal: 505
 """@flow: PHI(Φ_declared) → reflect → Ψ → materialize → Φ_materialized → entry(anchor)"""
 import asyncio
 import json
@@ -14,15 +7,18 @@ import ast
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
-from watcher.plane.emitter import get_logger
+
 from arch.gov.flow import PhaseFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.contract.discovery import discover_modules
+
 from phase.ator.transcript.phi import TranscriptPhi
 from phase.ator.transcript.spec import TranscriptSpec
 from phase.ator.runtime import AtorRuntime
-from phase.runtime.node import NodeRuntime
 from phase.bind.resolver import find_current_self, resolve_path, load_bound
+from phase.runtime.node import NodeRuntime
+
+from watcher.plane.emitter import get_logger
 
 log = get_logger("ator.bootstrap")
 SELF_ROOT = find_current_self()
@@ -85,17 +81,13 @@ XPHI = {
   }
 }
 
-async def bootstrap(
-    topology_path: str, 
-    redis_url: str = "redis://localhost:6379",
-    repos: List[str] = REPOS
-) -> Tuple[NodeRuntime, AtorRuntime, str]:
+async def bootstrap(topology_path: str, repos: List[str] = REPOS) -> Tuple[NodeRuntime, AtorRuntime, str]:
     is_spec = topology_path.lower().endswith('.md')
     log_msg = "via Spec Transcript" if is_spec else "via Transcript"
     log.info(f">>> Launching Complex Phase-Field Task {log_msg}...")
 
     discover_modules(find_current_self())
-    base_node = NodeRuntime(redis_url=redis_url, executor=None)
+    base_node = NodeRuntime(executor=None)
     bootstrap_flow = PhaseFlow(payload=topology_path, aspect="bootstrap")
 
     transcript_cls = TranscriptSpec if is_spec else TranscriptPhi

@@ -6,8 +6,8 @@ import json
 import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
-import redis.asyncio as redis_async
 
+from arch.topos.bound.tunnel import UniversalFacade, TunnelFactory
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.bus import AsyncEventBus
 from arch.contract.event.next import next_id
@@ -15,31 +15,57 @@ from arch.contract.interface import IPhaseAtor, IPhaseField
 from arch.contract.registry.unified import registry
 from arch.contract.discovery import discover_modules
 
-from phase.runtime.surface.sensor import sense_once, REDIS_URL
+from phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from phase.runtime.task.dispatcher import Dispatcher
 from phase.runtime.task.supervisor import TaskSupervisor
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
-from phase.runtime.surface.actuator import SurfaceActuator
-from phase.runtime.surface.sink import RedisSink
-from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from phase.reflect.swarm.executor import SwarmExecutor
-from phase.reflect.context.builder import ContextBuilder
-from phase.reflect.context.coupler import ContextCoupler
+from watcher.plane.sink import TunnelSink
+from phase.runtime.daemon.base import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
+from phase.runtime.daemon.dynamics import DynamicsDaemon
+
+from phase.executor.swarm import SwarmExecutor
 from phase.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
+RUNTIME_KEY = {
+    "queue": "runtime:queue",
+    "active": "runtime:active",
+    "signal": "runtime:signal",
+    "receptor_leader": "runtime:receptor:leader",
+    "heartbeat_pattern": "runtime:heartbeat:*",
+    "node": "runtime:node:{node_id}",
+    "index_requires": "runtime:index:requires:{req_key}",
+    "index_emits": "runtime:index:emits:{emit_key}",
+    "heartbeat": "runtime:heartbeat:{node_id}"
+}
+
+class RuntimeKeyResolver:
+    """런타임 시스템에서 사용하는 Redis 키 스키마 해결기"""
+    def __init__(self, templates: Optional[Dict[str, str]] = None):
+        self.templates = templates or RUNTIME_KEY.copy()
+
+    def get(self, template_key: str, **kwargs) -> str:
+        """키 템플릿을 찾아 kwargs를 매핑하여 반환합니다."""
+        template = self.templates.get(template_key)
+        if not template:
+            raise KeyError(f"Unrecognized runtime key template: '{template_key}'")
+        
+        return template.format(**kwargs)
+
+runtime_keys = RuntimeKeyResolver()
+
 class NodeRuntime(IPhaseAtor):
     """
     @runtime.node: closed-loop control manifold
-    @flow: ψ → global queue → dispatch → Φ(Interpreter) → Coupler → Worker
+    @flow: ψ → global queue → dispatch → Φ(Interpreter) → Worker
     """
-    def __init__(self, redis_url=REDIS_URL, executor=None, idle_timeout=353):
+    def __init__(self, executor=None, idle_timeout=353):
         self._id = f"node-{next_id()}" 
         self.node_id = self._id
-        self.redis_url = redis_url
-        self.redis = None
+        
+        self.tunnel: Optional[UniversalFacade] = None
         self.executor = executor
         self.idle_timeout = idle_timeout
         
@@ -53,8 +79,8 @@ class NodeRuntime(IPhaseAtor):
 
         self.interpreter = None
         self.dispatcher = None
+        self.sensor = None
         self.actuator = None
-        self.coupler = None
         
         self.bus.subscribe(self)
         self._stop_event = asyncio.Event()
@@ -100,22 +126,20 @@ class NodeRuntime(IPhaseAtor):
             self.running = True
 
     async def react(self, event: PsiEvent, field: IPhaseField, bus: AsyncEventBus):
-        if self.running and self.redis:
+        if self.running and self.tunnel:
             async def push_task():
                 try:
-                    await self.redis.lpush("runtime:queue", event.to_json())
+                    await self.tunnel.lpush(runtime_keys.get("queue"), event.to_json())
                 except Exception as e:
                     self.log.error(f"Failed to push event: {e}")
             
             self.supervisor.create(push_task(), name=f"Escalate-{event.symbol}")
 
-    def _create_phase_handler(self, coupler: ContextCoupler):
+    def _create_phase_handler(self):
         async def handler(psi: PsiEvent):
             ## Judgment by the reflex system (Sync)
             judgment = self.interpreter.process(psi.carrier)
             
-            ## Transfer to the bridge (Fire and Forget)
-            coupler.ingest(psi.carrier, judgment)
             if self.executor:
                 await self.executor.execute(psi)
 
@@ -130,13 +154,12 @@ class NodeRuntime(IPhaseAtor):
         return handler
 
     async def start(self):
-        from phase.bind.client.engine.local import LLMEngine
-
         loop = asyncio.get_running_loop()
         loop.set_exception_handler(self._handle_exception)
         self.log.info(f"Starting RuntimeNode [{self.node_id}]")
-
-        self.redis = redis_async.from_url(self.redis_url, decode_responses=True)
+        
+        self.tunnel = await TunnelFactory.get_default()
+        
         if self.executor:
             self.executor.node = self
 
@@ -152,37 +175,30 @@ class NodeRuntime(IPhaseAtor):
         if not all_recepts:
             all_recepts = {"system:signal", "system:ping"}
 
-        ## Configure the spinal cord (Interpreter)
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
         self.interpreter = NodeInterpreter(anchor)
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")
 
-        try:
-            self.coupler = ContextBuilder.build(self.interpreter, self.redis)
-            await self.coupler.start()
-            self.log.info("Cognitive Coupler successfully attached.")
-        except Exception as e:
-            self.log.error(f"Failed to attach Cognitive Coupler: {e}")
-            raise
-
-        self.actuator = SurfaceActuator(RedisSink())
+        self.sensor = SurfaceSensor(tunnel=self.tunnel)
+        self.actuator = SurfaceActuator(TunnelSink(tunnel=self.tunnel))
+        
         self.dispatcher = Dispatcher(
-            handler=self._create_phase_handler(self.coupler),
+            handler=self._create_phase_handler(),
             executor=self.executor,
             actuator=self.actuator,
         )
         await self.dispatcher.start()
-
+        
         self.daemons = [
-            SensorDaemon(self.redis, self.bus),
-            CaptureDaemon(self.redis, self.dispatcher, self, self.idle_timeout),
-            HeartbeatDaemon(self.redis, self.node_id),
-            SignalDaemon(self.redis, self),
-            ReceptorDaemon(self.redis, self.node_id, watch_dir)
+            SensorDaemon(self.sensor, self.bus),
+            CaptureDaemon(self.tunnel, self.dispatcher, self, self.idle_timeout),
+            HeartbeatDaemon(self.tunnel, self.node_id),
+            SignalDaemon(self.tunnel, self),
+            ReceptorDaemon(self.tunnel, self.node_id, watch_dir),
+            DynamicsDaemon(self.bus)
         ]
 
         for daemon in self.daemons:
-            ## If daemon.start() is a coroutine, wrap it as a task inside the supervisor and auto-bind the error handler
             self.supervisor.create(
                 daemon.start(), 
                 name=f"Daemon-{daemon.__class__.__name__}",
@@ -201,10 +217,9 @@ class NodeRuntime(IPhaseAtor):
         await self.supervisor.shutdown()
 
         ## @release: internal core components
-        if self.coupler: await self.coupler.stop()
         if self.dispatcher: await self.dispatcher.stop()
         if self.actuator: await self.actuator.close()
-        if self.redis: await self.redis.close()
+        if self.tunnel: await self.tunnel.close()
 
         self.log.info("Teardown complete.")
         self._stop_event.set()
@@ -224,7 +239,7 @@ class NodeRuntime(IPhaseAtor):
         self.interpreter = NodeInterpreter(stable_anchor)
         if self.dispatcher:
             ## @reconnect: bridge to prevent data loss even during panic recovery
-            self.dispatcher.handler = self._create_phase_handler(self.coupler) 
+            self.dispatcher.handler = self._create_phase_handler() 
         self.log.signal(f"System restored to Phase: {self.interpreter.phase}")
 
     async def register_node(self):
@@ -243,23 +258,34 @@ class NodeRuntime(IPhaseAtor):
         if self.executor:
             data["executor_type"] = type(self.executor).__name__
 
-        await self.redis.hset(f"runtime:node:{self.node_id}", mapping=data)
+        node_key = runtime_keys.get("node", node_id=self.node_id)
+        await self.tunnel.hset(node_key, mapping=data)
+        
         for fqn, cap in capabilities.items():
             for req_key in cap["requires"]:
-                await self.redis.sadd(f"runtime:index:requires:{req_key}", self.node_id)
+                req_idx_key = runtime_keys.get("index_requires", req_key=req_key)
+                await self.tunnel.sadd(req_idx_key, self.node_id)
             for emit_key in cap["emits"]:
-                await self.redis.sadd(f"runtime:index:emits:{emit_key}", self.node_id)
+                emit_idx_key = runtime_keys.get("index_emits", emit_key=emit_key)
+                await self.tunnel.sadd(emit_idx_key, self.node_id)
+                
         self.log.signal(f"Node registered with {len(capabilities)} capabilities.")
 
     async def deregister_node(self):
-        if not self.redis: return
-        await self.redis.delete(f"runtime:node:{self.node_id}")
+        if not self.tunnel: return
+        
+        node_key = runtime_keys.get("node", node_id=self.node_id)
+        await self.tunnel.delete(node_key)
+        
         for fqn, meta in self.local_manifold.items():
             contract = meta.contract
             for req_key in contract.requires:
-                await self.redis.srem(f"runtime:index:requires:{req_key}", self.node_id)
+                req_idx_key = runtime_keys.get("index_requires", req_key=req_key)
+                await self.tunnel.srem(req_idx_key, self.node_id)
             for emit_key in contract.emits:
-                await self.redis.srem(f"runtime:index:emits:{emit_key}", self.node_id)
+                emit_idx_key = runtime_keys.get("index_emits", emit_key=emit_key)
+                await self.tunnel.srem(emit_idx_key, self.node_id)
+                
         self.log.info("Node and capability indexes deregistered.")
 
 def install_os_signal(node: NodeRuntime):
@@ -275,8 +301,6 @@ async def main_async():
     completion_signal = asyncio.Event()
     executor = SwarmExecutor(completion_signal)
     node = NodeRuntime(executor=executor)
-    
-    ## Set to call node.shutdown() upon receiving OS Signals (SIGINT, SIGTERM)
     install_os_signal(node) 
     
     try:

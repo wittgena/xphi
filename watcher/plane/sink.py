@@ -1,69 +1,66 @@
-# phase.runtime.surface.sink
-## @lineage: arch.model.surface.sink
+# watcher.plane.sink
+## @lineage: phase.runtime.surface.sink
 import os
 import json
 import aiohttp
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator
-import redis.asyncio as redis_async
+from typing import AsyncGenerator, Optional
+from arch.topos.bound.tunnel import UniversalFacade, from_url as tunnel_from_url
 
 class EmitterSink(ABC):
     @abstractmethod
-    async def set(self, key: str, payload: dict):
-        pass
+    async def set(self, key: str, payload: dict): pass
 
     @abstractmethod
-    async def delete(self, key: str):
-        pass
+    async def delete(self, key: str): pass
 
-    async def get_control_flag(self, key: str):
-        return None
-
-    async def close(self):
-        pass
+    async def get_control_flag(self, key: str): return None
+    async def close(self): pass
 
     @abstractmethod
-    async def publish(self, channel: str, payload: str):
-        """방출(Emission)을 위한 브로드캐스트 인터페이스"""
-        pass
+    async def publish(self, channel: str, payload: str): pass
 
     @abstractmethod
-    async def subscribe(self, channel: str) -> AsyncGenerator[str, None]:
-        """
-        수신(Reception)을 위한 구독 인터페이스
-        @flow: Async Iterator를 통해 이벤트 루프 블로킹 없이 메시지 스트림 제공
-        """
-        pass
+    async def subscribe(self, channel: str) -> AsyncGenerator[str, None]: pass
 
-class RedisSink(EmitterSink):
-    def __init__(self, host="localhost", port=6379, db=0):
-        self.redis = redis_async.Redis(host=host, port=port, db=db)
+class TunnelSink(EmitterSink):
+    """
+    @role: Universal Sink utilizing the Tunnel Facade
+    @flow: Replaces RedisSink to support seamless multi-protocol (Redis, Kafka) routing
+    """
+    def __init__(self, tunnel: Optional[UniversalFacade] = None, url: Optional[str] = None):
+        self.tunnel = tunnel
+        self.url = url
+
+    async def initialize(self):
+        if not self.tunnel and self.url:
+            self.tunnel = await tunnel_from_url(self.url)
 
     async def set(self, key, payload):
-        await self.redis.set(key, str(payload))
+        await self.tunnel.set(key, str(payload))
 
     async def delete(self, key):
-        await self.redis.delete(key)
+        await self.tunnel.delete(key)
 
     async def get_control_flag(self, key):
-        val = await self.redis.get(key)
-        return val.decode() if val else None
+        val = await self.tunnel.get(key)
+        return val if isinstance(val, str) else (val.decode() if val else None)
 
     async def close(self):
-        await self.redis.close()
+        if self.tunnel and hasattr(self.tunnel, 'close'):
+            await self.tunnel.close()
     
     async def publish(self, channel: str, payload: str):
-        await self.redis.publish(channel, payload)
+        await self.tunnel.publish(channel, payload)
 
     async def subscribe(self, channel: str) -> AsyncGenerator[str, None]:
-        pubsub = self.redis.pubsub()
+        pubsub = self.tunnel.pubsub()
         await pubsub.subscribe(channel)
         
-        # async for를 지원하기 위해 비동기 제너레이터(yield) 사용
         async for message in pubsub.listen():
-            if message["type"] == "message":
+            if isinstance(message, dict) and message["type"] == "message":
                 data = message["data"]
-                yield data.decode('utf-8') if isinstance(data, bytes) else data
+                yield data
 
 class FileSink(EmitterSink):
     def __init__(self, base_dir="/tmp/psi_surface"):
@@ -74,7 +71,6 @@ class FileSink(EmitterSink):
         return os.path.join(self.base_dir, f"{key}.json")
 
     async def set(self, key, payload):
-        # 향후 aiofiles 도입을 권장하지만, 일단 동기 I/O 유지
         with open(self._path(key), "w") as f:
             json.dump(payload, f)
 

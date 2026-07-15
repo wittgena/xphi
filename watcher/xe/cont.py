@@ -1,25 +1,33 @@
 # watcher.xe.cont
-## @lineage: arch.xor.manifold.cont
 from __future__ import annotations
 import asyncio
+import json
+import logging
+from typing import List, Dict, Optional, Any, Callable
+import redis.asyncio as redis_async
+
 from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
-from typing import List, Dict, Optional, Any
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
+from arch.contract.event.bus import AsyncEventBus
+from arch.topos.bound.tunnel import TunnelFactory
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+
+log = logging.getLogger("xe.cont")
 
 class PhaseField(type(BaseExecutor)):
-    """@phase.bound: 클래스 생성 시점에 고유한 Snowflake ID 부여"""
+    """@phase.bound: Assign unique Snowflake ID on class creation"""
     def __new__(mcs, name, bases, namespace):
-        # 4글자 해시 대신 Snowflake ID를 사용하여 글로벌 고유성 확보
+        ## Ensure global uniqueness using Snowflake ID
         namespace['bound_id'] = f"bound.{next_id()}"
         return super().__new__(mcs, name, bases, namespace)
 
 class XeCont(BaseExecutor, metaclass=PhaseField):
     """
     @entity: autonomous phase carrier
-    @flow: Snowflake로 선후관계를, PhaseId로 상태 벡터를 기록
+    @flow: Snowflake for sequence, PhaseId for state vector
     """
-    def __init__(self, bound, ex: str = "void", origin: str = "void"):
+    def __init__(self, bound: Any, ex: str = "void", origin: str = "void"):
         super().__init__()
         self.trace_id = next_id() 
         self.phase_id = 0
@@ -28,46 +36,113 @@ class XeCont(BaseExecutor, metaclass=PhaseField):
         self.bound = bound
 
     async def execute(self, psi: Any) -> List[Any]:
-        ## step.1: Ψ → ∂Φ (흡수 및 위상 업데이트)
-        batch_payload = [{"payload": psi.symbol}]
-        self.bound.absorb(batch_payload)
-        
-        # 현재 bound의 물리량으로부터 Phase ID 갱신
-        self.phase_id = next_phase_id(
-            topo=int(getattr(self.bound, 'topology', 0)), 
-            press=int(getattr(self.bound, 'pressure', 0))
-        )
-
-        ## step.2: τ evaluation
-        decision = self.bound.evaluate()
-        
-        if decision == "DEPOSIT":
-            # Rupture(단절) 발생 시 Phase ID의 Epoch를 전환하여 계보를 분리
-            self.phase_id = next_phase_id(
-                topo=int(self.bound.topology), 
-                press=int(self.bound.pressure), 
-                rupture=True
-            )
-            
-            self.bound.commit()
-            ext_base = self._ext__()
-            
-            ## 로그 출력 시에도 정렬 가능한 ID 사용
-            print(f"\n[Rupture] {self.trace_id} (Phase:{hex(self.phase_id)}) -> {ext_base.trace_id}")
-            self.ex = ext_base.ex
-            self.origin = ext_base.trace_id
-        else:
-            # Saturation(포화) 상태 로그
-            pass
-
-        ## step.3: ID 주입 (psi 이벤트에 현재의 Snowflake와 Phase 정보를 바인딩)
-        psi.event_id = next_id()
-        psi.phase_id = self.phase_id
-        return [psi]
+        """Base execution flow - Override in subclasses"""
+        raise NotImplementedError("Subclasses must implement execute()")
 
     def _ext__(self) -> 'XeCont':
-        return XeCont(
+        """@epoch.flip: Isolate lineage and respawn on rupture"""
+        return self.__class__(
             bound=self.bound,
             ex=f"Base.bind(inversion.overflow.{self.ex})",
             origin=self.trace_id
         )
+
+class DynamicsXe(XeCont):
+    async def execute(self, psi: Any) -> List[Any]:
+        payload = psi.context.get("payload", []) if hasattr(psi, 'context') else [{"payload": getattr(psi, "symbol", "")}]
+        if hasattr(self.bound, 'absorb'):
+            self.bound.absorb(payload)
+
+        def _get_metric(attr_name: str, default: int = 0) -> int:
+            val = getattr(self.bound, attr_name, default)
+            try:
+                return int(val() if callable(val) else val)
+            except (TypeError, ValueError):
+                return default
+
+        topo_val = _get_metric('topology', 0)
+        press_val = _get_metric('pressure', 0)
+
+        self.phase_id = next_phase_id(topo=topo_val, press=press_val)
+        decision = "CONTINUE"
+        if hasattr(self.bound, 'evaluate'):
+            decision = self.bound.evaluate()
+        
+        if decision == "DEPOSIT":
+            self.phase_id = next_phase_id(
+                topo=topo_val,
+                press=press_val,
+                rupture=True
+            )
+            if hasattr(self.bound, 'commit'):
+                self.bound.commit()
+            
+            ext_base = self._ext__()
+            log.info(f"!!! [RUPTURE] Epoch.flip: {self.trace_id} (Phase:{hex(self.phase_id)}) -> {ext_base.trace_id}")
+            self.ex = ext_base.ex
+            self.origin = ext_base.trace_id
+
+        psi.event_id = next_id()
+        psi.phase_id = self.phase_id
+        return [psi]
+
+class LoopCarrier(BaseExecutor):
+    def __init__(self, xe: XeCont, max_ticks: int = 100, interval: float = 0.1):
+        super().__init__()
+        self.xe = xe
+        self.tick = 0
+        self.max_ticks = max_ticks
+        self.interval = interval
+
+    async def execute(self, psi: Any) -> List[Any]:
+        out = []
+        
+        xe_out = await self.xe.execute(psi)
+        out.extend(xe_out) 
+
+        if self.tick < self.max_ticks:
+            incoming_psi = None
+            
+            if hasattr(self, "node") and self.node and hasattr(self.node, "bus"):
+                try:
+                    incoming_psi = await asyncio.wait_for(
+                        self.node.bus.wait_for_event(predicate=lambda e: getattr(e.carrier, 'kind', '') == "SIGNAL"),
+                        timeout=self.interval
+                    )
+                except (asyncio.TimeoutError, AttributeError):
+                    ## Proceed normally on timeout
+                    pass
+            else:
+                await asyncio.sleep(self.interval)
+
+            if incoming_psi:
+                next_psi = incoming_psi
+                next_psi.tick = self.tick + 1
+                next_psi.phase_id = getattr(self.xe, 'phase_id', 0)
+            else:
+                next_psi = psi.__class__(
+                    event_id=next_id(), 
+                    parent_id=getattr(psi, "event_id", None),
+                    source_id="loop.carrier",
+                    scope=getattr(psi, "scope", "GLOBAL"),
+                    carrier=getattr(psi, "carrier", None),
+                    phase_id=getattr(self.xe, 'phase_id', 0),
+                    tick=self.tick + 1,
+                    context=getattr(psi, "context", {}).copy()
+                )
+
+            if hasattr(self, "node") and self.node and hasattr(self.node, "bus"):
+                await self.node.bus.publish(next_psi)
+            else:
+                out.append(next_psi) 
+                
+            self.tick += 1
+            
+        return out
+
+class SeekerLogic(BaseExecutor):
+    """@role: Attractor-Seeker / @flow: Psi → Intent.vector"""
+    async def execute(self, psi: Any) -> List[Any]:
+        psi.kind = "attempt:vector"
+        psi.context["vector_field"] = "directional_flow"
+        return [psi]

@@ -1,5 +1,4 @@
 # arch.contract.event.next
-## @lineage: arch.proto.event.next
 import os
 import shutil
 import stat
@@ -15,7 +14,6 @@ from pydantic import Field
 
 class ToposGenerator:
     def __init__(self, vertex_id: int = 1, manifold_id: int = 1):
-        # 파라미터 제약 조건 (각 5비트이므로 0~31)
         self.worker_id = vertex_id & 0x1F
         self.datacenter_id = manifold_id & 0x1F
         self.sequence = 0

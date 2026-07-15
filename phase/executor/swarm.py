@@ -1,4 +1,5 @@
-# phase.reflect.swarm.executor
+# phase.executor.swarm
+## @lineage: phase.reflect.swarm.executor
 ## @lineage: phase.runtime.swarm.executor
 import os
 import sys
@@ -14,7 +15,7 @@ from dataclasses import asdict
 from watcher.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from arch.contract.executor import BaseExecutor
-from phase.reflect.cli.executor import _GenericCliExecutor
+from phase.executor.cli import _GenericCliExecutor
 
 log = get_logger("swarm.executor")
 

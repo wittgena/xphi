@@ -1,4 +1,5 @@
-# watcher.plane.surface
+# watcher.plane.observer.surface
+## @lineage: watcher.plane.surface
 """
 @manifold: Surface Event Projection Plane
 @desc: Manages multi-surface log event distribution (Console, File, Tunnel) 

@@ -1,4 +1,5 @@
-# arch.topos.bound.sandbox.adapter.config
+# arch.topos.bound.adapter.config
+## @lineage: arch.topos.bound.sandbox.adapter.config
 ## @lineage: arch.bound.sandbox.adapter.config
 """@desc: Universal Infrastructure Adapter Base"""
 import os

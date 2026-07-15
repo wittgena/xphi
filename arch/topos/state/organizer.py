@@ -1,17 +1,18 @@
 # arch.topos.state.organizer
-## @lineage: gov.state.organizer
 import time
 import asyncio
-import redis.asyncio as redis_async
 from typing import Dict, Any
-from watcher.plane.emitter import get_emitter
-from phase.runtime.node import NodeRuntime
+
 from arch.contract.protocol import get_proto
 from arch.gov.flow import PhaseFlow, FlowState
+from arch.topos.bound.tunnel import from_url as tunnel_from_url
 from arch.topos.node.pool import NodePool
-from watcher.kernel.state.spec import TransRule
 from arch.topos.node.state import LinkerNode, InversionNode, StateNode, NodeType
 from arch.topos.state.runtime import StateRuntime
+
+from phase.runtime.node import NodeRuntime
+from watcher.kernel.state.spec import TransRule
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter("topos.organizer")
 
@@ -54,22 +55,22 @@ class ToposOrganizer:
             runtime_nodes[node_id] = node_instance
         return runtime_nodes
 
+
 async def main():
     specs = {
         "linker_1": {"type": "linker", "next": "inversion_1"},
         "inversion_1": {"type": "inversion", "next": "END"}
     }
     entry_point = "linker_1"
-
-    base_node = NodeRuntime(redis_url="redis://localhost:6379", executor=None)
-    base_node.redis = redis_async.from_url(base_node.redis_url, decode_responses=True)
+    base_node = NodeRuntime(executor=None)
+    base_node.tunnel = await tunnel_from_url(base_node.tunnel_url)
     
     flow_controller = None
     try:
         dummy_worker_id = "node-dummy-123"
-        await base_node.redis.sadd("runtime:index:emits:capability:code", dummy_worker_id)
-        await base_node.redis.sadd("runtime:index:emits:capability:logic", dummy_worker_id)
-        await base_node.redis.set(f"runtime:heartbeat:{dummy_worker_id}", int(time.time()), ex=60)
+        await base_node.tunnel.sadd("runtime:index:emits:capability:code", dummy_worker_id)
+        await base_node.tunnel.sadd("runtime:index:emits:capability:logic", dummy_worker_id)
+        await base_node.tunnel.set(f"runtime:heartbeat:{dummy_worker_id}", int(time.time()), ex=60)
 
         pool = NodePool(base_node)
         organizer = ToposOrganizer(pool)
@@ -138,8 +139,8 @@ async def main():
             await flow_controller.detach()
             
         base_node.running = False
-        if hasattr(base_node, 'redis') and base_node.redis:
-            await base_node.redis.aclose()
+        if getattr(base_node, 'tunnel', None):
+            await base_node.tunnel.close()
         
         log.info("[Organizer] Teardown complete. Exit.")
 

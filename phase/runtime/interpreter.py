@@ -1,5 +1,4 @@
 # phase.runtime.interpreter
-## @lineage: phase.node.interpreter
 import __future__
 import time
 from abc import ABC, abstractmethod
@@ -13,7 +12,6 @@ from arch.contract.event.psi import PsiCarrier, PhaseField
 log = get_emitter("node.interpreter")
 
 class PhaseAction(str, Enum):
-    """@enum: 처리 방식을 명확한 상수로 정의 (Magic String 제거)"""
     SPAWN = "RESONANCE:SPAWN"
     DROP = "INTERFERENCE:DROP"
     FIELD_MISMATCH = "INTERFERENCE:FIELD_MISMATCH"
@@ -35,8 +33,6 @@ class AnchoredIR:
     resonance_map: Dict[str, PhaseAction] # 매직 스트링 대신 Enum 타입 사용
 
 class AnchorFlow:
-    """@flow: bootstrap (계약 기반 경계 형성) → revise (동적 확장)"""
-    
     @staticmethod
     def bootstrap(recepts: Optional[FrozenSet[str]] = None) -> AnchoredIR:
         if not recepts:
@@ -72,14 +68,10 @@ class AnchorFlow:
         return resonance_map
 
 class NodeInterpreter:
-    """
-    @bridge: Phase Gate Logic
-    의도: 상태(State)를 보관하지만, 판단(Process) 과정은 부작용(Side-effect) 없는 순수 파이프라인으로 동작
-    """
     def __init__(self, anchor: AnchoredIR, field: PhaseField = PhaseField.COHERENT):
         self.anchor = anchor
         self.current_field = field
-        self._current_phase = "PHASE_IDLE" # _last_action을 좀 더 의미론적으로 명확하게 변경
+        self._current_phase = "PHASE_IDLE"
 
     @property
     def phase(self) -> str:
@@ -93,20 +85,11 @@ class NodeInterpreter:
         return "UNKNOWN"
 
     def process(self, carrier: PsiCarrier) -> PhaseJudgment:
-        """@return: 명확한 타입이 부여된 PhaseJudgment 반환"""
-        
-        ## 1. 경계 해석 (Resolve)
         symbol = self._resolve_symbol(carrier.tag)
-        
-        ## 2. 공명 확인 (Resonance Check)
         res_map = getattr(self.anchor, 'resonance_map', {})
         action = res_map.get(symbol, PhaseAction.SPAWN if symbol != "UNKNOWN" else PhaseAction.DROP)
-        
-        ## 3. 내부 상태 갱신 (State Evolution)
         is_resonance = (action == PhaseAction.SPAWN)
         self._current_phase = f"PHASE_ACTIVE::{symbol}" if is_resonance else "PHASE_IDLE"
-
-        ## 4. 구조화된 판결(Judgment) 반환
         return PhaseJudgment(
             psi_symbol=carrier.symbol,
             action=action,

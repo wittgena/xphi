@@ -1,4 +1,5 @@
-# watcher.plane.sensor.config
+# watcher.kernel.sensor.config
+## @lineage: watcher.plane.sensor.config
 ## @lineage: watcher.config
 import math
 import json

@@ -1,11 +1,8 @@
 # watcher.kernel.state.aggregator
-## @lineage: arch.contract.state.aggregator
-## @lineage: topos.contract.state.aggregator
-## @lineage: phase.runtime.state.aggregator
-## @lineage: phase.node.state.aggregator
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
-import redis.asyncio as redis_async
+
+from arch.topos.bound.tunnel import UniversalFacade
 from arch.contract.event.psi import PsiCarrier
 from phase.runtime.interpreter import NodeInterpreter
 
@@ -25,9 +22,9 @@ class InternalContext:
 
 class KernelStateAggregator:
     """@context: runtime state + surface signals → InternalContext (Worker Payload)"""
-    def __init__(self, interpreter: NodeInterpreter, redis: redis_async.Redis):
+    def __init__(self, interpreter: NodeInterpreter, tunnel: UniversalFacade):
         self.machine = interpreter
-        self.redis = redis
+        self.tunnel = tunnel
 
     def snapshot_state(self) -> CoreState:
         """@state.snapshot: 동적 상태를 불변하는 스냅샷으로 동결(Freezing)"""
@@ -40,25 +37,24 @@ class KernelStateAggregator:
     async def retrieve_surface_signals(self, psi: PsiCarrier) -> Dict[str, Any]:
         """@signal.retrieve: 블로킹 없는(Scan) 구조화된 표면 데이터 수집"""
         signals: Dict[str, Any] = {}
-        pattern = f"*{psi.tag.split(':')[0]}*".encode('utf-8')
-
+        pattern = f"*{psi.tag.split(':')[0]}*"
         try:
-            # 안전한 조회를 위해 KEYS 대신 비동기 SCAN 사용 (병목 해소)
-            cursor = b'0'
+            cursor = 0
             collected_keys = []
-            while cursor:
-                cursor, keys = await self.redis.scan(cursor=cursor, match=pattern, count=100)
+            while True:
+                cursor, keys = await self.tunnel.scan(cursor=cursor, match=pattern, count=100)
                 collected_keys.extend(keys)
                 if len(collected_keys) >= 5: # Limit boundary
                     break
+                    
+                if int(cursor) == 0:
+                    break
             
             for k in collected_keys[:5]:
-                val = await self.redis.get(k)
-                if val:
-                    signals[k.decode('utf-8')] = val.decode('utf-8')
-                    
+                val = await self.tunnel.get(k)
+                if val is not None:
+                    signals[k] = val
         except Exception as e:
-            # Metalog 또는 Logger를 통한 우아한 예외 처리
             print(f"[RuntimeStateAggregator] signal retrieval error: {e}")
 
         return signals

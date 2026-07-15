@@ -1,5 +1,4 @@
 # arch.contract.event.psi
-## @lineage: arch.proto.event.psi
 """
 @flow:
 Ψ (carrier)

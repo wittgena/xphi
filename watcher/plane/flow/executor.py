@@ -6,17 +6,15 @@ import json
 import uuid
 import asyncio
 import argparse
-import redis.asyncio as redis_async
 from pathlib import Path
 from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
+from arch.topos.bound.tunnel import from_url as tunnel_from_url
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
 from arch.contract.event.next import next_id
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-
-from phase.runtime.surface.sensor import REDIS_URL
 from phase.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter, flow_scope
 
@@ -63,6 +61,9 @@ class FlowExecutor(BaseExecutor):
             self.log.info(f"[Isolated] Spawning isolated worker for '{command}' (Timeout: {timeout_seconds}s)")
             process = None
             
+            # [CHANGED] 런타임 노드에서 tunnel을 안전하게 획득 (하위 호환성 고려)
+            tunnel = getattr(self.node, 'tunnel', getattr(self.node, 'redis', None)) if self.node else None
+
             try:
                 # 1. Enforce strict isolation timeout boundary
                 async with asyncio.timeout(timeout_seconds):
@@ -90,14 +91,14 @@ class FlowExecutor(BaseExecutor):
                         if not decoded_line:
                             continue
                         
-                        # 5. Broadcast real-time stream frames back to Redis manifold
-                        if self.node and self.node.redis and response_channel:
+                        # 5. Broadcast real-time stream frames back to Tunnel manifold
+                        if tunnel and response_channel:
                             stream_payload = {
                                 "type": "FLOW",
                                 "phase": "STREAMING",
                                 "boundary": decoded_line
                             }
-                            await self.node.redis.publish(response_channel, json.dumps(stream_payload))
+                            await tunnel.publish(response_channel, json.dumps(stream_payload))
 
                     await process.wait()
                     
@@ -105,13 +106,13 @@ class FlowExecutor(BaseExecutor):
                         raise RuntimeError(f"Subprocess terminated with abnormal exit code: {process.returncode}")
 
                     # 6. Publish final collapse event upon successful convergence
-                    if self.node and self.node.redis and response_channel:
+                    if tunnel and response_channel:
                         collapse_payload = {
                             "type": "COLLAPSE",
                             "status": "SUCCESS",
                             "summary": f"Flow converged successfully via isolated worker process."
                         }
-                        await self.node.redis.publish(response_channel, json.dumps(collapse_payload))
+                        await tunnel.publish(response_channel, json.dumps(collapse_payload))
 
             except TimeoutError:
                 self.log.error(f"⚠️ [SUPERVISOR KILLED] Flow task '{command}' exceeded {timeout_seconds}s limit.")
@@ -122,23 +123,23 @@ class FlowExecutor(BaseExecutor):
                     except Exception as e:
                         self.log.error(f"Failed to kill timed-out subprocess cleanly: {e}")
                 
-                if self.node and self.node.redis and response_channel:
+                if tunnel and response_channel:
                     error_payload = {
                         "type": "ERROR",
                         "status": "FAILED",
                         "summary": f"Task timed out after enforcement of {timeout_seconds}s boundary."
                     }
-                    await self.node.redis.publish(response_channel, json.dumps(error_payload))
+                    await tunnel.publish(response_channel, json.dumps(error_payload))
                     
             except Exception as e:
                 self.log.error(f"[Isolated] Supervised execution pipeline failed: {e}")
-                if self.node and self.node.redis and response_channel:
+                if tunnel and response_channel:
                     error_payload = {
                         "type": "ERROR",
                         "status": "FAILED",
                         "summary": str(e)
                     }
-                    await self.node.redis.publish(response_channel, json.dumps(error_payload))
+                    await tunnel.publish(response_channel, json.dumps(error_payload))
             finally:
                 self.completion_signal.set()
 
@@ -189,7 +190,7 @@ async def _local_stream_runner(flow_instance, command_name):
     """Executes the flow instance locally rendering standard output frames."""
     print(f"\n[\033[94mLOCAL STREAM\033[0m] Starting {command_name}...")
     try:
-        # [핵심 수정] flow_instance가 execute_flow를 가지면 그것을, 아니면 execute를 호출
+        # flow_instance가 execute_flow를 가지면 그것을, 아니면 execute를 호출
         stream_generator = flow_instance.execute_flow() if hasattr(flow_instance, "execute_flow") else flow_instance.execute()
         
         async for event in stream_generator:
@@ -205,17 +206,17 @@ async def _local_stream_runner(flow_instance, command_name):
     except Exception as e:
         print(f" └─ [\033[91mERROR\033[0m] Local stream failed: {e}")
 
+
 async def _async_run_flow_proxy(command_name: str, payload: dict):
     """
     @role: Dedicated Flow Receiver
-    @desc: Listens to the Redis stream until a COLLAPSE or ERROR event is received.
+    @desc: Listens to the Tunnel stream until a COLLAPSE or ERROR event is received.
     """
-    r = redis_async.from_url(REDIS_URL, decode_responses=True)
+    tunnel = await tunnel_from_url()
     task_id = f"flow-{uuid.uuid4().hex[:8]}"
     response_channel = f"res:{task_id}"
     log_channel = f"log:{task_id}"
-
-    pubsub = r.pubsub()
+    pubsub = tunnel.pubsub()
     await pubsub.subscribe(response_channel, log_channel)
 
     # Inject Ψ into the manifold
@@ -234,7 +235,8 @@ async def _async_run_flow_proxy(command_name: str, payload: dict):
     except TypeError:
         event_data = trigger_event.__dict__
         
-    await r.lpush("runtime:queue", json.dumps(event_data))
+    # [CHANGED] tunnel 을 이용한 lpush 호출
+    await tunnel.lpush("runtime:queue", json.dumps(event_data))
 
     timeout_sec = payload.get("_context", {}).get("timeout", 300.0)
 
@@ -246,31 +248,35 @@ async def _async_run_flow_proxy(command_name: str, payload: dict):
                     continue
 
                 channel = msg["channel"]
-                if channel == response_channel:
-                    data = json.loads(msg["data"])
-                    msg_type = data.get("type", "UNKNOWN")
+                data = json.loads(msg["data"])
+                msg_type = data.get("type", "UNKNOWN")
 
-                    # [Core Fix] Do NOT return on FLOW events; keep streaming
-                    if msg_type == "FLOW":
-                        phase_name = data.get("phase", "STREAM")
-                        boundary = data.get("boundary", "")
-                        print(f" ├─ [FLOW:{phase_name}] {boundary}")
-                        continue 
-                        
-                    # Return only on terminating conditions
-                    elif msg_type == "COLLAPSE":
-                        print(f" └─ [\033[92mCOLLAPSE\033[0m] {data.get('summary', 'Flow converged.')}")
-                        return
-                        
-                    elif msg_type == "ERROR":
-                        print(f" └─ [\033[91mERROR\033[0m] {data.get('summary', 'Flow failed.')}")
-                        return
+                # Do NOT return on FLOW events; keep streaming
+                if msg_type == "FLOW":
+                    phase_name = data.get("phase", "STREAM")
+                    boundary = data.get("boundary", "")
+                    print(f" ├─ [FLOW:{phase_name}] {boundary}")
+                    continue 
+                    
+                # Return only on terminating conditions
+                elif msg_type == "COLLAPSE":
+                    print(f" └─ [\033[92mCOLLAPSE\033[0m] {data.get('summary', 'Flow converged.')}")
+                    return
+                    
+                elif msg_type == "ERROR":
+                    print(f" └─ [\033[91mERROR\033[0m] {data.get('summary', 'Flow failed.')}")
+                    return
 
     except TimeoutError:
         print(f" └─ [\033[91mTIMEOUT\033[0m] Node failed to converge within {timeout_sec}s.")
     finally:
-        await pubsub.unsubscribe(response_channel)
-        await r.close()
+        if hasattr(pubsub, 'unsubscribe'):
+            await pubsub.unsubscribe(response_channel)
+        if hasattr(pubsub, 'close'):
+            await pubsub.close()
+        if hasattr(tunnel, 'close'):
+            await tunnel.close()
+
 
 def execute_flow_cli_task(command_name: str, payload: dict):
     """Triggers the remote proxy and monitors the flow stream."""

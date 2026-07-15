@@ -1,6 +1,4 @@
 # arch.contract.event.network
-## @lineage: arch.proto.event.network
-## @lineage: phase.bind.event.network
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Dict, Any, Optional
 from watcher.plane.emitter import get_emitter

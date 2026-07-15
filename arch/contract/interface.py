@@ -1,6 +1,4 @@
 # arch.contract.interface
-## @lineage: topos.contract.interface
-## @lineage: phase.runtime.contract.interface
 """
 @phase
 - ψ: event signal resonance around

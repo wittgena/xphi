@@ -1,6 +1,5 @@
-# phase.reflect.dynamics.executor
-## @lineage: phase.dynamics.executor
-## @lineage: phase.rhythm.dynamics.executor
+# phase.executor.dynamics
+## @lineage: phase.reflect.dynamics.executor
 from __future__ import annotations
 import json
 import asyncio

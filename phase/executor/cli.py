@@ -1,5 +1,5 @@
-# phase.reflect.cli.executor
-## @lineage: phase.runtime.cli.executor
+# phase.executor.cli
+## @lineage: phase.reflect.cli.executor
 import os
 import sys
 import uuid
@@ -16,13 +16,12 @@ from arch.contract.event.next import next_id, LogEvent
 from arch.contract.registry.unified import registry
 from arch.contract.executor import BaseExecutor
 
-# [개선] 직접적인 Redis 의존성 제거, 샌드박스 터널 도입
 from arch.topos.bound.tunnel import TunnelFactory
 from phase.bind.resolver import get_invoker
 from phase.runtime.task.event import TaskSummaryEvent, TaskDetailRecord
 
 from watcher.plane.emitter import get_emitter, flow_scope
-from watcher.plane.surface import console_surface
+from watcher.plane.observer.surface import console_surface
 
 log = get_emitter("cli.executor")
 

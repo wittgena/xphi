@@ -4,7 +4,7 @@ import json
 from typing import Optional, Dict, List
 from contextlib import suppress
 
-from phase.runtime.surface.sink import EmitterSink
+from watcher.plane.sink import EmitterSink
 from watcher.tracer.trajectory import TopologicalStructure
 from watcher.plane.emitter import get_emitter
 

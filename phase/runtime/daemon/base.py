@@ -1,17 +1,19 @@
-# phase.runtime.daemon
+# phase.runtime.daemon.base
 import asyncio
 import json
 import time
 import random
 from abc import ABC, abstractmethod
 from typing import Optional
-import redis.asyncio as redis_async
-from watcher.plane.emitter import get_emitter
-from phase.runtime.surface.sensor import sense_once
+
+from arch.topos.bound.tunnel import UniversalFacade
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.bus import AsyncEventBus
+
 from phase.runtime.task.dispatcher import Dispatcher
 from phase.runtime.receptor.bootstrap import receptor_bootstrap
+from phase.runtime.sensor import SurfaceSensor
+from watcher.plane.emitter import get_emitter
 
 SENSOR_INTERVAL = 1.0
 
@@ -41,18 +43,19 @@ class AbstractDaemon(ABC):
     async def run(self):
         pass
 
+
 class SensorDaemon(AbstractDaemon):
     """@psi.observe: surface → bus"""
-    def __init__(self, redis: redis_async.Redis, bus: AsyncEventBus):
+    def __init__(self, sensor: SurfaceSensor, bus: AsyncEventBus):
         super().__init__("Sensor")
-        self.redis = redis
+        self.sensor = sensor
         self.bus = bus
 
     async def run(self):
         self.log.info("Sensor loop started. Observing state space.")
         while self.running:
             try:
-                signals = await sense_once(self.redis)
+                signals = await self.sensor.sense()
                 for psi in signals:
                     await self.bus.publish(psi) 
                 await asyncio.sleep(SENSOR_INTERVAL)
@@ -62,11 +65,12 @@ class SensorDaemon(AbstractDaemon):
                 self.log.error(f"Sensor Error: {e}")
                 await asyncio.sleep(2)
 
+
 class CaptureDaemon(AbstractDaemon):
     """@psi.capture: global queue → dispatcher"""
-    def __init__(self, redis: redis_async.Redis, dispatcher: Dispatcher, node: 'NodeRuntime', idle_timeout: int):
+    def __init__(self, tunnel: UniversalFacade, dispatcher: Dispatcher, node: 'NodeRuntime', idle_timeout: int):
         super().__init__("Capture")
-        self.redis = redis
+        self.tunnel = tunnel
         self.dispatcher = dispatcher
         self.node = node
         self.base_timeout = idle_timeout  
@@ -77,7 +81,7 @@ class CaptureDaemon(AbstractDaemon):
         self.log.info(f"Capture loop started (Idle Timeout: {self.idle_timeout}s)")
         while self.running:
             try:
-                res = await self.redis.brpop("runtime:queue", timeout=1.0)
+                res = await self.tunnel.brpop("runtime:queue", timeout=1.0)
                 if res:
                     _, data = res
                     event_dict = json.loads(data)
@@ -90,7 +94,7 @@ class CaptureDaemon(AbstractDaemon):
                     await self.dispatcher.send(psi)
                 else:
                     if time.time() - self.last_active_time > self.idle_timeout:
-                        active_nodes = await self.redis.keys("runtime:heartbeat:*")
+                        active_nodes = await self.tunnel.keys("runtime:heartbeat:*")
                         if len(active_nodes) <= 1:
                             decayed = self.idle_timeout * 0.9
                             jitter = random.uniform(-5.0, 5.0)
@@ -112,35 +116,36 @@ class CaptureDaemon(AbstractDaemon):
 
 class HeartbeatDaemon(AbstractDaemon):
     """@phase.liveness: temporal presence 유지"""
-    def __init__(self, redis: redis_async.Redis, node_id: str):
+    def __init__(self, tunnel: UniversalFacade, node_id: str):
         super().__init__("Heartbeat")
-        self.redis = redis
+        self.tunnel = tunnel
         self.node_id = node_id
 
     async def run(self):
         try:
             while self.running:
-                await self.redis.set(f"runtime:heartbeat:{self.node_id}", int(time.time()), ex=10)
-                await self.redis.set("runtime:active", int(time.time()), ex=10)
+                await self.tunnel.set(f"runtime:heartbeat:{self.node_id}", int(time.time()), ex=10)
+                await self.tunnel.set("runtime:active", int(time.time()), ex=10)
                 await asyncio.sleep(3)
         except asyncio.CancelledError:
             pass
 
+
 class SignalDaemon(AbstractDaemon):
     """@control.inbound: external signal → runtime control"""
-    def __init__(self, redis: redis_async.Redis, node: 'NodeRuntime'):
+    def __init__(self, tunnel: UniversalFacade, node: 'NodeRuntime'):
         super().__init__("Signal")
-        self.redis = redis
+        self.tunnel = tunnel
         self.node = node
 
     async def run(self):
-        pubsub = self.redis.pubsub()
+        pubsub = self.tunnel.pubsub()
         await pubsub.subscribe("runtime:signal")
         try:
             async for msg in pubsub.listen():
                 if not self.running:
                     break
-                if msg["type"] == "message":
+                if isinstance(msg, dict) and msg.get("type") == "message":
                     parsed = json.loads(msg["data"])
                     if parsed.get("type") == "shutdown":
                         asyncio.create_task(self.node.shutdown())
@@ -148,14 +153,15 @@ class SignalDaemon(AbstractDaemon):
         except asyncio.CancelledError:
             pass
         finally:
-            await pubsub.unsubscribe("runtime:signal")
+            if hasattr(pubsub, 'unsubscribe'):
+                await pubsub.unsubscribe("runtime:signal")
             await pubsub.close()
 
 class ReceptorDaemon(AbstractDaemon):
     """@membrane.leader: 스웜(Swarm) 중 단 하나의 노드만 물리적 멤브레인(Watchdog)을 담당하도록 하는 리더 선출 데몬"""
-    def __init__(self, redis: redis_async.Redis, node_id: str, watch_dir: str):
+    def __init__(self, tunnel: UniversalFacade, node_id: str, watch_dir: str):
         super().__init__("Receptor")
-        self.redis = redis
+        self.tunnel = tunnel
         self.node_id = node_id
         self.watch_dir = watch_dir
         self.lock_key = "runtime:receptor:leader"
@@ -165,27 +171,23 @@ class ReceptorDaemon(AbstractDaemon):
         self.log.info("Receptor daemon initiated. Engaging in leader election...")
         try:
             while self.running:
-                ## 분산 락 획득 시도 (TTL 6초)
-                acquired = await self.redis.set(self.lock_key, self.node_id, nx=True, ex=6)
+                acquired = await self.tunnel.set(self.lock_key, self.node_id, nx=True, ex=6)
                 
                 if not acquired:
-                    current_leader = await self.redis.get(self.lock_key)
+                    current_leader = await self.tunnel.get(self.lock_key)
                     if current_leader == self.node_id:
-                        await self.redis.expire(self.lock_key, 6)
+                        await self.tunnel.expire(self.lock_key, 6)
                         acquired = True
 
-                ## 위상(역할) 실행
                 if acquired:
                     if self.receptor_task is None or self.receptor_task.done():
                         self.log.warn(f"[{self.node_id}] Acquired Membrane Leadership. Bootstrapping Receptor...")
-                        self.receptor_task = asyncio.create_task(receptor_bootstrap(self.watch_dir))
+                        self.receptor_task = asyncio.create_task(receptor_bootstrap(self.tunnel, self.watch_dir))
                 else:
-                    ## leadership을 상실했을 때의 처리
                     if self.receptor_task and not self.receptor_task.done():
                         self.log.warn(f"[{self.node_id}] Lost Membrane Leadership. Shutting down local Receptor...")
                         self.receptor_task.cancel()
                         
-                        ## leadership 교체 시에도 이전 멤브레인의 완전한 철거를 기다림
                         try:
                             await self.receptor_task
                         except asyncio.CancelledError:
@@ -200,22 +202,19 @@ class ReceptorDaemon(AbstractDaemon):
             self.log.error(f"ReceptorDaemon Error: {e}")
         
         finally:
-            ## Graceful Teardown
             if self.receptor_task and not self.receptor_task.done():
                 self.log.warn("Tearing down Membrane (Watchdog OS Threads)...")
                 self.receptor_task.cancel()
                 try:
-                    ## cancel 후 태스크가 완전히 끝날 때(observer.join() 완료)까지 대기
                     await self.receptor_task 
                 except asyncio.CancelledError:
                     pass
                 except Exception as e:
                     self.log.error(f"Error during Membrane teardown: {e}")
             
-            ## 내가 리더로서 종료되는 것이라면 락을 해제하여 타 노드에 즉시 인계
             try:
-                if await self.redis.get(self.lock_key) == self.node_id:
-                    await self.redis.delete(self.lock_key)
+                if await self.tunnel.get(self.lock_key) == self.node_id:
+                    await self.tunnel.delete(self.lock_key)
             except Exception:
                 pass
             
