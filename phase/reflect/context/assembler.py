@@ -1,6 +1,4 @@
 # phase.reflect.context.assembler
-## @lineage: arch.contract.context.assembler
-## @lineage: theoria.arch.contract.context.assembler
 import json
 import yaml
 from pathlib import Path

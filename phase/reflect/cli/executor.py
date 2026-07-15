@@ -17,7 +17,7 @@ from arch.contract.registry.unified import registry
 from arch.contract.executor import BaseExecutor
 
 # [개선] 직접적인 Redis 의존성 제거, 샌드박스 터널 도입
-from arch.topos.bound.sandbox.tunnel import TunnelFactory
+from arch.topos.bound.tunnel import TunnelFactory
 from phase.bind.resolver import get_invoker
 from phase.runtime.task.event import TaskSummaryEvent, TaskDetailRecord
 

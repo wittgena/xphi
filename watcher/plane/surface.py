@@ -43,7 +43,7 @@ class TunnelSurface(EventObserver):
             pass
             
     async def _async_publish(self, channel: str, msg: str):
-        from arch.topos.bound.sandbox.tunnel import TunnelFactory
+        from arch.topos.bound.tunnel import TunnelFactory
         try:
             tunnel = await TunnelFactory.get_default()
             await tunnel.publish(channel, msg)

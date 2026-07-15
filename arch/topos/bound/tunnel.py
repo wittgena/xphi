@@ -1,5 +1,4 @@
 # arch.topos.bound.sandbox.tunnel
-## @lineage: arch.bound.sandbox.tunnel
 """
 @desc: Universal Message/State Tunnel (Async & Sync Implementation)
 @flow: 
@@ -11,9 +10,9 @@ import redis.asyncio as actual_redis
 import redis.exceptions
 import logging
 from typing import Optional, Any, List, Tuple
-from arch.topos.bound.sandbox.adapter.config import BackendProtocol, resolve_default_config, parse_connection_urls
+from arch.topos.bound.adapter.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
-log = logging.getLogger("sandbox.tunnel")
+log = logging.getLogger("bound.tunnel")
 
 class UniversalPubSub:
     def __init__(self, protocol: BackendProtocol, actual_pubsub=None, mq_client=None):

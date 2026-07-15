@@ -5,7 +5,7 @@ import logging
 from collections import defaultdict, deque
 from typing import Dict, Any, List, Optional
 from watcher.tracer.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
-from arch.topos.bound.sandbox.tunnel import TunnelFactory
+from arch.topos.bound.tunnel import TunnelFactory
 
 log = logging.getLogger("watcher.meter")
 

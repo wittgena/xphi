@@ -1,7 +1,5 @@
 # arch.topos.bound.sandbox.surface
-## @lineage: arch.bound.sandbox.surface
 """
-@desc: Boundary Surface
 @flow:
 -> request: Ψ_out ↦ HTTP Stream 
 -> extract: Stream ↦ jobId
@@ -15,10 +13,10 @@ import json
 import time
 from typing import Optional, Generator
 
-from arch.topos.bound.sandbox.tunnel import TunnelFactory
+from arch.topos.bound.tunnel import TunnelFactory
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("sandbox.surface")
+log = get_emitter("bound.surface")
 
 class SurfaceMQ:
     """@role: Echolocator & Synchronous Result Listener (MQ)"""

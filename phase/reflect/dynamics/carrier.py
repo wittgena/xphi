@@ -6,7 +6,7 @@ import json
 import redis.asyncio as redis_async
 from typing import List, Dict, Optional, Any
 
-from arch.topos.bound.sandbox.tunnel import TunnelFactory
+from arch.topos.bound.tunnel import TunnelFactory
 from arch.contract.event.next import next_id
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.executor import BaseExecutor
