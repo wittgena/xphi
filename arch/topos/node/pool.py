@@ -6,8 +6,8 @@ import random
 import json
 from typing import Optional, Any
 
-from arch.proto.event.psi import PsiEvent
-from phase.gov.proto.flow import PhaseFlow
+from arch.contract.event.psi import PsiEvent
+from arch.gov.flow import PhaseFlow
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("node.pool")

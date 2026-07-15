@@ -15,7 +15,7 @@ from dataclasses import replace, asdict
 from typing import Dict, List, Protocol, Optional
 from pathlib import Path
 
-from arch.proto.event.next import LogEvent
+from arch.contract.event.next import LogEvent
 from phase.bind.resolver import resolve_path
 from watcher.plane.meter import default_telemetry
 
@@ -43,7 +43,7 @@ class TunnelSurface(EventObserver):
             pass
             
     async def _async_publish(self, channel: str, msg: str):
-        from arch.bound.sandbox.tunnel import TunnelFactory
+        from arch.topos.bound.sandbox.tunnel import TunnelFactory
         try:
             tunnel = await TunnelFactory.get_default()
             await tunnel.publish(channel, msg)

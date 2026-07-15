@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Set, List
 import redis.asyncio as airedis
-from arch.proto.event.psi import PsiType
+from arch.contract.event.psi import PsiType
 from phase.bind.resolver import (
     find_current_self,
     resolve_path,

@@ -8,8 +8,8 @@ import json
 import uuid
 from pathlib import Path
 from typing import Dict, List, Optional, Callable
-from arch.proto.event.next import next_id
-from phase.gov.node.anchor import ActorNode, EpochManager
+from arch.contract.event.next import next_id
+from arch.topos.node.anchor import ActorNode, EpochManager
 from phase.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 

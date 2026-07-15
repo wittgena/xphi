@@ -10,7 +10,7 @@ from rocksdict import Rdict, Options, AccessType
 
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
-from arch.bound.sandbox.tunnel import TunnelFactory
+from arch.topos.bound.sandbox.tunnel import TunnelFactory
 
 log = get_emitter("kernel.store.consensus")
 

@@ -1,7 +1,7 @@
 # phase.bind.client.engine.base
 from abc import ABC, abstractmethod
 from typing import Dict, Any
-from arch.proto.schema.resonance import BridgeEvent
+from arch.contract.schema.resonance import BridgeEvent
 
 class BaseEngine(ABC):
     @abstractmethod

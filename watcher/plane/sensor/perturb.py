@@ -6,8 +6,8 @@ import time
 import re
 from typing import Optional, Any
 
-import arch.bound.sandbox.tunnel as tunnel
-from arch.proto.event.psi import PsiEvent, PsiCarrier
+import arch.topos.bound.sandbox.tunnel as tunnel
+from arch.contract.event.psi import PsiEvent, PsiCarrier
 from phase.bind.resolver import resolve_channel, resolve_pattern
 from watcher.plane.emitter import get_emitter
 

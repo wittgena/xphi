@@ -8,9 +8,9 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 import redis.asyncio as redis_async
 
-from arch.proto.event.psi import PsiEvent, PsiCarrier
-from arch.proto.event.bus import AsyncEventBus
-from arch.proto.event.next import next_id
+from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.bus import AsyncEventBus
+from arch.contract.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField
 from arch.contract.registry.unified import registry
 from arch.contract.discovery import discover_modules
@@ -21,10 +21,10 @@ from phase.runtime.task.supervisor import TaskSupervisor
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
 from phase.runtime.surface.actuator import SurfaceActuator
 from phase.runtime.surface.sink import RedisSink
-from phase.runtime.swarm.executor import SwarmExecutor
 from phase.runtime.daemon import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from phase.runtime.builder import CouplerBuilder
-from watcher.reflect.coupler import ReflectCoupler
+from phase.reflect.swarm.executor import SwarmExecutor
+from phase.reflect.context.builder import ContextBuilder
+from phase.reflect.context.coupler import ContextCoupler
 from phase.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter
 
@@ -109,7 +109,7 @@ class NodeRuntime(IPhaseAtor):
             
             self.supervisor.create(push_task(), name=f"Escalate-{event.symbol}")
 
-    def _create_phase_handler(self, coupler: ReflectCoupler):
+    def _create_phase_handler(self, coupler: ContextCoupler):
         async def handler(psi: PsiEvent):
             ## Judgment by the reflex system (Sync)
             judgment = self.interpreter.process(psi.carrier)
@@ -158,7 +158,7 @@ class NodeRuntime(IPhaseAtor):
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")
 
         try:
-            self.coupler = CouplerBuilder.build(self.interpreter, self.redis)
+            self.coupler = ContextBuilder.build(self.interpreter, self.redis)
             await self.coupler.start()
             self.log.info("Cognitive Coupler successfully attached.")
         except Exception as e:

@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
-from arch.contract.base.executor import BaseExecutor
+from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
-from arch.proto.event.next import next_id
-from arch.proto.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.next import next_id
+from arch.contract.event.psi import PsiEvent, PsiCarrier
 
 from phase.runtime.surface.sensor import REDIS_URL
 from phase.bind.resolver import find_current_self

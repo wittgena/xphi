@@ -1,13 +1,11 @@
 # watcher.kernel.inversion
-## @lineage: phase.watcher.kernel.inversion
-## @lineage: meta.watcher.kernel.inversion
 from typing import List, Dict, Optional, Any
 from arch.contract.registry.unified import contract
 from arch.contract.interface import ICriticalDetector, IPhaseField
-from arch.proto.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.psi import PsiEvent, PsiCarrier
 
-@contract.watcher("inversion.watcher")
-class InversionWatcher(ICriticalDetector):
+@contract.watcher("kernel.inversion")
+class KernelInversion(ICriticalDetector):
     """
     @role: Field의 Pressure(피로도) 가속도를 감시, 망델브로 경계(최고점, dS/dt=0)에 도달하는 순간 파열(Rupture) 대신 역-반전(Inversion) 댐핑을 주입
     """
@@ -52,7 +50,7 @@ class InversionWatcher(ICriticalDetector):
             return PsiEvent(
                 event_id=f"isorhesis-inversion-{current_tick}",
                 parent_id=None,
-                source_id="watcher.inversion",
+                source_id="kernel.inversion",
                 scope="GLOBAL",
                 tick=current_tick,
                 carrier=carrier,

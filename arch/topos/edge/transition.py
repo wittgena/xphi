@@ -2,7 +2,7 @@
 import uuid
 from enum import Enum
 from typing import List, Optional, Dict, Any
-from arch.proto.event.next import next_id
+from arch.contract.event.next import next_id
 
 class EdgeFlow(Enum):
     ZERO = "0"           # 구조적 정체성의 공백 (Void)

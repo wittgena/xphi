@@ -14,7 +14,7 @@ from rich.text import Text
 from pydantic import Field
 from typing import Annotated
 from uuid import UUID
-from arch.proto.event.next import next_id
+from arch.contract.event.next import next_id
 
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()

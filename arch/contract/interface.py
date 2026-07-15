@@ -15,7 +15,7 @@ from typing import Tuple, List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol
-from arch.proto.event.psi import PsiEvent
+from arch.contract.event.psi import PsiEvent
 
 class IPhaseField(ABC):
     """Φ-field: shared phase space where system tension accumulates"""

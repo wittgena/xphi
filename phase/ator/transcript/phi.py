@@ -8,7 +8,7 @@ import yaml
 from abc import abstractmethod
 from typing import Any, Dict, List, Tuple
 
-from phase.gov.proto.flow import PhaseFlow, FlowState, Transduction
+from arch.gov.flow import PhaseFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
 from arch.xor.block.parser.md import MdAstParser
 from arch.xor.block.extractor import BlockExtractor

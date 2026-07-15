@@ -7,9 +7,9 @@ from typing import Dict, Any
 from watcher.plane.emitter import get_emitter
 from phase.runtime.node import NodeRuntime
 from arch.contract.protocol import get_proto
-from phase.gov.proto.flow import PhaseFlow, FlowState
+from arch.gov.flow import PhaseFlow, FlowState
 from arch.topos.node.pool import NodePool
-from arch.contract.state.spec import TransRule
+from watcher.kernel.state.spec import TransRule
 from arch.topos.node.state import LinkerNode, InversionNode, StateNode, NodeType
 from arch.topos.state.runtime import StateRuntime
 

@@ -4,15 +4,15 @@ import asyncio
 import json
 import math
 
-from arch.proto.event.psi import PsiCarrier, PsiEvent
+from arch.contract.event.psi import PsiCarrier, PsiEvent
 from arch.contract.registry.unified import registry, contract
 from arch.contract.discovery import discover_modules
 from arch.contract.interface import IDynamicsKernel
 
 from phase.bind.resolver import find_current_self
 from phase.runtime.node import NodeRuntime
-from phase.dynamics.loop.carrier import LoopCarrier
-from phase.dynamics.executor import DynamicsExecutor
+from phase.reflect.dynamics.carrier import LoopCarrier
+from phase.reflect.dynamics.executor import DynamicsExecutor
 
 from watcher.plane.emitter import get_emitter
 
@@ -67,7 +67,7 @@ async def main():
           "params": { "size": 30, "init_phase_range": [0, 6.28], "omega_range": [0.2, 0.5] } 
       },
       "watcher": { 
-          "type": "singularity.watcher",
+          "type": "kernel.singularity",
           "params": { "candidate_limit": 10.0, "rupture_limit": 30.0 } 
       },
       "regime": { 
