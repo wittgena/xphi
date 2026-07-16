@@ -12,7 +12,8 @@ from phase.bind.resolver import resolve_path
 from watcher.plane.flow.meter import default_telemetry
 from watcher.plane.observer.event import EventObserver
 from watcher.plane.surface.tunnel import TunnelSurface
-from watcher.plane.surface.base import ConsoleSurface, FileSurface
+from watcher.plane.surface.console import ConsoleSurface
+from watcher.plane.surface.file import TextFileSurface, JsonFileSurface
 
 class PlaneRegulator:
     """@desc: Event backpressure regulator and telemetry/phase orchestrator."""
@@ -127,17 +128,23 @@ console_surface = ConsoleSurface(
 )
 
 def _assemble_collector_network():
-    """@desc: 내부 조립 부트스트래퍼."""
     global_log_level = os.environ.get("LOG_LEVEL", "INFO").upper()
 
-    ## Console 부착
+    ## 터미널 출력 (콘솔)
     default_plane.attach(console_surface)
 
-    ## File Surface 동적 라우팅 및 부착
+    ## 사람을 위한 텍스트 파일 저장소 (log 디렉토리)
     log_base_dir = resolve_path("log")
-    file_min_level = "TRACE" if global_log_level == "TRACE" else "DEBUG"
-    file_surface = FileSurface(base_dir=log_base_dir, min_level=file_min_level)
-    default_plane.attach(file_surface)
+    text_min_level = "TRACE" if global_log_level == "TRACE" else "DEBUG"
+    text_surface = TextFileSurface(base_dir=log_base_dir, min_level=text_min_level)
+    default_plane.attach(text_surface)
+
+    ## 기계(AI/ES)를 위한 구조화 파일 저장소 (io 디렉토리)
+    ailog_base_dir = resolve_path("ailog")
+
+    ## AI가 요약하기 좋도록 unified=True 옵션을 주어 하나의 jsonl 파일로 모으는 것도 좋은 전략입니다.
+    json_surface = JsonFileSurface(base_dir=ailog_base_dir, min_level="INFO", unified=True)
+    default_plane.attach(json_surface)
 
     tunnel_streamer = TunnelSurface()
     default_plane.attach(tunnel_streamer)

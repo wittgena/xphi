@@ -39,7 +39,7 @@ class TracerSource(FileSystemEventHandler):
             return
 
         self.last_trigger = time.time()
-        print(f"\n✨ [SourceTracer] Physical mutation detected → {event.src_path}")
+        log.info(f"\n✨ [SourceTracer] Physical mutation detected → {event.src_path}")
 
         module_fqn = self._resolve_fqn(event.src_path)
         payload = {"signal_id": "unknown_mutation", "value": 0.0}
@@ -47,9 +47,9 @@ class TracerSource(FileSystemEventHandler):
         if module_fqn and module_fqn in sys.modules:
             try:
                 ## Modification (위상 갱신 / 핫 리로딩 시도)
-                print(f"[Plasticity] Re-aligning topology for: {module_fqn}")
+                log.info(f"[Plasticity] Re-aligning topology for: {module_fqn}")
                 importlib.reload(sys.modules[module_fqn])
-                print(f"[Modification] {module_fqn} successfully integrated into Runtime.")
+                log.info(f"[Modification] {module_fqn} successfully integrated into Runtime.")
                 
                 payload = {
                     "signal_id": "topology_reloaded",
@@ -58,9 +58,9 @@ class TracerSource(FileSystemEventHandler):
                 }
             except Exception as e:
                 ## 문법 오류(SyntaxError)나 로직 오류로 인한 런타임 붕괴 방지
-                print(f"[Cleavage] Critical syntax/logic error in {module_fqn}.")
-                print(f"  ↳ System protected. Malformed phase rejected.")
-                print(traceback.format_exc()) # 파지의 시체를 로그로만 출력하고 런타임은 보존
+                log.info(f"[Cleavage] Critical syntax/logic error in {module_fqn}.")
+                log.info(f"  ↳ System protected. Malformed phase rejected.")
+                log.info(traceback.format_exc()) # 파지의 시체를 로그로만 출력하고 런타임은 보존
                 
                 payload = {
                     "signal_id": "mutation_rejected",
@@ -69,7 +69,7 @@ class TracerSource(FileSystemEventHandler):
                 }
         else:
             ## 아직 런타임에 로드되지 않은 새로운 파일의 감지
-            print(f"[Genesis] New structure detected: {module_fqn or event.src_path}")
+            log.info(f"[Genesis] New structure detected: {module_fqn or event.src_path}")
             payload = {"signal_id": "new_structure_detected", "value": 0.5, "module": module_fqn}
 
         asyncio.run_coroutine_threadsafe(

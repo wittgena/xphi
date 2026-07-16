@@ -102,10 +102,9 @@ class TelemetryEngine:
         self.meter = PressureMeter(window=window)
         self.projector = MeterProjector(bins=resolution_bins)
         self.kinematic_lens = DefaultBoundLensStrategy(preset_name="kinematic")
-        
-        # 폭주 판단 임계값 설정
         self.burst_density_threshold = burst_density_threshold
         self.burst_accel_threshold = burst_accel_threshold
+        self._last_burst_state = False
 
     def analyze(self, key: str) -> Dict[str, Any]:
         """Records an event and returns diagnosed turbulence metrics."""
@@ -117,14 +116,14 @@ class TelemetryEngine:
         metrics = lens_result.get("metrics", {})
         acceleration = metrics.get("acceleration", 0.0)
         
-        is_bursting = (
-            current_density > self.burst_density_threshold and 
-            acceleration > self.burst_accel_threshold
-        )
-        
-        if is_bursting:
-            log.warning(f"[Telemetry] Pre-emptive Turbulence detected on '{key}' (Acc: {acceleration:.2f}, Den: {current_density:.2f})")
+        is_bursting = current_density > self.burst_density_threshold and acceleration > self.burst_accel_threshold
+        if is_bursting and not self._last_burst_state:
+            log.warning(f"[Telemetry] 🚨 Burst Alert Triggered on '{key}' (Acc: {acceleration:.2f}) Den: {current_density:.2f})")
+        elif not is_bursting and self._last_burst_state:
+            log.info(f"[Telemetry] 🟢 System Stabilized on '{key}'")
             
+        self._last_burst_state = is_bursting
+        
         return {
             "key": key,
             "density": round(current_density, 2),
