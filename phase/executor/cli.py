@@ -21,7 +21,7 @@ from phase.bind.resolver import get_invoker
 from phase.runtime.task.event import TaskSummaryEvent, TaskDetailRecord
 
 from watcher.plane.emitter import get_emitter, flow_scope
-from watcher.plane.observer.surface import console_surface
+from watcher.plane.regulator import console_surface
 
 log = get_emitter("cli.executor")
 

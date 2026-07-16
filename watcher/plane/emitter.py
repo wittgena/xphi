@@ -7,8 +7,9 @@ import traceback
 from typing import Any, Dict, Optional, Callable, List
 from contextvars import ContextVar
 from contextlib import contextmanager
-from arch.contract.event.next import LogEvent
-from watcher.plane.observer.surface import default_plane
+
+from arch.contract.event.next import LogEvent, next_id
+from watcher.plane.regulator import default_plane
 
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})
 _event_interceptors: List[Callable[[LogEvent], None]] = []
@@ -44,7 +45,6 @@ class SurfaceEmitter:
         self.mode = mode.upper()
 
     def set_mode(self, mode: str):
-        """Dynamically override output layout (NORMAL, SLIM, MINIMAL, FULL, etc.)"""
         self.mode = mode.upper()
         return self
 
@@ -64,14 +64,20 @@ class SurfaceEmitter:
         if exc_info:
             formatted_msg += "\n" + traceback.format_exc()
         
+        # [flow_id 제어] 컨텍스트에 flow_id가 없다면 단독 루트 스팬으로 간주하여 자동 부여
+        flow_id = ctx.get("flow_id")
+        if not flow_id:
+            flow_id = next_id()
+        
         unified_context = {
-            "flow_id": ctx.get("flow_id"),
+            "flow_id": flow_id,
             "phase": self.phase or ctx.get("phase"),
             "bound": self.bound or ctx.get("bound"),
             **ctx.get("extra", {}),
             **kwargs
         }
 
+        # event_id는 LogEvent의 default_factory(next_id)에 의해 이 시점에 자동 생성됨
         event = LogEvent(
             source_id=self.name,
             message=formatted_msg,
@@ -88,7 +94,6 @@ class SurfaceEmitter:
 
         self._handler(event)
 
-    ## @compat: Fully compatible adapter interface for standard logging.Logger
     def debug(self, msg, *args, **kwargs): self._log("DEBUG", msg, *args, **kwargs)
     def trace(self, msg, *args, **kwargs): self._log("TRACE", msg, *args, **kwargs)
     def info(self, msg, *args, **kwargs): self._log("INFO", msg, *args, **kwargs)
@@ -108,10 +113,8 @@ class SurfaceEmitter:
     def flush(self):
         default_plane.flush()
 
-
 def get_emitter(name: str, phase: Optional[str] = None, boundary: Optional[str] = None, mode: str = "NORMAL") -> SurfaceEmitter:
     return SurfaceEmitter(name, phase, boundary, mode=mode)
-
 
 ## @legacy.compat: Native Python logging fallback setup
 _LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()

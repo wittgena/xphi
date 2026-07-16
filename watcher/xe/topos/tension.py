@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from phase.bind.rhythm.bridge import RhythmBridge
-from watcher.plane.observer.surface import default_plane
+from watcher.plane.regulator import default_plane
 from watcher.plane.emitter import get_emitter
 from watcher.xe.topos.particle import ToposManifold, Particle
 

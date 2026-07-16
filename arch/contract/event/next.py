@@ -87,20 +87,13 @@ class PhaseIdGenerator:
                  ref_topo: Optional[int] = None, 
                  ref_press: Optional[int] = None, 
                  rupture: bool = False) -> int:
-        """
-        :param ref_topo: 외부(Lineage/Redis)에서 제공하는 위상 기준점
-        :param ref_press: 외부(Signature/Context)에서 제공하는 압력 기준점
-        """
         with self._lock:
-            # 1. Epoch: 계보 단절(Discontinuity) 마커
             if rupture:
                 self.epoch ^= 1
             
-            # 2. 기준점 설정 (외부 참조 우선)
             base_t = ref_topo if ref_topo is not None else self.prev_topo
             base_p = ref_press if ref_press is not None else self.prev_press
 
-            # 3. 차분 및 포화(Saturation) 연산
             # Overflow 왜곡을 방지하기 위해 min()으로 클리핑
             d_topo = current_topo - base_t
             topo_sign = 1 if d_topo >= 0 else 0
@@ -110,11 +103,11 @@ class PhaseIdGenerator:
             press_sign = 1 if d_press >= 0 else 0
             press_mag = min(abs(d_press), 0x7FFF) # 15bit 포화
             
-            # 4. 상태 업데이트 (외부 기준이 없을 때만 내부 캐시 갱신)
+            # 상태 업데이트 (외부 기준이 없을 때만 내부 캐시 갱신)
             if ref_topo is None: self.prev_topo = current_topo
             if ref_press is None: self.prev_press = current_press
             
-            # 5. 비트 패킹 (32bit)
+            # 비트 패킹 (32bit)
             return (self.epoch << 31) | (topo_sign << 30) | (topo_mag << 16) | \
                    (press_sign << 15) | (press_mag)
 

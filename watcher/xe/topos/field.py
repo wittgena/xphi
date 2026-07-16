@@ -12,7 +12,7 @@ import json
 from typing import Dict, Any, Optional
 import redis.asyncio as redis_async
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-from watcher.plane.observer.surface import SurfacePlane
+from watcher.plane.regulator import PlaneRegulator
 from watcher.plane.emitter import get_emitter
 from phase.bind.rhythm.bridge import RhythmBridge
 from watcher.xe.topos.particle import ToposManifold, Particle
@@ -62,7 +62,7 @@ class ToposField:
         
         if sig_type == "topos:perturb":
             ## @point: Global phase reset (Entropy Flush)
-            SurfacePlane.record(time.time(), "PERTURB", "[⚡] ENTROPY FLUSH: Global Phase Reset", "CRIT")
+            PlaneRegulator.record(time.time(), "PERTURB", "[⚡] ENTROPY FLUSH: Global Phase Reset", "CRIT")
             
             tasks = [
                 inst.phase_reset() for inst in ToposManifold._instances 
@@ -76,7 +76,7 @@ class ToposField:
 
         elif sig_type == "topos:inject":
             ## @point: External demand tension injection
-            SurfacePlane.record(time.time(), "INJECT", "[External] Demand Tension Injected", "WARN")
+            PlaneRegulator.record(time.time(), "INJECT", "[External] Demand Tension Injected", "WARN")
             await ToposManifold.void_gap.put({
                 "id": f"rupture.inject.{uuid.uuid4().hex[:4]}", 
                 "parent_id": "ext-inject-event"
@@ -92,7 +92,7 @@ class ToposField:
         elif sig_type == "topos:tune_reentry":
             ## @regime.change: Update re-entry plasticity (Multiplier tuning)
             new_factor = float(data.get("factor", 1.0))
-            SurfacePlane.record(time.time(), "TUNE", f"[External] Tuning Re-entry Multiplier to {new_factor}", "WARN")
+            PlaneRegulator.record(time.time(), "TUNE", f"[External] Tuning Re-entry Multiplier to {new_factor}", "WARN")
             
             tasks = [
                 inst.update_multiplier(new_factor) 

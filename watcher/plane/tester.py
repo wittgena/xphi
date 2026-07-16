@@ -12,7 +12,7 @@
 import unittest
 import time
 from watcher.plane.emitter import get_emitter, flow_scope, _flow_context
-from watcher.plane.observer.surface import SurfacePlane
+from watcher.plane.regulator import PlaneRegulator
 from watcher.plane.flow.monitor import flow_monitor
 
 class ToposVariants(unittest.TestCase):
@@ -22,8 +22,8 @@ class ToposVariants(unittest.TestCase):
         @flow: Φ(t) → Φ(t₀)
         @intent: Reset the BoundPlane phase field and clear telemetry caches before each invariant check.
         """
-        SurfacePlane.meter.history.clear()
-        SurfacePlane.fold_cache.clear()
+        PlaneRegulator.meter.history.clear()
+        PlaneRegulator.fold_cache.clear()
         _flow_context.set({})
         
         # [topos Sensor]: 개별 노드에 부착되는 위상 발화기
@@ -41,13 +41,13 @@ class ToposVariants(unittest.TestCase):
             self.emitter.info("heartbeat_pulse")
             
         ## laminar regime must not trigger folding
-        self.assertEqual(len(SurfacePlane.fold_cache), 0, "Laminar flow should not trigger folding.")
+        self.assertEqual(len(PlaneRegulator.fold_cache), 0, "Laminar flow should not trigger folding.")
         
         ## events must exist in pressure meter history
         key1 = "verify:test.engine:system_initialized"
         key2 = "verify:test.engine:heartbeat_pulse"
-        self.assertIn(key1, SurfacePlane.meter.history)
-        self.assertIn(key2, SurfacePlane.meter.history)
+        self.assertIn(key1, PlaneRegulator.meter.history)
+        self.assertIn(key2, PlaneRegulator.meter.history)
 
     @flow_monitor
     def test_turbulence_and_folding(self):
@@ -64,9 +64,9 @@ class ToposVariants(unittest.TestCase):
                 self.emitter.info(target_msg)
         
         ## turbulence must generate folding
-        self.assertIn(key, SurfacePlane.fold_cache, "High density events must be caught in fold_cache.")
+        self.assertIn(key, PlaneRegulator.fold_cache, "High density events must be caught in fold_cache.")
         
-        folded_event = SurfacePlane.fold_cache[key]
+        folded_event = PlaneRegulator.fold_cache[key]
 
         ## compression magnitude must reflect burst density
         self.assertGreater(folded_event.fold_count, 1, "Fold count should reflect the burst volume.")
@@ -88,16 +88,16 @@ class ToposVariants(unittest.TestCase):
         for _ in range(20):
             self.emitter.warn(target_msg)
         
-        self.assertIn(key, SurfacePlane.fold_cache)
+        self.assertIn(key, PlaneRegulator.fold_cache)
         
         ## simulate pressure relaxation
-        time.sleep(SurfacePlane.meter.window + 0.1)
+        time.sleep(PlaneRegulator.meter.window + 0.1)
         
         ## new event triggers implicit flush
         self.emitter.info(target_msg)
 
         ## folding cache must be cleared
-        self.assertNotIn(key, SurfacePlane.fold_cache, "Fold cache must be flushed implicitly after pressure drops.")
+        self.assertNotIn(key, PlaneRegulator.fold_cache, "Fold cache must be flushed implicitly after pressure drops.")
 
     @flow_monitor
     def test_explicit_flush(self):
@@ -113,12 +113,12 @@ class ToposVariants(unittest.TestCase):
         for _ in range(20):
             self.emitter.crit(target_msg)
             
-        self.assertIn(key, SurfacePlane.fold_cache)
+        self.assertIn(key, PlaneRegulator.fold_cache)
         
         ## 강제 플러시 호출 (시간 지연이나 새 이벤트 없이 즉각 방출)
-        SurfacePlane.flush()
+        PlaneRegulator.flush()
         
-        self.assertEqual(len(SurfacePlane.fold_cache), 0, "Explicit flush must clear all folded events.")
+        self.assertEqual(len(PlaneRegulator.fold_cache), 0, "Explicit flush must clear all folded events.")
 
     @flow_monitor
     def test_context_nesting_integrity(self):

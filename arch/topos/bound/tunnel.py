@@ -4,6 +4,7 @@
 @flow: 
 - Defaults to asynchronous processing, while providing a minimal 
 - facade for synchronous environments where an async event loop is unavailable
+- [Added] Built-in Connection Pool limits to prevent "Too many connections" infrastructure collapse.
 """
 import redis
 import redis.asyncio as actual_redis
@@ -52,12 +53,25 @@ class UniversalPubSub:
         raise AttributeError(f"'UniversalPubSub' object has no attribute '{name}'")
 
 class UniversalFacade:
-    """@role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals"""
-    def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol):
-        self.state_store = actual_redis.from_url(state_url, decode_responses=True)
+    """
+    @role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals
+    @defense: Configures connection pooling defaults to prevent Redis overload.
+    """
+    def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
         self.mq_protocol = mq_protocol
         self.mq_url = mq_url
         self.mq_client = None
+
+        # [방어장치 1] 커넥션 풀 제한 설정 (기본값: 100, 대기 시간: 5초)
+        pool_kwargs = {
+            "max_connections": 100,
+            "socket_timeout": 5.0,
+            "socket_connect_timeout": 5.0,
+            "retry_on_timeout": True
+        }
+        pool_kwargs.update(kwargs)
+
+        self.state_store = actual_redis.from_url(state_url, decode_responses=True, **pool_kwargs)
 
         if self.mq_protocol == BackendProtocol.KAFKA:
             log.info(f"[Tunnel] Initializing Kafka Producer/Consumer at {self.mq_url}")
@@ -94,15 +108,22 @@ class UniversalFacade:
 class UniversalFacadeSync:
     """
     @role: Synchronous (Blocking) routing facade
-    @flow: 
-    - Explicitly defines stream methods that differ from standard Redis naming require custom exception handling (e.g., BUSYGROUP). 
-    - All other simple pass-through methods (lpush, get, pubsub, etc.) are automatically delegated via __getattr__.
     """
-    def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol):
-        self.state_store = redis.from_url(state_url, decode_responses=True)
+    def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
         self.mq_protocol = mq_protocol
         self.mq_url = mq_url
         self.mq_client = None
+
+        # [방어장치 1] 동기 클라이언트에도 풀 제한 적용 (동기 환경은 더 적은 커넥션 유지)
+        pool_kwargs = {
+            "max_connections": 50,
+            "socket_timeout": 5.0,
+            "socket_connect_timeout": 5.0,
+            "retry_on_timeout": True
+        }
+        pool_kwargs.update(kwargs)
+
+        self.state_store = redis.from_url(state_url, decode_responses=True, **pool_kwargs)
 
         if self.mq_protocol == BackendProtocol.KAFKA:
             log.info(f"[SyncTunnel] Initializing Sync Kafka Producer/Consumer at {self.mq_url}")
@@ -136,55 +157,60 @@ class TunnelFactory:
     _sync_instance: Optional[UniversalFacadeSync] = None
 
     @classmethod
-    async def get_default(cls) -> UniversalFacade:
+    async def get_default(cls, **kwargs) -> UniversalFacade:
         """Default tunnel for asynchronous environments (maintains standard await calls)"""
         if cls._async_instance is None:
             config = resolve_default_config()
             scheme, state_url, mq_url = parse_connection_urls(config.default_url)
-            cls._async_instance = UniversalFacade(state_url, mq_url, scheme)
+            cls._async_instance = UniversalFacade(state_url, mq_url, scheme, **kwargs)
             log.info(f"[TunnelFactory] Provisioned Async Tunnel: {config.default_url}")
         return cls._async_instance
 
     @classmethod
-    async def get_isolated(cls) -> UniversalFacade:
-        """Isolated asynchronous connection"""
+    async def get_isolated(cls, **kwargs) -> UniversalFacade:
+        """Isolated asynchronous connection. 
+        Note: Use sparingly to prevent connection pool exhaustion."""
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
-        return UniversalFacade(state_url, mq_url, scheme)
+        return UniversalFacade(state_url, mq_url, scheme, **kwargs)
 
     @classmethod
-    def get_sync(cls) -> UniversalFacadeSync:
+    def get_sync(cls, **kwargs) -> UniversalFacadeSync:
         """Tunnel for synchronous environments like SurfaceMQ (called without await)"""
         if cls._sync_instance is None:
             config = resolve_default_config()
             scheme, state_url, mq_url = parse_connection_urls(config.default_url)
-            cls._sync_instance = UniversalFacadeSync(state_url, mq_url, scheme)
+            cls._sync_instance = UniversalFacadeSync(state_url, mq_url, scheme, **kwargs)
             log.info(f"[TunnelFactory] Provisioned Sync Tunnel: {config.default_url}")
         return cls._sync_instance
 
     @classmethod
-    def get_isolated_sync(cls) -> UniversalFacadeSync:
+    def get_isolated_sync(cls, **kwargs) -> UniversalFacadeSync:
         """Isolated synchronous connection"""
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
-        return UniversalFacadeSync(state_url, mq_url, scheme)
+        return UniversalFacadeSync(state_url, mq_url, scheme, **kwargs)
 
     @classmethod
     async def close_all(cls):
         """Terminates the global connection pool"""
         if cls._async_instance:
-            await cls._async_instance.aclose()
+            if hasattr(cls._async_instance.state_store, 'aclose'):
+                await cls._async_instance.state_store.aclose()
+            elif hasattr(cls._async_instance.state_store, 'close'):
+                await cls._async_instance.state_store.close()
             cls._async_instance = None
+            
         if cls._sync_instance:
-            cls._sync_instance.close()
+            cls._sync_instance.state_store.close()
             cls._sync_instance = None
 
 async def from_url(url: str, **kwargs) -> UniversalFacade:
     """@legacy: Special-purpose Async builder requiring explicit URL injection"""
     scheme, state_url, mq_url = parse_connection_urls(url)
-    return UniversalFacade(state_url=state_url, mq_url=mq_url, mq_protocol=scheme)
+    return UniversalFacade(state_url=state_url, mq_url=mq_url, mq_protocol=scheme, **kwargs)
 
 def sync_from_url(url: str, **kwargs) -> UniversalFacadeSync:
     """@legacy: Special-purpose Sync builder requiring explicit URL injection"""
     scheme, state_url, mq_url = parse_connection_urls(url)
-    return UniversalFacadeSync(state_url=state_url, mq_url=mq_url, mq_protocol=scheme)
+    return UniversalFacadeSync(state_url=state_url, mq_url=mq_url, mq_protocol=scheme, **kwargs)
