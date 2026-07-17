@@ -37,20 +37,29 @@ class ReceptorTopos:
 
 def build_system_topos() -> List[TopologicalStructure]:
     structures = []
-    core = []
-    with suppress(ImportError): import phase.bind.resolver as m; core.append(m.__name__)
-    with suppress(ImportError): import phase.runtime.receptor.bootstrap as m; core.append(m.__name__)
-    with suppress(ImportError): import phase.runtime.receptor.kernel as m; core.append(m.__name__)
+    arch = []
+    with suppress(ImportError): import arch.topos.bound.sensor as m; arch.append(m.__name__)
+    with suppress(ImportError): import arch.topos.bound.surface as m; arch.append(m.__name__)
+    with suppress(ImportError): import arch.topos.bound.tunnel as m; arch.append(m.__name__)
 
-    if core:
-        structures.append(TopologicalStructure(name="core.runtime", members=core))
+    if arch:
+        structures.append(TopologicalStructure(name="arch.topos", members=arch))
 
-    tracer = []
-    with suppress(ImportError): import watcher.tracer.kernel as m; tracer.append(m.__name__)
-    with suppress(ImportError): import watcher.tracer.source as m; tracer.append(m.__name__)
-    with suppress(ImportError): import watcher.tracer.trajectory as m; tracer.append(m.__name__)
 
-    if tracer:
-        structures.append(TopologicalStructure(name="tracer.grid", members=tracer))
+    phase = []
+    with suppress(ImportError): import phase.bind.resolver as m; phase.append(m.__name__)
+    with suppress(ImportError): import phase.runtime.receptor.bootstrap as m; phase.append(m.__name__)
+    with suppress(ImportError): import phase.runtime.receptor.kernel as m; phase.append(m.__name__)
+
+    if phase:
+        structures.append(TopologicalStructure(name="phase.runtime", members=phase))
+
+    watcher = []
+    with suppress(ImportError): import watcher.kernel.resonance as m; watcher.append(m.__name__)
+    with suppress(ImportError): import watcher.kernel.store as m; watcher.append(m.__name__)
+    with suppress(ImportError): import watcher.kernel.singularity as m; watcher.append(m.__name__)
+
+    if watcher:
+        structures.append(TopologicalStructure(name="watcher.kernel", members=watcher))
 
     return structures

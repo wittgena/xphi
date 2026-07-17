@@ -14,24 +14,14 @@ from watcher.tracer.trajectory import (
 )
 
 class ReceptorKernel:
-    """
-    @desc: SourceTracer의 파동(Ψ)을 스트리밍으로 받아 다중 Lens(독립 운동학 / 위상 괴리)를 
-           동시에 투영하여 실시간 시스템 장력을 평가하고 붕괴를 판단합니다.
-    """
     def __init__(self, surface: ReceptorTopos, window_steps: int = 14, structures: List[TopologicalStructure] = None):
         self.surface = surface
         self.window_steps = window_steps
         self.structures = structures or []
         
-        # [다중 렌즈 장착]
-        # 1. Kinematic Lens: 개별 노드의 절대적 변동성 및 추세 평가
         self.kinematic_lens = DefaultBoundLensStrategy(preset_name="tail_risk")
-        # 2. Topological Lens: 자신이 속한 그룹(Φ) 흐름 대비 이탈률(Co-Diff) 평가
         self.codiff_lens = CoDiffBoundLensStrategy(diff_threshold=0.1)
-        
-        # [상태 공간]
         self.trajectory_buffer: Dict[str, List[Point]] = {}
-        # 비동기 스트리밍 환경에서 구조(Φ)의 중심을 구하기 위한 Last Known Value
         self.last_known_values: Dict[str, float] = {}
 
     def _get_structure_for(self, signal_id: str) -> Optional[TopologicalStructure]:
@@ -62,7 +52,6 @@ class ReceptorKernel:
     async def _ingest_and_evaluate(self, signal_id: str, current_value: float):
         now = datetime.now()
         
-        # 1. 상태 업데이트 (LKV 및 버퍼 갱신)
         self.last_known_values[signal_id] = current_value
         if signal_id not in self.trajectory_buffer:
             self.trajectory_buffer[signal_id] = []
@@ -70,14 +59,12 @@ class ReceptorKernel:
         buffer = self.trajectory_buffer[signal_id]
         buffer.append(Point(timestamp=now, value=current_value))
         
-        # 시간에 따른 망각 (Sliding Window)
         if len(buffer) > self.window_steps:
             buffer.pop(0)
             
         if len(buffer) < self.window_steps:
             return
 
-        # 윈도우 생성
         window = WindowedTrajectory(
             identity=signal_id,
             start_time=buffer[0].timestamp,
@@ -85,9 +72,6 @@ class ReceptorKernel:
             points=buffer
         )
 
-        # ---------------------------------------------------------
-        # [Lens 1] Kinematic Scan (내재적 폭주 검사)
-        # ---------------------------------------------------------
         k_scan = self.kinematic_lens.scan(window)
         if k_scan["status"] == "valid":
             metrics = k_scan["metrics"]
@@ -96,14 +80,10 @@ class ReceptorKernel:
             if is_ruptured:
                 await self._emit_rupture("KINEMATIC", signal_id, metrics)
 
-        # ---------------------------------------------------------
-        # [Lens 2] Topological Co-Diff Scan (구조적 이탈 검사)
-        # ---------------------------------------------------------
         structure = self._get_structure_for(signal_id)
         if structure:
             struct_val = self._calculate_structure_center(structure)
             if struct_val is not None:
-                # 스트리밍 환경에 맞춰 현재 구조 평균값(LKV)으로 비교 윈도우 생성
                 struct_window = WindowedTrajectory(
                     identity=structure.name,
                     start_time=buffer[0].timestamp,

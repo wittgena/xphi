@@ -1,4 +1,5 @@
-# arch.topos.state.disc
+# arch.topos.surge.disc
+## @lineage: arch.topos.state.disc
 ## @lineage: topos.medium.subst.disc
 import inspect
 import logging
@@ -20,7 +21,7 @@ from pydantic import (
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
-from arch.topos.state.surge.model import SurgeBaseModel
+from arch.topos.surge.model import SurgeBaseModel
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
