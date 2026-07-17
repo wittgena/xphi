@@ -95,9 +95,7 @@ class ToposCompiler:
             details=details
         )
         
-        # 💡 [CRITICAL FIX] Offload disk I/O to thread
         blob_hash = await asyncio.to_thread(self.store.save_transition, blob)
-        
         logic_state.pending_blob_hashes.append(blob_hash)
         log.info(f"[COMPILER|{action}] {logic_state.stream_id} | {from_state} -> {to_state} | τ: {tension:.2f} | {details}")
 

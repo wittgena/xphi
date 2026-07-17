@@ -1,5 +1,4 @@
 # arch.topos.node.discovery
-## @lineage: phase.gov.node.discovery
 """
 @topos.role: Φ constructor (global topology discovery)
 @desc: A pure logical scanner decoupled from physical implementations (e.g., Git).

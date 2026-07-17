@@ -1,4 +1,5 @@
-# arch.topos.bound.trans.topic.registry
+# arch.topos.node.trans.topic.registry
+## @lineage: arch.topos.bound.trans.topic.registry
 ## @lineage: arch.bound.topic.registry
 import json
 from typing import Any, Callable, Dict, Optional, Union, List, Any

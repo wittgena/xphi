@@ -1,4 +1,5 @@
-# arch.topos.bound.trans.schema
+# arch.topos.node.trans.schema
+## @lineage: arch.topos.bound.trans.schema
 ## @lineage: arch.bound.trans.schema
 ## @lineage: meta.ator.trans
 ## @lineage: meta.ator.transductor
