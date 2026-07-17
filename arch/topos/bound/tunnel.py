@@ -4,7 +4,6 @@
 @flow: 
 - Defaults to asynchronous processing, while providing a minimal 
 - facade for synchronous environments where an async event loop is unavailable
-- [Added] Built-in Connection Pool limits to prevent "Too many connections" infrastructure collapse.
 """
 import redis
 import redis.asyncio as actual_redis
@@ -53,16 +52,11 @@ class UniversalPubSub:
         raise AttributeError(f"'UniversalPubSub' object has no attribute '{name}'")
 
 class UniversalFacade:
-    """
-    @role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals
-    @defense: Configures connection pooling defaults to prevent Redis overload.
-    """
+    """@role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals"""
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
         self.mq_protocol = mq_protocol
         self.mq_url = mq_url
         self.mq_client = None
-
-        # [방어장치 1] 커넥션 풀 제한 설정 (기본값: 100, 대기 시간: 5초)
         pool_kwargs = {
             "max_connections": 100,
             "socket_timeout": 5.0,
@@ -106,15 +100,12 @@ class UniversalFacade:
         return getattr(self.state_store, name)
 
 class UniversalFacadeSync:
-    """
-    @role: Synchronous (Blocking) routing facade
-    """
+    """@role: Synchronous (Blocking) routing facade"""
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
         self.mq_protocol = mq_protocol
         self.mq_url = mq_url
         self.mq_client = None
 
-        # [방어장치 1] 동기 클라이언트에도 풀 제한 적용 (동기 환경은 더 적은 커넥션 유지)
         pool_kwargs = {
             "max_connections": 50,
             "socket_timeout": 5.0,
@@ -168,8 +159,7 @@ class TunnelFactory:
 
     @classmethod
     async def get_isolated(cls, **kwargs) -> UniversalFacade:
-        """Isolated asynchronous connection. 
-        Note: Use sparingly to prevent connection pool exhaustion."""
+        """Isolated asynchronous connection"""
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
         return UniversalFacade(state_url, mq_url, scheme, **kwargs)
@@ -206,11 +196,11 @@ class TunnelFactory:
             cls._sync_instance = None
 
 async def from_url(url: str, **kwargs) -> UniversalFacade:
-    """@legacy: Special-purpose Async builder requiring explicit URL injection"""
+    """Special-purpose Async builder requiring explicit URL injection"""
     scheme, state_url, mq_url = parse_connection_urls(url)
     return UniversalFacade(state_url=state_url, mq_url=mq_url, mq_protocol=scheme, **kwargs)
 
 def sync_from_url(url: str, **kwargs) -> UniversalFacadeSync:
-    """@legacy: Special-purpose Sync builder requiring explicit URL injection"""
+    """Special-purpose Sync builder requiring explicit URL injection"""
     scheme, state_url, mq_url = parse_connection_urls(url)
     return UniversalFacadeSync(state_url=state_url, mq_url=mq_url, mq_protocol=scheme, **kwargs)

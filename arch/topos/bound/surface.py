@@ -1,12 +1,4 @@
 # arch.topos.bound.surface
-## @lineage: arch.topos.bound.sandbox.surface
-"""
-@flow:
--> request: Ψ_out ↦ HTTP Stream 
--> extract: Stream ↦ jobId
--> listen: jobId ↦ SurfaceMQ (Tunnel) ↦ Ψ_in
-"""
-
 import urllib.request
 import urllib.parse
 from urllib.error import HTTPError, URLError
@@ -22,6 +14,15 @@ log = get_emitter("bound.surface")
 class SurfaceMQ:
     """@role: Echolocator & Synchronous Result Listener (MQ)"""
     
+    def register_state(self, key: str, value: str):
+        """@flow: Synchronously register state to the tunnel"""
+        state_store = TunnelFactory.get_isolated_sync()
+        try:
+            state_store.sadd(key, value)
+        finally:
+            if hasattr(state_store, "close"):
+                state_store.close()
+
     def listen_job(self, channel: str) -> Generator:
         """@flow: Blocking generator for asynchronous job results"""
         listen_client = TunnelFactory.get_isolated_sync()
@@ -83,10 +84,6 @@ class SurfaceMQ:
 
 
 class SurfaceClient:
-    """
-    @role: Boundary Orchestrator (Action & Perception Pipeline)
-    @desc: 외부 경계와의 통신(HTTP), 자가 치유(Echolocation), 비동기 결과 수신(MQ)을 단일 흐름으로 응집
-    """
     def __init__(self, stream_client, bootstrap_runtime, mq_surface: SurfaceMQ, source_name: str, fallback_url: str, path_prefix: str = ""):
         self.stream = stream_client
         self.bootstrap_runtime = bootstrap_runtime
@@ -158,37 +155,28 @@ class SurfaceClient:
             
             try:
                 yield from self.stream.stream(req, **kwargs)
-                break  # 성공 시 루프 탈출
-                
+                break
             except HTTPError as e:
                 log.error(f"[{self.source_name}] Request failed with HTTP {e.code}: {full_url}")
-                raise  # HTTP 에러는 엔드포인트 무효화 사유가 아니므로 즉각 실패 처리
-                
+                raise
             except URLError as e:
                 if attempt == max_retries - 1:
                     log.error(f"[{self.source_name}] Surface completely unreachable after retries.")
                     raise
                 log.warning(f"[{self.source_name}] Boundary collapsed ({e.reason}). Realigning...")
-                self._current_endpoint = None  # 무효화. 다음 루프(attempt)에서 ensure_boundary()가 재탐색 유도
-                
+                self._current_endpoint = None
             except Exception as e:
                 log.error(f"[{self.source_name}] Unexpected stream anomaly: {e}")
                 raise
 
     def stream_job(self, query_path: str, channel_prefix: str, method: str = "POST", **kwargs) -> Generator:
-        """
-        @flow: Action ↦ Perception Unified Pipeline
-        호출자는 스레드를 분리할 필요 없이 이 파이프라인 하나로 HTTP 응답과 MQ(Redis/Kafka) 결과를 순차적으로 획득합니다.
-        """
+        """@flow: Action ↦ Perception Unified Pipeline"""
         job_id = None
-        
-        ## Action (Dispatch via HTTP)
         for msg in self.request(query_path, method=method, **kwargs):
             yield ("http", msg)
             if isinstance(msg, str) and msg.startswith("jobId:"):
-                job_id = msg.split("jobId:", 1)[1].strip()  # [개선] split 제한(1)을 두어 값에 ':'가 포함되어도 안전하게 파싱
+                job_id = msg.split("jobId:", 1)[1].strip()
 
-        ## Perception (Listen via MQ Adapter)
         if job_id:
             channel = f"{channel_prefix}{job_id}"
             for data in self.mq.listen_job(channel):
