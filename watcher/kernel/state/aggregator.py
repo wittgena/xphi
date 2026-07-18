@@ -4,7 +4,7 @@ from typing import Dict, Any, List
 
 from arch.topos.bound.tunnel import UniversalFacade
 from arch.contract.event.psi import PsiCarrier
-from phase.runtime.interpreter import NodeInterpreter
+from phase.runtime.inter.anchor import NodeInterpreter
 
 @dataclass
 class CoreState:

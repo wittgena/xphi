@@ -19,12 +19,10 @@ from phase.bind.resolver import find_current_self
 from phase.executor.swarm import SwarmExecutor
 
 from phase.runtime.sensor import SurfaceSensor, SurfaceActuator
-from phase.runtime.task.dispatcher import Dispatcher
-from phase.runtime.task.supervisor import TaskSupervisor
-from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
-from phase.runtime.daemon.base import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
-from phase.runtime.daemon.dynamics import DynamicsDaemon
-from phase.runtime.daemon.event import EventBusDaemon
+from phase.runtime.task.supervisor import TaskSupervisor, Dispatcher
+from phase.runtime.inter.anchor import NodeInterpreter, AnchorFlow
+from phase.runtime.context import RuntimeContext
+from phase.runtime.daemon.bootstrap import mount_core_layer, mount_app_layer
 
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
@@ -61,7 +59,7 @@ runtime_keys = RuntimeKeyResolver()
 class NodeRuntime(IPhaseAtor):
     """
     @runtime.node: closed-loop control manifold
-    @flow: ψ(EventBus) → global queue → dispatch → Φ(Interpreter) → Worker
+    @flow: ψ(EventBus) → global queue → CaptureDaemon → Dispatcher → Φ(Interpreter/Plugins)
     """
     def __init__(self, executor=None, idle_timeout=353):
         self._id = f"node-{next_id()}" 
@@ -72,18 +70,16 @@ class NodeRuntime(IPhaseAtor):
         self.idle_timeout = idle_timeout
         
         self.running = True
-        self.daemons: List[Any] = [] 
         self.supervisor = TaskSupervisor(source=f"NodeRuntime-{self._id}")
         self.supervisor.add_error_handler(self._global_task_error)
-        
-        # [개선] 런타임 초기화 시점에서는 아직 Tunnel이 없으므로 None 처리
+
         self.bus: Optional[TunnelEventBus] = None
         self.log = get_emitter("node.runtime", phase="SYSTEM")
-
         self.interpreter = None
         self.dispatcher = None
         self.sensor = None
         self.actuator = None
+        self.ctx: Optional[RuntimeContext] = None
         
         self._stop_event = asyncio.Event()
 
@@ -92,22 +88,9 @@ class NodeRuntime(IPhaseAtor):
         self.log.crit(f"⚠️ Critical fault in Task [{task.get_name()}]: {exc}")
         asyncio.create_task(self.shutdown())
 
-    def _on_daemon_error(self, task: asyncio.Task[Any], exc: BaseException) -> None:
-        """Dedicated error handler for specific daemons"""
-        self.log.error(f"❌ Daemon Task [{task.get_name()}] failed. Initiating panic recovery...")
-
     def _handle_exception(self, loop, context):
         msg = context.get("exception", context["message"])
         self.log.crit(f"Unhandled exception in event loop: {msg}")
-
-    def _on_task_done(self, task: asyncio.Task):
-        try:
-            task.result()
-        except asyncio.CancelledError:
-            pass  
-        except Exception as e:
-            self.log.crit(f"Loop Task [{task.get_name()}] died with error: {e}")
-            asyncio.create_task(self.shutdown())
 
     @property
     def local_manifold(self):
@@ -139,12 +122,14 @@ class NodeRuntime(IPhaseAtor):
             self.supervisor.create(push_task(), name=f"Escalate-{event.symbol}")
 
     def _create_phase_handler(self):
-        async def handler(psi: PsiEvent):
-            ## Judgment by the reflex system (Sync)
+        """
+        [정렬 완료] 
+        1. executor 실행을 제거하여 Dispatcher 파이프라인과 중복 방지
+        2. async def -> def 로 변경하여 Dispatcher가 자동으로 스레드 풀(Thread Pool)로 격리하도록 최적화
+        """
+        def handler(psi: PsiEvent):
+            ## Judgment by the reflex system (CPU-Bound Sync Task)
             judgment = self.interpreter.process(psi.carrier)
-            
-            if self.executor:
-                await self.executor.execute(psi)
 
             return {
                 "psi": judgment.psi_symbol,
@@ -161,14 +146,11 @@ class NodeRuntime(IPhaseAtor):
         loop.set_exception_handler(self._handle_exception)
         self.log.info(f"Starting RuntimeNode [{self.node_id}]")
         
+        # 1. 인프라 바인딩
         self.tunnel = await TunnelFactory.get_default()
         
-        # =====================================================================
-        # [핵심 변경 1] 분산 TunnelEventBus 초기화 및 자기 자신(NodeRuntime) 구독
-        # =====================================================================
         self.bus = TunnelEventBus(self.tunnel)
         self.bus.subscribe(self, predicate=lambda e: True) # 로컬 반응계(Ator) 등록
-        # =====================================================================
         
         if self.executor:
             self.executor.node = self
@@ -192,35 +174,38 @@ class NodeRuntime(IPhaseAtor):
         self.sensor = SurfaceSensor(tunnel=self.tunnel)
         self.actuator = SurfaceActuator(TunnelSink(tunnel=self.tunnel))
         
+        # 2. 엔진(Dispatcher) 초기화
         self.dispatcher = Dispatcher(
-            handler=self._create_phase_handler(),
+            supervisor=self.supervisor,
+            default_handler=self._create_phase_handler(),
             executor=self.executor,
             actuator=self.actuator,
         )
-        await self.dispatcher.start()
         
-        self.daemons = [
-            SensorDaemon(self.sensor, self.bus),
-            CaptureDaemon(self.tunnel, self.dispatcher, self, self.idle_timeout),
-            HeartbeatDaemon(self.tunnel, self.node_id),
-            SignalDaemon(self.tunnel, self),
-            ReceptorDaemon(self.tunnel, self.node_id, watch_dir),
-            DynamicsDaemon(self.bus),
-            
-            # =====================================================================
-            # [핵심 변경 2] EventBusDaemon 편입 (Redis Stream Consumer Group 연동)
-            # =====================================================================
-            EventBusDaemon(self.tunnel, self.bus, self.node_id)
-        ]
+        # 3. [핵심 개선] 의존성 주입(DI) 컨텍스트 생성
+        self.ctx = RuntimeContext(
+            node_id=self.node_id,
+            tunnel=self.tunnel,
+            bus=self.bus,
+            dispatcher=self.dispatcher,
+            sensor=self.sensor,
+            actuator=self.actuator,
+            idle_timeout=self.idle_timeout,
+            watch_dir=watch_dir,
+            shutdown_hook=self.shutdown # NodeRuntime의 shutdown을 데몬들이 호출할 수 있도록 위임
+        )
 
-        for daemon in self.daemons:
-            self.supervisor.create(
-                daemon.start(), 
-                name=f"Daemon-{daemon.__class__.__name__}",
-                on_error=self._on_daemon_error
-            )
-        
-        self.log.info("All core daemons under TaskSupervisor orchestration")
+        # 4. [핵심 개선] 계층화된 데몬 장착 (NodeRuntime은 데몬 목록 및 생명주기를 모름)
+        mount_core_layer(self.supervisor, self.ctx)
+        self.log.info("Core Infra Layer mounted successfully.")
+
+        mount_app_layer(self.supervisor, self.ctx)
+        self.log.info("App Plugin Layer mounted successfully.")
+        self.log.info("All components orchestrated under TaskSupervisor.")
+
+        mount_app_layer(self.supervisor, self.ctx)
+        self.log.info("App Plugin Layer mounted successfully.")
+        self.log.info("All components orchestrated under TaskSupervisor.")
 
     async def shutdown(self):
         if not self.running: return
@@ -232,7 +217,6 @@ class NodeRuntime(IPhaseAtor):
         await self.supervisor.shutdown()
 
         ## @release: internal core components
-        if self.dispatcher: await self.dispatcher.stop()
         if self.actuator: await self.actuator.close()
         if self.tunnel: await self.tunnel.close()
 
@@ -252,9 +236,11 @@ class NodeRuntime(IPhaseAtor):
         stable_anchor = AnchorFlow.bootstrap(current_boundaries)
         
         self.interpreter = NodeInterpreter(stable_anchor)
+        
+        # [개선] Dispatcher의 핸들러 속성 업데이트 (새로운 구조 반영)
         if self.dispatcher:
-            ## @reconnect: bridge to prevent data loss even during panic recovery
-            self.dispatcher.handler = self._create_phase_handler() 
+            self.dispatcher.default_handler = self._create_phase_handler() 
+            
         self.log.signal(f"System restored to Phase: {self.interpreter.phase}")
 
     async def register_node(self):

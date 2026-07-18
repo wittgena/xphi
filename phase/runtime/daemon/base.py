@@ -4,13 +4,13 @@ import json
 import time
 import random
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Optional, Callable, Awaitable
+from contextlib import suppress
 
 from arch.topos.bound.tunnel import UniversalFacade
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.bus import AsyncEventBus
-
-from phase.runtime.task.dispatcher import Dispatcher
+from phase.runtime.task.supervisor import Dispatcher
 from phase.runtime.receptor.bootstrap import receptor_bootstrap
 from phase.runtime.sensor import SurfaceSensor
 from watcher.plane.emitter import get_emitter
@@ -27,22 +27,19 @@ class AbstractDaemon(ABC):
 
     async def start(self) -> asyncio.Task:
         self.running = True
-        self.task = asyncio.create_task(self.run(), name=self.name)
+        self.task = asyncio.create_task(self.run(), name=f"Daemon-{self.name}")
         return self.task
 
     async def stop(self):
         self.running = False
         if self.task and not self.task.done():
             self.task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self.task
-            except asyncio.CancelledError:
-                pass
 
     @abstractmethod
     async def run(self):
         pass
-
 
 class SensorDaemon(AbstractDaemon):
     """@psi.observe: surface → bus"""
@@ -65,16 +62,15 @@ class SensorDaemon(AbstractDaemon):
                 self.log.error(f"Sensor Error: {e}")
                 await asyncio.sleep(2)
 
-
 class CaptureDaemon(AbstractDaemon):
     """@psi.capture: global queue → dispatcher"""
-    def __init__(self, tunnel: UniversalFacade, dispatcher: Dispatcher, node: 'NodeRuntime', idle_timeout: int):
+    def __init__(self, tunnel: UniversalFacade, dispatcher: Dispatcher, idle_timeout: float, shutdown_hook: Callable[[], Awaitable[None]]):
         super().__init__("Capture")
         self.tunnel = tunnel
         self.dispatcher = dispatcher
-        self.node = node
-        self.base_timeout = idle_timeout  
-        self.idle_timeout = idle_timeout
+        self.shutdown_hook = shutdown_hook
+        self.base_timeout = float(idle_timeout)
+        self.idle_timeout = float(idle_timeout)
         self.last_active_time = time.time()
 
     async def run(self):
@@ -91,7 +87,7 @@ class CaptureDaemon(AbstractDaemon):
                     psi = PsiEvent(**event_dict)
                     self.last_active_time = time.time()
                     self.idle_timeout = self.base_timeout 
-                    await self.dispatcher.send(psi)
+                    self.dispatcher.dispatch(psi)
                 else:
                     if time.time() - self.last_active_time > self.idle_timeout:
                         active_nodes = await self.tunnel.keys("runtime:heartbeat:*")
@@ -106,7 +102,7 @@ class CaptureDaemon(AbstractDaemon):
                             )
                         else:
                             self.log.warn(f"Idle for {self.idle_timeout:.1f}s. Self-evaporating...")
-                            asyncio.create_task(self.node.shutdown())
+                            asyncio.create_task(self.shutdown_hook())
                             break
             except asyncio.CancelledError:
                 break
@@ -130,13 +126,12 @@ class HeartbeatDaemon(AbstractDaemon):
         except asyncio.CancelledError:
             pass
 
-
 class SignalDaemon(AbstractDaemon):
     """@control.inbound: external signal → runtime control"""
-    def __init__(self, tunnel: UniversalFacade, node: 'NodeRuntime'):
+    def __init__(self, tunnel: UniversalFacade, shutdown_hook: Callable[[], Awaitable[None]]):
         super().__init__("Signal")
         self.tunnel = tunnel
-        self.node = node
+        self.shutdown_hook = shutdown_hook
 
     async def run(self):
         pubsub = self.tunnel.pubsub()
@@ -148,7 +143,9 @@ class SignalDaemon(AbstractDaemon):
                 if isinstance(msg, dict) and msg.get("type") == "message":
                     parsed = json.loads(msg["data"])
                     if parsed.get("type") == "shutdown":
-                        asyncio.create_task(self.node.shutdown())
+                        self.log.warn("Shutdown signal received via pubsub.")
+                        # [개선] 주입받은 콜백 실행
+                        asyncio.create_task(self.shutdown_hook())
                         break
         except asyncio.CancelledError:
             pass
@@ -187,11 +184,8 @@ class ReceptorDaemon(AbstractDaemon):
                     if self.receptor_task and not self.receptor_task.done():
                         self.log.warn(f"[{self.node_id}] Lost Membrane Leadership. Shutting down local Receptor...")
                         self.receptor_task.cancel()
-                        
-                        try:
+                        with suppress(asyncio.CancelledError):
                             await self.receptor_task
-                        except asyncio.CancelledError:
-                            pass
                         self.receptor_task = None
 
                 await asyncio.sleep(2)
@@ -200,17 +194,12 @@ class ReceptorDaemon(AbstractDaemon):
             self.log.warn("ReceptorDaemon received cancellation signal.")
         except Exception as e:
             self.log.error(f"ReceptorDaemon Error: {e}")
-        
         finally:
             if self.receptor_task and not self.receptor_task.done():
                 self.log.warn("Tearing down Membrane (Watchdog OS Threads)...")
                 self.receptor_task.cancel()
-                try:
+                with suppress(asyncio.CancelledError, Exception):
                     await self.receptor_task 
-                except asyncio.CancelledError:
-                    pass
-                except Exception as e:
-                    self.log.error(f"Error during Membrane teardown: {e}")
             
             try:
                 if await self.tunnel.get(self.lock_key) == self.node_id:

@@ -14,7 +14,7 @@ from arch.contract.protocol import get_proto
 from arch.contract.event.psi import PhaseField, PsiCarrier, CarrierType
 from watcher.kernel.state.node0 import enter_node0
 from phase.runtime.node import NodeRuntime
-from phase.runtime.interpreter import AnchorFlow, NodeInterpreter
+from phase.runtime.inter.anchor import AnchorFlow, NodeInterpreter
 
 log = get_logger("ator.runtime")
 

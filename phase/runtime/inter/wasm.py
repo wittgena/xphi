@@ -1,4 +1,5 @@
-# phase.runtime.wasm.interpreter
+# phase.runtime.inter.wasm
+## @lineage: phase.runtime.wasm.interpreter
 """@desc: Local interpreter for secure Python code execution using Wasmtime/RustPython"""
 import functools
 import inspect
@@ -65,8 +66,6 @@ class WasmInterpreter:
         self.shared_size = 0
         
         self.valid_methods = set()
-        
-        # [개선] 외부 주입 정책이 없으면 엄격한 기본 정책(Standard) 사용
         cg_policy = policy or CgroupPolicy.standard()
         self.cg = WasmCgroup(cgroup_name=f"worker-{id(self)}", policy=cg_policy)
         
@@ -147,21 +146,34 @@ class WasmInterpreter:
         except Exception as e:
             raise ProtocolError(f"Failed to initialize Wasmtime engine: {e}")
 
-    # (중략: _to_json_compatible, _serialize_value, _inject_variables 유지)
     def _to_json_compatible(self, value: Any) -> Any: ...
     def _serialize_value(self, value: Any) -> str: ...
     def _inject_variables(self, code: str, variables: Mapping[str, Any]) -> str: ...
 
-    def _run_wasm_function(self, target_func_name: str, payload: str) -> str:
+    def _run_wasm_function(self, target_func_name: str, payload: Any) -> str:
         self._ensure_engine_started()
         
         if self.valid_methods and target_func_name not in self.valid_methods:
             raise ExecutionError(f"Method '{target_func_name}' is not registered in Wasm API.")
         
+        # ==============================================================
+        # [핵심 방어벽] 이중 직렬화(Double Serialization) 원천 차단
+        # ==============================================================
+        actual_payload = payload
+        if isinstance(payload, str):
+            try:
+                # 앞단에서 이미 json.dumps()된 문자열이 들어왔다면 dict로 풀어냄
+                actual_payload = json.loads(payload)
+            except json.JSONDecodeError:
+                # 일반 텍스트/파이썬 코드라면 그대로 패스 (O(1) 통과)
+                pass
+
         routed_request = {
             "method": target_func_name,
-            "payload": payload
+            "payload": actual_payload
         }
+        
+        # 여기서 단 한 번만 직렬화되어 WASM FFI로 전달됨 (Rust RawValue와 완벽 호환)
         payload_bytes = json.dumps(routed_request).encode('utf-8')
         req_len = len(payload_bytes)
         
@@ -187,9 +199,7 @@ class WasmInterpreter:
                 res_ptr = result_packed >> 32
                 res_len_legacy = result_packed & 0xFFFFFFFF
                 result_bytes = self.memory.read(self.store, res_ptr, res_ptr + res_len_legacy)
-                
                 return result_bytes.decode('utf-8')
-                
             finally:
                 if code_ptr is not None:
                     self._wasm_dealloc(self.store, code_ptr, req_len)
@@ -232,16 +242,13 @@ class WasmInterpreter:
              result_str = self._run_wasm_function("execute_code", injected_code)
              result_data = json.loads(result_str)
              
-             # [개선] execute도 FfiResponse 규격(data 계층 구조)에 맞게 파싱
              if result_data.get("success", False):
-                  # Rust 측 ok_res(ExecuteResult { output: "..." }) 구조에서 텍스트만 추출
                   inner_data = result_data.get("data", {})
                   actual_output = inner_data.get("output", "")
                   return ExecutionResult(success=True, output=actual_output)
              else:
                   error_msg = result_data.get("error", "Unknown execution error")
                   return ExecutionResult(success=False, error=ExecutionError(error_msg))
-                  
         except Exception as e:
              return ExecutionResult(success=False, error=ExecutionError(f"WASM Execution Failed: {e}"))
 
@@ -278,5 +285,4 @@ class WasmInterpreter:
         self.shared_ptr = None
         self.shared_size = 0
         self.valid_methods.clear()
-        
         self._owner_thread = None

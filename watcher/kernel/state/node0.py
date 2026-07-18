@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import uuid
 from arch.contract.event.psi import PsiCarrier
 from watcher.plane.emitter import get_emitter
-from phase.runtime.interpreter import NodeInterpreter, AnchoredIR, AnchorFlow
+from phase.runtime.inter.anchor import NodeInterpreter, AnchoredIR, AnchorFlow
 
 log = get_emitter("state.node0")
 
