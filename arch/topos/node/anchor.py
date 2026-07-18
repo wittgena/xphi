@@ -1,10 +1,4 @@
 # arch.topos.node.anchor
-## @lineage: phase.gov.node.anchor
-"""
-@node: execution-capable self (not tied to repo)
-@anchor: synchronization boundary across nodes (era frame)
-@commit: parent linkage under anchor-constrained selection
-"""
 import json
 import uuid
 from pathlib import Path
@@ -13,7 +7,6 @@ from typing import Dict, List, Optional, Callable
 from arch.contract.event.next import next_id
 from arch.contract.schema.repo import RepoCommit, AnchorCommit
 from phase.bind.resolver import resolve_path
-
 from watcher.kernel.store import KernelStore, ToposBlob, KernelCommit
 
 DEFAULT_ID = "0000000"

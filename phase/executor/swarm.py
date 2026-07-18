@@ -1,6 +1,4 @@
 # phase.executor.swarm
-## @lineage: phase.reflect.swarm.executor
-## @lineage: phase.runtime.swarm.executor
 import os
 import sys
 import uuid

@@ -1,11 +1,11 @@
 # watcher.xe.topos.particle
-## @lineage: arch.xor.manifold.particle
 """@phase: Tension Accumulation -> Projection -> Collapse -> Re-entry"""
 import asyncio
 import uuid
 import time
 from typing import Dict, Any, Optional, Set
 from arch.contract.event.psi import PsiEvent, PsiCarrier
+from arch.contract.event.next import next_id
 from watcher.plane.emitter import get_emitter
 
 class ToposManifold(type):
@@ -41,8 +41,6 @@ class ToposManifold(type):
     def __call__(cls, *args, **kwargs):
         instance = super().__call__(*args, **kwargs)
         ToposManifold._instances.append(instance)
-        
-        ## 시스템 점화 확인 (Safety Net)
         if cls.void_gap is None:
             raise RuntimeError("ToposManifold.ignite_manifold() must be called inside the event loop before creating particles.")
 
@@ -79,14 +77,13 @@ class Particle(metaclass=ToposManifold):
 
     async def emit_external(self, kind: str, tag: str, payload: dict = None, parent_id: str = None) -> PsiEvent:
         """@phase: transduction (Internal -> External)"""
-        # [수정] 원자적(Atomic) 틱 증가 보장
         async with ToposManifold._tick_lock:
             ToposManifold.global_tick += 1
             current_tick = ToposManifold.global_tick
 
         carrier = PsiCarrier(kind=kind, tag=tag, payload=payload or {"timestamp": time.time()})
         event = PsiEvent(
-            event_id=f"evt-{uuid.uuid4().hex[:6]}",
+            event_id=next_id(),
             parent_id=parent_id,
             source_id=self.trace_id,
             scope="GLOBAL",

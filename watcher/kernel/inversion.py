@@ -57,3 +57,28 @@ class KernelInversion(ICriticalDetector):
                 context={"state": "damping_injected", "action": "execute_bridge_tx"}
             )
         return None
+
+@contract.watcher("kernel.singularity")
+class KernelSingularity(ICriticalDetector):
+    def __init__(self, **kwargs):
+        self.candidate_limit = kwargs.get("candidate_limit", 10.0)
+        self.rupture_limit = kwargs.get("rupture_limit", 25.0)
+
+    def extract(self, field: IPhaseField) -> Dict[str, float]:
+        return {"pressure": getattr(field, "pressure", 0.0)}
+
+    def evaluate(self, field: IPhaseField, history: List[Any], current_tick: int) -> Optional[PsiEvent]:
+        metrics = self.extract(field)
+        pressure = metrics.get("pressure", 0.0)
+        if pressure >= self.rupture_limit:
+            carrier = PsiCarrier(kind="RUPTURE", tag="CRITICAL", payload={"pressure": pressure})
+            return PsiEvent(
+                event_id="system-rupture",
+                parent_id=None,
+                source_id="kernel.singularity",
+                scope="GLOBAL",
+                tick=current_tick,
+                carrier=carrier,
+                context={"state": "collapse"}
+            )
+        return None

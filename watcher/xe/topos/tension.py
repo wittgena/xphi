@@ -1,5 +1,4 @@
 # watcher.xe.topos.tension
-## @lineage: watcher.xe.topos.manifold
 """@phase: Tension Accumulation $\rightarrow$ Projection $\rightarrow$ Collapse $\rightarrow$ Re-entry"""
 import asyncio
 import uuid
@@ -9,10 +8,10 @@ import json
 from typing import Dict, Any, Optional
 
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-from phase.bind.rhythm.bridge import RhythmBridge
-from watcher.plane.regulator import default_plane
 from watcher.plane.emitter import get_emitter
 from watcher.xe.topos.particle import ToposManifold, Particle
+
+log = get_emitter("topos.tension")
 
 class TensionAccumulator(Particle):
     """@phase: Tension Accumulation (결핍 축적 및 자율 파열)"""
@@ -36,11 +35,11 @@ class TensionAccumulator(Particle):
                 ## @phase: 다음 노드가 포화(불응기) 상태라면 억지로 밀어넣지 않고 에너지 소멸(Drop)
                 try:
                     ToposManifold.void_gap.put_nowait({"id": pulse_id, "parent_id": event.event_id})
-                    default_plane.record(time.time(), "TENSION_NODE", f"[♥] Pulse Fired: {pulse_id}", "SYS")
+                    log.info(time.time(), "TENSION_NODE", f"[♥] Pulse Fired: {pulse_id}", "SYS")
                 except asyncio.QueueFull:
                     self.log.debug(f"Pulse {pulse_id} dropped (Refractory Period)")
 
-                default_plane.record(time.time(), "TENSION_NODE", f"[♥] Pulse Fired: {pulse_id}", "SYS")
+                log.info(time.time(), "TENSION_NODE", f"[♥] Pulse Fired: {pulse_id}", "SYS")
             await asyncio.sleep(0.1)
 
 class PhaseProjector(Particle):
@@ -77,7 +76,7 @@ class ToposCollapse(Particle):
                 ToposManifold.collapse_field.put_nowait({"id": phi_id, "parent_id": event.event_id})
             except asyncio.QueueFull:
                 pass
-            default_plane.record(time.time(), "COLLAPSE", f"[♥] Contraction: {phi_id}", "INFO")
+            log.info(time.time(), "COLLAPSE", f"[♥] Contraction: {phi_id}", "INFO")
 
 class ReentryInversion(Particle):
     """@phase: Inversion (여백 확보 및 재진입 준비)"""
@@ -106,7 +105,7 @@ class ReentryInversion(Particle):
                 except asyncio.QueueFull:
                     break 
 
-            default_plane.record(
+            log.info(
                 time.time(), 
                 "INVERSION", 
                 f"[△] Inversion complete. Reflowed: {actual_reflow} (Tension: {current_tension})", 

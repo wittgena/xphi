@@ -1,6 +1,4 @@
 # arch.contract.protocol
-## @lineage: topos.contract.protocol
-## @lineage: phase.runtime.contract.protocol
 """@desc: Proto decorator (non-executing structural record)"""
 from typing import Tuple, Any, Callable, Union, Type, TypeVar
 from dataclasses import dataclass

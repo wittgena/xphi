@@ -1,0 +1,102 @@
+# phase.runtime.wasm.wasmcg
+import wasmtime
+from dataclasses import dataclass
+from enum import Enum
+from watcher.plane.emitter import get_emitter
+
+log = get_emitter("wasm.wasmcg")
+
+class Tier(Enum):
+    STANDARD = "STANDARD"   # 일반 유저 코드 및 비즈니스 로직
+    SYSTEM = "SYSTEM"       # 관리자 작업 (무결성 검증, 대규모 해싱 등)
+    UNLIMITED = "UNLIMITED" # 로컬 디버깅 및 프로파일링 전용
+
+@dataclass
+class CgroupPolicy:
+    max_memory_bytes: int
+    cpu_fuel_quota: int
+    tier: Tier
+
+    @classmethod
+    def standard(cls) -> 'CgroupPolicy':
+        """
+        @desc: 일반적인 상태 변이 및 트랜잭션을 위한 엄격한 기본 정책
+        - 메모리: 64MB
+        - Fuel: 10,000,000 (1천만 인스트럭션)
+        """
+        return cls(
+            max_memory_bytes=64 * 1024 * 1024,
+            cpu_fuel_quota=10_000_000,
+            tier=Tier.STANDARD
+        )
+
+    @classmethod
+    def system(cls) -> 'CgroupPolicy':
+        """
+        @desc: 커널(Ledger) 접근, 대규모 암호학 연산(SHA-256), Lineage 검증용 완화된 정책
+        - 메모리: 256MB
+        - Fuel: 2,000,000,000 (20억 인스트럭션 - 사실상 매우 여유로운 값)
+        """
+        return cls(
+            max_memory_bytes=256 * 1024 * 1024,
+            cpu_fuel_quota=2_000_000_000,
+            tier=Tier.SYSTEM
+        )
+
+    @classmethod
+    def custom(cls, mem_mb: int, fuel: int) -> 'CgroupPolicy':
+        return cls(
+            max_memory_bytes=mem_mb * 1024 * 1024,
+            cpu_fuel_quota=fuel,
+            tier=Tier.UNLIMITED
+        )
+
+
+class WasmCgroup:
+    """@desc: In-process resource controller (Data Plane) for a Wasm instance"""
+    def __init__(self, cgroup_name: str, policy: CgroupPolicy = None):
+        self.cgroup_name = cgroup_name
+        # 정책이 주입되지 않으면 가장 엄격한 STANDARD 정책을 기본으로 사용
+        self.policy = policy or CgroupPolicy.standard()
+
+    def apply_to_config(self, config: wasmtime.Config) -> None:
+        """엔진 설정 단계에서 CPU Fuel 기능을 활성화합니다."""
+        config.consume_fuel = True
+
+    def apply_to_store(self, store: wasmtime.Store) -> None:
+        """Store에 메모리 제한과 CPU 쿼터를 주입하여 샌드박스를 물리적으로 잠급니다."""
+        store.set_limits(memory_size=self.policy.max_memory_bytes)
+        store.set_fuel(self.policy.cpu_fuel_quota)
+        
+        mb = self.policy.max_memory_bytes // 1024 // 1024
+        log.info(f"[{self.cgroup_name}] Cgroup enforced: Tier={self.policy.tier.value}, Mem={mb}MB, Fuel={self.policy.cpu_fuel_quota:,}")
+
+    def inject_emergency_fuel(self, store: wasmtime.Store, additional_fuel: int) -> None:
+        """@desc: 예상치 못한 대규모 작업 진행 중 Fuel이 고갈될 위험이 있을 때, 동적으로 쿼터를 늘립니다."""
+        current_fuel = store.get_fuel()
+        new_fuel = current_fuel + additional_fuel
+        
+        # Wasmtime Store의 Fuel을 새로운 값으로 덮어씁니다.
+        store.set_fuel(new_fuel)
+        self.policy.cpu_fuel_quota += additional_fuel
+        
+        log.warning(f"[{self.cgroup_name}] Emergency Fuel Injected: +{additional_fuel:,} (New Total Quota: {self.policy.cpu_fuel_quota:,})")
+
+    def inspect_metrics(self, store: wasmtime.Store, memory: wasmtime.Memory) -> dict:
+        """Control Plane(브로커)으로 보낼 현재 리소스 상태를 계측합니다."""
+        current_mem_bytes = memory.size(store) * 65536 
+        try:
+            fuel_remaining = store.get_fuel()
+        except wasmtime.WasmtimeError:
+            fuel_remaining = 0
+            
+        fuel_consumed = self.policy.cpu_fuel_quota - fuel_remaining
+        
+        return {
+            "cgroup": self.cgroup_name,
+            "tier": self.policy.tier.value,
+            "mem_usage_bytes": current_mem_bytes,
+            "mem_limit_bytes": self.policy.max_memory_bytes,
+            "fuel_consumed": fuel_consumed,
+            "fuel_remaining": fuel_remaining
+        }

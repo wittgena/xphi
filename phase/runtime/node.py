@@ -9,22 +9,24 @@ from typing import List, Dict, Any, Optional
 
 from arch.topos.bound.tunnel import UniversalFacade, TunnelFactory
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-from arch.contract.event.bus import AsyncEventBus
+from arch.contract.event.tunnelbus import TunnelEventBus
 from arch.contract.event.next import next_id
-from arch.contract.interface import IPhaseAtor, IPhaseField
+from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from arch.contract.registry.unified import registry
 from arch.contract.discovery import discover_modules
+
+from phase.bind.resolver import find_current_self
+from phase.executor.swarm import SwarmExecutor
 
 from phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from phase.runtime.task.dispatcher import Dispatcher
 from phase.runtime.task.supervisor import TaskSupervisor
 from phase.runtime.interpreter import NodeInterpreter, AnchorFlow
-from watcher.plane.sink import TunnelSink
 from phase.runtime.daemon.base import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
 from phase.runtime.daemon.dynamics import DynamicsDaemon
+from phase.runtime.daemon.event import EventBusDaemon
 
-from phase.executor.swarm import SwarmExecutor
-from phase.bind.resolver import find_current_self
+from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
@@ -59,7 +61,7 @@ runtime_keys = RuntimeKeyResolver()
 class NodeRuntime(IPhaseAtor):
     """
     @runtime.node: closed-loop control manifold
-    @flow: ψ → global queue → dispatch → Φ(Interpreter) → Worker
+    @flow: ψ(EventBus) → global queue → dispatch → Φ(Interpreter) → Worker
     """
     def __init__(self, executor=None, idle_timeout=353):
         self._id = f"node-{next_id()}" 
@@ -74,7 +76,8 @@ class NodeRuntime(IPhaseAtor):
         self.supervisor = TaskSupervisor(source=f"NodeRuntime-{self._id}")
         self.supervisor.add_error_handler(self._global_task_error)
         
-        self.bus = AsyncEventBus()
+        # [개선] 런타임 초기화 시점에서는 아직 Tunnel이 없으므로 None 처리
+        self.bus: Optional[TunnelEventBus] = None
         self.log = get_emitter("node.runtime", phase="SYSTEM")
 
         self.interpreter = None
@@ -82,7 +85,6 @@ class NodeRuntime(IPhaseAtor):
         self.sensor = None
         self.actuator = None
         
-        self.bus.subscribe(self)
         self._stop_event = asyncio.Event()
 
     def _global_task_error(self, task: asyncio.Task[Any], exc: BaseException) -> None:
@@ -125,13 +127,14 @@ class NodeRuntime(IPhaseAtor):
         elif new_state == "RUNNING" and not self.running:
             self.running = True
 
-    async def react(self, event: PsiEvent, field: IPhaseField, bus: AsyncEventBus):
+    async def react(self, event: PsiEvent, field: IPhaseField, bus: IEventBus):
+        """@desc: EventBusDaemon이 로컬 전파(Dispatch) 시 호출하는 리액션. 큐로 밀어넣어 처리를 오프로드합니다."""
         if self.running and self.tunnel:
             async def push_task():
                 try:
                     await self.tunnel.lpush(runtime_keys.get("queue"), event.to_json())
                 except Exception as e:
-                    self.log.error(f"Failed to push event: {e}")
+                    self.log.error(f"Failed to push event to local queue: {e}")
             
             self.supervisor.create(push_task(), name=f"Escalate-{event.symbol}")
 
@@ -159,6 +162,13 @@ class NodeRuntime(IPhaseAtor):
         self.log.info(f"Starting RuntimeNode [{self.node_id}]")
         
         self.tunnel = await TunnelFactory.get_default()
+        
+        # =====================================================================
+        # [핵심 변경 1] 분산 TunnelEventBus 초기화 및 자기 자신(NodeRuntime) 구독
+        # =====================================================================
+        self.bus = TunnelEventBus(self.tunnel)
+        self.bus.subscribe(self, predicate=lambda e: True) # 로컬 반응계(Ator) 등록
+        # =====================================================================
         
         if self.executor:
             self.executor.node = self
@@ -195,7 +205,12 @@ class NodeRuntime(IPhaseAtor):
             HeartbeatDaemon(self.tunnel, self.node_id),
             SignalDaemon(self.tunnel, self),
             ReceptorDaemon(self.tunnel, self.node_id, watch_dir),
-            DynamicsDaemon(self.bus)
+            DynamicsDaemon(self.bus),
+            
+            # =====================================================================
+            # [핵심 변경 2] EventBusDaemon 편입 (Redis Stream Consumer Group 연동)
+            # =====================================================================
+            EventBusDaemon(self.tunnel, self.bus, self.node_id)
         ]
 
         for daemon in self.daemons:

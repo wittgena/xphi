@@ -136,6 +136,16 @@ class UniversalFacadeSync:
         if self.mq_protocol == BackendProtocol.KAFKA: pass
         return self.state_store.xack(topic, group, message_id)
 
+    async def stream_pending(self, topic: str, group: str) -> dict:
+        """@desc: ACK를 받지 못한 채 보류(Pending) 중인 메시지 목록을 조회합니다."""
+        if self.mq_protocol == BackendProtocol.KAFKA: pass
+        return await self.state_store.xpending(topic, group)
+
+    async def stream_claim(self, topic: str, group: str, consumer: str, min_idle_time: int, message_ids: List[str]):
+        """@desc: 죽은 노드가 물고 있는 메시지의 소유권을 현재 노드(consumer)로 강제 이전(Claim)합니다."""
+        if self.mq_protocol == BackendProtocol.KAFKA: pass
+        return await self.state_store.xclaim(topic, group, consumer, min_idle_time, message_ids)
+
     def publish(self, channel: str, message: Any):
         if self.mq_protocol == BackendProtocol.KAFKA: pass
         return self.state_store.publish(channel, message)
