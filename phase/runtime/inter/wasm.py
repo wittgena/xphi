@@ -1,5 +1,4 @@
 # phase.runtime.inter.wasm
-## @lineage: phase.runtime.wasm.interpreter
 """@desc: Local interpreter for secure Python code execution using Wasmtime/RustPython"""
 import functools
 import inspect
@@ -30,7 +29,7 @@ log = get_emitter(MODULE_NAMESPACE, phase="SYSTEM")
 class WasmInterpreter:
     def __init__(
         self,
-        wasm_module_path: str = "dphi_mock.wasm",
+        wasm_module_path: str = "dphi.wasm",
         enable_read_paths: list[PathLike | str] | None = None,
         enable_write_paths: list[PathLike | str] | None = None,
         enable_env_vars: list[str] | None = None,

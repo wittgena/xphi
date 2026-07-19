@@ -1,4 +1,4 @@
-# arch.xor.proto.interpreter
+# phase.runtime.inter.python
 """@desc: Local interpreter for secure Python code execution using Deno/Pyodide"""
 import functools
 import inspect
@@ -10,6 +10,7 @@ import threading
 from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Mapping
+
 from arch.xor.proto.code import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
 from arch.xor.proto.jsonrpc import JsonRpcMessage, JsonRpcErrorCode
 from phase.bind.resolver import find_current_self, get_invoker, resolve_path
@@ -101,7 +102,7 @@ class PythonInterpreter:
 
     def _get_runner_path(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(SANDBOX_ROOT, "runner.js")
+        return os.path.join(SANDBOX_ROOT, "pysand.ts")
 
     def _mount_files(self):
         if self._mounted_files:
@@ -195,7 +196,8 @@ class PythonInterpreter:
                     self.deno_command,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
+                    # [치명적 버그 수정 1] stderr를 stdout으로 병합하여 OS 파이프 버퍼 초과로 인한 데드락 차단
+                    stderr=subprocess.STDOUT,
                     text=True,
                     encoding="UTF-8",
                     env=os.environ.copy()
@@ -213,8 +215,8 @@ class PythonInterpreter:
 
         exit_code = self.deno_process.poll()
         if exit_code is not None:
-            stderr = self.deno_process.stderr.read() if self.deno_process.stderr else ""
-            raise ProtocolError(f"Deno exited (code {exit_code}) {context}: {stderr}")
+            # stderr가 stdout으로 병합되었으므로 더 이상 stderr를 읽지 않음
+            raise ProtocolError(f"Deno exited (code {exit_code}) {context}")
         raise ProtocolError(f"No response {context}")
 
     def _parse_response_line(self, response_line: str, context: str) -> dict | None:
@@ -288,8 +290,6 @@ class PythonInterpreter:
         self._pending_large_vars = large_vars
 
         if large_vars:
-            # 경고: 이 하드코딩된 경로는 파일 시스템 격리 레벨에서 여전히 충돌 가능성이 있으나,
-            # 현재 위상 구조 교정에 집중하기 위해 논리적 흐름만 유지합니다.
             large_assignments = [f"{k} = json.loads(open('/tmp/spi_vars/{k}.json').read())" for k in large_vars]
             assignments = ["import json"] + small_assignments + large_assignments
         else:
@@ -331,11 +331,6 @@ class PythonInterpreter:
         variables: Mapping[str, Any] | None = None,
         callables: Mapping[str, Callable[..., Any]] | None = None,
     ) -> ExecutionResult:
-        """
-        주입된 데이터(variables)와 함수(callables)를 기반으로 코드를 실행합니다.
-        오류가 발생하더라도 제어 흐름을 끊지 않고 ExecutionResult로 래핑하여 반환합니다.
-        단, 통신/인프라 붕괴 시에는 ProtocolError를 raise합니다.
-        """
         self._check_thread_ownership()
         variables = variables or {}
         callables = callables or {}
@@ -366,8 +361,13 @@ class PythonInterpreter:
             self._register_callables(callables)
             for name, value in self._pending_large_vars.items():
                 self._inject_large_var(name, value)
-            self.deno_process.stdin.write(input_data + "\n")
-            self.deno_process.stdin.flush()
+            
+            # [치명적 버그 수정 2] 재시도 중 또 끊어질 때 호스트 백엔드가 죽는 것을 방지
+            try:
+                self.deno_process.stdin.write(input_data + "\n")
+                self.deno_process.stdin.flush()
+            except BrokenPipeError as e:
+                raise ProtocolError("Deno process crashed continuously during execution.") from e
 
         skipped = 0
         while skipped <= self._MAX_SKIP_LINES:

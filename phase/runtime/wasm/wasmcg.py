@@ -51,7 +51,6 @@ class CgroupPolicy:
             tier=Tier.UNLIMITED
         )
 
-
 class WasmCgroup:
     """@desc: In-process resource controller (Data Plane) for a Wasm instance"""
     def __init__(self, cgroup_name: str, policy: CgroupPolicy = None):
