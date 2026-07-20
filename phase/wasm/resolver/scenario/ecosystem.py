@@ -1,12 +1,12 @@
 # phase.wasm.resolver.scenario.ecosystem
 import time
-import json
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
 from phase.wasm.resolver.runner import SchemeRunner
 from watcher.plane.emitter import get_emitter
+from phase.wasm.resolver.adapter import StateAdapter
 
 log = get_emitter("scenario.ecosystem")
 
@@ -28,7 +28,7 @@ class EcosystemScenarios(SchemeRunner):
         """@pipeline.1: Zero-Trust Data Integrity"""
         await self._test_oracle_packet_integrity()
         await self._test_oracle_data_provenance()
-        await self._test_oracle_epoch_initialization() # [변경] InitEpoch 통합 테스트로 명칭 변경
+        await self._test_oracle_epoch_initialization()
         await self._test_oracle_self_healing()
         
         """@pipeline.2: Autonomous Protocol State Engine"""
@@ -40,11 +40,11 @@ class EcosystemScenarios(SchemeRunner):
 
     def _generate_signature(self, commit_dict: dict) -> str:
         """
-        [개선] Rust BTreeMap의 결정론적 해시 구조(알파벳순 정렬)와 일치시키기 위해 
-        sort_keys=True 옵션을 추가하여 Ed25519 서명을 생성합니다.
+        [개선됨] 일반 json.dumps를 제거하고 StateAdapter의 RFC 8785 JCS 변환을 사용하여
+        Rust의 serde_jcs와 100% 동일한 결정론적 바이트 배열 및 해시를 보장합니다.
         """
-        commit_json = json.dumps(commit_dict, separators=(',', ':'), sort_keys=True)
-        commit_hash = hashlib.sha256(commit_json.encode('utf-8')).hexdigest()
+        canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
+        commit_hash = hashlib.sha256(canonical_bytes).hexdigest()
         signature = self.private_key.sign(commit_hash.encode('utf-8'))
         return signature.hex()
 
@@ -66,8 +66,7 @@ class EcosystemScenarios(SchemeRunner):
 
     async def _test_oracle_epoch_initialization(self):
         """
-        @flow: Fingerprint -> Spatiotemporal Context Injection -> Parity Triplet (InitEpoch)
-        [개선] 단순 Topos 생성이 아닌, 단일 트랜잭션 기반 InitEpoch 래퍼 호출을 테스트합니다.
+        @flow: Fingerprint -> Spatiotemporal Context Injection -> Parity Triplet (init_epoch)
         """
         log.info("\n--- [Data Pipeline] Phase 3: Epoch Initialization & Parity Triplet ---")
         current_ts = int(time.time() * 1000)
@@ -78,7 +77,7 @@ class EcosystemScenarios(SchemeRunner):
             "rupture": False,
             "injected_tick": None
         }
-        await self._run_case("Pipeline: Generate Parity Triplet (InitEpoch)", "InitEpoch", payload, expected_success=True)
+        await self._run_case("Pipeline: Generate Parity Triplet (init_epoch)", "init_epoch", payload, expected_success=True)
 
     async def _test_oracle_self_healing(self):
         """@flow: Fragmented Topology (Missing Phase ID) -> dphi.wasm Tripartite XOR Parity -> 100% Deterministic State Reconstruction"""
@@ -87,79 +86,72 @@ class EcosystemScenarios(SchemeRunner):
         payload = {"topos_id_low32": t_id, "nexus_id": n_id}
         await self._run_case("Pipeline: Recover Lost Data via XOR Parity", "verify_parity", payload, expected_success=True)
 
-
     """@pipeline.2: Autonomous Protocol State Engine (Off-chain Rollup)"""
     async def _test_dao_tension_evaluation(self):
         """
         @flow: Network Metrics -> Tension Evaluation Algorithm -> Dynamic Protocol Parameter Adjustment
-        [개선] Rust SymbolTopology::from_raw가 파싱하는 "current|previous" 문자열 포맷으로 수정
         """
         log.info("\n--- [State Engine] Phase 1: Ecosystem Tension Evaluation ---")
-        # 교집합: node_b, node_c / 합집합: node_a, node_b, node_c, node_d
+        ## Intersection: node_b, node_c / Union: node_a, node_b, node_c, node_d
         payload = "node_a,node_b,node_c|node_b,node_c,node_d" 
         await self._run_case("Engine: Evaluate Network Tension & Load", "evaluate_tension", payload, expected_success=True)
 
     async def _test_dao_state_evolution(self):
         """@flow: Evaluated Tension -> Off-chain Sandbox Execution -> Deterministic State Evolution"""
         log.info("\n--- [State Engine] Phase 2: Protocol State Evolution ---")
-        payload = {
-            "phase_root": {
-                "name": "ecosystem_root",
-                "kind": "CORE",
-                "content": "epoch_399_state",
-                "ref_target": None,
-                "children": {
-                    "pending_proposal": {
-                        "name": "pending_proposal",
-                        "kind": "SYMLINK",
-                        "content": None,
-                        "ref_target": "ipfs_hash_xyz",
-                        "children": {}
-                    }
-                }
-            },
-            "external_rules": [
-                {
-                    "src": "legacy_data",
-                    "dest": "archived_data",
-                    "kind": "CORE"
-                }
-            ]
-        }
+        
+        ## Safely map the ecosystem domain state into a rigorous StateNode tree
+        phase_root = StateAdapter.adapt_ecosystem_to_phase_root(
+            epoch_state="epoch_399_state",
+            proposal_ipfs_hash="ipfs_hash_xyz"
+        )
+        
+        # [개선됨] 어댑터를 활용하여 안전하게 트랜지션 룰과 컨텍스트를 구성
+        rule = StateAdapter.build_trans_rule(
+            src="legacy_data", 
+            dest="archived_data", 
+            kind="CORE"
+        )
+        payload = StateAdapter.build_evolution_context(
+            phase_root=phase_root, 
+            external_rules=[rule]
+        )
+        
         await self._run_case("Engine: Process High-Speed Off-chain Evolution", "process_evolution", payload, expected_success=True)
 
     async def _test_dao_epoch_sealing(self):
         """
         @flow: Evolved State -> Parity Triplet Linkage -> Cryptographic Signature -> Immutable Epoch Sealing
-        [개선] ParityTriplet 스키마 및 parent_nexus_id 반영
         """
         log.info("\n--- [State Engine] Phase 3: Epoch Sealing & Consensus ---")
         
-        parity_triplet = {
-            "topos_id": "1767225600000_w1_d1_0",
-            "phase_id": 999999,
-            "nexus_id": 907049
-        }
+        # [개선됨] 직접 딕셔너리를 작성하지 않고 어댑터의 팩토리 메서드 체인을 활용
+        parity_triplet = StateAdapter.build_parity_triplet(
+            topos_id="1767225600000_w1_d1_0",
+            phase_id=999999,
+            nexus_id=907049
+        )
         
-        # Rust의 AnchorCommit 구조체 스키마
-        anchor_commit = {
-            "parity": parity_triplet,
-            "parent_nexus_id": 123456,
-            "parent_commit_id": "state-v2-hash",
-            "repos": {"ledger": "hash_a", "registry": "hash_b"},
-            "cached_states": {"tension_rate": "5.5%"}
-        }
+        # 1. 서명용 커밋 데이터 생성
+        anchor_commit = StateAdapter.build_anchor_commit(
+            parity=parity_triplet,
+            parent_nexus_id=123456,
+            parent_commit_id="state-v2-hash",
+            repos={"ledger": "hash_a", "registry": "hash_b"},
+            cached_states={"tension_rate": "5.5%"}
+        )
         sig_hex = self._generate_signature(anchor_commit)
         
-        # WASM에 전달할 FFI Payload
-        payload = {
-            "parity": parity_triplet,
-            "parent_nexus_id": 123456,
-            "self_parent_state": "state-v2-hash",
-            "repos": {"ledger": "hash_a", "registry": "hash_b"},
-            "cached_states": {"tension_rate": "5.5%"},
-            "timestamp": time.time(),
-            "pubkey": self.pubkey_hex,
-            "signature": sig_hex
-        }
-        await self._run_case("Engine: Seal Epoch & Finalize State Transition", "SealEpoch", payload, expected_success=True)
+        # 2. WASM 전달용 최종 FFI 페이로드 생성
+        payload = StateAdapter.build_seal_epoch_payload(
+            parity=parity_triplet,
+            parent_nexus_id=123456,
+            self_parent_state="state-v2-hash",
+            repos={"ledger": "hash_a", "registry": "hash_b"},
+            cached_states={"tension_rate": "5.5%"},
+            timestamp=time.time(),
+            pubkey=self.pubkey_hex,
+            signature=sig_hex
+        )
+        
+        await self._run_case("Engine: Seal Epoch & Finalize State Transition", "seal_epoch", payload, expected_success=True)

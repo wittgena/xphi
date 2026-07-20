@@ -12,7 +12,7 @@ from phase.runtime.inter.python import PythonInterpreter
 from phase.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 
-SANDBOX_ROOT = resolve_path("sandbox")
+TIME_ROOT = resolve_path("time")
 
 class WasmTaskerDaemon(AbstractDaemon):
     """
@@ -115,7 +115,7 @@ class WasmTaskerDaemon(AbstractDaemon):
     def _resolve_wasm_path(self, wasm_path: str) -> Path:
         path = Path(wasm_path)
         if not path.is_absolute():
-            path = SANDBOX_ROOT / path
+            path = TIME_ROOT / path
         return path
 
     async def _handle_control(self, payload: dict):
@@ -189,12 +189,11 @@ class WasmTaskerDaemon(AbstractDaemon):
                         code_to_run = ""
                         variables = {}
 
-                    self.log.error(f"====== [DEBUG X-RAY] ======")
-                    self.log.error(f"1. RAW payload: {payload}")
-                    self.log.error(f"2. safe_payload: {safe_payload}")
-                    self.log.error(f"3. Extracted code_to_run: '{code_to_run}'")
-                    self.log.error(f"===========================")        
-                    # 테스트(PysandTester)와 확장성을 위한 호스트 위임 함수 기본 주입
+                    self.log.debug(f"====== [DEBUG X-RAY] ======")
+                    self.log.debug(f"1. RAW payload: {payload}")
+                    self.log.debug(f"2. safe_payload: {safe_payload}")
+                    self.log.debug(f"3. Extracted code_to_run: '{code_to_run}'")
+                    self.log.debug(f"===========================")        
                     host_capabilities = {
                         "system_ping": lambda: "pong_from_host"
                     }

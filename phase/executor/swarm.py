@@ -13,7 +13,10 @@ from dataclasses import asdict
 from watcher.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from arch.contract.executor import BaseExecutor
+
+# 두 가지 Executor 모두 임포트
 from phase.executor.cli import _GenericCliExecutor
+from watcher.plane.flow.executor import FlowExecutor
 
 log = get_logger("swarm.executor")
 
@@ -51,7 +54,6 @@ class SwarmExecutor(BaseExecutor):
                 task_info = task_info_list[0]
                 module_fqn = task_info.get("module_fqn")
                 entry_func_name = task_info.get("entry", "entry_task")
-                task_type = task_info.get("type", "cli") 
                 
                 ## 모듈 동적 임포트
                 module = importlib.import_module(module_fqn)
@@ -66,15 +68,19 @@ class SwarmExecutor(BaseExecutor):
                 ## 내부 실행기를 위한 독립적인 완료 시그널 생성
                 sub_completion_signal = asyncio.Event()
                 
-                internal_executor = _GenericCliExecutor(task_instance, sub_completion_signal)
-                self.log.info(f"[Swarm] Allocated _GenericCliExecutor for {command}")
+                # [CHANGED] 인터페이스 검사를 통한 동적 Executor 할당 (Duck Typing)
+                if hasattr(task_instance, "execute_flow") or hasattr(task_instance, "execute"):
+                    internal_executor = FlowExecutor(sub_completion_signal)
+                    self.log.info(f"[Swarm] Allocated FlowExecutor for {command}")
+                else:
+                    internal_executor = _GenericCliExecutor(task_instance, sub_completion_signal)
+                    self.log.info(f"[Swarm] Allocated _GenericCliExecutor for {command}")
 
                 if self.node:
                     internal_executor.node = self.node
                 else:
                     self.log.warn("[Swarm] Executor has no node reference! Reflection might fail.")
-                
-                ## 내부 Executor(GenericCliExecutor)에 실행 위임
+
                 await internal_executor.execute(psi)
             except Exception as e:
                 self.log.error(f"[Swarm] Execution Failed: {e}")

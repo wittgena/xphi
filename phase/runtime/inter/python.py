@@ -18,7 +18,7 @@ from arch.xor.proto.jsonrpc import JsonRpcMessage, JsonRpcErrorCode
 from phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 
-SANDBOX_ROOT = resolve_path("sandbox")
+TIME_ROOT = resolve_path("time")
 LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
 
 _invoker_full, MODULE_NAMESPACE = get_invoker(Path(__file__))
@@ -107,7 +107,7 @@ class PythonInterpreter:
 
     def _get_runner_path(self) -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(SANDBOX_ROOT, "pysand.ts")
+        return os.path.join(TIME_ROOT, "pysand.ts")
 
     def _mount_files(self):
         if self._mounted_files:

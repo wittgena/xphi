@@ -16,9 +16,9 @@ from watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.tracer")
 
-SANDBOX_ROOT = resolve_path("sandbox")
-DEST_WASM_FILE = SANDBOX_ROOT / "dphi.wasm"
-REGISTRY_FILE = SANDBOX_ROOT / "wasm_registry.json"
+TIME_ROOT = resolve_path("sandbox")
+DEST_WASM_FILE = TIME_ROOT / "dphi.wasm"
+REGISTRY_FILE = TIME_ROOT / "registry.json"
 STREAM_ID = "wasm_binary_lineage"
 
 class WasmTracer(BaseTracer):
@@ -104,7 +104,7 @@ class WasmTracer(BaseTracer):
                 self.log.info("[SYSTEM] Initializing default WasmTester...")
                 self.tester = WasmTester(
                     wasm_module_path=str(DEST_WASM_FILE),
-                    sandbox_root=str(SANDBOX_ROOT)
+                    sandbox_root=str(TIME_ROOT)
                 )
             else:
                 self.log.info("[SYSTEM] Using injected WasmTester instance.")

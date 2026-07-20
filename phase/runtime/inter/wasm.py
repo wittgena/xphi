@@ -20,7 +20,7 @@ from phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 from phase.wasm.wasmcg import WasmCgroup, CgroupPolicy
 
-SANDBOX_ROOT = resolve_path("sandbox")
+TIME_ROOT = resolve_path("time")
 LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
 
 _invoker_full, MODULE_NAMESPACE = get_invoker(Path(__file__))
@@ -133,14 +133,14 @@ class WasmInterpreter:
             else:
                 log.warning("Shared Buffer APIs not found in WASM. Running in Legacy-only mode.")
 
-            registry_path = Path(SANDBOX_ROOT) / "wasm_registry.json"
+            registry_path = Path(TIME_ROOT) / "registry.json"
             if registry_path.exists():
                 try:
                     with open(registry_path, "r", encoding="utf-8") as f:
                         reg_data = json.load(f)
                         self.valid_methods = set(reg_data.get("methods", []))
                 except Exception as e:
-                    log.warning(f"Failed to load wasm_registry.json: {e}")
+                    log.warning(f"Failed to load registry.json: {e}")
 
         except Exception as e:
             raise ProtocolError(f"Failed to initialize Wasmtime engine: {e}")

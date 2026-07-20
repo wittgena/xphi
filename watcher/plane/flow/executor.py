@@ -1,5 +1,4 @@
 # watcher.plane.flow.executor
-## @lineage: phase.dynamics.flow.executor
 import os
 import sys
 import json
@@ -10,7 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
-from arch.topos.bound.tunnel import from_url as tunnel_from_url
+from arch.topos.bound.tunnel import TunnelFactory
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
 from arch.contract.event.next import next_id
@@ -212,7 +211,7 @@ async def _async_run_flow_proxy(command_name: str, payload: dict):
     @role: Dedicated Flow Receiver
     @desc: Listens to the Tunnel stream until a COLLAPSE or ERROR event is received.
     """
-    tunnel = await tunnel_from_url()
+    tunnel = await TunnelFactory.get_isolated()
     task_id = f"flow-{uuid.uuid4().hex[:8]}"
     response_channel = f"res:{task_id}"
     log_channel = f"log:{task_id}"
