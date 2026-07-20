@@ -32,8 +32,8 @@ class LedgerScenarios(SchemeRunner):
 
     def _generate_signature(self, commit_dict: dict) -> str:
         """
-        Rust WASM 내부의 compute_deterministic_hash 함수와 동일하게 동작하도록 
-        파이썬 딕셔너리를 공백 없는 JSON으로 직렬화한 후 SHA-256 해싱 후 서명합니다.
+        [수정됨] Rust WASM의 serde_json은 구조체 필드가 선언된 순서대로 직렬화합니다.
+        알파벳순 정렬(sort_keys=True)을 제거하고, 파이썬 딕셔너리의 키 삽입 순서를 유지합니다.
         """
         commit_json = json.dumps(commit_dict, separators=(',', ':'))
         commit_hash = hashlib.sha256(commit_json.encode('utf-8')).hexdigest()
@@ -41,17 +41,25 @@ class LedgerScenarios(SchemeRunner):
         return signature.hex()
 
     async def _test_inscribe_actor_authorized(self):
-        log.info("\n--- Running Suite: Authorized Actor Inscription ---")
+        log.info("\n--- Running Suite: Authorized Actor Inscription (Nexus ID) ---")
+        
+        # Rust의 RepoCommit 구조체 필드 선언 순서에 완벽히 일치해야 합니다.
+        # pub nexus_id: u32
+        # pub parent_nexus_id: u32
+        # pub parent_commit_id: String
         repo_commit = {
-            "anchor_id": "anc-1001",
-            "parent_anchor_id": "0000000",
+            "nexus_id": 907049,
+            "parent_nexus_id": 0,
             "parent_commit_id": "commit-0000"
         }
         
         sig_hex = self._generate_signature(repo_commit)
+        
+        # WASM에 전달할 FFI Payload (InscribePayload 구조체)
         payload = {
-            **repo_commit,
-            "parent_anchor_id": None,
+            "nexus_id": 907049,
+            "parent_nexus_id": None, # Option<u32>이므로 None 전달 -> Rust 내부에서 0으로 처리됨
+            "parent_commit_id": "commit-0000",
             "pubkey": self.pubkey_hex,
             "signature": sig_hex
         }
@@ -59,16 +67,19 @@ class LedgerScenarios(SchemeRunner):
 
     async def _test_inscribe_actor_tampered(self):
         log.info("\n--- Running Suite: Fraudulent Inscription (Tamper-Proof Guard) ---")
+        
+        # 원본 서명 객체 생성 (순서 보장)
         repo_commit = {
-            "anchor_id": "anc-9999",
-            "parent_anchor_id": "0000000",
+            "nexus_id": 907049,
+            "parent_nexus_id": 0,
             "parent_commit_id": "commit-0000"
         }
-        
         sig_hex = self._generate_signature(repo_commit)
+        
+        # 악의적으로 nexus_id를 위조한 Payload (서명은 원본 유지)
         tampered_payload = {
-            "anchor_id": "anc-hacked", 
-            "parent_anchor_id": None,
+            "nexus_id": 999999, # HACKED
+            "parent_nexus_id": None,
             "parent_commit_id": "commit-0000",
             "pubkey": self.pubkey_hex,
             "signature": sig_hex
@@ -76,19 +87,29 @@ class LedgerScenarios(SchemeRunner):
         await self._run_case("Ledger: Reject Tampered Payload (UNAUTHORIZED_ACTOR)", "inscribe_actor", tampered_payload, expected_success=False)
 
     async def _test_seal_epoch_consensus(self):
-        log.info("\n--- Running Suite: Epoch Sealing Consensus ---")
+        log.info("\n--- Running Suite: Epoch Sealing Consensus (Parity Triplet) ---")
+        
+        # Rust의 ParityTriplet 구조체 선언 순서: topos_id -> phase_id -> nexus_id
+        parity_triplet = {
+            "topos_id": "1767225600000_w1_d1_0",
+            "phase_id": 999999,
+            "nexus_id": 907049
+        }
+        
+        # Rust의 AnchorCommit 구조체 선언 순서와 완벽히 일치시켜야 합니다.
         anchor_commit = {
-            "anchor_id": "epoch-200",
-            "parent_anchor_id": "epoch-199",
+            "parity": parity_triplet,
+            "parent_nexus_id": 123456,
             "parent_commit_id": "state-xyz",
             "repos": {"repoA": "hashA", "repoB": "hashB"},
             "cached_states": {"key1": "val1"}
         }
-        
         sig_hex = self._generate_signature(anchor_commit)
+        
+        # WASM에 전달할 FFI Payload (SealEpochPayload 구조체)
         payload = {
-            "anchor_id": "epoch-200",
-            "parent_anchor_id": "epoch-199",
+            "parity": parity_triplet,
+            "parent_nexus_id": 123456,
             "self_parent_state": "state-xyz",
             "repos": {"repoA": "hashA", "repoB": "hashB"},
             "cached_states": {"key1": "val1"},

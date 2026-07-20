@@ -28,7 +28,7 @@ class EcosystemScenarios(SchemeRunner):
         """@pipeline.1: Zero-Trust Data Integrity"""
         await self._test_oracle_packet_integrity()
         await self._test_oracle_data_provenance()
-        await self._test_oracle_spatiotemporal_tagging()
+        await self._test_oracle_epoch_initialization() # [변경] InitEpoch 통합 테스트로 명칭 변경
         await self._test_oracle_self_healing()
         
         """@pipeline.2: Autonomous Protocol State Engine"""
@@ -39,8 +39,11 @@ class EcosystemScenarios(SchemeRunner):
         self.report()
 
     def _generate_signature(self, commit_dict: dict) -> str:
-        """Ed25519 signature utility for deterministic consensus proof generation."""
-        commit_json = json.dumps(commit_dict, separators=(',', ':'))
+        """
+        [개선] Rust BTreeMap의 결정론적 해시 구조(알파벳순 정렬)와 일치시키기 위해 
+        sort_keys=True 옵션을 추가하여 Ed25519 서명을 생성합니다.
+        """
+        commit_json = json.dumps(commit_dict, separators=(',', ':'), sort_keys=True)
         commit_hash = hashlib.sha256(commit_json.encode('utf-8')).hexdigest()
         signature = self.private_key.sign(commit_hash.encode('utf-8'))
         return signature.hex()
@@ -61,11 +64,21 @@ class EcosystemScenarios(SchemeRunner):
         payload = {"dummy_data": "Node_State_Report_Data..."}
         await self._run_case("Pipeline: Compute Tamper-Proof Root Fingerprint", "compute_root_fingerprint", payload, expected_success=True)
 
-    async def _test_oracle_spatiotemporal_tagging(self):
-        """@flow: Fingerprint -> Spatiotemporal Context Injection -> Topos/Phase Anchor ID Assignment"""
-        log.info("\n--- [Data Pipeline] Phase 3: Spatiotemporal Tagging ---")
+    async def _test_oracle_epoch_initialization(self):
+        """
+        @flow: Fingerprint -> Spatiotemporal Context Injection -> Parity Triplet (InitEpoch)
+        [개선] 단순 Topos 생성이 아닌, 단일 트랜잭션 기반 InitEpoch 래퍼 호출을 테스트합니다.
+        """
+        log.info("\n--- [Data Pipeline] Phase 3: Epoch Initialization & Parity Triplet ---")
         current_ts = int(time.time() * 1000)
-        await self._run_case("Pipeline: Generate Topology Anchor", "generate_topos_id", {"ts": current_ts}, expected_success=True)
+        payload = {
+            "ts": current_ts,
+            "topo": 1,
+            "press": 5,
+            "rupture": False,
+            "injected_tick": None
+        }
+        await self._run_case("Pipeline: Generate Parity Triplet (InitEpoch)", "InitEpoch", payload, expected_success=True)
 
     async def _test_oracle_self_healing(self):
         """@flow: Fragmented Topology (Missing Phase ID) -> dphi.wasm Tripartite XOR Parity -> 100% Deterministic State Reconstruction"""
@@ -77,13 +90,13 @@ class EcosystemScenarios(SchemeRunner):
 
     """@pipeline.2: Autonomous Protocol State Engine (Off-chain Rollup)"""
     async def _test_dao_tension_evaluation(self):
-        """@flow: Network Metrics (Nodes, Volume) -> Tension Evaluation Algorithm -> Dynamic Protocol Parameter Adjustment"""
+        """
+        @flow: Network Metrics -> Tension Evaluation Algorithm -> Dynamic Protocol Parameter Adjustment
+        [개선] Rust SymbolTopology::from_raw가 파싱하는 "current|previous" 문자열 포맷으로 수정
+        """
         log.info("\n--- [State Engine] Phase 1: Ecosystem Tension Evaluation ---")
-        payload = {
-            "active_nodes": 1500,
-            "tx_volume": 450000,
-            "governance_proposals": 5
-        }
+        # 교집합: node_b, node_c / 합집합: node_a, node_b, node_c, node_d
+        payload = "node_a,node_b,node_c|node_b,node_c,node_d" 
         await self._run_case("Engine: Evaluate Network Tension & Load", "evaluate_tension", payload, expected_success=True)
 
     async def _test_dao_state_evolution(self):
@@ -116,20 +129,32 @@ class EcosystemScenarios(SchemeRunner):
         await self._run_case("Engine: Process High-Speed Off-chain Evolution", "process_evolution", payload, expected_success=True)
 
     async def _test_dao_epoch_sealing(self):
-        """@flow: Evolved State -> Parent Anchor Linkage -> Cryptographic Proposer Signature -> Immutable Epoch Sealing"""
+        """
+        @flow: Evolved State -> Parity Triplet Linkage -> Cryptographic Signature -> Immutable Epoch Sealing
+        [개선] ParityTriplet 스키마 및 parent_nexus_id 반영
+        """
         log.info("\n--- [State Engine] Phase 3: Epoch Sealing & Consensus ---")
+        
+        parity_triplet = {
+            "topos_id": "1767225600000_w1_d1_0",
+            "phase_id": 999999,
+            "nexus_id": 907049
+        }
+        
+        # Rust의 AnchorCommit 구조체 스키마
         anchor_commit = {
-            "anchor_id": "epoch-400",
-            "parent_anchor_id": "epoch-399",
+            "parity": parity_triplet,
+            "parent_nexus_id": 123456,
             "parent_commit_id": "state-v2-hash",
             "repos": {"ledger": "hash_a", "registry": "hash_b"},
             "cached_states": {"tension_rate": "5.5%"}
         }
         sig_hex = self._generate_signature(anchor_commit)
         
+        # WASM에 전달할 FFI Payload
         payload = {
-            "anchor_id": "epoch-400",
-            "parent_anchor_id": "epoch-399",
+            "parity": parity_triplet,
+            "parent_nexus_id": 123456,
             "self_parent_state": "state-v2-hash",
             "repos": {"ledger": "hash_a", "registry": "hash_b"},
             "cached_states": {"tension_rate": "5.5%"},
@@ -137,4 +162,4 @@ class EcosystemScenarios(SchemeRunner):
             "pubkey": self.pubkey_hex,
             "signature": sig_hex
         }
-        await self._run_case("Engine: Seal Epoch & Finalize State Transition", "seal_epoch", payload, expected_success=True)
+        await self._run_case("Engine: Seal Epoch & Finalize State Transition", "SealEpoch", payload, expected_success=True)
