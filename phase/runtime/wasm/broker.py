@@ -25,16 +25,13 @@ class WasmBroker:
             pubsub = listen_client.pubsub()
             pubsub.subscribe(response_channel)
             
-            # [핵심 라우팅] 제어 명령은 PubSub(Broadcast), 실행 명령은 Stream(Exclusive)
             if route == self.control_channel:
                 log.info(f"[{job_id[:8]}] Broadcasting control task '{payload.get('target_func', 'unknown')}'...")
                 tunnel.publish(route, json.dumps(payload))
             else:
                 log.info(f"[{job_id[:8]}] Enqueuing execution task '{payload.get('target_func', 'unknown')}' to Stream...")
-                # UniversalFacade의 state_store(Redis)를 통한 XADD 수행
                 tunnel.state_store.xadd(route, {"data": json.dumps(payload)})
             
-            # 응답 대기 로직은 동일
             start_time = time.time()
             while time.time() - start_time < self.timeout:
                 msg = pubsub.get_message(ignore_subscribe_messages=True, timeout=0.1)

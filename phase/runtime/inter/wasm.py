@@ -29,7 +29,7 @@ log = get_emitter(MODULE_NAMESPACE, phase="SYSTEM")
 class WasmInterpreter:
     def __init__(
         self,
-        wasm_module_path: str = "dphi.wasm",
+        wasm_module_path: str = "theoria.wasm",
         enable_read_paths: list[PathLike | str] | None = None,
         enable_write_paths: list[PathLike | str] | None = None,
         enable_env_vars: list[str] | None = None,
@@ -155,27 +155,21 @@ class WasmInterpreter:
         if self.valid_methods and target_func_name not in self.valid_methods:
             raise ExecutionError(f"Method '{target_func_name}' is not registered in Wasm API.")
         
-        # ==============================================================
-        # [핵심 방어벽] 이중 직렬화(Double Serialization) 원천 차단
-        # ==============================================================
         actual_payload = payload
         if isinstance(payload, str):
             try:
-                # 앞단에서 이미 json.dumps()된 문자열이 들어왔다면 dict로 풀어냄
                 actual_payload = json.loads(payload)
             except json.JSONDecodeError:
-                # 일반 텍스트/파이썬 코드라면 그대로 패스 (O(1) 통과)
                 pass
 
         routed_request = {
             "method": target_func_name,
+            "context": {},
             "payload": actual_payload
         }
         
-        # 여기서 단 한 번만 직렬화되어 WASM FFI로 전달됨 (Rust RawValue와 완벽 호환)
         payload_bytes = json.dumps(routed_request).encode('utf-8')
         req_len = len(payload_bytes)
-        
         if self.shared_ptr is not None and req_len <= self.shared_size:
             self.memory.write(self.store, payload_bytes, self.shared_ptr)
             res_len = self._invoke_shared(self.store, req_len)

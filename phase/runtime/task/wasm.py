@@ -1,5 +1,4 @@
 # phase.runtime.task.wasm
-# phase.runtime.task.wasm (수정본)
 import json
 import asyncio
 import uuid
@@ -21,7 +20,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         1. Execute Plane: Stream(XREADGROUP) -> 스레드 위임 -> Interpreter -> XACK
         2. Control Plane: Pub/Sub -> 정책 동기화 (독립 태스크로 병렬 동작)
     """
-    def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi_space.wasm"):
+    def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "theoria.wasm"):
         super().__init__("WasmTasker")
         self.tunnel = tunnel
         self.supervisor = supervisor
@@ -48,14 +47,9 @@ class WasmTaskerDaemon(AbstractDaemon):
 
     async def run(self):
         await self._init_consumer_group()
-        
-        # 1. [핵심 개선] Control Plane(Pub/Sub) 리스너를 별도 비동기 태스크로 격리하여 
-        # Stream 폴링(Block)에 의해 수신이 지연되지 않도록 만듭니다.
         self._pubsub_task = asyncio.create_task(self._listen_pubsub())
-        
         self.log.info(f"WasmTasker listening: Stream[{self.topic}] | PubSub[{self.control_channel}]")
         
-        # 2. Execution Plane (Stream) 메인 루프
         try:
             while self.running:
                 streams = await self.tunnel.stream_consume(

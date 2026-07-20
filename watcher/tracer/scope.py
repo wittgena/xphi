@@ -1,5 +1,4 @@
 # watcher.tracer.scope
-## @lineage: gov.bridge.scope.tracer
 import contextvars
 import time
 import uuid
@@ -45,7 +44,6 @@ class scope_trace:
         return self.__exit__(exc_type, exc_val, exc_tb)
 
 def get_current_trace_path() -> str:
-    """현재 중첩된 스코프 경로를 반환 (예: '[infra:was] -> [logical:dphi] -> [execution:thch]')"""
     stack = _scope_stack.get()
     if not stack:
         return "[root]"
