@@ -18,7 +18,7 @@ except ImportError:
 from arch.xor.proto.code import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
 from phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
-from phase.runtime.wasm.wasmcg import WasmCgroup, CgroupPolicy
+from phase.wasm.wasmcg import WasmCgroup, CgroupPolicy
 
 SANDBOX_ROOT = resolve_path("sandbox")
 LARGE_VAR_THRESHOLD = 100 * 1024 * 1024

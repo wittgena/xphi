@@ -8,6 +8,7 @@ from contextlib import suppress
 
 from phase.runtime.daemon.base import AbstractDaemon
 from phase.runtime.inter.wasm import WasmInterpreter
+from phase.runtime.inter.python import PythonInterpreter
 from phase.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 
@@ -15,10 +16,10 @@ SANDBOX_ROOT = resolve_path("sandbox")
 
 class WasmTaskerDaemon(AbstractDaemon):
     """
-    @role: WASM 전용 리스너 데몬 (Sticky & Exclusive)
+    @role: Secure Execution Daemon (Bifurcated Routing)
     @flow: 
-        1. Execute Plane: Stream(XREADGROUP) -> 스레드 위임 -> Interpreter -> XACK
-        2. Control Plane: Pub/Sub -> 정책 동기화 (독립 태스크로 병렬 동작)
+        [ROUTE A] target == 'execute_code' -> Checkpoint(WASM validate) -> Jail(Deno)
+        [ROUTE B] target != 'execute_code' -> Direct WASM Kernel Execution
     """
     def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
         super().__init__("WasmTasker")
@@ -40,7 +41,7 @@ class WasmTaskerDaemon(AbstractDaemon):
             await self.tunnel.state_store.xgroup_create(
                 name=self.topic, groupname=self.group_name, id='0', mkstream=True
             )
-            self.log.info(f"Consumer Group '{self.group_name}' initialized for WASM.")
+            self.log.info(f"Consumer Group '{self.group_name}' initialized for Secure Execution.")
         except Exception as e:
             if "BUSYGROUP" not in str(e):
                 self.log.error(f"Failed to init Consumer Group: {e}")
@@ -75,7 +76,7 @@ class WasmTaskerDaemon(AbstractDaemon):
                             
                             self.supervisor.create(
                                 self._process_and_reply(data, message_id), 
-                                name=f"WasmExec-{job_id[:8]}"
+                                name=f"ExecGate-{job_id[:8]}"
                             )
                         except json.JSONDecodeError:
                             self.log.error(f"Invalid JSON payload: {json_payload}")
@@ -84,7 +85,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            self.log.error(f"WasmTasker Main Loop Error: {e}")
+            self.log.error(f"WasmTasker Main Loop Error: {e}", exc_info=True)
         finally:
             if self._pubsub_task and not self._pubsub_task.done():
                 self._pubsub_task.cancel()
@@ -92,7 +93,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                     await self._pubsub_task
 
     async def _listen_pubsub(self):
-        """별도 태스크로 동작하는 Control Plane 리스너"""
         pubsub = self.tunnel.pubsub()
         await pubsub.subscribe(self.control_channel)
         
@@ -134,7 +134,7 @@ class WasmTaskerDaemon(AbstractDaemon):
             if response_channel:
                 await self.tunnel.publish(response_channel, json.dumps(response_data))
         except Exception as e:
-            self.log.error(f"Failed to process WASM payload: {e}")
+            self.log.error(f"Failed to process execution payload: {e}", exc_info=True)
         finally:
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
 
@@ -142,6 +142,8 @@ class WasmTaskerDaemon(AbstractDaemon):
         job_id = payload.get("job_id", "unknown")
         target_func = payload.get("target_func", "execute_code")
         wasm_path = payload.get("wasm_path", self.default_wasm_path)
+        
+        # 순수 페이로드 원본 (WASM 커널용)
         exec_data = payload.get("payload", payload.get("data", ""))
 
         target_path = self._resolve_wasm_path(wasm_path)
@@ -150,14 +152,84 @@ class WasmTaskerDaemon(AbstractDaemon):
             self.log.warn(f"[{job_id[:8]}] {error_msg}")
             return {"success": False, "output": "", "error": error_msg}
 
-        try:
-            with WasmInterpreter(str(target_path)) as interpreter:
-                result = interpreter.invoke(target_func, exec_data)
-                return {
-                    "success": result.success,
-                    "output": result.output if result.success else "",
-                    "error": str(result.error) if not result.success else ""
-                }
-        except Exception as e:
-            self.log.error(f"WASM crashed [Job: {job_id[:8]}]: {e}")
-            return {"success": False, "output": "", "error": str(e)}
+        if target_func == "execute_code":
+            try:
+                # --- STAGE 1: Checkpoint (validate_intent) ---
+                with WasmInterpreter(str(target_path)) as wasm_gate:
+                    validation_res = wasm_gate.invoke("validate_intent", json.dumps(payload))
+                    
+                    if not validation_res.success:
+                        # [하위 호환성 방어] dphi.wasm에 아직 validate_intent가 없을 경우 우회 허용
+                        if "not registered" in str(validation_res.error) or "not found" in str(validation_res.error):
+                            self.log.debug(f"[{job_id[:8]}] 'validate_intent' missing in WASM. Bypassing checkpoint for legacy compatibility.")
+                            safe_payload = exec_data
+                        else:
+                            self.log.error(f"[{job_id[:8]}] WASM Gateway crashed: {validation_res.error}")
+                            return {"success": False, "output": "", "error": f"Gateway Fault: {validation_res.error}"}
+                    else:
+                        val_data = json.loads(validation_res.output)
+                        if not val_data.get("is_valid", True):
+                            error_code = val_data.get('error_code', 'UNAUTHORIZED_INTENT')
+                            self.log.warning(f"[{job_id[:8]}] 🔒 Checkpoint Denied: {error_code}")
+                            return {"success": False, "output": "", "error": f"Security Policy Violation: {error_code}"}
+                        
+                        safe_payload = val_data.get("safe_payload", exec_data)
+
+                # --- STAGE 2: Jail (Deno Sandbox) ---
+                with PythonInterpreter(enable_network_access=None) as py_sandbox:
+                    
+                    # 딕셔너리 구조 차이에 대비한 완벽한 페이로드 파싱 (빈 문자열 실행 방지)
+                    if isinstance(safe_payload, str):
+                        code_to_run = safe_payload
+                        variables = {}
+                    elif isinstance(safe_payload, dict):
+                        code_to_run = safe_payload.get("code", safe_payload.get("data", ""))
+                        variables = safe_payload.get("variables", {})
+                    else:
+                        code_to_run = ""
+                        variables = {}
+
+                    self.log.error(f"====== [DEBUG X-RAY] ======")
+                    self.log.error(f"1. RAW payload: {payload}")
+                    self.log.error(f"2. safe_payload: {safe_payload}")
+                    self.log.error(f"3. Extracted code_to_run: '{code_to_run}'")
+                    self.log.error(f"===========================")        
+                    # 테스트(PysandTester)와 확장성을 위한 호스트 위임 함수 기본 주입
+                    host_capabilities = {
+                        "system_ping": lambda: "pong_from_host"
+                    }
+                    
+                    self.log.info(f"[{job_id[:8]}] 🔓 Entering Deno Jail for Python execution.")
+                    result = py_sandbox.execute(
+                        code=code_to_run, 
+                        variables=variables,
+                        callables=host_capabilities
+                    )
+                    
+                    return {
+                        "success": result.success,
+                        "output": result.output if result.success else "",
+                        "error": str(result.error) if not result.success else ""
+                    }
+                    
+            except Exception as e:
+                self.log.error(f"[{job_id[:8]}] Execution crashed: {e}", exc_info=True)
+                return {"success": False, "output": "", "error": f"Execution Error: {e}"}
+
+        # =====================================================================
+        # ROUTE B: Pure WASM Execution (Topology, Resonance, State Collapse)
+        # =====================================================================
+        else:
+            try:
+                # 검문소 우회. 원본 exec_data를 들고 dphi.wasm 커널로 직행
+                with WasmInterpreter(str(target_path)) as wasm_runner:
+                    self.log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func}")
+                    result = wasm_runner.invoke(target_func, exec_data)
+                    return {
+                        "success": result.success,
+                        "output": result.output if result.success else "",
+                        "error": str(result.error) if not result.success else ""
+                    }
+            except Exception as e:
+                self.log.error(f"[{job_id[:8]}] WASM Kernel logic crashed: {e}", exc_info=True)
+                return {"success": False, "output": "", "error": str(e)}

@@ -1,10 +1,4 @@
-# phase.bind.resonance.aligner
-## @lineage: phase.resonance.aligner
-## @lineage: swarm.resonance.aligner
-## @lineage: hub.residue.resonance.aligner
-## @lineage: phase.ator.resonance.aligner
-## @lineage: xphi.resonance.aligner
-## @lineage: cognitive.resonance.aligner
+# phase.ator.resonance.aligner
 import httpx
 import json
 import asyncio

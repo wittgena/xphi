@@ -1,4 +1,5 @@
-# arch.topos.node.trans.topic.tracer
+# arch.topos.trans.topic.tracer
+## @lineage: arch.topos.node.trans.topic.tracer
 ## @lineage: arch.topos.bound.trans.topic.tracer
 ## @lineage: arch.bound.topic.tracer
 ## @lineage: arch.topic.tracer
@@ -20,7 +21,7 @@ import signal
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Callable, Any, Dict, List, Optional
-from arch.topos.node.trans.topic.registry import TopicRegistry, TopicMap
+from arch.topos.trans.topic.registry import TopicRegistry, TopicMap
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter('topic.tracer')

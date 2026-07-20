@@ -7,6 +7,8 @@ import keyword
 import os
 import subprocess
 import threading
+import time
+import select
 from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -76,6 +78,9 @@ class PythonInterpreter:
         self._request_id = 0
         self._owner_thread: int | None = None
         self._pending_large_vars = {}
+        
+        # [수정] Pyodide 부팅 및 무거운 연산을 위해 기본 타임아웃을 15초로 설정
+        self.execution_timeout = 15.0
 
     def _check_thread_ownership(self) -> None:
         current_thread = threading.current_thread().ident
@@ -150,7 +155,6 @@ class PythonInterpreter:
         return params
 
     def _register_callables(self, callables: Mapping[str, Callable[..., Any]] | None) -> None:
-        """execute 시점에 주입된 호출 가능 객체를 동적으로 샌드박스에 바인딩합니다."""
         if not callables:
             return
 
@@ -164,7 +168,9 @@ class PythonInterpreter:
         self._send_request("register", {"tools": callables_info}, "registering callables")
 
     def _handle_callable_call(self, request: dict, callables: Mapping[str, Callable[..., Any]]) -> None:
-        """샌드박스 내부의 호출 요청을 주입된 callable 매핑과 연결하여 실행합니다."""
+        """
+        [개선됨] 호스트 함수 실행 중 발생하는 에러가 샌드박스와 데몬의 붕괴로 이어지지 않도록 격리합니다.
+        """
         request_id = request["id"]
         params = request.get("params", {})
         callable_name = params.get("name")
@@ -172,7 +178,7 @@ class PythonInterpreter:
 
         try:
             if callable_name not in callables:
-                raise ExecutionError(f"Unknown callable: {callable_name}")
+                raise ExecutionError(f"Security Violation: Unknown callable '{callable_name}' requested by Sandbox.")
             
             result = callables[callable_name](**kwargs)
             is_json = isinstance(result, (list, dict))
@@ -181,12 +187,16 @@ class PythonInterpreter:
                 request_id
             )
         except Exception as e:
+            log.warning(f"Callable '{callable_name}' failed in host: {e}")
             error_type = type(e).__name__
             error_code = JsonRpcErrorCode.from_exception_type(error_type)
             response = JsonRpcMessage.error(error_code, str(e), request_id, {"type": error_type})
 
-        self.deno_process.stdin.write(response + "\n")
-        self.deno_process.stdin.flush()
+        try:
+            self.deno_process.stdin.write(response + "\n")
+            self.deno_process.stdin.flush()
+        except BrokenPipeError:
+            pass 
 
     def _ensure_deno_process(self) -> None:
         if self.deno_process is None or self.deno_process.poll() is not None:
@@ -196,8 +206,7 @@ class PythonInterpreter:
                     self.deno_command,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
-                    # [치명적 버그 수정 1] stderr를 stdout으로 병합하여 OS 파이프 버퍼 초과로 인한 데드락 차단
-                    stderr=subprocess.STDOUT,
+                    stderr=subprocess.STDOUT, 
                     text=True,
                     encoding="UTF-8",
                     env=os.environ.copy()
@@ -209,24 +218,40 @@ class PythonInterpreter:
     _MAX_SKIP_LINES = 100
 
     def _read_response_line(self, context: str) -> str:
-        response_line = self.deno_process.stdout.readline().strip()
-        if response_line:
-            return response_line
+        """
+        [개선됨] select()를 사용한 타임아웃 기반 읽기 (Non-blocking I/O).
+        동기 readline()의 무한 대기(Deadlock)를 원천 차단합니다.
+        """
+        start_time = time.time()
+        
+        while True:
+            # 0.1초마다 stdout 버퍼에 데이터가 준비되었는지 확인
+            ready, _, _ = select.select([self.deno_process.stdout], [], [], 0.1)
+            
+            if ready:
+                response_line = self.deno_process.stdout.readline().strip()
+                if response_line:
+                    return response_line
+            
+            # 타임아웃 검사
+            if time.time() - start_time > self.execution_timeout:
+                log.error(f"Deno execution timed out ({self.execution_timeout}s) during {context}. Forcing termination.")
+                self.shutdown()
+                raise ProtocolError(f"Execution Timeout ({self.execution_timeout}s) {context}")
 
-        exit_code = self.deno_process.poll()
-        if exit_code is not None:
-            # stderr가 stdout으로 병합되었으므로 더 이상 stderr를 읽지 않음
-            raise ProtocolError(f"Deno exited (code {exit_code}) {context}")
-        raise ProtocolError(f"No response {context}")
+            exit_code = self.deno_process.poll()
+            if exit_code is not None:
+                raise ProtocolError(f"Deno exited unexpectedly (code {exit_code}) {context}")
 
     def _parse_response_line(self, response_line: str, context: str) -> dict | None:
+        log.error(f"[Deno RPC Response] <- {response_line}")
         if not response_line.startswith("{"):
-            log.debug("Skipping non-JSON output during %s: %s", context, response_line)
+            log.error(f"[Deno Output Leak] {context}: {response_line}")
             return None
         try:
             return json.loads(response_line)
         except json.JSONDecodeError:
-            log.debug("Skipping malformed JSON during %s: %s", context, response_line[:100])
+            log.error(f"[Deno JSON Error] {context}: {response_line[:500]}")
             return None
 
     def _send_request(self, method: str, params: dict, context: str) -> dict:
@@ -247,7 +272,6 @@ class PythonInterpreter:
             if response.get("id") != request_id:
                 raise ProtocolError(f"Response ID mismatch {context}: expected {request_id}, got {response.get('id')}")
             if "error" in response:
-                # 시스템 레벨 에러는 ProtocolError로 강제 종료
                 raise ProtocolError(f"Error {context}: {response['error'].get('message', 'Unknown error')}")
             return response
 
@@ -351,7 +375,8 @@ class PythonInterpreter:
         self._request_id += 1
         execute_request_id = self._request_id
         input_data = JsonRpcMessage.request("execute", {"code": code}, execute_request_id)
-        
+        log.error(f"[Deno RPC Request] -> {input_data}")
+
         try:
             self.deno_process.stdin.write(input_data + "\n")
             self.deno_process.stdin.flush()
@@ -362,7 +387,6 @@ class PythonInterpreter:
             for name, value in self._pending_large_vars.items():
                 self._inject_large_var(name, value)
             
-            # [치명적 버그 수정 2] 재시도 중 또 끊어질 때 호스트 백엔드가 죽는 것을 방지
             try:
                 self.deno_process.stdin.write(input_data + "\n")
                 self.deno_process.stdin.flush()
@@ -398,14 +422,11 @@ class PythonInterpreter:
                 error_message = error.get("message", "Unknown error")
                 error_data = error.get("data", {})
                 error_type = error_data.get("type", "Error")
-
                 return ExecutionResult(
                     success=False, 
                     error=ExecutionError(f"{error_type}: {error_data.get('args') or error_message}")
                 )
-
             raise ProtocolError(f"Unexpected message format from sandbox: {msg}")
-
         raise ProtocolError(f"Too many non-JSON lines ({skipped}) during execution")
 
     def start(self) -> None:
@@ -432,7 +453,7 @@ class PythonInterpreter:
                 self.deno_process.stdin.flush()
                 self.deno_process.stdin.close()
                 self.deno_process.wait(timeout=2)
-            except (BrokenPipeError, subprocess.TimeoutExpired):
+            except (BrokenPipeError, subprocess.TimeoutExpired, OSError):
                 self.deno_process.kill()
         self.deno_process = None
         self._owner_thread = None

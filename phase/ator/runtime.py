@@ -1,33 +1,20 @@
 # phase.ator.runtime
-## @lineage: phase.hub.ator.runtime
-## @lineage: hub.ator.runtime
-## @lineage: xe.ator.runtime
-## @lineage: xphi.ator.runtime
-## @lineage: cognitive.xphi.ator.runtime
-## @lineage: topos.bound.ator.runtime
 import asyncio
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Tuple
+import json
+from typing import Dict, Any, List
+from phase.wasm.broker import WasmBroker
 from watcher.plane.emitter import get_logger
 from arch.gov.flow import PhaseFlow, FlowState
-from arch.contract.protocol import get_proto
-from arch.contract.event.psi import PhaseField, PsiCarrier, CarrierType
-from watcher.kernel.state.node0 import enter_node0
-from phase.runtime.node import NodeRuntime
-from phase.runtime.inter.anchor import AnchorFlow, NodeInterpreter
 
 log = get_logger("ator.runtime")
 
 class AtorRuntime:
     """
-    @role: Φ-field mediator
-    @flow: Ψ → Φ' → ∂Φ → Node0 → Ψ' → Φ'
-    @semantics:
-    - PIR = Φ' (judgment operator)
-    - boundary = ∂Φ (phase discontinuity)
-    - Node0 = transducer (∂Φ → Ψ')
+    @role: Φ-field mediator & Ribosome
+    @flow: AST(DNA) -> Reflector(mRNA) -> AtorRuntime(Ribosome) -> WASM Kernel(Physics) -> Protein(Collapsed State)
+    @desc: Passes the transcribed intent into the WASM kernel and 'resonates' with the returned mathematical reality.
     """
-    def __init__(self, entry: str, nodes: Dict[str, Any], runtime_node: NodeRuntime):
+    def __init__(self, entry: str, nodes: Dict[str, Any], runtime_node: Any):
         self.entry = entry
         self.nodes = nodes
         self.engine = runtime_node
@@ -35,186 +22,104 @@ class AtorRuntime:
         self.psi_queue = asyncio.Queue()
         self._tasks: List[asyncio.Task] = []
         self._is_active = False
-        
-        ## Φ₀: global anchor (phase origin)
-        self.global_anchor = AnchorFlow.bootstrap()
-        
-        ## Φ'-operators per local field
-        self.interpreters = self._initialize_interpreters()
-
-        ## τ: minimal boundary threshold
-        self.boundary_threshold = 0.5
-        log.info(f"[RuntimeAtor] Initialized with Anchor Version: {self.global_anchor.version}")
-
-    def _initialize_interpreters(self) -> Dict[str, NodeInterpreter]:
-        return {
-            "ator": NodeInterpreter(self.global_anchor, field=PhaseField.COHERENT),
-            "router": NodeInterpreter(self.global_anchor, field=PhaseField.EVALUATION),
-            "resonance": NodeInterpreter(self.global_anchor, field=PhaseField.INTERFERENCE),
-            "default": NodeInterpreter(self.global_anchor)
-        }
-
-    def _flow_to_carrier(self, flow: PhaseFlow, node_type: str) -> PsiCarrier:
-        field_map = {
-            "ator": PhaseField.COHERENT,
-            "router": PhaseField.EVALUATION,
-            "resonance": PhaseField.INTERFERENCE
-        }
-        payload_data = flow.payload.get("status", "psi:ok") if isinstance(flow.payload, dict) else str(flow.payload)
-        
-        return PsiCarrier(
-            kind="status", tag="status", payload=payload_data,
-            target_field=field_map.get(node_type, PhaseField.COHERENT),
-            carrier_type=CarrierType.RECURSIVE,
-        )
-
-    def _sync_interpreters(self):
-        for interp in self.interpreters.values():
-            interp.anchor = self.global_anchor
-
-    def _route_to_boundary(self, ctx):
-        return [("NODE0", ctx)]
+        self.broker = WasmBroker()
 
     async def _process_queue_loop(self):
-        step = 0
-        log.info("[RuntimeAtor] Attached to Local Queue. Waiting for Ψ injection...")
-        
-        # [개선 2] 엔진의 상태와 자신의 활성 상태를 모두 체크
+        log.info("[RuntimeAtor] Ribosome active. Waiting for mRNA (Ψ) injection...")
         while self._is_active and getattr(self.engine, 'running', True):
             try:
                 item = await self.psi_queue.get()
-                step += 1
-
-                if isinstance(item, tuple) and len(item) == 2:
-                    node_name, ctx = item
-                else:
-                    log.debug(f"[Step {step}] Topology mismatch: Ignored non-Ator carrier type {type(item)}")
+                if not isinstance(item, tuple) or len(item) != 2:
                     self.psi_queue.task_done()
                     continue
 
-                if not hasattr(ctx, "state") or ctx.state is None:
-                    ctx.state = {}
-
-                if node_name == "UGA":
-                    log.info(f"[Step {step}] Closure Reached. Final State: {ctx.state}")
-                    self.psi_queue.task_done()
-                    continue
-
-                if node_name == "NODE0":
-                    log.warning(f"[Step {step}] Entering Node0 boundary context")
-                    interp = self.interpreters["default"]
-                    with enter_node0(interp, "runtime") as n0:
-                        if isinstance(ctx.flow.payload, dict):
-                            ctx.flow.payload["status"] = "psi:recovered"
-
-                    ctx.state.pop("boundary", None)
-                    await self.psi_queue.put((self.entry, ctx))
-                    self.psi_queue.task_done()
-                    continue
-
-                node = self.nodes.get(node_name)
-                if not node:
-                    log.error(f"[Step {step}] Node '{node_name}' not found in manifold.")
-                    self.psi_queue.task_done()
-                    continue
-
-                node_cls = node.__class__
-                p = get_proto(node_cls)
-                if not p:
-                    raise RuntimeError(f"[{node_name}] Missing @proto metadata.")
-
-                node_type = getattr(p, "kind", "default")
-                interp = self.interpreters.get(node_type, self.interpreters["default"])
-                carrier = self._flow_to_carrier(ctx.flow, node_type)
+                node_name, ctx = item
                 
-                interp.process(carrier)
-                current_anchor = interp.anchor
+                if node_name == "UGA":  # 종결 코돈
+                    log.info(f"[RuntimeAtor] Closure (UGA) Reached. Protein fully folded.")
+                    self.psi_queue.task_done()
+                    continue
 
-                if current_anchor.version > self.global_anchor.version:
-                    log.warning(f"[Step {step}] Singularity detected")
-                    # [버그 수정] new_anchor가 아닌 current_anchor로 동기화
-                    self.global_anchor = current_anchor 
-                    self._sync_interpreters()
-                    ctx.state["boundary"] = "inversion"
-                    if isinstance(ctx.flow.payload, dict):
-                        ctx.flow.payload["status"] = "delta:resolved"
+                # ==========================================================
+                # [WASM 감응 (Resonance)] 
+                # 파이썬은 더 이상 스스로 상태를 변경하지 않음. WASM에 붕괴를 요청.
+                # ==========================================================
+                payload = ctx.state.get("materialization_seed", {})
+                if not payload:
+                    payload = self._construct_transition_payload(node_name, ctx)
 
-                if ctx.state.get("boundary"):
-                    log.warning(f"[Step {step}] Topology fractured. Bypassing F_op and routing to NODE0.")
-                    next_steps = self._route_to_boundary(ctx)
-                else:
-                    log.info(f"[Step {step}] Executing F_op on Node: {node_name}")
-                    if hasattr(node, "bound_operator") and node.bound_operator is not None:
-                        operator = node.bound_operator
-                        log.info(f"  [DI] Injecting dynamic operator: {type(operator).__name__}")
-                    else:
-                        operator_type = p.sequence[1]
-                        operator = operator_type()
-                        log.info(f"  [DI] Injecting fallback operator: {type(operator).__name__}")
+                log.debug(f"[RuntimeAtor] Passing intent to WASM Kernel for Collapse...")
+                res_raw = await self.broker.execute("execute_transition", payload)
+                res = json.loads(res_raw)
 
-                    next_steps = await node.run(ctx.flow, operator, ctx)
+                if not res.get("is_authorized"):
+                    log.error(f"[RuntimeAtor] WASM Boundary rejected transition: {res.get('error_msg')}")
+                    # 감응: 거부당했을 때의 파열음(Fracture)을 처리
+                    await self._handle_fracture(ctx)
+                    self.psi_queue.task_done()
+                    continue
+
+                # ==========================================================
+                # [WASM의 흔적(Residue) 읽기 및 위상 텐션 체감]
+                # WASM이 수학적으로 계산한 잔여물(Residue)을 통해 현재 위상의 상태를 '체감'합니다.
+                # ==========================================================
+                final_root = res.get("final_root", {})
+                residues = res.get("all_residues", [])
                 
-                controlled_steps = self._control_flow(next_steps, ctx, node_name)
-                for nxt_node, nxt_ctx in controlled_steps:
-                    await self.psi_queue.put((nxt_node, nxt_ctx))
+                ctx.state["phase_root"] = final_root
+                
+                for residue in residues:
+                    kind = residue.get("kind")
+                    msg = residue.get("msg")
+                    
+                    if kind == "TRANSITION":
+                        log.info(f"  [Resonance] Topology Mutated: {msg}")
+                    elif kind == "ERROR":
+                        log.error(f"  [Resonance] Physics Error in WASM: {msg}")
+                    elif kind == "WARN":
+                        log.warning(f"  [Resonance] Tension Detected: {msg}")
 
+                # 텐션 평가 (WASM의 evaluate_tension 호출을 통한 수학적 단편화 체크)
+                tension_res_raw = await self.broker.execute("evaluate_tension", f"{node_name}|previous_state")
+                tension_res = json.loads(tension_res_raw)
+                
+                if tension_res.get("state") == "Fragmented":
+                    log.warning(f"[RuntimeAtor] 🌪️ High Topological Tension detected (Lambda: {tension_res.get('lambda')}). Triggering Auto-Alignment.")
+                    # 감응: 텐션이 너무 높으면 스스로 구조를 재정렬하는 로직 트리거
+                    
+                # 다음 노드로 유전자 체인 전달
+                next_node = self._determine_next_node(final_root, node_name)
+                await self.psi_queue.put((next_node, ctx))
                 self.psi_queue.task_done()
-            except asyncio.CancelledError:
-                log.info("[RuntimeAtor] Process loop cancelled.")
-                break
+
             except Exception as e:
-                log.error(f"Error during node execution: {e}", exc_info=True)
+                log.error(f"Error during RNA folding execution: {e}", exc_info=True)
                 self.psi_queue.task_done()
-
-    def _control_flow(self, next_steps, ctx, current_node_name: str):
-        controlled = []
-        current_node = self.nodes.get(current_node_name)
-        flow_rules = getattr(current_node, "spec", {}).get("flow", {}) if current_node else {}
-        for nxt_node, nxt_ctx in next_steps:
-            if nxt_node == "END":
-                controlled.append((nxt_node, nxt_ctx))
-                continue
-            if getattr(nxt_ctx, "state", {}).get("halt"):
-                continue
                 
-            # [개선 3] 엔진 큐가 아닌 로컬 큐 압력 확인
-            if self.psi_queue.qsize() > 1000:
-                log.warning("Backpressure triggered, dropping flow")
-                continue
-
-            if nxt_ctx.state.get("boundary"):
-                log.warning(f"[Boundary] Routing to Node0: {nxt_node}")
-                on_fracture_target = flow_rules.get("on_fracture")
-                if on_fracture_target:
-                    log.warning(f"[Boundary] Fracture intercepted by @flow rule. Routing to: {on_fracture_target}")
-                    nxt_ctx.state.pop("boundary", None) 
-                    return [(on_fracture_target, nxt_ctx)]
-                else:
-                    log.warning(f"[Boundary] No fracture rule. Routing to Node0: {nxt_node}")
-                    return self._route_to_boundary(nxt_ctx)
-
-            controlled.append((nxt_node, nxt_ctx))
-        return controlled
+    def _construct_transition_payload(self, node_name, ctx):
+        # 일반적인 런타임 진행 시 WASM에 던질 규격
+        return {
+            "intent_action": f"execute_{node_name}",
+            "intent_payload": {},
+            "evolution_ctx": {
+                "phase_root": ctx.state.get("phase_root", {"name": "root", "kind": "CORE", "children": {}}),
+                "external_rules": []
+            }
+        }
+        
+    def _determine_next_node(self, final_root, current_node):
+        # 최종 붕괴된 트리(WASM output)의 형상을 보고 다음 행선지를 결정
+        return "UGA" if current_node == "projection" else "evaluator" # (예시)
 
     def attach(self):
-        """[개선 4] 독립적인 생명주기 스레드 추적"""
         self._is_active = True
         controller_task = asyncio.create_task(self._process_queue_loop())
-        controller_task.set_name(f"AtorRuntime-Loop-{id(self)}")
         self._tasks.append(controller_task)
-        log.debug(f"[RuntimeAtor] Attached successfully. Tracking {len(self._tasks)} tasks.")
 
     async def detach(self):
-        """[개선 5] 잔여 태스크 소멸 및 우아한 종료 시퀀스"""
-        if not self._is_active:
-            return
-        log.info("[RuntimeAtor] Detach sequence initiated...")
         self._is_active = False
-        
         for task in self._tasks:
             if not task.done():
                 task.cancel()
-        
         await asyncio.gather(*self._tasks, return_exceptions=True)
         self._tasks.clear()
-        log.info("[RuntimeAtor] Detached and all internal tasks cleared.")

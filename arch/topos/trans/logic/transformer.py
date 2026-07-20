@@ -1,4 +1,5 @@
-# arch.topos.node.trans.logic.transformer
+# arch.topos.trans.logic.transformer
+## @lineage: arch.topos.node.trans.logic.transformer
 ## @lineage: arch.topos.bound.trans.logic.transformer
 ## @lineage: arch.bound.trans.logic.transformer
 ## @lineage: arch.topic.logic.transformer

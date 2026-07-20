@@ -1,8 +1,8 @@
-# phase.bind.resonance.feedback
+# phase.ator.resonance.feedback
+## @lineage: phase.bind.resonance.feedback
 ## @lineage: phase.resonance.feedback
 ## @lineage: swarm.resonance.feedback
 ## @lineage: hub.residue.resonance.feedback
-## @lineage: phase.ator.resonance.feedback
 import asyncio
 import inspect
 from pathlib import Path

@@ -1,5 +1,4 @@
 # arch.topos.node.gan
-## @lineage: phase.ator.node.gan
 """
 @desc: Base communication module handling message passing and hierarchical event routing (bubbling) 
        between GanNodes, each possessing an independent asynchronous lifecycle within the topos.
@@ -19,8 +18,6 @@ class Message:
         self.name = name
         self.bubble = bubble
         self.sender: Optional['GanNode'] = None
-        
-        # 동적 속성 바인딩 (예: Message("execute", events=[...]))
         for key, value in kwargs.items():
             setattr(self, key, value)
 

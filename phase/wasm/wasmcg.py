@@ -1,4 +1,4 @@
-# phase.runtime.wasm.wasmcg
+# phase.wasm.wasmcg
 import wasmtime
 from dataclasses import dataclass
 from enum import Enum

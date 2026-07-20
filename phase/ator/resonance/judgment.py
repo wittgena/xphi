@@ -1,8 +1,8 @@
-# phase.bind.resonance.judgment
+# phase.ator.resonance.judgment
+## @lineage: phase.bind.resonance.judgment
 ## @lineage: phase.resonance.judgment
 ## @lineage: swarm.resonance.judgment
 ## @lineage: hub.residue.resonance.judgment
-## @lineage: phase.ator.resonance.judgment
 ## @lineage: xphi.resonance.judgment
 ## @lineage: cognitive.resonance.judgment
 ## @lineage: cognitive.xphi.resonance.judgment
