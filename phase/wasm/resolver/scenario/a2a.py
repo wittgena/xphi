@@ -33,10 +33,6 @@ class A2AScenarios(SchemeRunner):
         self.report()
 
     def _generate_signature(self, commit_dict: dict) -> str:
-        """
-        [개선됨] 일반 json.dumps를 제거하고 StateAdapter의 RFC 8785 JCS 변환을 사용하여
-        Rust의 serde_jcs와 100% 동일한 결정론적 바이트 배열 및 해시를 보장합니다.
-        """
         canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
         commit_hash = hashlib.sha256(canonical_bytes).hexdigest()
         signature = self.private_key.sign(commit_hash.encode('utf-8'))
@@ -77,7 +73,6 @@ print(analyze_risk())
         log.info("\n--- Running Suite: Phase 4 - Cryptographic Ledger Inscription ---")
         await self._set_worker_policy("SYSTEM")
         
-        # [개선됨] 직접 딕셔너리를 만들지 않고 StateAdapter의 타입 세이프 빌더를 활용합니다.
         repo_commit = StateAdapter.build_repo_commit(
             nexus_id=907049,
             parent_nexus_id=0,
@@ -85,12 +80,16 @@ print(analyze_risk())
         )
         
         sig_hex = self._generate_signature(repo_commit)
+        
+        # [FIXED] Multi-sig & Dynamic ACL 구조에 맞추어 인자 변경 (1-of-1 서명)
         payload = StateAdapter.build_inscribe_payload(
             nexus_id=907049,
             parent_nexus_id=None,
             parent_commit_id="proof-hash-xyz",
-            pubkey=self.pubkey_hex,
-            signature=sig_hex
+            signers=[self.pubkey_hex],
+            signatures=[sig_hex],
+            threshold=1,
+            allowed_signers=[self.pubkey_hex]
         )
         
         await self._run_case("A2A: Inscribe Transaction for State Finality (Nexus ID)", "inscribe_actor", payload, expected_success=True)

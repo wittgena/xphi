@@ -1,5 +1,5 @@
 {
-    "generated_at": 1784563459.019775,
+    "generated_at": 1784581395.0111208,
     "methods": [
         "execute_code",
         "verify_packet",
@@ -16,9 +16,10 @@
         "seal_epoch",
         "verify_build_lineage",
         "verify_parity",
-        "execute_transition"
+        "execute_transition",
+        "configure_topology"
     ],
     "schema_version": "Draft-07",
     "parent_hash": "0000000",
-    "lineage_hash": "78fd90c85fd6ff8b15e3907e07f0d6d0eb54af8609d5566803c2d3acd910d69c"
+    "lineage_hash": "ba1785f766cc83c47ef5db67f65e86f17b7af55bc3a970aa6340ffe6457bd451"
 }

@@ -16,7 +16,7 @@ from watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.tracer")
 
-TIME_ROOT = resolve_path("sandbox")
+TIME_ROOT = resolve_path("time")
 DEST_WASM_FILE = TIME_ROOT / "dphi.wasm"
 REGISTRY_FILE = TIME_ROOT / "registry.json"
 STREAM_ID = "wasm_binary_lineage"

@@ -125,14 +125,12 @@ class EcosystemScenarios(SchemeRunner):
         """
         log.info("\n--- [State Engine] Phase 3: Epoch Sealing & Consensus ---")
         
-        # [개선됨] 직접 딕셔너리를 작성하지 않고 어댑터의 팩토리 메서드 체인을 활용
         parity_triplet = StateAdapter.build_parity_triplet(
             topos_id="1767225600000_w1_d1_0",
             phase_id=999999,
             nexus_id=907049
         )
         
-        # 1. 서명용 커밋 데이터 생성
         anchor_commit = StateAdapter.build_anchor_commit(
             parity=parity_triplet,
             parent_nexus_id=123456,
@@ -141,8 +139,6 @@ class EcosystemScenarios(SchemeRunner):
             cached_states={"tension_rate": "5.5%"}
         )
         sig_hex = self._generate_signature(anchor_commit)
-        
-        # 2. WASM 전달용 최종 FFI 페이로드 생성
         payload = StateAdapter.build_seal_epoch_payload(
             parity=parity_triplet,
             parent_nexus_id=123456,
@@ -150,8 +146,9 @@ class EcosystemScenarios(SchemeRunner):
             repos={"ledger": "hash_a", "registry": "hash_b"},
             cached_states={"tension_rate": "5.5%"},
             timestamp=time.time(),
-            pubkey=self.pubkey_hex,
-            signature=sig_hex
+            signers=[self.pubkey_hex],
+            signatures=[sig_hex],
+            threshold=1,
+            allowed_signers=[self.pubkey_hex]
         )
-        
         await self._run_case("Engine: Seal Epoch & Finalize State Transition", "seal_epoch", payload, expected_success=True)

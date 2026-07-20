@@ -11,107 +11,119 @@ from phase.wasm.resolver.adapter import StateAdapter
 log = get_emitter("scenario.ledger")
 
 class LedgerScenarios(SchemeRunner):
-    """@desc: Blockchain Consensus, Ed25519 Signatures, and Lineage Validation scenarios"""
+    """@desc: Multi-sig Consensus, Ed25519 Signatures, and Sybil Defense scenarios"""
     def __init__(self, broker):
         super().__init__(broker)
-        self.private_key = ed25519.Ed25519PrivateKey.generate()
-        self.public_key = self.private_key.public_key()
-        self.pubkey_hex = self.public_key.public_bytes(
-            encoding=serialization.Encoding.Raw,
-            format=serialization.PublicFormat.Raw
+        # [NEW] 3인의 위원회(Committee) 키 쌍 생성
+        self.committee_keys = [ed25519.Ed25519PrivateKey.generate() for _ in range(3)]
+        self.committee_pubkeys = [
+            k.public_key().public_bytes(
+                encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+            ).hex() for k in self.committee_keys
+        ]
+        # 악의적인 외부 공격자 키
+        self.rogue_key = ed25519.Ed25519PrivateKey.generate()
+        self.rogue_pubkey = self.rogue_key.public_key().public_bytes(
+            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
         ).hex()
 
     async def run_all(self):
-        log.info("\n=== [START] Executing Ledger & Blockchain Scenarios ===")
+        log.info("\n=== [START] Executing Ledger & Multi-sig Scenarios ===")
         await self._set_worker_policy("SYSTEM")
-        await self._test_inscribe_actor_authorized()
-        await self._test_inscribe_actor_tampered()
-        await self._test_seal_epoch_consensus()
+        await self._test_multisig_authorized()
+        await self._test_multisig_threshold_fail()
+        await self._test_multisig_sybil_attack()
+        await self._test_multisig_acl_rejection()
         
         self.report()
 
-    def _generate_signature(self, commit_dict: dict) -> str:
-        """
-        [개선됨] 구조체 선언 순서에 의존하던 기존 로직을 버리고, 
-        StateAdapter를 통해 Rust의 serde_jcs와 100% 동일한 RFC 8785 정렬 규격을 적용합니다.
-        """
+    def _generate_multisig(self, commit_dict: dict, signers_keys: list) -> list:
+        """JCS 변환 후 SHA256 해시에 대해 여러 키로 다중 서명 배열을 생성합니다."""
         canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
-        commit_hash = hashlib.sha256(canonical_bytes).hexdigest()
-        signature = self.private_key.sign(commit_hash.encode('utf-8'))
-        return signature.hex()
+        commit_hash = hashlib.sha256(canonical_bytes).hexdigest().encode('utf-8')
+        return [k.sign(commit_hash).hex() for k in signers_keys]
 
-    async def _test_inscribe_actor_authorized(self):
-        log.info("\n--- Running Suite: Authorized Actor Inscription (Nexus ID) ---")
-        
-        # [개선됨] 하드코딩 딕셔너리 대신 Adapter 빌더 사용
-        repo_commit = StateAdapter.build_repo_commit(
-            nexus_id=907049,
-            parent_nexus_id=0,
-            parent_commit_id="commit-0000"
-        )
-        
-        sig_hex = self._generate_signature(repo_commit)
-        
-        # [개선됨] WASM에 전달할 FFI Payload 빌드
-        payload = StateAdapter.build_inscribe_payload(
-            nexus_id=907049,
-            parent_nexus_id=None, # Option<u32>이므로 None 전달 -> Rust 내부에서 0으로 처리됨
-            parent_commit_id="commit-0000",
-            pubkey=self.pubkey_hex,
-            signature=sig_hex
-        )
-        await self._run_case("Ledger: Inscribe Actor with Valid Ed25519 Signature", "inscribe_actor", payload, expected_success=True)
-
-    async def _test_inscribe_actor_tampered(self):
-        log.info("\n--- Running Suite: Fraudulent Inscription (Tamper-Proof Guard) ---")
-        
-        # 원본 서명 객체 생성
-        repo_commit = StateAdapter.build_repo_commit(
-            nexus_id=907049,
-            parent_nexus_id=0,
-            parent_commit_id="commit-0000"
-        )
-        sig_hex = self._generate_signature(repo_commit)
-        
-        # 악의적으로 nexus_id를 위조한 Payload (서명은 원본 유지)
-        tampered_payload = StateAdapter.build_inscribe_payload(
-            nexus_id=999999, # HACKED
-            parent_nexus_id=None,
-            parent_commit_id="commit-0000",
-            pubkey=self.pubkey_hex,
-            signature=sig_hex
-        )
-        await self._run_case("Ledger: Reject Tampered Payload (UNAUTHORIZED_ACTOR)", "inscribe_actor", tampered_payload, expected_success=False)
-
-    async def _test_seal_epoch_consensus(self):
-        log.info("\n--- Running Suite: Epoch Sealing Consensus (Parity Triplet) ---")
-        
-        # [개선됨] 하드코딩 딕셔너리 대신 Adapter 빌더 사용
-        parity_triplet = StateAdapter.build_parity_triplet(
-            topos_id="1767225600000_w1_d1_0",
-            phase_id=999999,
-            nexus_id=907049
-        )
-        
-        # 서명을 위한 AnchorCommit 빌드
+    async def _test_multisig_authorized(self):
+        log.info("\n--- Running Suite: Authorized Multi-sig (2-of-3 Consensus) ---")
         anchor_commit = StateAdapter.build_anchor_commit(
-            parity=parity_triplet,
-            parent_nexus_id=123456,
-            parent_commit_id="state-xyz",
-            repos={"repoA": "hashA", "repoB": "hashB"},
-            cached_states={"key1": "val1"}
+            parity=StateAdapter.build_parity_triplet("test_topos", 1, 999),
+            parent_nexus_id=0, parent_commit_id="state-0",
+            repos={"repoA": "hashA"}, cached_states={}
         )
-        sig_hex = self._generate_signature(anchor_commit)
         
-        # WASM에 전달할 최종 FFI Payload 빌드
+        # 3명 중 2명만 서명 (2-of-3)
+        active_keys = self.committee_keys[:2]
+        active_pubs = self.committee_pubkeys[:2]
+        signatures = self._generate_multisig(anchor_commit, active_keys)
+        
         payload = StateAdapter.build_seal_epoch_payload(
-            parity=parity_triplet,
-            parent_nexus_id=123456,
-            self_parent_state="state-xyz",
-            repos={"repoA": "hashA", "repoB": "hashB"},
-            cached_states={"key1": "val1"},
-            timestamp=time.time(),
-            pubkey=self.pubkey_hex,
-            signature=sig_hex
+            parity=anchor_commit["parity"],
+            parent_nexus_id=0, self_parent_state="state-0",
+            repos={"repoA": "hashA"}, cached_states={}, timestamp=time.time(),
+            signers=active_pubs, signatures=signatures, threshold=2,
+            allowed_signers=self.committee_pubkeys  # 전체 위원회 명단 주입
         )
-        await self._run_case("Ledger: Seal Epoch with Proposer Signature", "seal_epoch", payload, expected_success=True)
+        await self._run_case("Ledger: 2-of-3 Valid Multi-sig", "seal_epoch", payload, expected_success=True)
+
+    async def _test_multisig_threshold_fail(self):
+        log.info("\n--- Running Suite: Insufficient Signatures ---")
+        anchor_commit = StateAdapter.build_anchor_commit(
+            parity=StateAdapter.build_parity_triplet("test_topos", 1, 999),
+            parent_nexus_id=0, parent_commit_id="state-0",
+            repos={"repoA": "hashA"}, cached_states={}
+        )
+        
+        # 1명만 서명했는데 threshold는 2일 경우
+        signatures = self._generate_multisig(anchor_commit, [self.committee_keys[0]])
+        
+        payload = StateAdapter.build_seal_epoch_payload(
+            parity=anchor_commit["parity"],
+            parent_nexus_id=0, self_parent_state="state-0",
+            repos={"repoA": "hashA"}, cached_states={}, timestamp=time.time(),
+            signers=[self.committee_pubkeys[0]], signatures=signatures, threshold=2,
+            allowed_signers=self.committee_pubkeys
+        )
+        await self._run_case("Ledger: Reject Insufficient Threshold", "seal_epoch", payload, expected_success=False)
+
+    async def _test_multisig_sybil_attack(self):
+        log.info("\n--- Running Suite: Sybil Attack Defense (Duplicate Keys) ---")
+        anchor_commit = StateAdapter.build_anchor_commit(
+            parity=StateAdapter.build_parity_triplet("test_topos", 1, 999),
+            parent_nexus_id=0, parent_commit_id="state-0",
+            repos={"repoA": "hashA"}, cached_states={}
+        )
+        
+        # [공격] 동일한 사람이 2번 서명해서 threshold=2를 우회하려 시도
+        signatures = self._generate_multisig(anchor_commit, [self.committee_keys[0], self.committee_keys[0]])
+        
+        payload = StateAdapter.build_seal_epoch_payload(
+            parity=anchor_commit["parity"],
+            parent_nexus_id=0, self_parent_state="state-0",
+            repos={"repoA": "hashA"}, cached_states={}, timestamp=time.time(),
+            signers=[self.committee_pubkeys[0], self.committee_pubkeys[0]], # 중복 키
+            signatures=signatures, threshold=2,
+            allowed_signers=self.committee_pubkeys
+        )
+        await self._run_case("Ledger: Reject Sybil Attack (Duplicate Signer)", "seal_epoch", payload, expected_success=False)
+
+    async def _test_multisig_acl_rejection(self):
+        log.info("\n--- Running Suite: Dynamic ACL Filtering ---")
+        anchor_commit = StateAdapter.build_anchor_commit(
+            parity=StateAdapter.build_parity_triplet("test_topos", 1, 999),
+            parent_nexus_id=0, parent_commit_id="state-0",
+            repos={"repoA": "hashA"}, cached_states={}
+        )
+        
+        # 1명은 정상 위원, 1명은 외부 공격자 (총 2명 서명으로 threshold 2 시도)
+        active_keys = [self.committee_keys[0], self.rogue_key]
+        active_pubs = [self.committee_pubkeys[0], self.rogue_pubkey]
+        signatures = self._generate_multisig(anchor_commit, active_keys)
+        
+        payload = StateAdapter.build_seal_epoch_payload(
+            parity=anchor_commit["parity"],
+            parent_nexus_id=0, self_parent_state="state-0",
+            repos={"repoA": "hashA"}, cached_states={}, timestamp=time.time(),
+            signers=active_pubs, signatures=signatures, threshold=2,
+            allowed_signers=self.committee_pubkeys # rogue_pubkey는 여기에 없음!
+        )
+        await self._run_case("Ledger: Reject Unauthorized Signer via ACL", "seal_epoch", payload, expected_success=False)

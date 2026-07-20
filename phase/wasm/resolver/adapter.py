@@ -18,6 +18,22 @@ class StateAdapter:
         if val is not None and not (0 <= val <= 4294967295):
             raise ValueError(f"[FFI Type Error] '{name}' must be a uint32, got {val}")
 
+    # -------------------------------------------------------------------------
+    # [NEW] Topology Identity FFI (Ref: phase.bind.resolver.resolve_identity)
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def build_configure_topology_payload(manifold_id: int, vertex_id: int) -> dict:
+        """@target: Rust `ConfigureTopologyPayload`"""
+        StateAdapter._assert_uint32(manifold_id, "manifold_id")
+        StateAdapter._assert_uint32(vertex_id, "vertex_id")
+        return {
+            "manifold_id": manifold_id,
+            "vertex_id": vertex_id
+        }
+
+    # -------------------------------------------------------------------------
+    # Parity & Context Builders
+    # -------------------------------------------------------------------------
     @staticmethod
     def build_topos_context(timestamp: int, injected_anchor: int = None, injected_tick: int = None) -> dict:
         """@target: Rust `ToposContext` (Influx Context)"""
@@ -39,23 +55,14 @@ class StateAdapter:
             "nexus_id": nexus_id
         }
 
-    @staticmethod
-    def build_core_node(name: str, content: str, children: dict = None) -> dict:
-        return {"name": name, "kind": "CORE", "content": content, "ref_target": None, "children": children or {}}
-
-    @staticmethod
-    def build_symlink_node(name: str, ref_target: str, children: dict = None) -> dict:
-        return {"name": name, "kind": "SYMLINK", "content": None, "ref_target": ref_target, "children": children or {}}
-
+    # -------------------------------------------------------------------------
+    # Ledger Struct Builders (For Canonical Hashing)
+    # -------------------------------------------------------------------------
     @staticmethod
     def build_repo_commit(nexus_id: int, parent_nexus_id: int, parent_commit_id: str) -> dict:
-        """
-        @target: Rust `RepoCommit` struct
-        @usage: Used to generate canonical bytes for `inscribe_actor` signatures.
-        """
+        """@target: Rust `RepoCommit` struct"""
         StateAdapter._assert_uint32(nexus_id, "nexus_id")
         StateAdapter._assert_uint32(parent_nexus_id, "parent_nexus_id")
-        
         return {
             "nexus_id": nexus_id,
             "parent_nexus_id": parent_nexus_id or 0,
@@ -64,13 +71,9 @@ class StateAdapter:
 
     @staticmethod
     def build_anchor_commit(parity: dict, parent_nexus_id: int, parent_commit_id: str, repos: dict, cached_states: dict = None) -> dict:
-        """
-        @target: Rust `AnchorCommit` struct
-        @usage: Used to generate canonical bytes for `seal_epoch` signatures.
-        """
+        """@target: Rust `AnchorCommit` struct"""
         StateAdapter._assert_uint32(parent_nexus_id, "parent_nexus_id")
         
-        # Rust의 BTreeMap<String, String> 호환을 위해 값들을 문자열로 강제 변환
         safe_repos = {str(k): str(v) for k, v in (repos or {}).items()}
         safe_cached_states = {str(k): str(v) for k, v in (cached_states or {}).items()}
 
@@ -82,26 +85,51 @@ class StateAdapter:
             "cached_states": safe_cached_states
         }
 
+    # -------------------------------------------------------------------------
+    # FFI Entrypoint Payloads (Multi-Sig & Dynamic ACL)
+    # -------------------------------------------------------------------------
     @staticmethod
-    def build_inscribe_payload(nexus_id: int, parent_nexus_id: int, parent_commit_id: str, pubkey: str, signature: str) -> dict:
+    def build_inscribe_payload(
+        nexus_id: int, 
+        parent_nexus_id: int, 
+        parent_commit_id: str, 
+        signers: list, 
+        signatures: list, 
+        threshold: int, 
+        allowed_signers: list = None
+    ) -> dict:
         """@target: Rust `InscribePayload` (Membrane Entrypoint)"""
         StateAdapter._assert_uint32(nexus_id, "nexus_id")
         StateAdapter._assert_uint32(parent_nexus_id, "parent_nexus_id")
+        StateAdapter._assert_uint32(threshold, "threshold")
         
         return {
             "nexus_id": nexus_id,
             "parent_nexus_id": parent_nexus_id,
             "parent_commit_id": parent_commit_id,
-            "pubkey": pubkey,
-            "signature": signature
+            "signers": signers,
+            "signatures": signatures,
+            "threshold": threshold,
+            "allowed_signers": allowed_signers
         }
 
     @staticmethod
-    def build_seal_epoch_payload(parity: dict, parent_nexus_id: int, self_parent_state: str, repos: dict, cached_states: dict, timestamp: float, pubkey: str, signature: str) -> dict:
+    def build_seal_epoch_payload(
+        parity: dict, 
+        parent_nexus_id: int, 
+        self_parent_state: str, 
+        repos: dict, 
+        cached_states: dict, 
+        timestamp: float, 
+        signers: list, 
+        signatures: list, 
+        threshold: int, 
+        allowed_signers: list = None
+    ) -> dict:
         """@target: Rust `SealEpochPayload` (Membrane Entrypoint)"""
         StateAdapter._assert_uint32(parent_nexus_id, "parent_nexus_id")
+        StateAdapter._assert_uint32(threshold, "threshold")
         
-        # Rust Map 직렬화 에러 방지
         safe_repos = {str(k): str(v) for k, v in (repos or {}).items()}
         safe_cached_states = {str(k): str(v) for k, v in (cached_states or {}).items()}
 
@@ -112,8 +140,10 @@ class StateAdapter:
             "repos": safe_repos,
             "cached_states": safe_cached_states,
             "timestamp": timestamp,
-            "pubkey": pubkey,
-            "signature": signature
+            "signers": signers,
+            "signatures": signatures,
+            "threshold": threshold,
+            "allowed_signers": allowed_signers
         }
 
     @staticmethod
@@ -171,3 +201,26 @@ class StateAdapter:
             for repo_name, repo_hash in repos_dict.items()
         }
         return StateAdapter.build_core_node("provenance_root", commit_hash, children)
+    
+    """DAG Node Builders"""
+    @staticmethod
+    def build_core_node(name: str, content: str, children: dict = None) -> dict:
+        """@target: Rust `StateNode` (CORE)"""
+        return {
+            "name": name, 
+            "kind": "CORE", 
+            "content": content, 
+            "ref_target": None, 
+            "children": children or {}
+        }
+
+    @staticmethod
+    def build_symlink_node(name: str, ref_target: str, children: dict = None) -> dict:
+        """@target: Rust `StateNode` (SYMLINK)"""
+        return {
+            "name": name, 
+            "kind": "SYMLINK", 
+            "content": None, 
+            "ref_target": ref_target, 
+            "children": children or {}
+        }

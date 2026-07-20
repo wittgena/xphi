@@ -12,29 +12,33 @@ from phase.wasm.resolver.adapter import StateAdapter
 log = get_emitter("scenario.anchor")
 
 class TrustlessEpochBase(SchemeRunner):
+    """@desc: Base scenario executor for the 5-Flow Epoch Lifecycle with Multi-sig support."""
     def __init__(self, broker, scenario_name: str):
         super().__init__(broker)
         self.scenario_name = scenario_name
-        self.master_key = ed25519.Ed25519PrivateKey.generate()
-        self.master_pubhex = self.master_key.public_key().public_bytes(
-            encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
-        ).hex()
+        
+        # [NEW] Generate a 3-member committee for dynamic ACL & multi-signature
+        self.committee_keys = [ed25519.Ed25519PrivateKey.generate() for _ in range(3)]
+        self.committee_pubs = [
+            k.public_key().public_bytes(
+                encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
+            ).hex() for k in self.committee_keys
+        ]
 
-    def _sign_payload(self, private_key, commit_dict: dict) -> str:
-        """
-        [개선됨] 일반 json.dumps를 제거하고 StateAdapter의 RFC 8785 JCS 변환을 사용하여
-        Rust의 serde_jcs와 100% 동일한 결정론적 바이트 배열 및 해시를 보장합니다.
-        """
+    def _sign_multisig(self, signers: list, commit_dict: dict) -> list:
+        """Generates an array of Ed25519 signatures from JCS deterministic hash."""
         canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
-        commit_hash = hashlib.sha256(canonical_bytes).hexdigest()
-        return private_key.sign(commit_hash.encode('utf-8')).hex()
+        commit_hash = hashlib.sha256(canonical_bytes).hexdigest().encode('utf-8')
+        return [k.sign(commit_hash).hex() for k in signers]
 
     async def execute_anchor_lifecycle(self, topo: int, press: int, rupture: bool):
         log.info(f"\n=== [Lifecycle START] {self.scenario_name} ===")
         
+        # ---------------------------------------------------------
+        # [Flow 1] Initialization: Requesting Parity Triplet
+        # ---------------------------------------------------------
         log.info(f"--- [Flow 1] Initialization: Requesting Parity Triplet ---")
         current_ts = int(time.time() * 1000)
-        # 단순 FFI 요청이므로 오버엔지니어링 방지를 위해 dict 유지
         init_req = {"ts": current_ts, "topo": topo, "press": press, "rupture": rupture, "injected_tick": None}
         
         res = await self.broker.invoke("init_epoch", json.dumps(init_req))
@@ -46,9 +50,15 @@ class TrustlessEpochBase(SchemeRunner):
         parity_triplet = json.loads(res.output)
         log.info(f"  └─ Generated Nexus ID: {parity_triplet.get('nexus_id')}")
         
+        # ---------------------------------------------------------
+        # [Flow 2] Inscription: Gathering Local Node States
+        # ---------------------------------------------------------
         log.info(f"--- [Flow 2] Inscription: Gathering Local Node States ---")
         repos = await self.hook_inscribe_nodes(parity_triplet)
         
+        # ---------------------------------------------------------
+        # [Flow 3] Sealing: Cryptographic Epoch Alignment (Multi-sig)
+        # ---------------------------------------------------------
         log.info(f"--- [Flow 3] Sealing: Cryptographic Epoch Alignment ---")
         seal_payload = await self.hook_seal_epoch(parity_triplet, repos, current_ts)
         
@@ -59,19 +69,17 @@ class TrustlessEpochBase(SchemeRunner):
             return
             
         sealed_data = json.loads(seal_res.output)
-        log.info("  └─ Epoch Sealed Successfully.")
+        log.info("  └─ Epoch Sealed Successfully via Multi-sig Consensus.")
 
+        # ---------------------------------------------------------
+        # [Flow 4] Transition: Validating & Applying State Evolution
+        # ---------------------------------------------------------
         log.info(f"--- [Flow 4] Transition: Validating & Applying State Evolution ---")
         anchor_result = sealed_data.get("anchor_result", sealed_data)
         commit_hash = anchor_result.get("commit_hash", "mock_fallback_hash_0x99")
         
         state_node_struct = await self.hook_build_phase_root(commit_hash, repos)
-        
-        # [개선됨] 스키마에 정의되지 않은 임의 필드를 제거하고 어댑터를 통해 안전한 컨텍스트 생성
-        evo_ctx = StateAdapter.build_evolution_context(
-            phase_root=state_node_struct,
-            external_rules=[]
-        )
+        evo_ctx = StateAdapter.build_evolution_context(phase_root=state_node_struct, external_rules=[])
         transition_payload = StateAdapter.build_transition_payload(
             intent_action="commit_era",
             intent_payload=anchor_result,
@@ -80,9 +88,11 @@ class TrustlessEpochBase(SchemeRunner):
         
         await self._run_case(f"{self.scenario_name} (Flow 4): Execute Transition", "execute_transition", transition_payload, expected_success=True)
 
+        # ---------------------------------------------------------
+        # [Flow 5] Finality: Zero-Trust Parity & Recovery Verification
+        # ---------------------------------------------------------
         log.info(f"--- [Flow 5] Finality: Zero-Trust Parity & Recovery Verification ---")
         t_id_low32 = int(parity_triplet["topos_id"].split('_')[-1]) if '_' in parity_triplet["topos_id"] else 0
-        # 단순 검증 요청이므로 dict 유지
         parity_req = {
             "topos_id_low32": t_id_low32,
             "phase_id": parity_triplet["phase_id"],
@@ -90,94 +100,101 @@ class TrustlessEpochBase(SchemeRunner):
         }
         await self._run_case(f"{self.scenario_name} (Flow 5): Verify Parity Completeness", "verify_parity", parity_req, expected_success=True)
 
+    # Subclass hooks
     async def hook_inscribe_nodes(self, parity_triplet: dict) -> dict: raise NotImplementedError
     async def hook_seal_epoch(self, parity_triplet: dict, repos: dict, timestamp: int) -> dict: raise NotImplementedError
     async def hook_build_phase_root(self, commit_hash: str, repos: dict) -> dict: raise NotImplementedError
 
+
 class SwarmConsensusScenario(TrustlessEpochBase):
     def __init__(self, broker):
-        super().__init__(broker, "AI Agent Swarm Consensus")
+        super().__init__(broker, "AI Agent Swarm Consensus (M-of-N)")
         
     async def hook_inscribe_nodes(self, parity_triplet: dict) -> dict:
         nexus_id = parity_triplet["nexus_id"]
         agents = {"CodeAgent": "hash-code-v1", "SecurityAgent": "hash-sec-v1"}
+        
         for agent_name, state_hash in agents.items():
+            # Individual node inscriptions require 1-of-1 self-signature
             agent_key = ed25519.Ed25519PrivateKey.generate()
             pubhex = agent_key.public_key().public_bytes(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw).hex()
             
-            # [개선됨] 하드코딩 방식을 버리고 StateAdapter 빌더 적용
-            repo_commit = StateAdapter.build_repo_commit(
-                nexus_id=nexus_id, 
-                parent_nexus_id=0, 
-                parent_commit_id=state_hash
-            )
+            repo_commit = StateAdapter.build_repo_commit(nexus_id=nexus_id, parent_nexus_id=0, parent_commit_id=state_hash)
             
             payload = StateAdapter.build_inscribe_payload(
-                nexus_id=nexus_id,
-                parent_nexus_id=None,
-                parent_commit_id=state_hash,
-                pubkey=pubhex,
-                signature=self._sign_payload(agent_key, repo_commit)
+                nexus_id=nexus_id, parent_nexus_id=0, parent_commit_id=state_hash,
+                signers=[pubhex], 
+                signatures=self._sign_multisig([agent_key], repo_commit),
+                threshold=1,
+                allowed_signers=[pubhex]
             )
             await self._run_case(f"Swarm: Inscribe {agent_name}", "inscribe_actor", payload, expected_success=True)
+            
         return agents
 
     async def hook_seal_epoch(self, parity_triplet: dict, repos: dict, timestamp: int) -> dict:
-        # [개선됨] 구버전의 sort_dict_recursive를 완전히 제거하고 StateAdapter로 생성
         anchor_commit = StateAdapter.build_anchor_commit(
-            parity=parity_triplet, 
-            parent_nexus_id=0, 
-            parent_commit_id="swarm-base",
-            repos=repos, 
-            cached_states={}
+            parity=parity_triplet, parent_nexus_id=0, parent_commit_id="swarm-base",
+            repos=repos, cached_states={}
         )
-        sig_hex = self._sign_payload(self.master_key, anchor_commit)
+        
+        # 3-of-3 Full Committee Consensus
+        signatures = self._sign_multisig(self.committee_keys, anchor_commit)
         
         return StateAdapter.build_seal_epoch_payload(
-            parity=parity_triplet,
-            parent_nexus_id=None, # Option<u32> for FFI
-            self_parent_state="swarm-base",
-            repos=repos,
-            cached_states={},
-            timestamp=timestamp,
-            pubkey=self.master_pubhex,
-            signature=sig_hex
+            parity=parity_triplet, parent_nexus_id=0, self_parent_state="swarm-base",
+            repos=repos, cached_states={}, timestamp=timestamp,
+            signers=self.committee_pubs, signatures=signatures, threshold=3,
+            allowed_signers=self.committee_pubs
         )
 
     async def hook_build_phase_root(self, commit_hash: str, repos: dict) -> dict:
         return StateAdapter.adapt_swarm_to_phase_root(commit_hash, agents_dict=repos)
 
+
 class ProvenanceAlignmentScenario(TrustlessEpochBase):
     def __init__(self, broker):
-        super().__init__(broker, "Cross-Repo Provenance Alignment")
+        super().__init__(broker, "Cross-Repo Provenance Alignment (M-of-N)")
         
     async def hook_inscribe_nodes(self, parity_triplet: dict) -> dict:
-        return {
-            "ml_training_code_repo": "git-hash-code-77",
-            "model_weights_repo": "git-hash-weights-99",
-            "curated_dataset_repo": "git-hash-data-88"
+        nexus_id = parity_triplet["nexus_id"]
+        repos = {
+            "ml_training_code": "git-hash-code-77",
+            "model_weights": "git-hash-weights-99"
         }
+        
+        for repo_name, state_hash in repos.items():
+            agent_key = ed25519.Ed25519PrivateKey.generate()
+            pubhex = agent_key.public_key().public_bytes(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw).hex()
+            repo_commit = StateAdapter.build_repo_commit(nexus_id=nexus_id, parent_nexus_id=907040, parent_commit_id=state_hash)
+            
+            payload = StateAdapter.build_inscribe_payload(
+                nexus_id=nexus_id, parent_nexus_id=907040, parent_commit_id=state_hash,
+                signers=[pubhex], 
+                signatures=self._sign_multisig([agent_key], repo_commit),
+                threshold=1,
+                allowed_signers=[pubhex]
+            )
+            await self._run_case(f"Provenance: Inscribe {repo_name}", "inscribe_actor", payload, expected_success=True)
+            
+        return repos
 
     async def hook_seal_epoch(self, parity_triplet: dict, repos: dict, timestamp: int) -> dict:
-        # [개선됨] 구버전의 sort_dict_recursive를 완전히 제거하고 StateAdapter로 생성
         anchor_commit = StateAdapter.build_anchor_commit(
-            parity=parity_triplet, 
-            parent_nexus_id=907040, 
-            parent_commit_id="infra-state-v1",
-            repos=repos, 
-            cached_states={"hyperparameters_repo": "git-hash-hyper-old"}
+            parity=parity_triplet, parent_nexus_id=907040, parent_commit_id="infra-state-v1",
+            repos=repos, cached_states={"hyperparameters": "git-hash-hyper-old"}
         )
-        sig_hex = self._sign_payload(self.master_key, anchor_commit)
+        
+        # 2-of-3 Partial Committee Consensus (Dynamic Thresholding)
+        active_keys = self.committee_keys[:2]
+        active_pubs = self.committee_pubs[:2]
+        signatures = self._sign_multisig(active_keys, anchor_commit)
         
         return StateAdapter.build_seal_epoch_payload(
-            parity=parity_triplet,
-            parent_nexus_id=907040,
-            self_parent_state="infra-state-v1",
-            repos=repos,
-            cached_states={"hyperparameters_repo": "git-hash-hyper-old"},
-            timestamp=timestamp,
-            pubkey=self.master_pubhex,
-            signature=sig_hex
+            parity=parity_triplet, parent_nexus_id=907040, self_parent_state="infra-state-v1",
+            repos=repos, cached_states={"hyperparameters": "git-hash-hyper-old"}, timestamp=timestamp,
+            signers=active_pubs, signatures=signatures, threshold=2,
+            allowed_signers=self.committee_pubs
         )
 
     async def hook_build_phase_root(self, commit_hash: str, repos: dict) -> dict:
