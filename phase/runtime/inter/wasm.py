@@ -29,7 +29,7 @@ log = get_emitter(MODULE_NAMESPACE, phase="SYSTEM")
 class WasmInterpreter:
     def __init__(
         self,
-        wasm_module_path: str = "theoria.wasm",
+        wasm_module_path: str = "dphi.wasm",
         enable_read_paths: list[PathLike | str] | None = None,
         enable_write_paths: list[PathLike | str] | None = None,
         enable_env_vars: list[str] | None = None,

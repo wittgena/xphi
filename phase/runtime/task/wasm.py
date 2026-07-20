@@ -20,7 +20,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         1. Execute Plane: Stream(XREADGROUP) -> 스레드 위임 -> Interpreter -> XACK
         2. Control Plane: Pub/Sub -> 정책 동기화 (독립 태스크로 병렬 동작)
     """
-    def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "theoria.wasm"):
+    def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
         super().__init__("WasmTasker")
         self.tunnel = tunnel
         self.supervisor = supervisor
