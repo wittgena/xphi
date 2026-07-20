@@ -87,10 +87,9 @@ async def anchor_git_commit_async(
     
     # [CHANGED] json.dumps(..., sort_keys=True)의 불완전성을 제거하고 Canonical JSON 직렬화 적용
     seal_payload_str = StateAdapter.to_canonical_bytes(seal_payload).decode('utf-8')
-    seal_res = await broker.invoke("SealEpoch", seal_payload_str)
+    seal_res = await broker.invoke("seal_epoch", seal_payload_str)
     
     if not seal_res.success:
-        # [FIXED] WASM 통신 에러 처리 규격화 (.message 제거)
         log.critical(f"## Epoch Seal Rejected by WASM: {str(seal_res.error)}")
         return
 
