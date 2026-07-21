@@ -45,7 +45,7 @@ def _get_around_context() -> tuple[str, dict]:
         import bind.around as around_mod
     except ImportError:
         try:
-            import anchor.bind.around as around_mod
+            import phase.bind.around as around_mod
         except ImportError as e:
             raise RuntimeError(f"Critical dependency missing: 'around' module not found. ({e})")
     
