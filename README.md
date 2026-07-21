@@ -1,4 +1,5 @@
-# readme
+# README
+@lineage: readme
 @about: The Absolute Microkernel & Zero-Trust State Engine (Layer-0)
 @generator: gemini-3.1-pro
 @topos: Core Holographic Manifold & Deterministic Axioms

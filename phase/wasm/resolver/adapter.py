@@ -31,9 +31,7 @@ class StateAdapter:
             "vertex_id": vertex_id
         }
 
-    # -------------------------------------------------------------------------
-    # Parity & Context Builders
-    # -------------------------------------------------------------------------
+    """Parity & Context Builders"""
     @staticmethod
     def build_topos_context(timestamp: int, injected_anchor: int = None, injected_tick: int = None) -> dict:
         """@target: Rust `ToposContext` (Influx Context)"""
@@ -55,9 +53,7 @@ class StateAdapter:
             "nexus_id": nexus_id
         }
 
-    # -------------------------------------------------------------------------
-    # Ledger Struct Builders (For Canonical Hashing)
-    # -------------------------------------------------------------------------
+    """Ledger Struct Builders For Canonical Hashing"""
     @staticmethod
     def build_repo_commit(nexus_id: int, parent_nexus_id: int, parent_commit_id: str) -> dict:
         """@target: Rust `RepoCommit` struct"""
@@ -85,9 +81,7 @@ class StateAdapter:
             "cached_states": safe_cached_states
         }
 
-    # -------------------------------------------------------------------------
-    # FFI Entrypoint Payloads (Multi-Sig & Dynamic ACL)
-    # -------------------------------------------------------------------------
+    """FFI Entrypoint Payloads (Multi-Sig & Dynamic ACL)"""
     @staticmethod
     def build_inscribe_payload(
         nexus_id: int, 

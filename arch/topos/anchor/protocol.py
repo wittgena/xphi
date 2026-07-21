@@ -1,8 +1,14 @@
 # arch.topos.anchor.protocol
+"""
+@desc: 
+- Protocol for orchestrating Era-based Alignment cycles, 
+- synchronizing local repository states with the WASM engine, 
+- and generating cryptographically sealed epochs.
+"""
 import json
 import time
 import asyncio
-from typing import List
+from typing import List, Dict, Any
 
 from arch.crypto.signer import NodeSigner
 from arch.topos.anchor.node import ActorNode, EpochManager
@@ -18,15 +24,26 @@ async def anchor_git_commit_async(
     broker: WasmBroker, 
     message: str, 
     apply: bool = False
-):
-    """@protocol: WasmBroker를 경유하여 비동기로 Era-based Alignment 수행 및 암호학적 서명 검증"""
-    log.info(f"## Era-based Alignment Cycle Initiated ({'APPLY' if apply else 'DRY-RUN'})")
+) -> None:
+    """
+    @protocol: Era-based Alignment (Asynchronous)
+    @desc: Executes the alignment cycle across multiple topological nodes. Coordinates 
+           physical state commits and validates them through the WASM FFI layer using 
+           deterministic canonical hashing and Ed25519 signatures.
+
+    Args:
+        repos: List of ActorNodes representing the target repositories to align.
+        anchor: The EpochManager responsible for global state tracking.
+        broker: The WasmBroker instance for FFI communication.
+        message: The commit message for the alignment cycle.
+        apply: If True, physically persists the state. If False, performs a dry-run.
+    """
+    mode = "APPLY" if apply else "DRY-RUN"
+    log.info(f"## Era-based Alignment Cycle Initiated ({mode})")
     current_ts = int(time.time() * 1000)
 
-    # ---------------------------------------------------------
-    # [Phase 1] Parity Triplet 일괄 발급 (WASM 통신)
-    # ---------------------------------------------------------
-    init_req = {
+    ## @phase.1: Parity Triplet Generation (WASM FFI Communication)
+    init_req: Dict[str, Any] = {
         "ts": current_ts,
         "topo": 1,
         "press": len(repos),
@@ -46,17 +63,16 @@ async def anchor_git_commit_async(
     nexus_id = parity.get("nexus_id")
     log.info(f"[Protocol] Nexus ID Generated: {nexus_id}")
 
-    # ---------------------------------------------------------
-    # [Phase 2] 물리적 커밋 (Thread Offloading)
-    # ---------------------------------------------------------
+    ## @phase.2: Physical Commits (Thread Offloading)
     history = anchor.load_history()
     last_snapshot = history[-1] if history else None
     parent_nexus_id = last_snapshot.get("parity", {}).get("nexus_id", 0) if last_snapshot else 0
 
-    current_aligned_states = {}
+    current_aligned_states: Dict[str, str] = {}
+    
+    ## Offload physical Git operations to background threads to prevent blocking the async event loop
     for r in repos:
         parent_state = anchor.resolve(r.name)
-        # Git Commit(동기)은 블로킹을 방지하기 위해 백그라운드 스레드에서 수행
         commit_hash = await asyncio.to_thread(
             r.inscribe,
             nexus_id,
@@ -67,20 +83,18 @@ async def anchor_git_commit_async(
         )
         current_aligned_states[r.name] = commit_hash
 
-    # ---------------------------------------------------------
-    # [Phase 3] Epoch Seal (Cryptographic Signature & WASM)
-    # ---------------------------------------------------------
-    cached_states = {}
+    ## @phase.3: Epoch Sealing (Cryptographic Signatures & WASM)
+    cached_states: Dict[str, str] = {}
     if last_snapshot:
         prev_total = {**last_snapshot.get("repos", {}), **last_snapshot.get("cached_states", {})}
         for name, last_hash in prev_total.items():
             if name not in current_aligned_states and name != anchor.name:
                 cached_states[name] = last_hash
 
-    # 싱글톤 Identity Manager 획득 (ENV 또는 SSH 키 자동 로드)
+    ## Retrieve Singleton Identity Manager (auto-loads ENV or SSH keys)
     signer = NodeSigner.get_instance()
 
-    # 1. 서명 검증을 위한 원본 데이터(AnchorCommit) 조립
+    ## @phase.3.1: Construct the raw AnchorCommit data for signature verification
     anchor_commit_dict = StateAdapter.build_anchor_commit(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
@@ -89,13 +103,13 @@ async def anchor_git_commit_async(
         cached_states=cached_states
     )
     
-    # 2. Canonical JSON (JCS) 바이트로 변환 (결정론적 해싱 보장)
+    ## @phase.3.2: Convert to Canonical JSON (JCS) bytes to guarantee deterministic hashing
     canonical_bytes = StateAdapter.to_canonical_bytes(anchor_commit_dict)
     
-    # 3. 파이썬 내부에서 SHA256 해싱 후 Ed25519 서명 수행
+    ## @phase.3.3: Execute Python-side SHA256 hashing followed by Ed25519 signature
     signature_hex = signer.sign_anchor_commit(canonical_bytes)
 
-    # 4. WASM 엔진(FFI)용 최종 페이로드 빌드
+    ## @phase.3.4: Build the final payload for the WASM engine (Applying Multi-Sig schema fix)
     seal_payload = StateAdapter.build_seal_epoch_payload(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
@@ -103,8 +117,9 @@ async def anchor_git_commit_async(
         repos=current_aligned_states,
         cached_states=cached_states,
         timestamp=float(current_ts),
-        pubkey=signer.pubkey_hex,       # 생성된 공개키 주입
-        signature=signature_hex         # 서명 해시 주입
+        signers=[signer.pubkey_hex],     # Multi-Sig array schema applied
+        signatures=[signature_hex],      # Multi-Sig array schema applied
+        threshold=1                      # Single active signer threshold
     )
 
     log.info("[Protocol] Sealing Epoch cryptographically...")
@@ -117,23 +132,23 @@ async def anchor_git_commit_async(
             log.warning("Physical commits were made, but WASM seal failed. Requires subsequent sync to recover.")
         return
 
-    # ---------------------------------------------------------
-    # [Phase 4] 상태 확정 및 레거시 레지스트리 갱신
-    # ---------------------------------------------------------
+    ## @phase.4: State Finalization & Store Registration
     if apply:
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")
         
+        ## Inline import to prevent circular dependencies at module initialization
         from watcher.kernel.store import KernelCommit
         commit_obj = KernelCommit(**kernel_commit_data)
         
-        # KernelStore에 상태 등록
+        ## Register the finalized state into the KernelStore
         anchor.store.save_kernel(commit_obj)
         anchor.store.update_head("global_era_anchor", sealed_data["anchor_result"]["commit_hash"])
+        
         for repo_name, repo_hash in current_aligned_states.items():
             anchor.store.update_head(repo_name, repo_hash)
             
-        # Legacy Registry 호환성 (히스토리 어펜드)
+        ## Append to Legacy Registry for backwards compatibility
         full_history = history + [seal_payload]
         try:
             anchor.store.db[anchor.registry_key] = json.dumps({"history": full_history}).encode('utf-8')
