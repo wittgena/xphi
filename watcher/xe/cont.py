@@ -1,4 +1,4 @@
-# watcher.xe.cont
+# watcher/xe/cont.py
 from __future__ import annotations
 import asyncio
 import json
@@ -14,6 +14,17 @@ from arch.topos.bound.tunnel import TunnelFactory
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 
 log = logging.getLogger("xe.cont")
+
+def _get_bound_metric(bound: Any, attr_name: str, default: int = 0) -> int:
+    """@desc: bound 객체에서 메트릭(Topology, Pressure 등)을 안전하게 추출하는 유틸리티"""
+    if not bound:
+        return default
+    val = getattr(bound, attr_name, default)
+    try:
+        return int(val() if callable(val) else val)
+    except (TypeError, ValueError):
+        return default
+
 
 class PhaseField(type(BaseExecutor)):
     """@phase.bound: Assign unique Snowflake ID on class creation"""
@@ -53,18 +64,13 @@ class DynamicsXe(XeCont):
         if hasattr(self.bound, 'absorb'):
             self.bound.absorb(payload)
 
-        def _get_metric(attr_name: str, default: int = 0) -> int:
-            val = getattr(self.bound, attr_name, default)
-            try:
-                return int(val() if callable(val) else val)
-            except (TypeError, ValueError):
-                return default
-
-        topo_val = _get_metric('topology', 0)
-        press_val = _get_metric('pressure', 0)
+        # 공통 유틸리티를 사용하여 메트릭 추출
+        topo_val = _get_bound_metric(self.bound, 'topology', 0)
+        press_val = _get_bound_metric(self.bound, 'pressure', 0)
 
         self.phase_id = next_phase_id(topo=topo_val, press=press_val)
         decision = "CONTINUE"
+        
         if hasattr(self.bound, 'evaluate'):
             decision = self.bound.evaluate()
         
@@ -115,10 +121,18 @@ class LoopCarrier(BaseExecutor):
             else:
                 await asyncio.sleep(self.interval)
 
+            current_tick = self.tick + 1
+            
+            # [수정됨] 매 틱마다 현재 bound 상태를 기반으로 동기화된 Phase ID 재발급
+            bound_obj = getattr(self.xe, 'bound', None)
+            topo_val = _get_bound_metric(bound_obj, 'topology', 0)
+            press_val = _get_bound_metric(bound_obj, 'pressure', 0)
+            sync_phase_id = next_phase_id(topo=topo_val, press=press_val, tick=current_tick)
+
             if incoming_psi:
                 next_psi = incoming_psi
-                next_psi.tick = self.tick + 1
-                next_psi.phase_id = getattr(self.xe, 'phase_id', 0)
+                next_psi.tick = current_tick
+                next_psi.phase_id = sync_phase_id
             else:
                 next_psi = psi.__class__(
                     event_id=next_id(), 
@@ -126,8 +140,8 @@ class LoopCarrier(BaseExecutor):
                     source_id="loop.carrier",
                     scope=getattr(psi, "scope", "GLOBAL"),
                     carrier=getattr(psi, "carrier", None),
-                    phase_id=getattr(self.xe, 'phase_id', 0),
-                    tick=self.tick + 1,
+                    phase_id=sync_phase_id,
+                    tick=current_tick,
                     context=getattr(psi, "context", {}).copy()
                 )
 
