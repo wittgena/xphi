@@ -1,4 +1,5 @@
-# ops.tester.state.vocab
+# arch.gov.state.vocab
+## @lineage: ops.tester.state.vocab
 from enum import Enum
 
 class NodeType(str, Enum):

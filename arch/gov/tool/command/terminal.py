@@ -1,4 +1,5 @@
-# sandbox.executor.command.terminal
+# arch.gov.tool.command.terminal
+## @lineage: sandbox.executor.command.terminal
 from enum import Enum
 
 class TerminalCommandStatus(Enum):

@@ -1,4 +1,5 @@
-# ops.watcher.topos
+# watcher.plane.observer.span
+## @lineage: ops.watcher.topos
 """
 @desc: Native topological telemetry
 - Preserves legacy dependency signatures while transparently collapsing 

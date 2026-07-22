@@ -1,4 +1,5 @@
-# sandbox.tool.terminal.metadata
+# arch.gov.tool.terminal
+## @lineage: sandbox.tool.terminal.metadata
 import json
 import re
 import traceback

@@ -1,4 +1,5 @@
-# ops.xor.store.memfile
+# arch.xor.store.memfile
+## @lineage: ops.xor.store.memfile
 ## @lineage: meta.xor.store.memfile
 ## @lineage: gov.conv.store.memfile
 import os
