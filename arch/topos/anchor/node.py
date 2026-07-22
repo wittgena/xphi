@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Callable
 
 # 기존 RepoCommit, AnchorCommit 임포트는 WASM으로 스키마 검증이 이관되었으므로 사용하지 않습니다.
-from watcher.kernel.store import KernelStore, ToposBlob
+from watcher.kernel.ledger import KernelStore, ToposBlob
 
 class ActorNode:
     """@role: execution unit + lineage inscription node"""

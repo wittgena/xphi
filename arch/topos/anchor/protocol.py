@@ -1,9 +1,11 @@
 # arch.topos.anchor.protocol
 """
+@module: arch.topos.anchor.protocol
 @desc: 
-- Protocol for orchestrating Era-based Alignment cycles, 
-- synchronizing local repository states with the WASM engine, 
-- and generating cryptographically sealed epochs.
+- Protocol for orchestrating Era-based Alignment cycles.
+- Synchronizes local repository states with the WASM engine.
+- [EVOLUTION] Enforces Zero Trust architecture. Final state commits to the Ledger
+  must pass through the KernelStore's Ring 0 Multi-Sig Privileged Wrapper.
 """
 import json
 import time
@@ -16,7 +18,7 @@ from phase.wasm.broker import WasmBroker
 from phase.wasm.resolver.adapter import StateAdapter
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("anchor.protocol")
+log = get_emitter("anchor.protocol", phase="SYSTEM")
 
 async def anchor_git_commit_async(
     repos: List[ActorNode], 
@@ -28,8 +30,8 @@ async def anchor_git_commit_async(
     """
     @protocol: Era-based Alignment (Asynchronous)
     @desc: Executes the alignment cycle across multiple topological nodes. Coordinates 
-           physical state commits and validates them through the WASM FFI layer using 
-           deterministic canonical hashing and Ed25519 signatures.
+           physical state commits and validates them through the WASM FFI layer.
+           The physical finalization is guarded by a Multi-Sig privilege wrapper.
 
     Args:
         repos: List of ActorNodes representing the target repositories to align.
@@ -42,7 +44,9 @@ async def anchor_git_commit_async(
     log.info(f"## Era-based Alignment Cycle Initiated ({mode})")
     current_ts = int(time.time() * 1000)
 
-    ## @phase.1: Parity Triplet Generation (WASM FFI Communication)
+    # =========================================================================
+    # PHASE 1: Parity Triplet Generation (WASM FFI Communication)
+    # =========================================================================
     init_req: Dict[str, Any] = {
         "ts": current_ts,
         "topo": 1,
@@ -63,14 +67,16 @@ async def anchor_git_commit_async(
     nexus_id = parity.get("nexus_id")
     log.info(f"[Protocol] Nexus ID Generated: {nexus_id}")
 
-    ## @phase.2: Physical Commits (Thread Offloading)
+    # =========================================================================
+    # PHASE 2: Physical Commits (Thread Offloading)
+    # =========================================================================
     history = anchor.load_history()
     last_snapshot = history[-1] if history else None
     parent_nexus_id = last_snapshot.get("parity", {}).get("nexus_id", 0) if last_snapshot else 0
 
     current_aligned_states: Dict[str, str] = {}
     
-    ## Offload physical Git operations to background threads to prevent blocking the async event loop
+    # Offload physical Git operations to background threads to prevent blocking the async event loop
     for r in repos:
         parent_state = anchor.resolve(r.name)
         commit_hash = await asyncio.to_thread(
@@ -83,7 +89,9 @@ async def anchor_git_commit_async(
         )
         current_aligned_states[r.name] = commit_hash
 
-    ## @phase.3: Epoch Sealing (Cryptographic Signatures & WASM)
+    # =========================================================================
+    # PHASE 3: Epoch Sealing (Cryptographic Signatures & WASM)
+    # =========================================================================
     cached_states: Dict[str, str] = {}
     if last_snapshot:
         prev_total = {**last_snapshot.get("repos", {}), **last_snapshot.get("cached_states", {})}
@@ -91,10 +99,10 @@ async def anchor_git_commit_async(
             if name not in current_aligned_states and name != anchor.name:
                 cached_states[name] = last_hash
 
-    ## Retrieve Singleton Identity Manager (auto-loads ENV or SSH keys)
+    # Retrieve Singleton Identity Manager (auto-loads ENV or SSH keys)
     signer = NodeSigner.get_instance()
 
-    ## @phase.3.1: Construct the raw AnchorCommit data for signature verification
+    # Construct the raw AnchorCommit data for signature verification
     anchor_commit_dict = StateAdapter.build_anchor_commit(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
@@ -103,13 +111,13 @@ async def anchor_git_commit_async(
         cached_states=cached_states
     )
     
-    ## @phase.3.2: Convert to Canonical JSON (JCS) bytes to guarantee deterministic hashing
+    # Convert to Canonical JSON (JCS) bytes to guarantee deterministic hashing
     canonical_bytes = StateAdapter.to_canonical_bytes(anchor_commit_dict)
     
-    ## @phase.3.3: Execute Python-side SHA256 hashing followed by Ed25519 signature
+    # Execute Python-side SHA256 hashing followed by Ed25519 signature
     signature_hex = signer.sign_anchor_commit(canonical_bytes)
 
-    ## @phase.3.4: Build the final payload for the WASM engine (Applying Multi-Sig schema fix)
+    # Build the final payload for the WASM engine (Multi-Sig schema applied)
     seal_payload = StateAdapter.build_seal_epoch_payload(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
@@ -132,26 +140,49 @@ async def anchor_git_commit_async(
             log.warning("Physical commits were made, but WASM seal failed. Requires subsequent sync to recover.")
         return
 
-    ## @phase.4: State Finalization & Store Registration
+    # =========================================================================
+    # PHASE 4: State Finalization & Store Registration (Ring 0 Privileged Flow)
+    # =========================================================================
     if apply:
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")
         
-        ## Inline import to prevent circular dependencies at module initialization
-        from watcher.kernel.store import KernelCommit
+        # Inline import to prevent circular dependencies at module initialization
+        from watcher.kernel.ledger import KernelCommit, LedgerRole
+        from dataclasses import asdict
+        
         commit_obj = KernelCommit(**kernel_commit_data)
         
-        ## Register the finalized state into the KernelStore
-        anchor.store.save_kernel(commit_obj)
-        anchor.store.update_head("global_era_anchor", sealed_data["anchor_result"]["commit_hash"])
-        
-        for repo_name, repo_hash in current_aligned_states.items():
-            anchor.store.update_head(repo_name, repo_hash)
+        # [EVOLUTION] Enforce Zero Trust: Delegate persistence to the Store based on Consensus Role
+        if hasattr(anchor.store, 'role') and anchor.store.role == LedgerRole.FOLLOWER:
+            log.warning("[Protocol] Node is FOLLOWER. Proposing Epoch Seal to Mempool instead of direct disk write.")
+            # FOLLOWER delegates raw commit proposal to mempool
+            anchor.store._put_object("commit_proposal", asdict(commit_obj))
+        else:
+            try:
+                # [EVOLUTION] LEADER must pass the Ring 0 Multi-Sig Privilege Wrapper
+                # Submit the identical signature validated by WASM to the physical Ledger for execution
+                commit_hash = anchor.store.seal_system_epoch(
+                    commit=commit_obj, 
+                    signatures=[signature_hex], 
+                    threshold=1
+                )
+                
+                # If privilege wrapper passes, finalize the Merkle Head updates
+                anchor.store.update_head("global_era_anchor", sealed_data["anchor_result"]["commit_hash"])
+                
+                for repo_name, repo_hash in current_aligned_states.items():
+                    anchor.store.update_head(repo_name, repo_hash)
+                    
+            except PermissionError as pe:
+                log.critical(f"Physical state finalization aborted due to Kernel Store privilege denial: {pe}")
+                return
             
-        ## Append to Legacy Registry for backwards compatibility
+        # Append to Legacy Registry for backwards compatibility
         full_history = history + [seal_payload]
         try:
-            anchor.store.db[anchor.registry_key] = json.dumps({"history": full_history}).encode('utf-8')
+            if hasattr(anchor.store, 'db') and anchor.store.db is not None:
+                anchor.store.db[anchor.registry_key] = json.dumps({"history": full_history}).encode('utf-8')
         except Exception as e:
             log.warning(f"Failed to update legacy registry: {e}")
 

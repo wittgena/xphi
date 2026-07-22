@@ -56,7 +56,7 @@ def build_system_topos() -> List[TopologicalStructure]:
 
     watcher = []
     with suppress(ImportError): import watcher.kernel.resonance as m; watcher.append(m.__name__)
-    with suppress(ImportError): import watcher.kernel.store as m; watcher.append(m.__name__)
+    with suppress(ImportError): import watcher.kernel.ledger as m; watcher.append(m.__name__)
     with suppress(ImportError): import watcher.kernel.singularity as m; watcher.append(m.__name__)
 
     if watcher:

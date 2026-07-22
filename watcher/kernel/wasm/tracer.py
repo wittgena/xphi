@@ -12,7 +12,7 @@ from phase.runtime.inter.wasm import WasmInterpreter
 from watcher.kernel.wasm.cgroup import CgroupPolicy
 
 from watcher.tracer.bound import BaseTracer
-from watcher.kernel.store import KernelStore, KernelCommit
+from watcher.kernel.ledger import KernelStore, KernelCommit
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.tracer")

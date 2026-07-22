@@ -1,10 +1,12 @@
-# watcher.kernel.store
+# watcher.kernel.ledger
+## @lineage: watcher.kernel.store
 """
-@module: watcher.kernel.store (Absorbed kernel.compiler)
 @desc: 
 - Consensus-aware Merkle Store & Unified Entry Gateway for dphi.wasm Kernel.
-- Stripped of all "fake intelligence" (Python-side state evaluation).
-- Acts strictly as an I/O pipeline: Ingress Stream -> FOLLOWER(Mempool) or LEADER(WASM FFI -> RocksDB).
+- Implements Ring-based protection:
+  1. Ring 3 (propose_and_seal): For external ingress, heavily validated by WASM Spatial Fence.
+  2. Ring 0 (seal_system_epoch): For internal core sync (e.g., align.commit), protected by Multi-Sig Cryptography.
+- [EVOLUTION] Eradicated circular dependency with AuditWarden via Inversion of Control (IoC).
 """
 import time
 import json
@@ -20,8 +22,11 @@ from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
 from arch.topos.bound.tunnel import TunnelFactory
 from phase.wasm.broker import WasmBroker  
+from arch.crypto.signer import NodeSigner
 
-log = get_emitter("kernel.store.consensus", phase="KERNEL")
+from watcher.kernel.audit.warden import AuditWarden
+
+log = get_emitter("kernel.ledger", phase="KERNEL")
 
 LEDGER_DB_PATH = resolve_path("ledger")
 
@@ -30,12 +35,12 @@ class LedgerRole(Enum):
     FOLLOWER = "PROPOSER"    # Read-Only mode; proposes raw streams to Mempool
 
 def deterministic_hash(data: Dict[str, Any]) -> str:
-    """Generates a deterministic integrity hash (SHA-256) via sorted serialization (JCS-like)."""
+    """Generates a deterministic integrity hash (SHA-256) via sorted serialization."""
     serialized = json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(',', ':'))
     return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
 
 class LogicStream(BaseModel):
-    """@desc: Ψ_open - The external request flowing into the system."""
+    """Ψ_open - The external request flowing into the system."""
     id: str
     action: str = "default_action"
     payload: Any  
@@ -43,7 +48,7 @@ class LogicStream(BaseModel):
 
 @dataclass
 class ToposBlob:
-    """OOB Log / Residue representation from WASM transitions."""
+    """OOB Log / Residue representation from WASM transitions or System Anomalies."""
     action: str
     from_state: str
     to_state: str
@@ -53,7 +58,7 @@ class ToposBlob:
 
 @dataclass
 class KernelCommit:
-    """Sealed kernel snapshot verified by WASM."""
+    """Sealed kernel snapshot verified by WASM or Multi-Sig Core."""
     stream_id: str
     executable_payload: Any
     tension_at_seal: float
@@ -62,22 +67,18 @@ class KernelCommit:
     sealed_at: float = field(default_factory=time.time)
 
 class SealedKernel(BaseModel):
-    """@desc: Ω_knot - The mathematically invariant, executable closed boundary."""
+    """Ω_knot - The mathematically invariant, executable closed boundary."""
     kernel_id: str
     stream_id: str
     executable_payload: Any
     tension_at_seal: float
-    signature: str  # The deterministic Merkle Commit hash 
+    signature: str 
 
 # -------------------------------------------------------------
 # The Unified Kernel Store (The Spinal Cord)
 # -------------------------------------------------------------
 
 class KernelStore:
-    """
-    @desc: Unified Physical Ledger & WASM Gateway.
-           All streams must pass through `propose_and_seal` to enter the WASM Universe.
-    """
     _instance = None
 
     def __new__(cls, path=LEDGER_DB_PATH):
@@ -87,26 +88,22 @@ class KernelStore:
         return cls._instance
 
     def _initialize_consensus_node(self, target_path: str):
-        """Proof of Lock: Determines LEADER/FOLLOWER role."""
+        """Proof of Lock: Determines LEADER/FOLLOWER role and binds system handlers."""
         opt = Options()
         opt.create_if_missing(True)
         
         try:
-            # 1. Attempt Proof of Lock (Requires Write Access)
             self.db = Rdict(str(target_path), opt)
             self.role = LedgerRole.LEADER
             self.broker = None
-            
-            # [ARCHITECTURE SHIFT] Only LEADER mounts the WASM Engine
             self.wasm = WasmBroker() 
             log.info(f"[Ledger] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
             
         except Exception as e:
             error_msg = str(e).lower()
             if "lock" in error_msg or "temporarily unavailable" in error_msg:
-                # Lock Acquisition Failed -> Transition to FOLLOWER mode
                 self.role = LedgerRole.FOLLOWER
-                self.wasm = None # FOLLOWER does not execute WASM
+                self.wasm = None 
                 log.info(f"[Ledger] Lock held by another node. Operating as {self.role.value} (Read-Only/Proposer).")
                 
                 ro_opt = Options()
@@ -115,7 +112,24 @@ class KernelStore:
             else:
                 raise 
 
-    # --- Low-Level Persistence (Leader vs Follower routing) ---
+        # [EVOLUTION] IoC Registration: Bind KernelStore's persistence pipeline to the Warden Sensor
+        AuditWarden.register_anomaly_handler(self._handle_warden_anomaly)
+
+    def _handle_warden_anomaly(self, action: str, details: str) -> None:
+        """
+        @desc: Callback handler for AuditWarden. Packages raw sensor signals into ToposBlobs 
+               and persists them physically, completing the immune system circuit.
+        """
+        blob = ToposBlob(
+            action=f"SYS_WARDEN_GUARD::{action}", 
+            from_state="host.python.sandbox", 
+            to_state="host.os.kernel",
+            tension=1.0, 
+            details=details
+        )
+        self.save_transition(blob)
+
+    # --- Low-Level Persistence ---
 
     def _put_object(self, obj_type: str, data: Dict[str, Any]) -> str:
         """Routes to either physical disk write (LEADER) or Mempool proposal (FOLLOWER)."""
@@ -136,11 +150,9 @@ class KernelStore:
             return obj_hash
 
     def save_transition(self, blob: ToposBlob) -> str:
-        """Used by Warden for out-of-band synchronous anomaly logging."""
         return self._put_object("blob", asdict(blob))
 
     def update_head(self, stream_id: str, commit_hash: str) -> None:
-        """Updates the latest kernel pointer (Anchor Ref) for a logic stream."""
         if self.role == LedgerRole.LEADER:
             key = f"ref:{stream_id}".encode('utf-8')
             self.db[key] = commit_hash.encode('utf-8')
@@ -152,33 +164,68 @@ class KernelStore:
                 pass
 
     def get_head_hash(self, stream_id: str) -> Optional[str]:
-        """Reads the Anchor Hash (Readable by both LEADER and FOLLOWER)."""
         key = f"ref:{stream_id}".encode('utf-8')
         if key in self.db:
             return self.db[key].decode('utf-8')
         return None
 
-    # --- High-Level Pipeline (Replacing compiler.compile_kernel) ---
+    # --- Ring 0: Privileged Core Interface (Multi-Sig Protected) ---
+
+    def _save_kernel_unsafe(self, commit: KernelCommit) -> str:
+        """
+        @desc: [PRIVATE] Physical disk write for KernelCommits.
+               Strictly forbidden to be called directly from outside.
+        """
+        return self._put_object("commit", asdict(commit))
+
+    def seal_system_epoch(self, commit: KernelCommit, signatures: List[str], threshold: int = 1) -> str:
+        """
+        @desc: [PRIVILEGED WRAPPER] Ring 0 Entry Point.
+               Used by align.commit to finalize physical states without WASM re-evaluation.
+               Requires Multi-Sig threshold validation.
+        """
+        if not signatures:
+            error_msg = "System Epoch Seal Rejected: No signatures provided."
+            log.critical(f"[KernelStore: PRIVILEGE] {error_msg}")
+            AuditWarden.record_anomaly("kernel.privilege_escalation_attempt", error_msg)
+            raise PermissionError(error_msg)
+
+        signer = NodeSigner.get_instance()
+        canonical_bytes = json.dumps(asdict(commit), sort_keys=True, separators=(',', ':')).encode('utf-8')
+        
+        valid_count = 0
+        for sig in signatures:
+            try:
+                # NodeSigner checks if the signature matches known authorized cluster public keys
+                if signer.verify_signature(canonical_bytes, sig):
+                    valid_count += 1
+            except Exception as e:
+                log.debug(f"[KernelStore] Invalid signature fragment detected: {e}")
+                continue
+
+        if valid_count < threshold:
+            error_msg = f"Multi-Sig Threshold Failed: {valid_count}/{threshold} valid signatures."
+            log.critical(f"[KernelStore: PRIVILEGE] {error_msg}")
+            AuditWarden.record_anomaly("kernel.privilege_escalation_attempt", error_msg)
+            raise PermissionError(error_msg)
+
+        log.info(f"[KernelStore: PRIVILEGE] Multi-Sig Verified ({valid_count}/{threshold}). Authorized direct ledger commit.")
+        return self._save_kernel_unsafe(commit)
+
+    # --- Ring 3: Standard Ingress Pipeline ---
 
     async def propose_and_seal(self, stream: LogicStream) -> Optional[SealedKernel]:
         """
-        @desc: The Unified Execution Gateway. 
-               Delegates ALL logic, validation, and tension calculation to `dphi.wasm`.
+        @desc: The Unified Execution Gateway for external/ingress traffic.
+               Delegates ALL validation to `dphi.wasm`.
         """
         if self.role == LedgerRole.FOLLOWER:
-            # [FOLLOWER FLOW] No authority to compute or seal. Forward raw stream to LEADER.
             stream_data = {"id": stream.id, "action": stream.action, "payload": stream.payload, "metadata": stream.metadata}
             self.broker.stream_produce("ledger:mempool:logic_streams", stream_data)
-            log.info(f"[Ledger:FOLLOWER] Delegated stream {stream.id} to Mempool.")
             return None
 
-        # [LEADER FLOW] Construct Theoria Pressure & Invoke WASM
-
-        # 1. Retrieve the Anchor (Time & State Context)
         parent_hash = self.get_head_hash(stream.id) or "genesis"
 
-        # 2. Assemble TransitionPayload (Matching dphi.wasm schema)
-        # Note: We wrap the stream into a primitive StateNode (CORE) to begin evolution.
         transition_payload = {
             "intent_action": stream.action,
             "intent_payload": stream.payload,
@@ -190,15 +237,11 @@ class KernelStore:
                     "ref_target": parent_hash,
                     "children": {}
                 },
-                "external_rules": [] # Optional topological mutation rules could be passed here
+                "external_rules": [] 
             }
         }
 
-        # 3. Delegate to WASM Kernel (The Absolute Authority)
-        log.debug(f"[Ledger:LEADER] Injecting stream {stream.id} into dphi.wasm (Anchor: {parent_hash[:8]})")
         payload_json = json.dumps(transition_payload)
-        
-        # Async invocation to prevent blocking the event loop during WASM compute
         wasm_res = await self.wasm.invoke("execute_transition", payload_json)
 
         if not wasm_res.success:
@@ -207,26 +250,20 @@ class KernelStore:
 
         trans_result = json.loads(wasm_res.output)
 
-        # 4. Check Spatial Fence Authorization
         if not trans_result.get("is_authorized", False):
             err_msg = trans_result.get("error_msg", "Spatial Fence Denied")
             log.warning(f"[Ledger:WASM] REJECTED: {err_msg}")
             
-            # Record the rejection as a Blob (Out-of-band audit)
             await asyncio.to_thread(
                 self.save_transition, 
                 ToposBlob(action="wasm.reject", from_state="logic.stream", to_state="fragmented", tension=1.0, details=err_msg)
             )
             return None
 
-        # 5. Extract Residues & Final Root (Evolution Completed)
         final_root = trans_result.get("final_root")
         all_residues = trans_result.get("all_residues", [])
-        
-        # WASM determines the complexity. We translate residue count/types to topological tension (τ)
         tension_at_seal = len(all_residues) * 0.1 
 
-        # 6. Translate WASM Residues into ToposBlobs for immutable ledger history
         blob_hashes = []
         for residue in all_residues:
             blob = ToposBlob(
@@ -239,7 +276,6 @@ class KernelStore:
             b_hash = await asyncio.to_thread(self.save_transition, blob)
             blob_hashes.append(b_hash)
 
-        # 7. Commit & Seal to Physical Ledger
         commit = KernelCommit(
             stream_id=stream.id,
             executable_payload=final_root,
@@ -248,7 +284,8 @@ class KernelStore:
             parent_hash=parent_hash
         )
 
-        signature = await asyncio.to_thread(self.save_kernel, commit)
+        # Ring 3 bypasses the external Multi-Sig requirement because WASM inherently approved it
+        signature = await asyncio.to_thread(self._save_kernel_unsafe, commit)
         await asyncio.to_thread(self.update_head, stream.id, signature)
 
         log.info(f"[Ledger:LEADER] ✨ Epoch Sealed by WASM. Stream: {stream.id} | Commit: {signature[:8]}")
