@@ -1,4 +1,5 @@
-# arch.topos.trans.topic.registry
+# arch.gov.trans.topic.registry
+## @lineage: arch.topos.trans.topic.registry
 ## @lineage: arch.topos.node.trans.topic.registry
 ## @lineage: arch.topos.bound.trans.topic.registry
 ## @lineage: arch.bound.topic.registry

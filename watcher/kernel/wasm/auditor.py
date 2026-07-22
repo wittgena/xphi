@@ -1,4 +1,5 @@
-# watcher.auditor.wasm
+# watcher.kernel.wasm.auditor
+## @lineage: watcher.auditor.wasm
 ## @lineage: ops.watcher.tracer.wasm.auditor
 import asyncio
 import struct

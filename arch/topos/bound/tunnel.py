@@ -4,11 +4,13 @@
 @flow: 
 - Defaults to asynchronous processing, while providing a minimal 
 - facade for synchronous environments where an async event loop is unavailable
+- [ENHANCED] Supports background WASM telemetry auditing without blocking the main event loop.
 """
 import redis
 import redis.asyncio as actual_redis
 import redis.exceptions
 import logging
+import asyncio
 from typing import Optional, Any, List, Tuple
 from arch.topos.bound.adapter.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
@@ -51,12 +53,15 @@ class UniversalPubSub:
             return getattr(self.actual_pubsub, name)
         raise AttributeError(f"'UniversalPubSub' object has no attribute '{name}'")
 
+
 class UniversalFacade:
     """@role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals"""
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
         self.mq_protocol = mq_protocol
         self.mq_url = mq_url
         self.mq_client = None
+        self.wasm_broker = None  # Hook for background WASM telemetry
+        
         pool_kwargs = {
             "max_connections": 100,
             "socket_timeout": 5.0,
@@ -71,9 +76,31 @@ class UniversalFacade:
             log.info(f"[Tunnel] Initializing Kafka Producer/Consumer at {self.mq_url}")
             pass
 
+    def bind_wasm_broker(self, broker):
+        self.wasm_broker = broker
+        log.info("[Tunnel] WasmBroker bound to UniversalFacade for background telemetry auditing.")
+
+    async def _audit_provenance(self, raw_payload: dict, message_id: str):
+        try:
+            # We only audit if the payload was enveloped by ProvenancePayloadAdapter
+            if isinstance(raw_payload, dict) and "_wasm_envelope" in raw_payload:
+                data_str = raw_payload.get("data")
+                if data_str:
+                    res = await self.wasm_broker.invoke("compute_root_fingerprint", data_str)
+                    if res.success:
+                        log.info(f"🧾 [Audit] Message {message_id} proven. Fingerprint: {res.output}")
+                    else:
+                        log.warning(f"⚠️ [Audit] Failed to prove message {message_id}: {res.error}")
+        except Exception as e:
+            log.error(f"[Audit] Background provenance task failed for message {message_id}: {e}", exc_info=True)
+
     async def stream_produce(self, topic: str, payload: dict, maxlen: int = 100000) -> str:
         if self.mq_protocol == BackendProtocol.KAFKA: pass
-        return await self.state_store.xadd(topic, payload, maxlen=maxlen)
+        msg_id = await self.state_store.xadd(topic, payload, maxlen=maxlen)
+        if self.wasm_broker:
+            asyncio.create_task(self._audit_provenance(payload, msg_id))
+            
+        return msg_id
 
     async def stream_consume(self, topic: str, group: str, consumer: str, count: int = 1, block: int = 0) -> List[Tuple]:
         if self.mq_protocol == BackendProtocol.KAFKA: pass
@@ -99,6 +126,7 @@ class UniversalFacade:
         """Automatically delegates unmapped async methods (e.g., llen, keys, lpush) to the underlying Redis Async client."""
         return getattr(self.state_store, name)
 
+
 class UniversalFacadeSync:
     """@role: Synchronous (Blocking) routing facade"""
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
@@ -113,9 +141,7 @@ class UniversalFacadeSync:
             "retry_on_timeout": True
         }
         pool_kwargs.update(kwargs)
-
         self.state_store = redis.from_url(state_url, decode_responses=True, **pool_kwargs)
-
         if self.mq_protocol == BackendProtocol.KAFKA:
             log.info(f"[SyncTunnel] Initializing Sync Kafka Producer/Consumer at {self.mq_url}")
             pass
@@ -153,6 +179,7 @@ class UniversalFacadeSync:
     def __getattr__(self, name: str):
         return getattr(self.state_store, name)
 
+
 class TunnelFactory:
     _async_instance: Optional[UniversalFacade] = None
     _sync_instance: Optional[UniversalFacadeSync] = None
@@ -173,6 +200,16 @@ class TunnelFactory:
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
         return UniversalFacade(state_url, mq_url, scheme, **kwargs)
+        
+    @classmethod
+    async def get_provenant(cls, wasm_broker, **kwargs) -> UniversalFacade:
+        """
+        [ENHANCED] Provisions an asynchronous tunnel bound with a WasmBroker 
+        to enable transparent background telemetry auditing.
+        """
+        tunnel = await cls.get_default(**kwargs)
+        tunnel.bind_wasm_broker(wasm_broker)
+        return tunnel
 
     @classmethod
     def get_sync(cls, **kwargs) -> UniversalFacadeSync:

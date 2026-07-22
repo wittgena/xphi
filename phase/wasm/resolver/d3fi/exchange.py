@@ -13,12 +13,10 @@ from typing import List
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from phase.wasm.resolver.runner import SchemeRunner
-from watcher.plane.emitter import get_emitter
-from phase.wasm.resolver.adapter import StateAdapter
-
-# [NEW] 어댑터 임포트 (이전 단계에서 설계한 ExchangeAdapter)
 from arch.topos.exchange.adapter import D3fiExchangeAdapter
+from phase.wasm.resolver.runner import SchemeRunner
+from phase.wasm.resolver.adapter import StateAdapter
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter("scenario.exchange")
 

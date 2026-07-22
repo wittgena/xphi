@@ -1,4 +1,5 @@
-# arch.topos.trans.imports.aligner
+# arch.gov.trans.imports.aligner
+## @lineage: arch.topos.trans.imports.aligner
 ## @lineage: arch.topos.node.trans.imports.aligner
 ## @lineage: arch.topos.bound.trans.imports.aligner
 ## @lineage: arch.bound.trans.imports.aligner
@@ -8,7 +9,7 @@ import libcst as cst
 from typing import List, Tuple
 from pathlib import Path
 from arch.gov.aligner import PhaseAligner, AlignRecord
-from arch.topos.trans.imports.transformer import ImportTransformer, RelativeImportTransformer
+from arch.gov.trans.imports.transformer import ImportTransformer, RelativeImportTransformer
 from watcher.plane.emitter import get_emitter, flow_scope
 
 def generate_diff(original: str, modified: str, filename: str) -> str:

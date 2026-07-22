@@ -1,5 +1,4 @@
 # arch.crypto.signer
-# phase/crypto/signer.py
 import os
 from pathlib import Path
 import hashlib
@@ -17,7 +16,6 @@ class NodeSigner:
     def __init__(self):
         self.signing_key = self._load_key_chain()
         self.verify_key = self.signing_key.verify_key
-        # 공개키를 Hex 문자열로 캐싱
         self.pubkey_hex = self.verify_key.encode(encoder=nacl.encoding.HexEncoder).decode('utf-8')
         log.info(f"[Crypto] Node Identity Loaded. PubKey: {self.pubkey_hex[:8]}...")
 

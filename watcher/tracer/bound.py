@@ -1,5 +1,4 @@
 # watcher.tracer.bound
-## @lineage: ops.watcher.tracer.base
 import asyncio
 import importlib
 import inspect

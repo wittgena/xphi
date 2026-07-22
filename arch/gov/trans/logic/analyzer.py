@@ -1,4 +1,5 @@
-# arch.topos.trans.logic.analyzer
+# arch.gov.trans.logic.analyzer
+## @lineage: arch.topos.trans.logic.analyzer
 ## @lineage: arch.topos.node.trans.logic.analyzer
 ## @lineage: arch.topos.bound.trans.logic.analyzer
 ## @lineage: arch.bound.trans.logic.analyzer
@@ -17,7 +18,7 @@ from dataclasses import dataclass, asdict
 from arch.contract.schema.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
-from arch.topos.trans.logic.transformer import LogicTransformer
+from arch.gov.trans.logic.transformer import LogicTransformer
 
 CODE_ROOT = resolve_path("code")
 log = get_emitter("logic.analyzer")

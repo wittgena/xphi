@@ -1,4 +1,5 @@
-# arch.topos.trans.schema
+# arch.gov.trans.schema
+## @lineage: arch.topos.trans.schema
 ## @lineage: arch.topos.node.trans.schema
 ## @lineage: arch.topos.bound.trans.schema
 ## @lineage: arch.bound.trans.schema

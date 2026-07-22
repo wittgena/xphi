@@ -1,4 +1,5 @@
-# phase.wasm.tracer
+# watcher.kernel.wasm.tracer
+## @lineage: phase.wasm.tracer
 import sys
 import asyncio
 import base64
@@ -8,7 +9,7 @@ from typing import Tuple, Optional
 
 from phase.bind.resolver import resolve_path
 from phase.runtime.inter.wasm import WasmInterpreter
-from phase.wasm.wasmcg import CgroupPolicy
+from watcher.kernel.wasm.cgroup import CgroupPolicy
 
 from watcher.tracer.bound import BaseTracer
 from watcher.kernel.store import KernelStore, KernelCommit

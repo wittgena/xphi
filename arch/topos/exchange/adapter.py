@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List
 import time
-from phase.wasm.wasmcg import Tier
+from watcher.kernel.wasm.cgroup import Tier
 from phase.wasm.resolver.adapter import StateAdapter
 from watcher.plane.emitter import get_emitter
 

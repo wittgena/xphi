@@ -16,7 +16,7 @@ log = logging.getLogger("around")
 CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
 PTH_FILENAME = "brane.pth"
-CORES = ["brane", "surgent", "nexus", "xphi"]
+CORES = ["brane", "surgent", "theoria", "xphi"]
 
 ## Default minimum skeleton to prevent resolver crashes if bound.json doesn't exist
 DEFAULT_BOUND_SKELETON = {
