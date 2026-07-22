@@ -40,13 +40,11 @@ class WardenTLS(threading.local):
     def __init__(self):
         self.in_hook = False
 
-
 class AuditWarden:
     """
     @desc: Core runtime warden that enforces physical OS boundaries.
     @security_model: Dynamic Egress Control & Shell Isolation via PEP 578
     """
-    
     _policies: Dict[str, Set[str]] = {
         "allowed_hosts": {"nexus.next-phase.com"},
         "restricted_domains": set(),
@@ -54,8 +52,6 @@ class AuditWarden:
     }
     _is_active: bool = False
     _tls = WardenTLS()
-
-    # [EVOLUTION] Decoupled persistence pipeline using a Callback Handler
     _anomaly_handler: Optional[Callable[[str, str], None]] = None
 
     @classmethod
