@@ -37,7 +37,7 @@ class EpochSealer:
         
         # 3. JCS 직렬화 후 서명 생성 (WASM 검증 규칙과 동일한 방식 적용)
         canonical_bytes = StateAdapter.to_canonical_bytes(anchor_commit)
-        signature_hex = signer.sign_anchor_commit(canonical_bytes)
+        signature_hex = signer.sign_payload(canonical_bytes)
         
         log.debug(f"[Sealer] Generated Ed25519 signature for epoch (Signer: {pubkey[:8]}...)")
         

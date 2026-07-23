@@ -1,5 +1,4 @@
 # watcher.dphi.wasm.receptor
-## @lineage: phase.wasm.receptor
 """
 @desc: Cellular Membrane Receptor for dphi.wasm Kernel.
 @role: Ingests non-deterministic external signals (Agent/Deno proofs), 
@@ -71,9 +70,7 @@ class WasmReceptor:
         """
         log.info(f"[{self.receptor_id}] ⚡ Ingesting external signal: '{signal.intent_action}' from [{signal.requester_id}]")
 
-        # -------------------------------------------------------------
-        # Phase 1: Intent Validation (의도 및 가스비 한도 검증)
-        # -------------------------------------------------------------
+        ## Phase 1: Intent Validation (의도 및 가스비 한도 검증)
         intent_payload = {
             "requester_id": signal.requester_id,
             "action": signal.intent_action,
@@ -81,7 +78,7 @@ class WasmReceptor:
             "timestamp": int(signal.timestamp * 1000)
         }
         
-        # dphi.wasm 내 validate_intent Entry 호출
+        ## dphi.wasm 내 validate_intent Entry 호출
         val_res = await self.broker.invoke("validate_intent", json.dumps(intent_payload))
         if not val_res.success:
             log.warn(f"[{self.receptor_id}] 🚫 Intent Validation Rejected: {val_res.error}")
@@ -91,9 +88,7 @@ class WasmReceptor:
                 rupture_reason=f"Intent Rejected: {val_res.error}"
             )
 
-        # -------------------------------------------------------------
-        # Phase 2: Proof-of-Compute Audit (연산 증명 무결성 검사)
-        # -------------------------------------------------------------
+        ## Phase 2: Proof-of-Compute Audit (연산 증명 무결성 검사)
         if signal.proof_of_compute:
             proof_res = await self.broker.invoke("generate_proof", json.dumps(signal.proof_of_compute))
             if not proof_res.success:
@@ -104,10 +99,7 @@ class WasmReceptor:
                     rupture_reason=f"Proof Audit Failed: {proof_res.error}"
                 )
 
-        # -------------------------------------------------------------
-        # Phase 3: Cryptographic Inscription & Alignment (암호학적 서명 각인)
-        # -------------------------------------------------------------
-        # 수용체가 서명할 Anchor Commit 객체 조립
+        ## Phase 3: Cryptographic Inscription & Alignment (암호학적 서명 각인)
         anchor_commit = StateAdapter.build_anchor_commit(
             parity=StateAdapter.build_parity_triplet(f"topos_{self.receptor_id}", 1, 0),
             parent_nexus_id=0,
@@ -117,9 +109,9 @@ class WasmReceptor:
         )
 
         canonical_bytes = StateAdapter.to_canonical_bytes(anchor_commit)
-        signature_hex = self.signer.sign_anchor_commit(canonical_bytes)
+        signature_hex = self.signer.sign_payload(canonical_bytes)
 
-        # Inscribe Payload 생성 (1-of-1 Receptor Authority)
+        ## Inscribe Payload 생성 (1-of-1 Receptor Authority)
         inscribe_payload = StateAdapter.build_inscribe_payload(
             nexus_id=int(time.time()) % 4294967295,  # u32 호환
             parent_nexus_id=0,
@@ -132,7 +124,6 @@ class WasmReceptor:
 
         inscribe_json = StateAdapter.to_canonical_bytes(inscribe_payload).decode('utf-8')
         inscribe_res = await self.broker.invoke("inscribe_actor", inscribe_json)
-
         if not inscribe_res.success:
             log.error(f"[{self.receptor_id}] ❌ Inscription to Ledger failed: {inscribe_res.error}")
             return ReceptorBindingResult(
@@ -144,9 +135,7 @@ class WasmReceptor:
         inscribe_output = json.loads(inscribe_res.output)
         commit_hash = inscribe_output.get("commit_hash")
 
-        # -------------------------------------------------------------
-        # Phase 4: Topological State Evolution (위상 상태 전이 확정)
-        # -------------------------------------------------------------
+        ## Phase 4: Topological State Evolution (위상 상태 전이 확정)
         trans_rule = StateAdapter.build_trans_rule(
             src=signal.requester_id,
             dest=f"receptor:{self.receptor_id}",
