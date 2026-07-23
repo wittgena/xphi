@@ -9,7 +9,7 @@ import uuid
 from typing import Any, Dict, Optional
 
 from arch.topos.ingress.schema import LogicStream as IngressLogicStream
-from watcher.kernel.ledger import KernelStore, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
+from watcher.kernel.ledger import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("ingress.gateway", phase="KERNEL")
@@ -19,8 +19,8 @@ class ToposGateway:
     @desc: Compliant middleware & Adapter bridging external Ingress to the unified KernelStore.
            (Formerly CompilerBridge)
     """
-    def __init__(self, store: Optional[KernelStore] = None):
-        self.store = store or KernelStore()
+    def __init__(self, store: Optional[KernelLedger] = None):
+        self.store = store or KernelLedger()
 
     async def authorize_ingress(self, stream: IngressLogicStream) -> bool:
         """

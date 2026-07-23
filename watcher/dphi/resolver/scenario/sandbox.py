@@ -1,7 +1,8 @@
-# phase.wasm.resolver.scenario.sandbox
+# watcher.dphi.resolver.scenario.sandbox
+## @lineage: phase.wasm.resolver.scenario.sandbox
 import time
 import asyncio
-from phase.wasm.resolver.runner import SchemeRunner
+from watcher.dphi.resolver.runner import SchemeRunner
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("scenario.sandbox")

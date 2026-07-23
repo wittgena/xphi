@@ -3,8 +3,8 @@
 from dataclasses import dataclass
 from typing import Any, Dict, List
 import time
-from watcher.kernel.wasm.cgroup import Tier
-from phase.wasm.resolver.adapter import StateAdapter
+from watcher.dphi.cgroup import Tier
+from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("exchange.adapter")

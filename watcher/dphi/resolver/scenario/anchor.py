@@ -1,13 +1,14 @@
-# phase.wasm.resolver.scenario.anchor
+# watcher.dphi.resolver.scenario.anchor
+## @lineage: phase.wasm.resolver.scenario.anchor
 import time
 import json
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from phase.wasm.resolver.runner import SchemeRunner
+from watcher.dphi.resolver.runner import SchemeRunner
 from watcher.plane.emitter import get_emitter
-from phase.wasm.resolver.adapter import StateAdapter
+from watcher.dphi.adapter.state import StateAdapter
 
 log = get_emitter("scenario.anchor")
 

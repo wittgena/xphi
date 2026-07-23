@@ -1,18 +1,21 @@
-# watcher.kernel.wasm.tracer
-## @lineage: phase.wasm.tracer
+# watcher.dphi.wasm.tracer
+## @lineage: watcher.kernel.dphi.wasm.tracer
 import sys
 import asyncio
 import base64
 import json
 from pathlib import Path
 from typing import Tuple, Optional
+from dataclasses import asdict
 
+from watcher.dphi.adapter.sign import LedgerAuthAdapter
 from phase.bind.resolver import resolve_path
 from phase.runtime.inter.wasm import WasmInterpreter
-from watcher.kernel.wasm.cgroup import CgroupPolicy
 
+from watcher.dphi.cgroup import CgroupPolicy
+from watcher.dphi.wasm.builder import WasmBuilder
+from watcher.kernel.ledger import KernelLedger, KernelCommit, LedgerRole
 from watcher.tracer.bound import BaseTracer
-from watcher.kernel.ledger import KernelStore, KernelCommit
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.tracer")
@@ -25,7 +28,7 @@ STREAM_ID = "wasm_binary_lineage"
 class WasmTracer(BaseTracer):
     def __init__(self, timeout: int = 300, tester=None):
         super().__init__(tracer_name="wasm.tracer", timeout=timeout)
-        self.store = KernelStore()
+        self.store = KernelLedger()
         self.tester = tester
 
     async def verify_cache_or_build(self) -> Tuple[bool, str]:
@@ -59,8 +62,6 @@ class WasmTracer(BaseTracer):
 
         if needs_build:
             self.log.info("[STATUS] Cache miss/invalid. Initiating Builder...")
-            from phase.wasm.builder import WasmBuilder
-
             builder = WasmBuilder()
             await builder.execute()
             if builder.rupture_confirmed:
@@ -78,12 +79,38 @@ class WasmTracer(BaseTracer):
             if result.success:
                 res_data = json.loads(result.output)
                 new_hash = res_data["lineage_hash"]
+                
                 commit = KernelCommit(
-                    stream_id=STREAM_ID, executable_payload="WASM Build Transition",
-                    tension_at_seal=0.0, blob_hashes=[], parent_hash=head_hash
+                    stream_id=STREAM_ID, 
+                    executable_payload="WASM Build Transition",
+                    tension_at_seal=0.0, 
+                    blob_hashes=[], 
+                    parent_hash=head_hash
                 )
-                self.store.save_kernel(commit)
-                self.store.update_head(STREAM_ID, new_hash)
+                
+                # [EVOLUTION] Zero Trust Architecture: Canonical conversion, Multi-Sig validation, and Role Checks
+                try:
+                    # 1. Sign the KernelCommit payload via the unified Auth Adapter
+                    signature_hex = LedgerAuthAdapter.sign_state_payload(asdict(commit))
+                    
+                    # 2. Consensus Role Check (FOLLOWER 방어 로직)
+                    if hasattr(self.store, 'role') and self.store.role == LedgerRole.FOLLOWER:
+                        self.log.warning("[Ledger] Node is FOLLOWER. Bypassing physical disk seal and proposing to Mempool.")
+                        # FOLLOWER는 직접 seal_system_epoch를 호출하지 않고 Mempool에 제안(Propose)만 수행
+                        self.store._put_object("commit_proposal", asdict(commit))
+                        self.store.update_head(STREAM_ID, new_hash)
+                    else:
+                        # LEADER인 경우에만 Ring 0 Privileged Seal 수행
+                        self.store.seal_system_epoch(
+                            commit=commit,
+                            signatures=[signature_hex],
+                            threshold=1
+                        )
+                        self.store.update_head(STREAM_ID, new_hash)
+                    
+                except PermissionError as pe:
+                    self.log.error(f"[FATAL] WASM Lineage commit rejected by Multi-Sig Guard: {pe}")
+                    return False, f"Privilege Denied: {pe}"
 
                 with open(REGISTRY_FILE, "r", encoding="utf-8") as f:
                     reg_data = json.load(f)

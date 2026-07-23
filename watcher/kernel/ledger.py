@@ -1,12 +1,10 @@
 # watcher.kernel.ledger
-## @lineage: watcher.kernel.store
 """
 @desc: 
 - Consensus-aware Merkle Store & Unified Entry Gateway for dphi.wasm Kernel.
 - Implements Ring-based protection:
   1. Ring 3 (propose_and_seal): For external ingress, heavily validated by WASM Spatial Fence.
   2. Ring 0 (seal_system_epoch): For internal core sync (e.g., align.commit), protected by Multi-Sig Cryptography.
-- [EVOLUTION] Eradicated circular dependency with AuditWarden via Inversion of Control (IoC).
 """
 import time
 import json
@@ -22,8 +20,10 @@ from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
 from arch.topos.bound.tunnel import TunnelFactory
 from phase.wasm.broker import WasmBroker  
-from arch.crypto.signer import NodeSigner
+from watcher.dphi.adapter.sign import NodeSigner
 
+# [EVOLUTION] Import StateAdapter for JCS (RFC 8785) Compliance
+from watcher.dphi.adapter.state import StateAdapter
 from watcher.kernel.audit.warden import AuditWarden
 
 log = get_emitter("kernel.ledger", phase="KERNEL")
@@ -35,9 +35,12 @@ class LedgerRole(Enum):
     FOLLOWER = "PROPOSER"    # Read-Only mode; proposes raw streams to Mempool
 
 def deterministic_hash(data: Dict[str, Any]) -> str:
-    """Generates a deterministic integrity hash (SHA-256) via sorted serialization."""
-    serialized = json.dumps(data, sort_keys=True, ensure_ascii=False, separators=(',', ':'))
-    return hashlib.sha256(serialized.encode('utf-8')).hexdigest()
+    """
+    Generates a deterministic integrity hash (SHA-256) via JCS (RFC 8785).
+    [EVOLUTION] Replaced standard json.dumps with StateAdapter.to_canonical_bytes to guarantee 1:1 match with WASM FFI.
+    """
+    canonical_bytes = StateAdapter.to_canonical_bytes(data)
+    return hashlib.sha256(canonical_bytes).hexdigest()
 
 class LogicStream(BaseModel):
     """Ψ_open - The external request flowing into the system."""
@@ -74,16 +77,12 @@ class SealedKernel(BaseModel):
     tension_at_seal: float
     signature: str 
 
-# -------------------------------------------------------------
-# The Unified Kernel Store (The Spinal Cord)
-# -------------------------------------------------------------
-
-class KernelStore:
+class KernelLedger:
     _instance = None
 
     def __new__(cls, path=LEDGER_DB_PATH):
         if cls._instance is None:
-            cls._instance = super(KernelStore, cls).__new__(cls)
+            cls._instance = super(KernelLedger, cls).__new__(cls)
             cls._instance._initialize_consensus_node(path)
         return cls._instance
 
@@ -129,8 +128,6 @@ class KernelStore:
         )
         self.save_transition(blob)
 
-    # --- Low-Level Persistence ---
-
     def _put_object(self, obj_type: str, data: Dict[str, Any]) -> str:
         """Routes to either physical disk write (LEADER) or Mempool proposal (FOLLOWER)."""
         obj_hash = deterministic_hash(data)
@@ -169,8 +166,6 @@ class KernelStore:
             return self.db[key].decode('utf-8')
         return None
 
-    # --- Ring 0: Privileged Core Interface (Multi-Sig Protected) ---
-
     def _save_kernel_unsafe(self, commit: KernelCommit) -> str:
         """
         @desc: [PRIVATE] Physical disk write for KernelCommits.
@@ -191,12 +186,14 @@ class KernelStore:
             raise PermissionError(error_msg)
 
         signer = NodeSigner.get_instance()
-        canonical_bytes = json.dumps(asdict(commit), sort_keys=True, separators=(',', ':')).encode('utf-8')
+        
+        # [EVOLUTION] Convert the KernelCommit to JCS exactly as LedgerAuthAdapter does for signing
+        canonical_bytes = StateAdapter.to_canonical_bytes(asdict(commit))
         
         valid_count = 0
         for sig in signatures:
             try:
-                # NodeSigner checks if the signature matches known authorized cluster public keys
+                # NodeSigner verifies the signature against the canonical payload hash
                 if signer.verify_signature(canonical_bytes, sig):
                     valid_count += 1
             except Exception as e:
@@ -211,8 +208,6 @@ class KernelStore:
 
         log.info(f"[KernelStore: PRIVILEGE] Multi-Sig Verified ({valid_count}/{threshold}). Authorized direct ledger commit.")
         return self._save_kernel_unsafe(commit)
-
-    # --- Ring 3: Standard Ingress Pipeline ---
 
     async def propose_and_seal(self, stream: LogicStream) -> Optional[SealedKernel]:
         """

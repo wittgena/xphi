@@ -1,12 +1,13 @@
-# phase.wasm.resolver.scenario.a2a
+# watcher.dphi.resolver.scenario.a2a
+## @lineage: phase.wasm.resolver.scenario.a2a
 import time
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from phase.wasm.resolver.runner import SchemeRunner
+from watcher.dphi.resolver.runner import SchemeRunner
 from watcher.plane.emitter import get_emitter
-from phase.wasm.resolver.adapter import StateAdapter
+from watcher.dphi.adapter.state import StateAdapter
 
 log = get_emitter("scenario.a2a")
 

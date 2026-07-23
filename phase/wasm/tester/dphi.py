@@ -5,11 +5,11 @@ from typing import Tuple
 
 from arch.topos.bound.tunnel import TunnelFactory
 
-from phase.wasm.resolver.scenario.sandbox import SandboxScenarios
-from phase.wasm.resolver.scenario.ledger import LedgerScenarios
-from phase.wasm.resolver.scenario.a2a import A2AScenarios
-from phase.wasm.resolver.scenario.ecosystem import EcosystemScenarios
-from phase.wasm.resolver.scenario.anchor import AnchorScenarios
+from watcher.dphi.resolver.scenario.sandbox import SandboxScenarios
+from watcher.dphi.resolver.scenario.ledger import LedgerScenarios
+from watcher.dphi.resolver.scenario.a2a import A2AScenarios
+from watcher.dphi.resolver.scenario.ecosystem import EcosystemScenarios
+from watcher.dphi.resolver.scenario.anchor import AnchorScenarios
 
 from phase.bind.resolver import resolve_path
 from phase.runtime.task.supervisor import TaskSupervisor
@@ -19,7 +19,6 @@ from phase.wasm.broker import WasmBroker
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("tester.dphi")
-NEXUS_ROOT = resolve_path("nexus")
 
 class WasmTester:
     """
@@ -91,9 +90,6 @@ class WasmTester:
         @desc: Constructs the test sandbox and executes the scenarios asynchronously.
         """
         log.info("\n--- [START] Orchestrating Distributed WASM Environment (Delegated) ---")
-        if str(NEXUS_ROOT) not in sys.path:
-            sys.path.insert(0, str(NEXUS_ROOT))
-            
         supervisor = None
         tunnel = None
         

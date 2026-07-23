@@ -1,6 +1,5 @@
-# phase.wasm.anchor
+# arch.topos.anchor.dphi
 """
-@desc: Cellular Nucleus & Topos Anchor for dphi.wasm Kernel.
 @role: 
   1. Validates structural integrity (Tripartite XOR Parity).
   2. Enforces Multi-Signature Consensus (BFT).
@@ -11,12 +10,12 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
-from phase.wasm.broker import WasmBroker
-from phase.wasm.resolver.adapter import StateAdapter
 from arch.topos.exchange.adapter import TransactionReceipt
+from phase.wasm.broker import WasmBroker
+from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("nexus.anchor")
+log = get_emitter("wasm.anchor")
 
 
 @dataclass
@@ -129,9 +128,7 @@ class NexusAnchor:
 
         log.info(f"[Nexus] ⏳ Epoch successfully sealed. Commit: {commit_hash[:8]}...")
 
-        # -------------------------------------------------------------
-        # Step 3: Receipt Emission (결정론적 물리 영수증 방출)
-        # -------------------------------------------------------------
+        ## Step 3: Receipt Emission (결정론적 물리 영수증 방출)
         receipt = TransactionReceipt(
             job_id=f"nexus_{new_nexus_id}_{int(time.time())}",
             topos_id=proposal.proposed_parity.get("topos_id", "0"),
@@ -140,9 +137,7 @@ class NexusAnchor:
             fuel_consumed=getattr(seal_res, 'fuel_consumed', 0),
             settlement_status="COMMITTED_TO_NEXUS"
         )
-
         log.info(f"[Nexus] 🧾 Deterministic Truth Emitted. (Receipt: {receipt.job_id})")
-
         return AnchorResult(
             is_sealed=True,
             nexus_id=new_nexus_id,

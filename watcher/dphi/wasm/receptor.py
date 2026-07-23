@@ -1,4 +1,5 @@
-# phase.wasm.receptor
+# watcher.dphi.wasm.receptor
+## @lineage: phase.wasm.receptor
 """
 @desc: Cellular Membrane Receptor for dphi.wasm Kernel.
 @role: Ingests non-deterministic external signals (Agent/Deno proofs), 
@@ -11,9 +12,9 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
-from arch.crypto.signer import NodeSigner
+from watcher.dphi.adapter.sign import NodeSigner
 from phase.wasm.broker import WasmBroker
-from phase.wasm.resolver.adapter import StateAdapter
+from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.receptor")

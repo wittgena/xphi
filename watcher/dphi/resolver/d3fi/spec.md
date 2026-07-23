@@ -1,4 +1,5 @@
-# phase.wasm.resolver.d3fi.spec
+# watcher.dphi.resolver.d3fi.spec
+@lineage: phase.wasm.resolver.d3fi.spec
 @lineage: abc.dphi.d3fi.spec
 @desc: [SPEC] d3fi: Topological Agentic Finance Architecture
 

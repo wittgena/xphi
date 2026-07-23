@@ -1,13 +1,15 @@
-# watcher.kernel.wasm.sygyzy.swarm
+# watcher.dphi.sygyzy.swarm
+## @lineage: watcher.kernel.dphi.sygyzy.swarm
+## @lineage: watcher.kernel.wasm.sygyzy.swarm
 import time
 import json
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from phase.wasm.resolver.runner import SchemeRunner
-from phase.wasm.resolver.adapter import StateAdapter
-from watcher.kernel.ledger import KernelStore, KernelCommit
+from watcher.dphi.resolver.runner import SchemeRunner
+from watcher.dphi.adapter.state import StateAdapter
+from watcher.kernel.ledger import KernelLedger, KernelCommit
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("syzygy.swarm")
@@ -21,7 +23,7 @@ class SwarmSyzygyScenarios(SchemeRunner):
         super().__init__(broker)
         self.swarm_size = swarm_size
         self.nodes = []
-        self.store = KernelStore()
+        self.store = KernelLedger()
         
         for i in range(self.swarm_size):
             priv_key = ed25519.Ed25519PrivateKey.generate()

@@ -1,10 +1,9 @@
 # arch.topos.anchor.protocol
 """
-@module: arch.topos.anchor.protocol
 @desc: 
 - Protocol for orchestrating Era-based Alignment cycles.
 - Synchronizes local repository states with the WASM engine.
-- [EVOLUTION] Enforces Zero Trust architecture. Final state commits to the Ledger
+- Enforces Zero Trust architecture. Final state commits to the Ledger
   must pass through the KernelStore's Ring 0 Multi-Sig Privileged Wrapper.
 """
 import json
@@ -12,10 +11,10 @@ import time
 import asyncio
 from typing import List, Dict, Any
 
-from arch.crypto.signer import NodeSigner
+from watcher.dphi.adapter.sign import LedgerAuthAdapter
 from arch.topos.anchor.node import ActorNode, EpochManager
 from phase.wasm.broker import WasmBroker
-from phase.wasm.resolver.adapter import StateAdapter
+from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("anchor.protocol", phase="SYSTEM")
@@ -44,9 +43,7 @@ async def anchor_git_commit_async(
     log.info(f"## Era-based Alignment Cycle Initiated ({mode})")
     current_ts = int(time.time() * 1000)
 
-    # =========================================================================
     # PHASE 1: Parity Triplet Generation (WASM FFI Communication)
-    # =========================================================================
     init_req: Dict[str, Any] = {
         "ts": current_ts,
         "topo": 1,
@@ -67,9 +64,7 @@ async def anchor_git_commit_async(
     nexus_id = parity.get("nexus_id")
     log.info(f"[Protocol] Nexus ID Generated: {nexus_id}")
 
-    # =========================================================================
     # PHASE 2: Physical Commits (Thread Offloading)
-    # =========================================================================
     history = anchor.load_history()
     last_snapshot = history[-1] if history else None
     parent_nexus_id = last_snapshot.get("parity", {}).get("nexus_id", 0) if last_snapshot else 0
@@ -89,18 +84,13 @@ async def anchor_git_commit_async(
         )
         current_aligned_states[r.name] = commit_hash
 
-    # =========================================================================
     # PHASE 3: Epoch Sealing (Cryptographic Signatures & WASM)
-    # =========================================================================
     cached_states: Dict[str, str] = {}
     if last_snapshot:
         prev_total = {**last_snapshot.get("repos", {}), **last_snapshot.get("cached_states", {})}
         for name, last_hash in prev_total.items():
             if name not in current_aligned_states and name != anchor.name:
                 cached_states[name] = last_hash
-
-    # Retrieve Singleton Identity Manager (auto-loads ENV or SSH keys)
-    signer = NodeSigner.get_instance()
 
     # Construct the raw AnchorCommit data for signature verification
     anchor_commit_dict = StateAdapter.build_anchor_commit(
@@ -111,11 +101,9 @@ async def anchor_git_commit_async(
         cached_states=cached_states
     )
     
-    # Convert to Canonical JSON (JCS) bytes to guarantee deterministic hashing
-    canonical_bytes = StateAdapter.to_canonical_bytes(anchor_commit_dict)
-    
-    # Execute Python-side SHA256 hashing followed by Ed25519 signature
-    signature_hex = signer.sign_anchor_commit(canonical_bytes)
+    # [EVOLUTION] Delegate Canonical JSON (JCS) conversion and cryptographic signing to LedgerAuthAdapter
+    signature_hex = LedgerAuthAdapter.sign_state_payload(anchor_commit_dict)
+    current_pubkey = LedgerAuthAdapter.get_signer_pubkey()
 
     # Build the final payload for the WASM engine (Multi-Sig schema applied)
     seal_payload = StateAdapter.build_seal_epoch_payload(
@@ -125,8 +113,8 @@ async def anchor_git_commit_async(
         repos=current_aligned_states,
         cached_states=cached_states,
         timestamp=float(current_ts),
-        signers=[signer.pubkey_hex],     # Multi-Sig array schema applied
-        signatures=[signature_hex],      # Multi-Sig array schema applied
+        signers=[current_pubkey],        # Extracted via LedgerAuthAdapter
+        signatures=[signature_hex],      # Extracted via LedgerAuthAdapter
         threshold=1                      # Single active signer threshold
     )
 
@@ -140,9 +128,7 @@ async def anchor_git_commit_async(
             log.warning("Physical commits were made, but WASM seal failed. Requires subsequent sync to recover.")
         return
 
-    # =========================================================================
     # PHASE 4: State Finalization & Store Registration (Ring 0 Privileged Flow)
-    # =========================================================================
     if apply:
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")

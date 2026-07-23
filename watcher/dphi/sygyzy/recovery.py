@@ -1,13 +1,15 @@
-# watcher.kernel.wasm.sygyzy.recovery
+# watcher.dphi.sygyzy.recovery
+## @lineage: watcher.kernel.dphi.sygyzy.recovery
+## @lineage: watcher.kernel.wasm.sygyzy.recovery
 import time
 import json
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from phase.wasm.resolver.runner import SchemeRunner
-from phase.wasm.resolver.adapter import StateAdapter
-from watcher.kernel.ledger import KernelStore, KernelCommit
+from watcher.dphi.resolver.runner import SchemeRunner
+from watcher.dphi.adapter.state import StateAdapter
+from watcher.kernel.ledger import KernelLedger, KernelCommit
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("sygyzy.recovery")
@@ -25,7 +27,7 @@ class RecoveryScenarios(SchemeRunner):
                 encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
             ).hex() for k in self.auditor_keys
         ]
-        self.store = KernelStore()
+        self.store = KernelLedger()
     
     def _sign_multisig(self, signers: list, commit_dict: dict) -> list:
         """[EVOLUTION] 서명 규격의 통일: Canonical Bytes를 직접 서명 (Ed25519 내부에서 SHA512 처리)"""
