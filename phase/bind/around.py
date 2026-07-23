@@ -1,5 +1,4 @@
 # phase.bind.around
-## @lineage: anchor.bind.around
 import os
 import sys
 import shutil
@@ -16,7 +15,7 @@ log = logging.getLogger("around")
 CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
 PTH_FILENAME = "brane.pth"
-CORES = ["brane", "surgent", "nexus", "theoria", "xphi"]
+CORES = ["brane", "nexus", "theoria", "xphi"]
 
 ## Default minimum skeleton to prevent resolver crashes if bound.json doesn't exist
 DEFAULT_BOUND_SKELETON = {
