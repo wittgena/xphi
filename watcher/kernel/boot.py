@@ -1,17 +1,8 @@
 # watcher.kernel.boot
-## @lineage: logos.kernel.boot
-## @lineage: logic.kernel.boot
 import asyncio
 import uvloop
 import os
 import asyncio
-
-import gateway.adapter.switch.compat.patch 
-
-from watcher.kernel.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
-from logos.gate.memory.factory import BridgeFactory
-from watcher.kernel.phase.signal import PhaseSignal
-from watcher.kernel.receptor import PolymorphicReceptor
 
 from arch.topos.bound.tunnel import TunnelFactory
 from arch.contract.event.bus import AsyncEventBus
@@ -24,10 +15,15 @@ from phase.bind.redirector import PhaseAirlock
 from phase.executor.swarm import SwarmExecutor
 from phase.runtime.node import NodeRuntime, install_os_signal
 
-from watcher.kernel.ledger import KernelLedger
 from watcher.plane.regulator import default_plane
 from watcher.plane.flow.executor import FlowExecutor
 from watcher.plane.emitter import get_emitter
+
+from watcher.kernel.bridge.memory import BridgeMemory
+from watcher.kernel.ledger import KernelLedger
+from watcher.kernel.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
+from watcher.kernel.phase.signal import PhaseSignal
+from watcher.kernel.receptor import PolymorphicReceptor
 
 log = get_emitter("kernel.boot")
 
@@ -44,7 +40,7 @@ class KernelGateway:
         state_mesh = ClusterStateMesh(broker_facade)
         await policy_engine.synchronize_initial_state()
 
-        bridge = BridgeFactory.resolve_bridge(topology, policy_engine, state_mesh)
+        bridge = BridgeMemory.resolve_bridge(topology, policy_engine, state_mesh)
         event_bus = getattr(node, 'bus', AsyncEventBus())
         receptor = PolymorphicReceptor(bus=event_bus, bridge=bridge)
 

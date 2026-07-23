@@ -1,4 +1,5 @@
-# meta.plane.node.config
+# watcher.xe.node.config
+## @lineage: meta.plane.node.config
 ## @lineage: logos.contract.config
 ## @lineage: meta.contract.config
 ## @lineage: xphi.kernel.config
