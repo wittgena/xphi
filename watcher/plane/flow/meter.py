@@ -5,7 +5,7 @@ import logging
 from collections import defaultdict, deque
 from typing import Dict, Any, List
 
-from watcher.tracer.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
+from arch.xor.metric.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 log = logging.getLogger("flow.meter")
 

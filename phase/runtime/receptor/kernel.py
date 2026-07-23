@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from phase.runtime.receptor.topos import ReceptorTopos
-from watcher.tracer.trajectory import (
+from arch.xor.metric.trajectory import (
     Point, 
     WindowedTrajectory, 
     DefaultBoundLensStrategy, 
