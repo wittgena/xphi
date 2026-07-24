@@ -1,6 +1,4 @@
 # arch.topos.bound.surge.model
-## @lineage: arch.topos.surge.model
-## @lineage: arch.topos.state.surge.model
 from pydantic import BaseModel, model_validator, ConfigDict
 from typing import Any, Type, TypeVar
 import dataclasses
@@ -9,27 +7,22 @@ T = TypeVar("T", bound="SurgeBaseModel")
 
 def _melt_alien_objects(obj: Any) -> Any:
     """이종 네임스페이스에서 온 모든 실체(Instance)를 순수 데이터 질료(Primitive)로 해체"""
-    ## 블루프린트(Type) 보존: 클래스 자체는 융해하지 않고 그대로 통과
     if isinstance(obj, type):
         return obj
 
-    ## 컨테이너 재귀 순회 (Collection Mapping)
     if isinstance(obj, dict):
         return {k: _melt_alien_objects(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple, set)):
         return type(obj)(_melt_alien_objects(v) for v in obj)
 
-    ## Pydantic 융해 (v1, v2 호환)
     if hasattr(obj, 'model_dump') and callable(getattr(obj, 'model_dump')):
         return _melt_alien_objects(obj.model_dump())
     if hasattr(obj, 'dict') and callable(getattr(obj, 'dict')):
         return _melt_alien_objects(obj.dict())
 
-    ## 표준 Dataclass 융해
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         return _melt_alien_objects(dataclasses.asdict(obj))
 
-    ## 일반 Python 객체 융해 (Optional) - __dict__를 가진 일반 객체 중 시스템 내부 객체인 경우 데이터로 취급
     if hasattr(obj, "__dict__") and str(type(obj).__module__).startswith(("agent", "closure", "ext")):
         return _melt_alien_objects(vars(obj))
 
@@ -60,3 +53,41 @@ class SurgeBaseModel(BaseModel):
         if hasattr(instance, "model_post_init"):
             instance.model_post_init(None)
         return instance
+
+class DynamicSurgeModel(SurgeBaseModel):
+    """
+    - 동적 스키마(extra='allow')를 지원
+    - Dict-like 접근(obj['key'])을 Pydantic V2에 맞게 안전하게 제공하는 확장 모델
+    """
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        populate_by_name=True,
+        extra='allow',
+        protected_namespaces=()
+    )
+
+    def __getitem__(self, key: str) -> Any:
+        if hasattr(self, key):
+            return getattr(self, key)
+        
+        if self.__pydantic_extra__ is not None and key in self.__pydantic_extra__:
+            return self.__pydantic_extra__[key]
+            
+        raise KeyError(key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    def __contains__(self, key: str) -> bool:
+        if hasattr(self, key):
+            return True
+        return bool(self.__pydantic_extra__ is not None and key in self.__pydantic_extra__)
+
+    def items(self):
+        return self.model_dump().items()
+
+    def __setitem__(self, key: str, value: Any):
+        setattr(self, key, value)
