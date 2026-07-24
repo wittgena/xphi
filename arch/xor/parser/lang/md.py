@@ -1,4 +1,5 @@
-# arch.xor.block.parser.md
+# arch.xor.parser.lang.md
+## @lineage: arch.xor.block.parser.md
 ## @lineage: hub.xor.block.parser.md
 ## @lineage: arch.code.block.parser.md
 ## @lineage: arch.model.code.block.parser.md
@@ -10,7 +11,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.xor.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
+from arch.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 
 ## Markdown → AST
 class MdAstParser:

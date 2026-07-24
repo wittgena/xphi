@@ -1,4 +1,5 @@
-# arch.xor.block.parser.kt
+# arch.xor.parser.lang.kt
+## @lineage: arch.xor.block.parser.kt
 ## @lineage: hub.xor.block.parser.kt
 ## @lineage: arch.code.block.parser.kt
 ## @lineage: arch.model.code.block.parser.kt
@@ -9,7 +10,7 @@
 import re
 from pathlib import Path
 from typing import List, Tuple
-from arch.xor.block.schema import MdDocument, MdSection, CodeBlock, Paragraph, Contract
+from arch.xor.parser.block.schema import MdDocument, MdSection, CodeBlock, Paragraph, Contract
 
 class KtAstParser:
     def __init__(self, path: Path, contracts: List[Contract] = None):

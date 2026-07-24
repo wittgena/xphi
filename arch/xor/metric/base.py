@@ -1,4 +1,5 @@
-# watcher.tracer.metrics
+# arch.xor.metric.base
+## @lineage: watcher.tracer.metrics
 import numpy as np
 
 def _is_invalid(values: np.ndarray, min_length: int = 2) -> bool:

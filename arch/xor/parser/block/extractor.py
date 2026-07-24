@@ -1,4 +1,5 @@
-# arch.xor.block.extractor
+# arch.xor.parser.block.extractor
+## @lineage: arch.xor.block.extractor
 import re
 import sys
 import json
@@ -7,10 +8,10 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from watcher.plane.emitter import get_logger
 from phase.bind.resolver import find_current_self, resolve_path
-from arch.xor.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
-from arch.xor.block.parser.md import MdAstParser
-from arch.xor.block.parser.py import PyAstParser
-from arch.xor.block.parser.kt import KtAstParser 
+from arch.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
+from arch.xor.parser.lang.md import MdAstParser
+from arch.xor.parser.lang.py import PyAstParser
+from arch.xor.parser.lang.kt import KtAstParser 
 
 log = get_logger("block.extractor")
 

@@ -5,8 +5,8 @@ import os
 from typing import Any, Dict, List, Optional
 
 from arch.contract.registry.unified import contract
-from arch.xor.block.parser.md import MdAstParser
-from arch.xor.block.extractor import BlockExtractor
+from arch.xor.parser.lang.md import MdAstParser
+from arch.xor.parser.block.extractor import BlockExtractor
 from phase.ator.transcript.phi import TranscriptBase
 from watcher.plane.emitter import get_logger
 

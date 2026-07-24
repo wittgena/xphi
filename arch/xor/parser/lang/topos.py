@@ -1,4 +1,5 @@
-# arch.xor.block.parser.topos
+# arch.xor.parser.lang.topos
+## @lineage: arch.xor.block.parser.topos
 ## @lineage: hub.xor.block.parser.topos
 ## @lineage: arch.code.block.parser.topos
 ## @lineage: arch.model.code.block.parser.topos
@@ -13,7 +14,7 @@ import io
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.xor.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
+from arch.xor.parser.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
 
 class ToposAstParser:
     """

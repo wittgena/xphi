@@ -1,4 +1,5 @@
-# topos.bound.resolver.log
+# watcher.tracer.resolver.log
+## @lineage: topos.bound.resolver.log
 """
 @desc: 
 - Resolves structured log rulesets into Elasticsearch JSON queries

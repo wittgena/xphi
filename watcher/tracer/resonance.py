@@ -1,4 +1,5 @@
-# topos.audit.tracer.resonance
+# watcher.tracer.resonance
+## @lineage: topos.audit.tracer.resonance
 import sys
 import asyncio
 from watcher.tracer.infra.auditor import ToposAuditor, SemanticLogAuditor, ResonanceSemanticAuditor

@@ -1,4 +1,5 @@
-# topos.bound.router.infra
+# watcher.tracer.infra.header
+## @lineage: topos.bound.router.infra
 """
 @desc: Centralized topology routing hub resolving HTTP/WS endpoints and telemetry headers.
 @flow: base configuration -> parameter mapping -> synchronized network URI resolution.

@@ -1,4 +1,5 @@
-# topos.audit.contract.model
+# arch.contract.audit.model
+## @lineage: topos.audit.contract.model
 from typing import Any, ClassVar
 from pydantic import BaseModel, ConfigDict, Field
 

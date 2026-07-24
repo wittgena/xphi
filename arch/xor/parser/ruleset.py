@@ -1,4 +1,5 @@
-# fiber.xor.parser.ruleset
+# arch.xor.parser.ruleset
+## @lineage: fiber.xor.parser.ruleset
 ## @lineage: ops.xor.parser.ruleset
 ## @lineage: gov.sandbox.xor.parser.ruleset
 ## @lineage: xor.opt.analyzer.parser.ruleset

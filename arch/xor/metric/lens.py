@@ -1,4 +1,5 @@
-# meta.ops.observer.sphere.lens
+# arch.xor.metric.lens
+## @lineage: meta.ops.observer.sphere.lens
 ## @lineage: meta.plane.observer.sphere.lens
 ## @lineage: plane.observer.sphere.lens
 ## @lineage: logict.plane.sphere.flow.lens

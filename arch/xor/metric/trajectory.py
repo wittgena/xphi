@@ -1,4 +1,5 @@
-# watcher.tracer.trajectory
+# arch.xor.metric.trajectory
+## @lineage: watcher.tracer.trajectory
 import numpy as np
 import datetime
 from typing import List, Dict, Any, Callable, Optional

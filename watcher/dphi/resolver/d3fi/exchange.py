@@ -1,12 +1,4 @@
 # watcher.dphi.resolver.d3fi.exchange
-## @lineage: phase.wasm.resolver.d3fi.exchange
-"""
-@ontology: Discards socio-ethical definitions ("collusion", "malice") for pure topological state mechanics.
-@entanglement: Processes pre-synchronized intents neutrally via XOR parity, blind to off-chain agent motives.
-@sandbox: Treats anomalous logic strictly as computational pressure, applying thermodynamic bounds (Fuel) without value judgment.
-@collapse: Replaces human trust with absolute M-of-N cryptographic constraints to trigger deterministic state transitions.
-@exchange: Translates internally resolved parity states into externally verifiable, monetizable transaction receipts.
-"""
 import time
 import json
 import hashlib
@@ -14,9 +6,9 @@ from typing import List
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from arch.topos.exchange.adapter import D3fiExchangeAdapter
-from watcher.dphi.resolver.runner import SchemeRunner
+from watcher.dphi.adapter.exchange import D3fiExchangeAdapter
 from watcher.dphi.adapter.state import StateAdapter
+from watcher.dphi.resolver.runner import SchemeRunner
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("scenario.exchange")

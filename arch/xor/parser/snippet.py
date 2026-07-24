@@ -1,4 +1,5 @@
-# fiber.xor.parser.snippet
+# arch.xor.parser.snippet
+## @lineage: fiber.xor.parser.snippet
 """
 @desc: Automatically injects dynamic CLI documentation and source code snippets into Markdown files to keep documentation synchronized with the codebase.
 @flow: Initialize Manager -> Parse README -> Regex Match Snippet/CLI Blocks -> Extract & Format Code/Docs -> Write to File (or Check)

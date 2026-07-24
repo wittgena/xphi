@@ -1,4 +1,5 @@
-# topos.audit.tracer.registry
+# watcher.tracer.registry
+## @lineage: topos.audit.tracer.registry
 from phase.bind.resolver import resolve_path
 
 class TargetRegistry:

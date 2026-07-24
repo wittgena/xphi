@@ -1,4 +1,5 @@
-# arch.topos.ingress.schema
+# watcher.kernel.bridge.schema
+## @lineage: arch.topos.ingress.schema
 ## @lineage: fiber.gateway.ingress.schema
 from pydantic import BaseModel, Field
 from typing import Any, Dict

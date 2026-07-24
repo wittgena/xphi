@@ -1,4 +1,5 @@
-# arch.topos.ingress.gateway
+# watcher.kernel.bridge.gateway
+## @lineage: arch.topos.ingress.gateway
 """
 @desc: 
 - Interceptor Bridge middleware decoupling Agent/Ingress execution from the Kernel Store.
@@ -8,25 +9,19 @@
 import uuid
 from typing import Any, Dict, Optional
 
-from arch.topos.ingress.schema import LogicStream as IngressLogicStream
+from watcher.kernel.bridge.schema import LogicStream as IngressLogicStream
 from watcher.kernel.ledger import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("ingress.gateway", phase="KERNEL")
 
 class ToposGateway:
-    """
-    @desc: Compliant middleware & Adapter bridging external Ingress to the unified KernelStore.
-           (Formerly CompilerBridge)
-    """
+    """@desc: Compliant middleware & Adapter bridging external Ingress to the unified KernelStore"""
     def __init__(self, store: Optional[KernelLedger] = None):
         self.store = store or KernelLedger()
 
     async def authorize_ingress(self, stream: IngressLogicStream) -> bool:
-        """
-        @desc: Structural adapter for Ingress validation.
-        - Unpacks the 3D rigid Ingress schema into the 2D flat context required by the Store.
-        """
+        """@desc: Structural adapter for Ingress validation"""
         action_id = str(stream.meta.stream_id)
         action = stream.payload.intent.value
         payload = stream.payload.parameters

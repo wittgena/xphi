@@ -1,4 +1,5 @@
-# arch.xor.block.schema
+# arch.xor.parser.block.schema
+## @lineage: arch.xor.block.schema
 ## @lineage: hub.xor.block.schema
 ## @lineage: arch.code.block.schema
 ## @lineage: arch.model.code.block.schema

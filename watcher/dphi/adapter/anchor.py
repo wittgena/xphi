@@ -1,16 +1,11 @@
-# arch.topos.anchor.dphi
-"""
-@role: 
-  1. Validates structural integrity (Tripartite XOR Parity).
-  2. Enforces Multi-Signature Consensus (BFT).
-  3. Permanently seals the Epoch and emits Deterministic Receipts.
-"""
+# watcher.dphi.adapter.anchor
+## @lineage: arch.topos.anchor.dphi
 import json
 import time
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
-from arch.topos.exchange.adapter import TransactionReceipt
+from watcher.dphi.adapter.exchange import TransactionReceipt
 from phase.wasm.broker import WasmBroker
 from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter

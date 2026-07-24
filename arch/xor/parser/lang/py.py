@@ -1,4 +1,5 @@
-# arch.xor.block.parser.py
+# arch.xor.parser.lang.py
+## @lineage: arch.xor.block.parser.py
 ## @lineage: hub.xor.block.parser.py
 ## @lineage: arch.code.block.parser.py
 ## @lineage: arch.model.code.block.parser.py
@@ -11,7 +12,7 @@ import ast
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.xor.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
+from arch.xor.parser.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
 
 ## Python → AST (using Python builtin ast module)
 class PyAstParser:

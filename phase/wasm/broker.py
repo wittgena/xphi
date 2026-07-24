@@ -3,8 +3,9 @@ import json
 import uuid
 import asyncio
 from typing import Optional, Any, Mapping
-from arch.xor.proto.code import ExecutionResult, ExecutionError
+
 from arch.topos.bound.tunnel import TunnelFactory
+from phase.runtime.inter.protocol import ExecutionResult, ExecutionError
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.broker")

@@ -15,7 +15,7 @@ try:
 except ImportError:
     wasmtime = None
 
-from arch.xor.proto.code import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
+from phase.runtime.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
 from phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 from watcher.dphi.cgroup import WasmCgroup, CgroupPolicy

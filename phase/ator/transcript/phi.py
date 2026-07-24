@@ -10,8 +10,8 @@ from typing import Any, Dict, List, Tuple
 
 from arch.gov.flow import PhaseFlow, FlowState, Transduction
 from arch.contract.registry.unified import contract, registry
-from arch.xor.block.parser.md import MdAstParser
-from arch.xor.block.extractor import BlockExtractor
+from arch.xor.parser.lang.md import MdAstParser
+from arch.xor.parser.block.extractor import BlockExtractor
 from watcher.plane.emitter import get_logger
 
 log = get_logger("transcript.phi")
