@@ -18,7 +18,6 @@ class TrustlessEpochBase(SchemeRunner):
         super().__init__(broker)
         self.scenario_name = scenario_name
         
-        # [NEW] Generate a 3-member committee for dynamic ACL & multi-signature
         self.committee_keys = [ed25519.Ed25519PrivateKey.generate() for _ in range(3)]
         self.committee_pubs = [
             k.public_key().public_bytes(

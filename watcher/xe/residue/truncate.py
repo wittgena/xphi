@@ -1,4 +1,5 @@
-# atoa.mesh.residue.truncate
+# watcher.xe.residue.truncate
+## @lineage: atoa.mesh.residue.truncate
 import hashlib
 from pathlib import Path
 from watcher.plane.emitter import get_logger

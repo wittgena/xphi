@@ -182,7 +182,7 @@ class ExchangeScenario(SchemeRunner):
             timestamp=time.time(),
             signers=signers,
             signatures=signatures,
-            threshold=3,  # 3-of-3 Absolute Consensus required for final settlement
+            threshold=3,
             allowed_signers=signers
         )
         
@@ -192,6 +192,4 @@ class ExchangeScenario(SchemeRunner):
             seal_payload, 
             expected_success=True
         )
-        
-        # [MODIFIED] 서명 배열을 반환하여 ExchangeAdapter가 Receipt 발행에 사용할 수 있게 함
         return signatures
