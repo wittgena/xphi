@@ -1,8 +1,4 @@
 # watcher.dphi.auditor
-## @lineage: watcher.kernel.dphi.auditor
-## @lineage: watcher.kernel.wasm.auditor
-## @lineage: watcher.auditor.wasm
-## @lineage: ops.watcher.tracer.wasm.auditor
 import asyncio
 import struct
 from typing import Union, Any

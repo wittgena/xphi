@@ -1,5 +1,4 @@
 # watcher.dphi.resolver.scenario.anchor
-## @lineage: phase.wasm.resolver.scenario.anchor
 import time
 import json
 import hashlib

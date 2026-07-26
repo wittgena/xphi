@@ -88,12 +88,11 @@ class WasmTracer(BaseTracer):
                     parent_hash=head_hash
                 )
                 
-                # [EVOLUTION] Zero Trust Architecture: Canonical conversion, Multi-Sig validation, and Role Checks
                 try:
-                    # 1. Sign the KernelCommit payload via the unified Auth Adapter
+                    ## Sign the KernelCommit payload via the unified Auth Adapter
                     signature_hex = LedgerAuthAdapter.sign_state_payload(asdict(commit))
                     
-                    # 2. Consensus Role Check (FOLLOWER 방어 로직)
+                    ## Consensus Role Check (FOLLOWER 방어 로직)
                     if hasattr(self.store, 'role') and self.store.role == LedgerRole.FOLLOWER:
                         self.log.warning("[Ledger] Node is FOLLOWER. Bypassing physical disk seal and proposing to Mempool.")
                         # FOLLOWER는 직접 seal_system_epoch를 호출하지 않고 Mempool에 제안(Propose)만 수행
