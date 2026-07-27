@@ -1,12 +1,4 @@
 # arch.xor.parser.block.schema
-## @lineage: arch.xor.block.schema
-## @lineage: hub.xor.block.schema
-## @lineage: arch.code.block.schema
-## @lineage: arch.model.code.block.schema
-## @lineage: arch.project.block.schema
-## @lineage: xphi.code.block.schema
-## @lineage: topos.arch.block.schema
-## @lineage: arch.model.block.schema
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from pathlib import Path

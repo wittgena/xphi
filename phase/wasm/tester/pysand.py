@@ -10,7 +10,7 @@ from arch.topos.bound.tunnel import TunnelFactory
 from phase.bind.resolver import resolve_path
 from phase.runtime.task.supervisor import TaskSupervisor
 from phase.runtime.task.wasm import WasmTaskerDaemon
-from phase.wasm.broker import WasmBroker
+from watcher.dphi.broker import WasmBroker
 
 from watcher.plane.emitter import get_emitter
 

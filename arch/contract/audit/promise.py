@@ -1,71 +1,131 @@
 # arch.contract.audit.promise
-## @lineage: topos.audit.contract.promise
+## arch.contract.audit.promise
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, NewType, Protocol
+from typing import Any, Callable, TypeVar, Generic, Protocol, Optional
 
-def future(message: str):
-    """
-    @desc: Architectural placeholder for future implementation.
-    - Acts as a explicit black-box structure for AI coding agents to fill in.
-    """
-    def decorator(fn):
-        fn.__future_message__ = message
-        return fn
-    return decorator
-
-class _TypeAsField:
-    def merge(
-        self,
-        a: "두 대화의 의미적 교집합을 보존하는 좌측 우선 병합",
-        b: "Conversation",
-    ) -> "병합 결과 + 보존된 긴장 메타데이터":
-        pass
-
-class Tribunal(Protocol):
-    """투입된 어댑터의 잠재적 위험을 정량화하는 게이트키퍼"""
-    def judge(self, candidate: Any) -> Any: ...
-    def explain(self, verdict: Any) -> str: ...
+T = TypeVar("T")
 
 class NotYetCrystallized(Exception):
-    """이 경로는 의미가 충분히 응결되지 않아 실행을 거부한다."""
+    """
+    @xe.desc: Execution rejected. The target vector lacks sufficient structural crystallization.
+    @xe.cause: P2P consensus latency, LLM semantic field collapse failure, or unmapped architectural voids.
+    @xe.phase: Pre-Collapse
+    """
+    pass
 
-def shard_corpus(corpus_path: str, num_shards: int) -> list[str]:
-    raise NotYetCrystallized("토큰 균형 sharding은 아직 정의되지 않음 — hash-based vs semantic-cluster-based 결정 보류")
+class RuptureDetected(Exception):
+    """
+    @xe.desc: Critical violation of a topological invariant.
+    @xe.cause: P2P network bifurcation (split-brain) or explicit LLM safety/schema breach.
+    @xe.phase: Collapse Failure
+    """
+    pass
 
-Adapter = NewType("Adapter", dict)
-Validated = NewType("Validated", Adapter)
-
-## @ritual: 다음 함수는 매 세대 1회 호출되며, 호출 후 호출자의 상태를 비결정적으로 변형시킨다
-def consult_ancestors(generation: int) -> Any:
-    ...
-
-@dataclass
+@dataclass(frozen=True)
 class Promise:
+    """
+    @xe.desc: Absolute topological anchor dictating the boundaries of entropy collapse.
+    @xe.domain.p2p: Consensus conditions for state synchronization across decoupled nodes.
+    @xe.domain.llm: Semantic alignment target forcing non-deterministic outputs into structured vectors.
+    @xe.domain.lineage: Cryptographic invariant required for parent-to-child state transition.
+    """
     contract: str
     invariant: str
     consequence: str
 
+def future(promise: Optional[Promise] = None):
+    """
+    @xe.desc: Architectural void awaiting deterministic crystallization.
+    @xe.bind: Injects an absolute structural constraint (Promise) into unmapped space.
+    @xe.enforce: AI agents or swarm nodes traversing this vector MUST satisfy the injected promise.
+    """
+    def decorator(fn: Callable) -> Callable:
+        fn.__future_promise__ = promise
+        return fn
+    return decorator
+
+class Adapter(dict):
+    """
+    @xe.desc: Pure data vessel adrift in the non-deterministic void (e.g., raw P2P packet, raw LLM token stream).
+    """
+    pass
+
+@dataclass(frozen=True)
+class Validated(Generic[T]):
+    """
+    @xe.desc: Cryptographically and semantically collapsed state, authorized for lineage integration.
+    @xe.invariant: Must possess a verified lineage hash and a measured topological tension score.
+    """
+    payload: T
+    lineage_hash: str
+    tension_at_validation: float
+
+class Tribunal(Protocol):
+    """
+    @xe.desc: Gatekeeper that measures the resonance and entropy of incoming vessels.
+    @xe.action: Collapses a non-deterministic Adapter into a Validated state or forces a Rupture.
+    """
+    def judge(self, candidate: Adapter, promise: Promise) -> Validated[Adapter]: ...
+    def explain(self, verdict: Validated[Adapter]) -> str: ...
+
+class SemanticFieldAligner:
+    """
+    @xe.desc: Resolves semantic drift between non-deterministic agents into a unified topological vector.
+    @xe.mechanism: Intersects LLM hallucinations or P2P state forks to extract the highest-density truth.
+    """
+    def merge(
+        self,
+        anchor: str,
+        drift: str,
+    ) -> Validated[str]:
+        raise NotYetCrystallized("Semantic-cluster alignment algorithm remains in the void.")
+
+## @xe.ritual: Invoked exactly once per Epoch. 
+## @xe.desc: Extracts non-deterministic context vectors from the ancestral lineage tensor.
+@future()
+def consult_ancestors(generation: int) -> Adapter:
+    raise NotYetCrystallized("The ritual of ancestral state retrieval is not yet crystallized.")
+
+
+## @xe.phase: Topological Anchors
+## Pre-defined vectors governing the macro-structure of the swarm.
+
 scatter_promise = Promise(
-    contract="N개의 spore를 4시간 내에 Dead Drop에 배치",
-    invariant="각 spore는 서로 다른 shard를 가짐",
-    consequence="중복 학습으로 인한 의미장 붕괴",
+    contract="Distribute N spores to the Dead Drop within a 4-hour temporal window.",
+    invariant="Each spore maintains a cryptographically isolated semantic shard.",
+    consequence="Semantic field collapse due to redundant learning signals and resonance overlap.",
 )
 
 harvest_promise = Promise(
-    contract="완료된 spore를 검증 후 Nexus에 통합",
-    invariant="Tribunal을 통과하지 않은 어댑터는 통합되지 않음",
-    consequence="백도어 침입에 의한 lineage 오염",
+    contract="Integrate validated spores into the Global Nexus lineage.",
+    invariant="No adapter shall merge without explicit cryptographic certification from the Tribunal.",
+    consequence="Irreversible contamination of the macro-lineage via backdoor vectors.",
 )
 
-INCOMPLETE_PIPELINE = """Scatter -> Dead Drop -> ??? -> Tribunal -> Nexus"""
+llm_alignment_promise = Promise(
+    contract="Force LLM agent emissions to align with the core system topology.",
+    invariant="Generated JSON/structures strictly satisfy the pre-defined base schema without hallucinated keys.",
+    consequence="Immediate runtime rupture within the WASM sandbox environment.",
+)
 
-class _NamingGaps:
-    def judge(self) -> Any: pass
+INCOMPLETE_PIPELINE = """Scatter -> Dead Drop -> [Semantic Alignment] -> Tribunal -> Nexus"""
+
+class IntegrityGaps:
+    """
+    @xe.desc: Cryptographic and semantic voids requiring phase crystallization for full system alignment.
+    """
+    
+    @future(promise=harvest_promise)
     def _audit_for_xe(self) -> Any:
-        """xe: 무엇을 감사하는가"""
+        """
+        @xe.target: Define the exact entropy parameters to audit prior to uncertainty elimination.
+        """
         pass
 
+    @future(promise=llm_alignment_promise)
     def _xe_signature(self) -> Any:
-        """xe: 서명을 어떻게 처리하는가"""
+        """
+        @xe.target: Establish the mechanism to bind deterministic cryptographic signatures to non-deterministic LLM output tensors.
+        """
         pass

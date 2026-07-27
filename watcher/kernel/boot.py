@@ -19,7 +19,7 @@ from watcher.plane.regulator import default_plane
 from watcher.plane.flow.executor import FlowExecutor
 from watcher.plane.emitter import get_emitter
 
-from watcher.kernel.bridge.memory import BridgeMemory
+from phase.runtime.bridge.memory import BridgeMemory
 from watcher.kernel.ledger import KernelLedger
 from watcher.kernel.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
 from watcher.kernel.phase.signal import PhaseSignal

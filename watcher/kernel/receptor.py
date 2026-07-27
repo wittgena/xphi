@@ -1,8 +1,4 @@
 # watcher.kernel.receptor
-## @lineage: logos.kernel.receptor
-## @lineage: logic.kernel.receptor
-## @lineage: bound.proxy.ingress.receptor
-## @lineage: anchor.phase.ingress.receptor
 """
 @desc: 
 - Polymorphic Ingress Boundary (Data Plane Receptor)

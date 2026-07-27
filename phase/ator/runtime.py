@@ -2,7 +2,7 @@
 import asyncio
 import json
 from typing import Dict, Any, List
-from phase.wasm.broker import WasmBroker
+from watcher.dphi.broker import WasmBroker
 from watcher.plane.emitter import get_logger
 from arch.gov.flow import PhaseFlow, FlowState
 

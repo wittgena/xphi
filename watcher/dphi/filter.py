@@ -1,15 +1,4 @@
 # watcher.dphi.filter
-## @lineage: watcher.kernel.dphi.filter
-## @lineage: watcher.kernel.wasm.filter
-## @lineage: phase.wasm.filter.entry
-"""
-@desc: Pure Python WebAssembly Binary Auditor & Entry Gatekeeper.
-@role: 
-- Parses raw .wasm bytes without external dependencies.
-- Enforces zero-trust isolation by strictly whitelisting Imports.
-- Ensures contract structural compliance by requiring specific Exports.
-"""
-
 import json
 from typing import Dict, Any, List, Tuple
 
@@ -18,8 +7,6 @@ class WasmBinaryFilter:
     ALLOWED_IMPORTS = {
         "env": {"consume_fuel", "crypto_sha256", "crypto_ed25519_verify", "ledger_read_state"}
     }
-    
-    # [구조적 정합성 정책] 생태계 참여를 위해 반드시 노출해야 하는 함수 목록
     REQUIRED_EXPORTS = {
         "validate_intent", 
         "execute_transition", 
@@ -31,7 +18,6 @@ class WasmBinaryFilter:
         self.found_imports: List[Dict[str, str]] = []
         self.found_exports: List[str] = []
 
-    # --- WASM Parsing Utilities (Zero-Dependency) ---
     @staticmethod
     def _read_leb128_u32(data: bytes, offset: int) -> Tuple[int, int]:
         """WASM 표준 가변 길이 정수 인코딩(LEB128) 디코더"""
@@ -56,8 +42,6 @@ class WasmBinaryFilter:
             raise ValueError("String length exceeds binary size")
         string_val = data[offset:offset+length].decode('utf-8')
         return string_val, offset + length
-
-    # --- Section Parsers ---
 
     def _parse_import_section(self, data: bytes, offset: int, end_offset: int) -> None:
         """Type 2: Import Section 파싱 - 호스트에 어떤 권한을 요구하는가?"""
@@ -111,7 +95,6 @@ class WasmBinaryFilter:
         self.found_imports.clear()
         self.found_exports.clear()
 
-        # 1. Magic Number & Version 검증
         if not wasm_bytes.startswith(b'\x00asm'):
             return {"success": False, "error": "Invalid Magic Number. Not a valid WASM binary."}
         if wasm_bytes[4:8] != b'\x01\x00\x00\x00':
@@ -120,7 +103,6 @@ class WasmBinaryFilter:
         offset = 8
         length = len(wasm_bytes)
 
-        # 2. Section 순회 및 파싱
         try:
             while offset < length:
                 section_id = wasm_bytes[offset]
@@ -138,14 +120,12 @@ class WasmBinaryFilter:
         except Exception as e:
             self.errors.append(f"MALFORMED BINARY: Failed to parse WASM structural sections -> {str(e)}")
 
-        # 3. 필수 Export 조건 검증 (ABI 호환성)
         missing_exports = self.REQUIRED_EXPORTS - set(self.found_exports)
         if missing_exports:
             self.errors.append(
                 f"STRUCTURAL FAILURE: Contract must export mandatory ABI functions: {missing_exports}"
             )
 
-        # 4. 종합 판정
         is_safe = len(self.errors) == 0
         return {
             "success": is_safe,

@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
 from watcher.dphi.adapter.exchange import TransactionReceipt
-from phase.wasm.broker import WasmBroker
+from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 

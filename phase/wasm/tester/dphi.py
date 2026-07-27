@@ -5,16 +5,16 @@ from typing import Tuple
 
 from arch.topos.bound.tunnel import TunnelFactory
 
-from watcher.dphi.resolver.scenario.sandbox import SandboxScenarios
-from watcher.dphi.resolver.scenario.ledger import LedgerScenarios
-from watcher.dphi.resolver.scenario.a2a import A2AScenarios
-from watcher.dphi.resolver.scenario.ecosystem import EcosystemScenarios
-from watcher.dphi.resolver.scenario.anchor import AnchorScenarios
+from watcher.dphi.scheme.scenario.sandbox import SandboxScenarios
+from watcher.dphi.scheme.scenario.ledger import LedgerScenarios
+from watcher.dphi.scheme.scenario.a2a import A2AScenarios
+from watcher.dphi.scheme.scenario.ecosystem import EcosystemScenarios
+from watcher.dphi.scheme.scenario.anchor import AnchorScenarios
 
 from phase.bind.resolver import resolve_path
 from phase.runtime.task.supervisor import TaskSupervisor
 from phase.runtime.task.wasm import WasmTaskerDaemon
-from phase.wasm.broker import WasmBroker
+from watcher.dphi.broker import WasmBroker
 
 from watcher.plane.emitter import get_emitter
 

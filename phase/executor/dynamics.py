@@ -8,7 +8,7 @@ from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_pha
 from typing import List, Dict, Optional, Any
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
-from watcher.xe.cont import XeCont
+from arch.topos.flow.cont import XeCont
 
 class SystemBuilder:
     """

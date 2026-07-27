@@ -1,19 +1,15 @@
 # watcher.tracer.resolver.log
-## @lineage: topos.bound.resolver.log
-"""
-@desc: 
-- Resolves structured log rulesets into Elasticsearch JSON queries
-- Aligned with the unified 'resolve()' interface pattern
-"""
 import json
-from typing import List, Tuple, Dict, Any, Optional
-from arch.xor.parser.ruleset import ElasticDSLRulesetParser
+from typing import List, Tuple, Dict, Any, Optional, Generic, TypeVar
+from arch.xor.parser.stream import ElasticDSLRulesetParser
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("resolver.log")
 
-class LogResolver:
-    """@desc: Translates high-level domain rulesets into deeply nested Elasticsearch queries."""
+T = TypeVar('T')
+
+class LogResolver(Generic[T]):
+    """@desc: Translates high-level domain rulesets into deeply nested queries or compiled engines."""
     
     DEFAULT_RULESET = {
         "global_config": {
@@ -28,31 +24,20 @@ class LogResolver:
 
     def __init__(self, ruleset: Optional[Dict[str, Any]] = None, parser: Optional[Any] = None):
         self.ruleset = ruleset if ruleset is not None else self.DEFAULT_RULESET
+        # 기본값은 ES 기반이나 주입되는 파서에 따라 유연히 대응
         self.parser = parser if parser is not None else ElasticDSLRulesetParser()
 
-    def resolve(self, target_tags: Optional[List[str]] = None) -> List[Tuple[Dict[str, Any], str]]:
+    def resolve(self, target_tags: Optional[List[str]] = None) -> T:
         """
-        @desc: 리졸버 공통 인터페이스. 룰셋을 컴파일하여 (ES JSON Dict, Tag) 형태로 반환합니다.
+        @desc: 리졸버 공통 인터페이스. 주입된 파서에 따라 
+               1. List[Tuple[Dict, str]] (ES) 
+               2. CompiledRuleEngine (Stream) 등을 반환합니다.
         """
         try:
-            parsed_queries = self.parser.parse_ruleset(self.ruleset, target_tags)
-            
-            resolved_results = []
-            for q_obj, tag in parsed_queries:
-                resolved_results.append((q_obj.to_dict(), tag))
-                
-            log.info(f"✅ Successfully resolved {len(resolved_results)} log queries.")
-            return resolved_results
+            resolved_result = self.parser.parse_ruleset(self.ruleset, target_tags)
+            log.info(f"✅ Successfully resolved ruleset topology via {self.parser.__class__.__name__}.")
+            return resolved_result
             
         except Exception as e:
-            log.error(f"🚨 Failed to resolve log ruleset: {str(e)}")
-            return []
-
-if __name__ == "__main__":
-    resolver = LogResolver()
-    resolved_queries = resolver.resolve()
-    log.info("=== [Resolved Elasticsearch JSON Queries] ===")
-    for es_json, tag in resolved_queries:
-        log.info(f"\n[Tag]: {tag}")
-        log.info(json.dumps(es_json, indent=2))
-        log.info("-" * 60)
+            log.error(f"🚨 Failed to resolve ruleset: {str(e)}")
+            return None

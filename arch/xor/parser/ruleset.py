@@ -1,205 +1,146 @@
 # arch.xor.parser.ruleset
-## @lineage: fiber.xor.parser.ruleset
-## @lineage: ops.xor.parser.ruleset
-## @lineage: gov.sandbox.xor.parser.ruleset
-## @lineage: xor.opt.analyzer.parser.ruleset
-## @lineage: xphi.analyzer.parser.ruleset
 import json
+import re
+import orjson
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Dict, Any, Optional, Callable
-from luqum.parser import parse as luqum_parse
-from luqum.tree import AndOperation, Group
-from elasticsearch.dsl import Q
+from typing import List, Dict, Any, Optional, Generic, TypeVar
+from arch.xor.secret.redact import redact_string, sanitize_payload
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("parser.ruleset")
 
-class AbstractRulesetParser(ABC):
+InputT = TypeVar('InputT')
+OutputT = TypeVar('OutputT')
+EngineT = TypeVar('EngineT')
+
+class CompiledEngine(ABC, Generic[InputT, OutputT]):
     @abstractmethod
-    def parse_ruleset(self, ruleset: Dict[str, Any], target_tags: Optional[List[str]] = None) -> List[Tuple[Any, str]]:
+    def execute(self, payload: InputT) -> OutputT:
         pass
 
-class LuqumRulesetParser(AbstractRulesetParser):
-    def _format_value(self, value: str) -> str:
-        return f'"{value}"' if ' ' in value else value
+class AbstractRulesetParser(ABC, Generic[EngineT]):
+    @abstractmethod
+    def parse_ruleset(self, ruleset: Dict[str, Any]) -> EngineT:
+        pass
 
-    def _dict_to_ast(self, kv_dict: Dict[str, Any], prefix: str = "") -> Optional[Any]:
-        if not kv_dict: return None
-            
-        terms = []
-        for key, value in kv_dict.items():
-            if isinstance(value, list):
-                for v in value:
-                    terms.append(f"{prefix}{key}:{self._format_value(v)}")
-            else:
-                terms.append(f"{prefix}{key}:{self._format_value(value)}")
+class FastRegexRedactionEngine(CompiledEngine[bytes, bytes]):
+    """@desc: 외부 모듈(redact_string) 또는 주입된 정규식을 통해 바이트 스트림 마스킹"""
+    def __init__(self, patterns: Optional[List[str]] = None):
+        self._use_custom_patterns = bool(patterns)
+        if self._use_custom_patterns:
+            self._compiled_regexes = [re.compile(p.encode('utf-8'), re.IGNORECASE) for p in patterns]
+            self.mask_token = b"***REDACTED***"
+
+    def execute(self, payload: bytes) -> bytes:
+        if self._use_custom_patterns:
+            redacted = payload
+            for r in self._compiled_regexes:
+                redacted = r.sub(self.mask_token, redacted)
+            return redacted
+        else:
+            try:
+                return redact_string(payload.decode('utf-8')).encode('utf-8')
+            except UnicodeDecodeError:
+                return payload
+
+class StructuralRedactionEngine(CompiledEngine[bytes, bytes]):
+    """@desc: JSON 파싱 후 마스킹. 실패 시 컴파일 시 주입된 fallback 엔진으로 위임"""
+    def __init__(self, fallback_engine: CompiledEngine[bytes, bytes]):
+        self._fallback = fallback_engine
+
+    def execute(self, payload: bytes) -> bytes:
+        try:
+            parsed_obj = orjson.loads(payload)
+            sanitized_obj = sanitize_payload(parsed_obj)
+            return orjson.dumps(sanitized_obj)
+        except orjson.JSONDecodeError:
+            return self._fallback.execute(payload)
+
+class StructuralExtractionEngine(CompiledEngine[bytes, Dict[str, Any]]):
+    def __init__(self, extract_paths: Dict[str, List[str]]):
+        self.paths = extract_paths
+
+    def execute(self, payload: bytes) -> Dict[str, Any]:
+        try:
+            parsed = orjson.loads(payload)
+            result = {}
+            for field_name, path_list in self.paths.items():
+                val = parsed
+                for p in path_list:
+                    if isinstance(val, dict) and p in val:
+                        val = val[p]
+                    else:
+                        val = None
+                        break
+                result[field_name] = val
+            return result
+        except orjson.JSONDecodeError:
+            return {}
+
+class StructuralExtractionParser(AbstractRulesetParser[StructuralExtractionEngine]):
+    def parse_ruleset(self, ruleset: Dict[str, Any]) -> StructuralExtractionEngine:
+        extract_paths = {}
+        for target in ruleset.get("targets", []):
+            field_name = target.get("tag")
+            path_str = target.get("path", "")
+            if field_name and path_str:
+                extract_paths[field_name] = path_str.split(".")
                 
-        if not terms: return None
-        return luqum_parse(" ".join(terms))
+        log.info(f"[Parser] Compiled StructuralExtractionEngine targeting: {list(extract_paths.keys())}")
+        return StructuralExtractionEngine(extract_paths)
 
-    def _keywords_to_ast(self, keywords: List[Dict[str, List[str]]]) -> Optional[Any]:
-        if not keywords: return None
-            
-        components = []
-        for group in keywords:
-            if "AND" in group and group["AND"]:
-                terms = [self._format_value(v) for v in group["AND"]]
-                components.append("(" + " AND ".join(terms) + ")" if len(terms) > 1 else terms[0])
-            elif "OR" in group and group["OR"]:
-                terms = [self._format_value(v) for v in group["OR"]]
-                components.append("(" + " OR ".join(terms) + ")" if len(terms) > 1 else terms[0])
+class AuditRulesetParser(AbstractRulesetParser[CompiledEngine[bytes, bytes]]):
+    def parse_ruleset(self, ruleset: Dict[str, Any]) -> CompiledEngine[bytes, bytes]:
+        regex_engine = FastRegexRedactionEngine()
+        inspection_level = ruleset.get("global_config", {}).get("inspection_level", "structural")
+        if inspection_level == "structural":
+            log.info("[Parser] Compiling StructuralRedactionEngine (Tree Traversal Active).")
+            return StructuralRedactionEngine(fallback_engine=regex_engine)
+        
+        log.info("[Parser] Compiling FastRegexRedactionEngine (Flat Regex Scan Active).")
+        return regex_engine
 
-        if not components: return None
-        combined_str = " AND ".join(components)
-        return Group(luqum_parse(combined_str))
+import re
+from typing import List, Dict, Any, Tuple
+from arch.xor.parser.ruleset import CompiledEngine, AbstractRulesetParser
 
-    def parse_ruleset(self, ruleset: Dict[str, Any], target_tags: Optional[List[str]] = None) -> List[Tuple[str, str]]:
-        global_config = ruleset.get("global_config", {})
-        
-        base_ast = self._dict_to_ast(global_config.get("base_query", {}))
-        excl_ast = self._dict_to_ast(global_config.get("noise_exclusions", {}), prefix="-")
-        
-        compiled_queries = []
-        
+class FastLifecycleEngine(CompiledEngine[str, List[str]]):
+    """@desc: C 레벨 정규식으로 컴파일된 패턴을 활용해 O(1)에 가까운 속도로 스트림을 분류합니다."""
+    def __init__(self, compiled_rules: List[Tuple[re.Pattern, str]]):
+        self.rules = compiled_rules
+
+    def execute(self, payload: str) -> List[str]:
+        # C 언어로 작성된 re.search만 호출하므로 Python 레벨의 연산 최소화
+        return [tag for pattern, tag in self.rules if pattern.search(payload)]
+
+
+class LifecycleRegexParser(AbstractRulesetParser[FastLifecycleEngine]):
+    """@desc: JSON 룰셋의 AND/OR 조건을 정규식 패턴으로 변환 후 컴파일합니다."""
+    
+    def parse_ruleset(self, ruleset: Dict[str, Any]) -> FastLifecycleEngine:
+        compiled_rules = []
         for target in ruleset.get("targets", []):
             tag = target.get("tag")
-            if target_tags and tag not in target_tags: continue
-                
-            cond_ast = self._dict_to_ast(target.get("condition", {}))
-            kw_ast = self._keywords_to_ast(target.get("keywords", []))
-            apply_exclusions = target.get("apply_exclusions", False)
-            
-            asts = []
-            if base_ast: asts.append(base_ast)
-            if cond_ast: asts.append(cond_ast)
-            if apply_exclusions and excl_ast: asts.append(excl_ast)
-            if kw_ast: asts.append(kw_ast)
-            
-            if asts:
-                final_ast = AndOperation(*asts) if len(asts) > 1 else asts[0]
-                compiled_queries.append((str(final_ast), tag))
-                
-        return compiled_queries
+            keywords = target.get("keywords", [])
+            if not tag or not keywords: continue
 
-
-class ElasticDSLRulesetParser(AbstractRulesetParser):
-    def _dict_to_q(self, kv_dict: Dict[str, Any], is_exclusion: bool = False) -> Optional[Q]:
-        """
-        @desc: Dict를 받아 Q 객체로 변환합니다. 
-               is_exclusion이 True이면 ~Q (NOT) 연산자를 적용합니다.
-        """
-        if not kv_dict: return None
-        
-        queries = []
-        for key, value in kv_dict.items():
-            if isinstance(value, list):
-                q = Q("terms", **{key: value})
-            else:
-                q = Q("term", **{key: value})
-            queries.append(~q if is_exclusion else q)
-        if not queries: return None
-        
-        # 생성된 여러 Q 객체를 & (AND) 연산자로 결합하여 단일 Q 반환
-        combined_q = queries[0]
-        for q in queries[1:]:
-            combined_q &= q
-            
-        return combined_q
-
-    def _keywords_to_q(self, keywords: List[Dict[str, List[str]]], search_field: str = "message") -> Optional[Q]:
-        """
-        @desc: 키워드 리스트를 받아 로그의 message 필드를 검색하는 match_phrase 쿼리로 변환합니다.
-        """
-        if not keywords: return None
-        
-        components = []
-        for group in keywords:
-            if "AND" in group and group["AND"]:
-                # AND 그룹: Q() & Q() 결합
-                q = Q("match_phrase", **{search_field: group["AND"][0]})
-                for val in group["AND"][1:]:
-                    q &= Q("match_phrase", **{search_field: val})
-                components.append(q)
-                
-            elif "OR" in group and group["OR"]:
-                # OR 그룹: Q() | Q() 결합
-                q = Q("match_phrase", **{search_field: group["OR"][0]})
-                for val in group["OR"][1:]:
-                    q |= Q("match_phrase", **{search_field: val})
-                components.append(q)
-
-        if not components: return None
-        
-        # 각 키워드 그룹(리스트의 요소)은 최종적으로 & (AND)로 묶임
-        combined_q = components[0]
-        for q in components[1:]:
-            combined_q &= q
-            
-        return combined_q
-
-    def parse_ruleset(self, ruleset: Dict[str, Any], target_tags: Optional[List[str]] = None) -> List[Tuple[Q, str]]:
-        global_config = ruleset.get("global_config", {})
-        
-        base_q = self._dict_to_q(global_config.get("base_query", {}))
-        excl_q = self._dict_to_q(global_config.get("noise_exclusions", {}), is_exclusion=True)
-        
-        compiled_queries = []
-        
-        for target in ruleset.get("targets", []):
-            tag = target.get("tag")
-            if target_tags and tag not in target_tags: continue
-                
-            cond_q = self._dict_to_q(target.get("condition", {}))
-            kw_q = self._keywords_to_q(target.get("keywords", []))
-            apply_exclusions = target.get("apply_exclusions", False)
-            
-            ## 파이썬 객체인 Q를 결합하기만 하면, Elasticsearch DSL이 내부적으로 트리를 구성함
-            final_q = None
-            for q_obj in [base_q, cond_q, excl_q if apply_exclusions else None, kw_q]:
-                if q_obj is not None:
-                    final_q = q_obj if final_q is None else (final_q & q_obj)
-            
-            if final_q:
-                compiled_queries.append((final_q, tag))
-                
-        return compiled_queries
-
-class LocalStreamRulesetParser(AbstractRulesetParser):
-    """
-    @desc: 동일한 룰셋 형식을 받아, 로컬 로그 스트림(문자열)을 실시간으로 
-           평가할 수 있는 파이썬 람다/함수(Callable)들의 조합으로 컴파일합니다.
-    """
-    def _keywords_to_evaluator(self, keywords: List[Dict[str, List[str]]]) -> Optional[Callable[[str], bool]]:
-        if not keywords: return None
-        
-        def evaluator(line: str) -> bool:
-            line_lower = line.lower()
-            # 키워드 그룹(리스트 요소) 간에는 AND 연산 적용 (ES 로직과 동일)
+            # AND 조건을 정규식의 전방 탐색(Positive Lookahead)으로 변환
+            # 예: {"AND": ["Netty started", "port"]} -> (?=.*Netty started)(?=.*port)
+            regex_parts = []
             for group in keywords:
-                if "AND" in group and group["AND"]:
-                    # AND 내부는 모두 존재해야 함 (all)
-                    if not all(val.lower() in line_lower for val in group["AND"]):
-                        return False
-                elif "OR" in group and group["OR"]:
-                    # OR 내부는 하나라도 존재해야 함 (any)
-                    if not any(val.lower() in line_lower for val in group["OR"]):
-                        return False
-            return True
-            
-        return evaluator
+                if "AND" in group:
+                    # 대소문자 무시 및 순서 무관 매칭
+                    lookaheads = "".join(f"(?=.*{re.escape(word)})" for word in group["AND"])
+                    regex_parts.append(f"^{lookaheads}.*")
+                elif "OR" in group:
+                    # OR 조건 변환
+                    ors = "|".join(re.escape(word) for word in group["OR"])
+                    regex_parts.append(f"(?:{ors})")
 
-    def parse_ruleset(self, ruleset: Dict[str, Any], target_tags: Optional[List[str]] = None) -> List[Tuple[Callable[[str], bool], str]]:
-        compiled_evaluators = []
-        
-        for target in ruleset.get("targets", []):
-            tag = target.get("tag")
-            if target_tags and tag not in target_tags: continue
-            
-            # 스트림의 경우 구조화된 condition(service=api 등)은 
-            # 이미 컨테이너를 지정해서 수집하므로 생략하거나, JSON 로그일 경우 확장 가능합니다.
-            kw_evaluator = self._keywords_to_evaluator(target.get("keywords", []))
-            
-            if kw_evaluator:
-                compiled_evaluators.append((kw_evaluator, tag))
-                
-        return compiled_evaluators
+            if regex_parts:
+                # 각 키워드 그룹을 결합하여 단일 정규식으로 컴파일 (IGNORECASE 플래그 적용)
+                final_regex = "|".join(regex_parts)
+                compiled_pattern = re.compile(final_regex, re.IGNORECASE)
+                compiled_rules.append((compiled_pattern, tag))
+
+        return FastLifecycleEngine(compiled_rules)

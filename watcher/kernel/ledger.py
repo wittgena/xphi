@@ -19,7 +19,7 @@ from rocksdict import Rdict, Options, AccessType
 from watcher.plane.emitter import get_emitter
 from phase.bind.resolver import resolve_path
 from arch.topos.bound.tunnel import TunnelFactory
-from phase.wasm.broker import WasmBroker  
+from watcher.dphi.broker import WasmBroker  
 from watcher.dphi.adapter.sign import NodeSigner
 
 # [EVOLUTION] Import StateAdapter for JCS (RFC 8785) Compliance

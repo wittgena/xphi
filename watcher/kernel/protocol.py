@@ -5,7 +5,7 @@ import asyncio
 from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
 
-from phase.wasm.broker import WasmBroker
+from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.sign import LedgerAuthAdapter
 from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter

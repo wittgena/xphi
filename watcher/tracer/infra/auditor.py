@@ -1,12 +1,12 @@
 # watcher.tracer.infra.auditor
-## @lineage: topos.audit.tracer.infra.auditor
 import asyncio
 import sys
 from typing import Dict, Any, Optional, Union
 
-from watcher.tracer.resolver.log import LogResolver
-from arch.xor.parser.ruleset import LocalStreamRulesetParser
+from arch.xor.parser.ruleset import CompiledEngine
+from arch.xor.parser.stream import LocalStreamRulesetParser
 
+from watcher.tracer.resolver.log import LogResolver
 from watcher.tracer.bound import (
     BaseAuditor, 
     BaseStreamAuditor, 
@@ -78,40 +78,33 @@ class LeakObserverAuditor(BaseStreamAuditor):
     def __init__(self, boundary: SystemBound):
         super().__init__(target="leak_observer", boundary=boundary, delay=0)
 
-    @log_streamer([sys.executable, "-m", "OBSERVER_MODULE"]) # NOTE: OBSERVER_MODULE 상수는 상황에 맞게 주입 필요
+    @log_streamer([sys.executable, "-m", "OBSERVER_MODULE"])
     async def run_stream(self, line: str) -> None:
         if "🚨" in line or "└─" in line or "online" in line:
             print(f"  [OBSERVER] {line}")
 
 class UniversalLogAuditor(BaseStreamAuditor):
-    """
-    @desc: [Semantic Axis] 구형 OOMLogAuditor를 대체합니다.
-           외부 Resolver를 통해 컴파일된 평가기를 기반으로 로그를 선언적으로 관측합니다.
-    """
     def __init__(self, container_name: str, verify_type: str, boundary: SystemBound, ruleset: Optional[Dict] = None):
         super().__init__(target=container_name, boundary=boundary, delay=1)
         self.container_name = container_name
         self.log = get_emitter(f"auditor.universal_log.{container_name}", phase="agent")
         
-        # 1. 주입받은 Ruleset을 사용 (없을 경우 빈 리스트로 초기화하여 에러 방지)
         _ruleset = ruleset or {"targets": []}
         
-        self.resolver = LogResolver(ruleset=_ruleset, parser=LocalStreamRulesetParser())
-        self.compiled_rules = self.resolver.resolve()
-        
-        ## @state
+        self.resolver = LogResolver[CompiledEngine](
+            ruleset=_ruleset, 
+            parser=LocalStreamRulesetParser()
+        )
+        self.rule_engine: CompiledEngine = self.resolver.resolve()
         self.max_type_depth = 0
         self.hit_fatal_limit = False
 
     @log_streamer(["docker", "logs", "-f", "{container_name}"])
     async def run_stream(self, line: str) -> None:
-        if not line: return
-        
-        # 2. 컴파일된 함수들로 라인을 순회 평가
-        for evaluator, tag in self.compiled_rules:
-            if evaluator(line):
-                # 3. Tag 기반으로 상태 업데이트 라우팅
-                self._handle_matched_tag(tag, line)
+        if not line or not self.rule_engine: return
+        matched_tags = self.rule_engine.execute(line)
+        for tag in matched_tags:
+            self._handle_matched_tag(tag, line)
 
     def _handle_matched_tag(self, tag: str, line: str):
         """@desc: 매칭된 태그에 따른 비즈니스 상태 변화 처리"""
@@ -127,7 +120,7 @@ class UniversalLogAuditor(BaseStreamAuditor):
             self.log.warning(f"  [FATAL] Boundary rupture detected: {tag}")
 
 class SemanticLogAuditor(BaseStreamAuditor):
-    """@desc: 내부 WASM/VM 로그를 스트리밍하여 Livelock(진행 정지) 상태를 관측합니다."""
+    """@desc: 내부 WASM/VM 로그를 스트리밍하여 Livelock(진행 정지) 상태를 관측"""
     def __init__(self, target: str, namespace: str, boundary: Union[BaseBoundary, Any]):
         super().__init__(target=target, boundary=boundary, delay=3)
         self.namespace = namespace

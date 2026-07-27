@@ -44,7 +44,7 @@ DEFAULT_BOUND_SKELETON = {
         "log": ":io:/log",
         "ailog": ":io:/ailog",
         "sandbox": ":workspace:/sandbox",
-        "time": ":phase:/wasm/time",
+        "time": ":watcher:/dphi/time",
         "surface": ":io:/surface",
         "contract": ":contract:",
         "spec": ":contract:/spec",
