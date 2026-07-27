@@ -1,5 +1,4 @@
 # arch.contract.event.mesh.swarm
-## arch.contract.event.swarmbus
 import asyncio
 import json
 from typing import List, Optional, Callable, Tuple
