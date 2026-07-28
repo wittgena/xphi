@@ -7,7 +7,7 @@ import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
-from arch.topos.bound.tunnel import UniversalFacade, TunnelFactory
+from arch.topos.tunnel.factory import UniversalFacade, TunnelFactory
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.tunnelbus import TunnelEventBus
 from arch.contract.event.next import next_id

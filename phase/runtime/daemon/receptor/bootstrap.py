@@ -6,7 +6,7 @@ from pathlib import Path
 from watchdog.observers import Observer
 from typing import List
 
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 
 from phase.bind.resolver import find_current_self
 from phase.runtime.daemon.receptor.topos import ReceptorTopos, build_system_topos

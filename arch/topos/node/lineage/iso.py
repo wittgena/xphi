@@ -1,4 +1,5 @@
-# arch.topos.lineage.iso
+# arch.topos.node.lineage.iso
+## @lineage: arch.topos.lineage.iso
 ## @lineage: logos.lineage.iso
 from __future__ import annotations
 import ast
@@ -16,8 +17,7 @@ from datetime import UTC, datetime, timezone
 from rich.text import Text
 from pydantic import Field
 
-from arch.topos.lineage.check import AdapterRecord, LineageManager
-
+from arch.topos.node.lineage.check import AdapterRecord, LineageManager
 from arch.contract.registry.static import static_registry
 from watcher.plane.emitter import get_emitter
 

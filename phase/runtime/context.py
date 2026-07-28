@@ -2,7 +2,7 @@
 from typing import Any
 from dataclasses import dataclass
 
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 from arch.contract.event.tunnelbus import TunnelEventBus
 from phase.runtime.daemon.task.supervisor import Dispatcher
 

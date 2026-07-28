@@ -1,4 +1,5 @@
-# arch.topos.lineage.check
+# arch.topos.node.lineage.check
+## @lineage: arch.topos.lineage.check
 ## @lineage: logos.lineage.check
 from __future__ import annotations
 import argparse

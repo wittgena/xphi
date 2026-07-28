@@ -1,4 +1,5 @@
-# arch.topos.bound.tunnel
+# arch.topos.tunnel.factory
+## @lineage: arch.topos.bound.tunnel
 """
 @desc: Universal Message/State Tunnel (Async & Sync Implementation)
 @flow: 
@@ -12,7 +13,7 @@ import redis.exceptions
 import logging
 import asyncio
 from typing import Optional, Any, List, Tuple
-from arch.topos.bound.adapter.config import BackendProtocol, resolve_default_config, parse_connection_urls
+from arch.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
 log = logging.getLogger("bound.tunnel")
 

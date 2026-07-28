@@ -1,8 +1,13 @@
 # watcher.dphi.cgroup
-import wasmtime
+import logging
 from dataclasses import dataclass
 from enum import Enum
 from watcher.plane.emitter import get_emitter
+
+try:
+    import wasmtime
+except ImportError:
+    wasmtime = None
 
 log = get_emitter("dphi.cgroup")
 
@@ -44,20 +49,24 @@ class CgroupPolicy:
 class WasmCgroup:
     """@desc: In-process resource controller (Data Plane) for a Wasm instance"""
     def __init__(self, cgroup_name: str, policy: CgroupPolicy = None):
+        # [개선] WasmCgroup 인스턴스화 시점에만 wasmtime 존재 여부 검증
+        if wasmtime is None:
+            raise ImportError("The 'wasmtime' module is required to use WasmCgroup.")
+            
         self.cgroup_name = cgroup_name
         self.policy = policy or CgroupPolicy.standard()
 
-    def apply_to_config(self, config: wasmtime.Config) -> None:
+    def apply_to_config(self, config: 'wasmtime.Config') -> None:
         config.consume_fuel = True
 
-    def apply_to_store(self, store: wasmtime.Store) -> None:
+    def apply_to_store(self, store: 'wasmtime.Store') -> None:
         store.set_limits(memory_size=self.policy.max_memory_bytes)
         store.set_fuel(self.policy.cpu_fuel_quota)
         
         mb = self.policy.max_memory_bytes // 1024 // 1024
         log.info(f"[{self.cgroup_name}] Cgroup enforced: Tier={self.policy.tier.value}, Mem={mb}MB, Fuel={self.policy.cpu_fuel_quota:,}")
 
-    def inject_emergency_fuel(self, store: wasmtime.Store, additional_fuel: int) -> None:
+    def inject_emergency_fuel(self, store: 'wasmtime.Store', additional_fuel: int) -> None:
         current_fuel = store.get_fuel()
         new_fuel = current_fuel + additional_fuel
         
@@ -66,7 +75,7 @@ class WasmCgroup:
         self.policy.cpu_fuel_quota += additional_fuel
         log.warning(f"[{self.cgroup_name}] Emergency Fuel Injected: +{additional_fuel:,} (New Total Quota: {self.policy.cpu_fuel_quota:,})")
 
-    def inspect_metrics(self, store: wasmtime.Store, memory: wasmtime.Memory) -> dict:
+    def inspect_metrics(self, store: 'wasmtime.Store', memory: 'wasmtime.Memory') -> dict:
         """Control Plane(브로커)으로 보낼 현재 리소스 상태를 계측합니다."""
         current_mem_bytes = memory.size(store) * 65536 
         try:

@@ -5,7 +5,7 @@ import asyncio
 from enum import Enum
 from typing import Optional, Any, Mapping, Union
 
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 from phase.runtime.inter.protocol import ExecutionResult, ExecutionError
 from watcher.plane.emitter import get_emitter
 
@@ -116,7 +116,8 @@ class WasmBroker:
         res = await self._dispatch_and_wait_async(job_id, payload, response_channel, target_route=self.control_channel)
         return res.success
 
-    async def invoke(self, target_func: Union[str, WasmMethod], payload: str, wasm_path: Optional[str] = None) -> ExecutionResult:
+    # [개선] tier 파라미터 추가
+    async def invoke(self, target_func: Union[str, WasmMethod], payload: str, wasm_path: Optional[str] = None, tier: Optional[str] = None) -> ExecutionResult:
         job_id = str(uuid.uuid4())
         response_channel = BrokerChannel.execute_res(job_id)
         
@@ -129,10 +130,12 @@ class WasmBroker:
         }
         if wasm_path:
             msg_payload[PayloadKey.WASM_PATH] = wasm_path
+        if tier:
+            msg_payload[PayloadKey.TIER] = tier.upper()
             
         return await self._dispatch_and_wait_async(job_id, msg_payload, response_channel)
 
-    async def execute(self, code: str, variables: Mapping[str, Any] | None = None) -> ExecutionResult:
+    async def execute(self, code: str, variables: Mapping[str, Any] | None = None, tier: Optional[str] = None) -> ExecutionResult:
         job_id = str(uuid.uuid4())
         response_channel = BrokerChannel.execute_res(job_id)
         msg_payload = {
@@ -144,4 +147,6 @@ class WasmBroker:
             },
             PayloadKey.RES_CHANNEL: response_channel
         }
+        if tier:
+            msg_payload[PayloadKey.TIER] = tier.upper()
         return await self._dispatch_and_wait_async(job_id, msg_payload, response_channel)

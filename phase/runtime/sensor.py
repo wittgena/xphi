@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 from typing import Set, List, Optional
 
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 from arch.contract.event.psi import PsiType
 from phase.bind.resolver import find_current_self, resolve_path, resolve_pattern
 from watcher.plane.emitter import get_emitter

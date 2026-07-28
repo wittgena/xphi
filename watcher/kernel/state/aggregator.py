@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, List
 
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 from arch.contract.event.psi import PsiCarrier
 from phase.runtime.inter.anchor import NodeInterpreter
 

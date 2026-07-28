@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
 from arch.contract.event.next import next_id

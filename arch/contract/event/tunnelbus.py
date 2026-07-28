@@ -8,7 +8,7 @@ from typing import Dict, Any, List, Optional, Callable, Tuple
 
 from arch.contract.event.psi import PsiEvent
 from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 from watcher.plane.emitter import get_emitter
 
 class TunnelEventBus(IEventBus):

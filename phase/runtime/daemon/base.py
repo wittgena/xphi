@@ -7,7 +7,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Callable, Awaitable
 from contextlib import suppress
 
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.bus import AsyncEventBus
 from phase.runtime.daemon.task.supervisor import Dispatcher

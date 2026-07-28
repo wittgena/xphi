@@ -7,7 +7,7 @@ from typing import Callable, List, Tuple, Optional
 from arch.contract.event.psi import PsiEvent
 from arch.contract.event.mesh.transport import MeshP2PTransport
 from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 
 from watcher.plane.emitter import get_emitter
 

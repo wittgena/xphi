@@ -3,6 +3,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol
+from enum import Enum
 
 from arch.xor.parser.block.contract import Contract, CoherenceState
 from arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
@@ -12,8 +13,14 @@ from watcher.dphi.cgroup import Tier
 
 log = get_emitter("wasm.executor")
 
+class SandboxEnv(str, Enum):
+    LOCAL = "local"     # 프로세스 내 순수 논리 시뮬레이션 (DAG Dry-run 등)
+    DENO = "deno"       # Pyodide 기반 JS/Python 격리 샌드박스
+    WASM = "wasm"       # 순수 WASM 바이너리 커널
+    DOCKER = "docker"   # 향후 지원할 Heavy-duty 컨테이너 격리
+
 class EffectResolver(Protocol):
-    async def resolve(self, payload: Dict[str, Any], instruction: str) -> Dict[str, Any]:
+    async def resolve(self, payload: Dict[str, Any], instruction: str, env: SandboxEnv, tier: str) -> Dict[str, Any]:
         ...
 
 @dataclass
@@ -21,6 +28,7 @@ class TaskContext:
     payload: Dict[str, Any]
     task_type: str = "default"
     tier: str = Tier.STANDARD.value
+    sandbox_env: SandboxEnv = SandboxEnv.DENO
     topos_id: str = field(default_factory=next_id) 
     phase_id: Optional[int] = None
     nexus_id: Optional[int] = None
@@ -43,7 +51,7 @@ class WasmExecutor:
         self.resolvers = resolvers or {}
 
     async def execute_stream(self, context: TaskContext) -> AsyncGenerator[Contract, None]:
-        log.info(f"[{SOURCE_NAME}] Injecting task (ToposID: {context.topos_id})")
+        log.info(f"[{SOURCE_NAME}] Injecting task (ToposID: {context.topos_id} | Env: {context.sandbox_env.value})")
         current_payload = context.payload
         
         while True:
@@ -57,13 +65,14 @@ class WasmExecutor:
             request_data = {
                 "action": context.task_type,
                 "tier": context.tier,
+                "env": context.sandbox_env.value,
                 "payload": current_payload
             }
 
             exec_result = await self.broker.invoke(
                 target_func=WasmMethod.EXECUTE_TRANSITION, 
-                context=topos_context,
-                payload=json.dumps(request_data)
+                payload=json.dumps(request_data),
+                tier=context.tier  # 브로커 레벨 Cgroup 주입
             )
             
             if not exec_result.success:
@@ -82,10 +91,7 @@ class WasmExecutor:
                 break
                 
             raw_res = json.loads(exec_result.output)
-            if "data" in raw_res and "success" in raw_res:
-                res = raw_res["data"]
-            else:
-                res = raw_res
+            res = raw_res.get("data", raw_res) if isinstance(raw_res, dict) else raw_res
             
             if not res.get("is_authorized", True):
                 triplet = generate_parity_triplet(topo=0, press=0, rupture=True)
@@ -105,7 +111,6 @@ class WasmExecutor:
             residues = res.get("all_residues", [])
             triplet = generate_parity_triplet(topo=cycles, press=len(residues), rupture=False)
             
-            # (이후 상태 전이 방출 및 Resolver Delegate 등은 이전 정렬과 동일)
             yield Contract(
                 id=next_id(),
                 topos_id=context.topos_id,
@@ -127,9 +132,14 @@ class WasmExecutor:
                 target_key = io_request.get("target") 
                 
                 resolver = self.resolvers.get(target_key)
-                
                 if resolver:
-                    current_payload = await resolver.resolve(current_payload, instruction=req_msg)
+                    # [개선] 런타임 환경(env)과 권한(tier)을 어댑터에 전달하여 올바른 샌드박스로 라우팅 유도
+                    current_payload = await resolver.resolve(
+                        current_payload, 
+                        instruction=req_msg, 
+                        env=context.sandbox_env,
+                        tier=context.tier
+                    )
                     context.phase_id = triplet["phase_id"]
                     context.nexus_id = triplet["nexus_id"]
                     continue 

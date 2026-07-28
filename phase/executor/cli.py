@@ -16,7 +16,7 @@ from arch.contract.event.next import next_id, LogEvent
 from arch.contract.registry.unified import registry
 from arch.contract.executor import BaseExecutor
 
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 from phase.bind.resolver import get_invoker
 from phase.runtime.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
 

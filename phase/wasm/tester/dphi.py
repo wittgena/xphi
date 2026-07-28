@@ -3,7 +3,7 @@ import sys
 import asyncio
 from typing import Tuple
 
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 
 from watcher.dphi.scheme.scenario.sandbox import SandboxScenarios
 from watcher.dphi.scheme.scenario.ledger import LedgerScenarios

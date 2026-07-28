@@ -4,11 +4,11 @@ import uvloop
 import os
 import asyncio
 
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.bus import AsyncEventBus
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.bus import AsyncEventBus
 
 from phase.bind.redirector import PhaseAirlock

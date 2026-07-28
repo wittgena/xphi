@@ -1,4 +1,5 @@
-# arch.topos.bound.interface.subs
+# arch.topos.tunnel.subs
+## @lineage: arch.topos.bound.interface.subs
 import asyncio
 import json
 from abc import ABC, abstractmethod
@@ -9,7 +10,7 @@ from pydantic import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from arch.contract.event.next import next_id
-from arch.topos.bound.tunnel import UniversalFacade 
+from arch.topos.tunnel.factory import UniversalFacade 
 from watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)

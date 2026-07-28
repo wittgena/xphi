@@ -1,4 +1,5 @@
-# arch.topos.bound.adapter.config
+# arch.topos.tunnel.config
+## @lineage: arch.topos.bound.adapter.config
 """@desc: Universal Infrastructure Adapter Base"""
 import os
 import urllib.parse
@@ -7,7 +8,7 @@ from enum import Enum
 from dataclasses import dataclass
 from typing import Tuple
 
-log = logging.getLogger("sandbox.config")
+log = logging.getLogger("tunnel.config")
 
 class BackendProtocol(str, Enum):
     """지원하는 백엔드 프로토콜 규격"""

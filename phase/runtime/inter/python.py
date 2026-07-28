@@ -16,6 +16,7 @@ from typing import Any, Callable, Mapping
 from phase.runtime.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
 from phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
+from watcher.dphi.cgroup import CgroupPolicy, Tier  # [추가됨] Cgroup 통제용
 
 TIME_ROOT = resolve_path("time")
 LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
@@ -32,6 +33,7 @@ class PythonInterpreter:
         enable_env_vars: list[str] | None = None,
         enable_network_access: list[str] | None = None,
         sync_files: bool = True,
+        policy: CgroupPolicy | None = None,  # [추가됨] Cgroup 정책 주입
     ) -> None:
         if isinstance(deno_command, dict):
             raise TypeError("deno_command must be a list of strings")
@@ -41,6 +43,7 @@ class PythonInterpreter:
         self.enable_env_vars = enable_env_vars or []
         self.enable_network_access = enable_network_access or []
         self.sync_files = sync_files
+        self.policy = policy or CgroupPolicy.standard()
 
         if deno_command:
             self.deno_command = list(deno_command)
@@ -78,7 +81,7 @@ class PythonInterpreter:
         self._owner_thread: int | None = None
         self._pending_large_vars = {}
         
-        # [수정] Pyodide 부팅 및 무거운 연산을 위해 기본 타임아웃을 15초로 설정
+        # Pyodide 부팅 및 무거운 연산을 위해 기본 타임아웃을 15초로 설정
         self.execution_timeout = 15.0
 
     def _check_thread_ownership(self) -> None:
@@ -167,9 +170,6 @@ class PythonInterpreter:
         self._send_request("register", {"tools": callables_info}, "registering callables")
 
     def _handle_callable_call(self, request: dict, callables: Mapping[str, Callable[..., Any]]) -> None:
-        """
-        [개선됨] 호스트 함수 실행 중 발생하는 에러가 샌드박스와 데몬의 붕괴로 이어지지 않도록 격리합니다.
-        """
         request_id = request["id"]
         params = request.get("params", {})
         callable_name = params.get("name")
@@ -197,6 +197,16 @@ class PythonInterpreter:
         except BrokenPipeError:
             pass 
 
+    def _apply_cgroup_policy(self) -> None:
+        """[추가됨] 샌드박스 내부의 파이썬 인터프리터에 Cgroup 정책(Fuel, Memory)을 동적으로 주입합니다."""
+        # Tier가 STANDARD인 경우에만 오버헤드가 있는 settrace(가상 Fuel)를 적용
+        use_fuel = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else None
+        params = {
+            "fuel": use_fuel,
+            "mem_bytes": self.policy.max_memory_bytes
+        }
+        self._send_request("apply_cgroup", params, "Applying Cgroup Policy")
+
     def _ensure_deno_process(self) -> None:
         if self.deno_process is None or self.deno_process.poll() is not None:
             self._mounted_files = False
@@ -212,19 +222,18 @@ class PythonInterpreter:
                 )
             except FileNotFoundError as e:
                 raise ProtocolError("Deno executable not found.") from e
+            
             self._health_check()
+            
+            # [추가됨] 샌드박스 구동 확인 직후, 현재 티어에 맞는 Cgroup 정책 주입
+            self._apply_cgroup_policy()
 
     _MAX_SKIP_LINES = 100
 
     def _read_response_line(self, context: str) -> str:
-        """
-        [개선됨] select()를 사용한 타임아웃 기반 읽기 (Non-blocking I/O).
-        동기 readline()의 무한 대기(Deadlock)를 원천 차단합니다.
-        """
         start_time = time.time()
         
         while True:
-            # 0.1초마다 stdout 버퍼에 데이터가 준비되었는지 확인
             ready, _, _ = select.select([self.deno_process.stdout], [], [], 0.1)
             
             if ready:
@@ -232,7 +241,6 @@ class PythonInterpreter:
                 if response_line:
                     return response_line
             
-            # 타임아웃 검사
             if time.time() - start_time > self.execution_timeout:
                 log.error(f"Deno execution timed out ({self.execution_timeout}s) during {context}. Forcing termination.")
                 self.shutdown()
@@ -347,6 +355,20 @@ class PythonInterpreter:
 
     def _inject_large_var(self, name: str, value: str) -> None:
         self._send_request("inject_var", {"name": name, "value": value}, f"injecting variable '{name}'")
+
+    def get_metrics(self) -> dict:
+        """[추가됨] 현재 샌드박스의 리소스 사용량(메모리, Fuel)을 조회하여 반환합니다."""
+        if not self.deno_process or self.deno_process.poll() is not None:
+            return {}
+        try:
+            res = self._send_request("get_metrics", {}, "fetching metrics")
+            if "result" in res:
+                metrics = res["result"]
+                metrics["tier"] = self.policy.tier.value
+                return metrics
+        except Exception as e:
+            log.warning(f"Failed to fetch sandbox metrics: {e}")
+        return {}
 
     def execute(
         self,

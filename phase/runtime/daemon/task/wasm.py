@@ -1,5 +1,4 @@
 # phase.runtime.daemon.task.wasm
-## @lineage: phase.runtime.task.wasm
 import json
 import asyncio
 import uuid
@@ -12,6 +11,7 @@ from phase.runtime.inter.wasm import WasmInterpreter
 from phase.runtime.inter.python import PythonInterpreter
 from phase.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
+from watcher.dphi.cgroup import CgroupPolicy, Tier
 
 TIME_ROOT = resolve_path("time")
 
@@ -19,8 +19,8 @@ class WasmTaskerDaemon(AbstractDaemon):
     """
     @role: Secure Execution Daemon (Bifurcated Routing)
     @flow: 
-        [ROUTE A] target == 'execute_code' -> Checkpoint(WASM validate) -> Jail(Deno)
-        [ROUTE B] target != 'execute_code' -> Direct WASM Kernel Execution
+        [ROUTE A] target == 'execute_code' -> Checkpoint(WASM validate: SYSTEM) -> Jail(Deno: TIER)
+        [ROUTE B] target != 'execute_code' -> Direct WASM Kernel Execution (WASM: TIER)
     """
     def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
         super().__init__("WasmTasker")
@@ -34,6 +34,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         self.group_name = "wasm_tasker_group"
         self.consumer_name = f"tasker-{self.node_id}"
         self.poll_timeout_ms = 1000
+        self.default_tier = "STANDARD"
 
         self._pubsub_task: Optional[asyncio.Task] = None
 
@@ -122,11 +123,22 @@ class WasmTaskerDaemon(AbstractDaemon):
     async def _handle_control(self, payload: dict):
         job_id = payload.get("job_id", "unknown")
         response_channel = payload.get("response_channel")
-        tier = payload.get("tier", "STANDARD")
+        tier = payload.get("tier", "STANDARD").upper()
         
-        self.log.info(f"[{job_id[:8]}] Cgroup policy update requested -> {tier}")
+        self.default_tier = tier
+        self.log.info(f"[{job_id[:8]}] Global Cgroup default tier updated -> {tier}")
+        
         if response_channel:
             await self.tunnel.publish(response_channel, json.dumps({"success": True}))
+
+    def _get_policy_from_tier(self, tier_str: str) -> CgroupPolicy:
+        tier_str = (tier_str or self.default_tier).upper()
+        if tier_str == "SYSTEM":
+            return CgroupPolicy.system()
+        elif tier_str == "UNLIMITED":
+            return CgroupPolicy.custom(mem_mb=1024, fuel=10_000_000_000)
+        else:
+            return CgroupPolicy.standard()
 
     async def _process_and_reply(self, payload: dict, message_id: str):
         response_channel = payload.get("response_channel")
@@ -144,7 +156,8 @@ class WasmTaskerDaemon(AbstractDaemon):
         target_func = payload.get("target_func", "execute_code")
         wasm_path = payload.get("wasm_path", self.default_wasm_path)
         
-        # 순수 페이로드 원본 (WASM 커널용)
+        tier_str = payload.get("tier", self.default_tier)
+        job_policy = self._get_policy_from_tier(tier_str)
         exec_data = payload.get("payload", payload.get("data", ""))
 
         target_path = self._resolve_wasm_path(wasm_path)
@@ -155,14 +168,13 @@ class WasmTaskerDaemon(AbstractDaemon):
 
         if target_func == "execute_code":
             try:
-                # --- STAGE 1: Checkpoint (validate_intent) ---
-                with WasmInterpreter(str(target_path)) as wasm_gate:
+                ## STAGE 1: Checkpoint (validate_intent)
+                with WasmInterpreter(str(target_path), policy=CgroupPolicy.system()) as wasm_gate:
                     validation_res = wasm_gate.invoke("validate_intent", json.dumps(payload))
                     
                     if not validation_res.success:
-                        # [하위 호환성 방어] dphi.wasm에 아직 validate_intent가 없을 경우 우회 허용
                         if "not registered" in str(validation_res.error) or "not found" in str(validation_res.error):
-                            self.log.debug(f"[{job_id[:8]}] 'validate_intent' missing in WASM. Bypassing checkpoint for legacy compatibility.")
+                            self.log.debug(f"[{job_id[:8]}] 'validate_intent' missing in WASM. Bypassing checkpoint.")
                             safe_payload = exec_data
                         else:
                             self.log.error(f"[{job_id[:8]}] WASM Gateway crashed: {validation_res.error}")
@@ -176,10 +188,8 @@ class WasmTaskerDaemon(AbstractDaemon):
                         
                         safe_payload = val_data.get("safe_payload", exec_data)
 
-                # --- STAGE 2: Jail (Deno Sandbox) ---
-                with PythonInterpreter(enable_network_access=None) as py_sandbox:
-                    
-                    # 딕셔너리 구조 차이에 대비한 완벽한 페이로드 파싱 (빈 문자열 실행 방지)
+                ## STAGE 2: Jail (Deno Sandbox)
+                with PythonInterpreter(enable_network_access=None, policy=job_policy) as py_sandbox:
                     if isinstance(safe_payload, str):
                         code_to_run = safe_payload
                         variables = {}
@@ -190,22 +200,19 @@ class WasmTaskerDaemon(AbstractDaemon):
                         code_to_run = ""
                         variables = {}
 
-                    self.log.debug(f"====== [DEBUG X-RAY] ======")
-                    self.log.debug(f"1. RAW payload: {payload}")
-                    self.log.debug(f"2. safe_payload: {safe_payload}")
-                    self.log.debug(f"3. Extracted code_to_run: '{code_to_run}'")
-                    self.log.debug(f"===========================")        
                     host_capabilities = {
                         "system_ping": lambda: "pong_from_host"
                     }
                     
-                    self.log.info(f"[{job_id[:8]}] 🔓 Entering Deno Jail for Python execution.")
+                    self.log.info(f"[{job_id[:8]}] 🔓 Entering Deno Jail (Tier: {job_policy.tier.value})")
                     result = py_sandbox.execute(
                         code=code_to_run, 
                         variables=variables,
                         callables=host_capabilities
                     )
                     
+                    metrics = py_sandbox.get_metrics()
+                    self.log.info(f"[{job_id[:8]}] 📊 Sandbox Metrics: {metrics}")
                     return {
                         "success": result.success,
                         "output": result.output if result.success else "",
@@ -216,15 +223,14 @@ class WasmTaskerDaemon(AbstractDaemon):
                 self.log.error(f"[{job_id[:8]}] Execution crashed: {e}", exc_info=True)
                 return {"success": False, "output": "", "error": f"Execution Error: {e}"}
 
-        # =====================================================================
-        # ROUTE B: Pure WASM Execution (Topology, Resonance, State Collapse)
-        # =====================================================================
+        ## ROUTE B: Pure WASM Execution (Topology, Resonance, State Collapse)
         else:
             try:
-                # 검문소 우회. 원본 exec_data를 들고 dphi.wasm 커널로 직행
-                with WasmInterpreter(str(target_path)) as wasm_runner:
-                    self.log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func}")
+                with WasmInterpreter(str(target_path), policy=job_policy) as wasm_runner:
+                    self.log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func} (Tier: {job_policy.tier.value})")
                     result = wasm_runner.invoke(target_func, exec_data)
+                    metrics = wasm_runner.get_metrics()
+                    self.log.info(f"[{job_id[:8]}] 📊 WASM Metrics: {metrics}")
                     return {
                         "success": result.success,
                         "output": result.output if result.success else "",

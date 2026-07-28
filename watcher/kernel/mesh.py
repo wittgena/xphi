@@ -14,7 +14,7 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional, Dict, AsyncGenerator
 
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("surface.mesh")

@@ -5,7 +5,7 @@ import sys
 from typing import Any, Tuple
 from contextlib import suppress
 
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 
 from phase.bind.resolver import resolve_path
 from phase.runtime.daemon.task.supervisor import TaskSupervisor

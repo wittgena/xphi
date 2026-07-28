@@ -40,8 +40,8 @@ def build_system_topos() -> List[TopologicalStructure]:
     structures = []
     arch = []
     with suppress(ImportError): import arch.topos.bound.sensor as m; arch.append(m.__name__)
-    with suppress(ImportError): import arch.topos.bound.surface as m; arch.append(m.__name__)
-    with suppress(ImportError): import arch.topos.bound.tunnel as m; arch.append(m.__name__)
+    with suppress(ImportError): import arch.topos.tunnel.surface as m; arch.append(m.__name__)
+    with suppress(ImportError): import arch.topos.tunnel.factory as m; arch.append(m.__name__)
 
     if arch:
         structures.append(TopologicalStructure(name="arch.topos", members=arch))

@@ -8,7 +8,7 @@ import asyncio
 from typing import Optional, Dict, Any, cast
 from acp.connection import Connection, StreamEvent, StreamDirection
 
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 
 from phase.runtime.mesh.queue import RpcTask, RpcTaskKind
 from watcher.kernel.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision

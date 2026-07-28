@@ -1,4 +1,4 @@
-# arch.topos.bound.surface
+# arch.topos.tunnel.surface
 import json
 import time
 import asyncio
@@ -6,7 +6,7 @@ import urllib.parse
 from typing import Optional, AsyncGenerator
 import httpx
 
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("bound.surface")

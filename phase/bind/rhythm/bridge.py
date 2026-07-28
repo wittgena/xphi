@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional
 from arch.contract.event.next import next_id, parse_id
 
 # [NEW] Redis 직접 의존성을 제거하고 Tunnel Facade 타입을 가져옵니다.
-from arch.topos.bound.tunnel import UniversalFacade
+from arch.topos.tunnel.factory import UniversalFacade
 
 class RhythmBridge:
     """

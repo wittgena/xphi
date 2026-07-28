@@ -11,7 +11,7 @@ from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_pha
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
 from arch.contract.event.bus import AsyncEventBus
-from arch.topos.bound.tunnel import TunnelFactory
+from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 
 log = logging.getLogger("xe.cont")

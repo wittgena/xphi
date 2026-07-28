@@ -1,5 +1,5 @@
 // pysand.ts
-// @desc: Optimized, Type-Safe, and Memory-Leak-Free Pyodide Sandbox Runner for Deno
+// @desc: Optimized, Type-Safe, and Memory-Leak-Free Pyodide Sandbox Runner for Deno (with Cgroup features)
 import pyodideModule from "npm:pyodide/pyodide.js";
 import { readLines } from "https://deno.land/std@0.186.0/io/mod.ts";
 
@@ -32,12 +32,56 @@ interface JsProxy {
   destroy: () => void;
 }
 
-// Python Code Templates (Optimized)
+// Python Code Templates (Optimized with Virtual Cgroup & Metrics)
 const PYTHON_SETUP_CODE = `
 import sys, io, json
+import tracemalloc
+
+# 메모리 텔레메트리 시작
+tracemalloc.start()
 
 old_stdout, old_stderr = sys.stdout, sys.stderr
 buf_stdout, buf_stderr = io.StringIO(), io.StringIO()
+
+# 가상 Cgroup 상태 저장소
+_cgroup_state = {
+    "fuel_quota": None,
+    "fuel_consumed": 0,
+    "memory_limit_bytes": None
+}
+
+def _cgroup_tracer(frame, event, arg):
+    """명령어 라인 단위로 가상 Fuel 차감 (무한 루프/과도한 연산 방어)"""
+    if _cgroup_state["fuel_quota"] is not None:
+        _cgroup_state["fuel_consumed"] += 1
+        if _cgroup_state["fuel_consumed"] >= _cgroup_state["fuel_quota"]:
+            raise RuntimeError(f"Cgroup Error: CPU Fuel Quota Exceeded ({_cgroup_state['fuel_quota']})")
+    return _cgroup_tracer
+
+def _apply_cgroup(fuel, mem_bytes):
+    """Control Plane(Broker)에서 전달된 정책을 인-프로세스에 적용"""
+    _cgroup_state["fuel_quota"] = fuel
+    _cgroup_state["fuel_consumed"] = 0
+    _cgroup_state["memory_limit_bytes"] = mem_bytes
+    
+    if fuel is not None:
+        sys.settrace(_cgroup_tracer)
+    else:
+        sys.settrace(None)
+
+def _get_metrics():
+    """현재 샌드박스의 리소스 사용량을 계측하여 반환"""
+    current, peak = tracemalloc.get_traced_memory()
+    fuel_remaining = -1
+    if _cgroup_state["fuel_quota"] is not None:
+        fuel_remaining = max(0, _cgroup_state["fuel_quota"] - _cgroup_state["fuel_consumed"])
+        
+    return json.dumps({
+        "mem_usage_bytes": current,
+        "mem_peak_bytes": peak,
+        "fuel_consumed": _cgroup_state["fuel_consumed"],
+        "fuel_remaining": fuel_remaining
+    })
 
 def _prepare_execution():
     buf_stdout.seek(0)
@@ -48,6 +92,8 @@ def _prepare_execution():
 
 def _restore_execution():
     sys.stdout, sys.stderr = old_stdout, old_stderr
+    # 실행 완료 후 안전하게 트레이서 해제
+    sys.settrace(None)
 
 def last_exception_args():
     if hasattr(sys, "last_exc") and sys.last_exc:
@@ -146,6 +192,11 @@ globalThis.addEventListener("unhandledrejection", (event) => {
 
 // Globals & Initialization
 const pyodide = await pyodideModule.loadPyodide();
+
+// [추가] 하드 타임아웃 시 C 레벨에서 파이썬 실행을 멈추기 위한 인터럽트 버퍼
+const interruptBuffer = new Uint8Array(new SharedArrayBuffer(1));
+pyodide.setInterruptBuffer(interruptBuffer);
+
 const stdinReader = readLines(Deno.stdin);
 let requestIdCounter = 0;
 
@@ -285,19 +336,47 @@ while (true) {
     continue;
   }
 
+  // [추가] Cgroup 정책 주입 RPC 처리
+  if (method === "apply_cgroup") {
+    const { fuel = null, mem_bytes = null } = params;
+    try {
+      pyodide.runPython(`_apply_cgroup(${toPythonLiteral(fuel)}, ${toPythonLiteral(mem_bytes)})`);
+      if (requestId !== undefined) console.log(jsonrpcResult({ applied: true }, requestId));
+    } catch (e: any) {
+      if (requestId !== undefined) console.log(jsonrpcError(JSONRPC_APP_ERRORS.RuntimeError, `Cgroup config failed: ${e.message}`, requestId));
+    }
+    continue;
+  }
+
+  // [추가] Metrics 조회 RPC 처리
+  if (method === "get_metrics") {
+    try {
+      const metricsStr = pyodide.runPython("_get_metrics()");
+      if (requestId !== undefined) console.log(jsonrpcResult(JSON.parse(metricsStr), requestId));
+    } catch (e: any) {
+      if (requestId !== undefined) console.log(jsonrpcError(JSONRPC_APP_ERRORS.RuntimeError, `Metrics failed: ${e.message}`, requestId));
+    }
+    continue;
+  }
+
   if (method === "execute") {
     const code = params.code || "";
     let setupCompleted = false;
+    let timeoutId: number | null = null;
 
     try {
-      // [최적화 4] import나 from 키워드가 있을 때만 패키지 로드 검사
       if (code.includes("import ") || code.includes("from ")) {
         await pyodide.loadPackagesFromImports(code);
       }
       
-      // [무결성 확보] JsProxy 객체 누수를 차단하기 위해 순수 문자열 기반 runPython 실행
       pyodide.runPython("_prepare_execution()");
       setupCompleted = true;
+
+      // [추가] Host의 15초 타임아웃 발생 전(12초), 샌드박스 내부에서 안전하게 KeyboardInterrupt(2) 유도
+      interruptBuffer[0] = 0;
+      timeoutId = setTimeout(() => {
+        interruptBuffer[0] = 2; 
+      }, 12000);
 
       const result: JsProxy | null | undefined = await pyodide.runPythonAsync(code);
       let output: any;
@@ -305,7 +384,6 @@ while (true) {
       if (result === null || result === undefined) {
         output = pyodide.runPython("buf_stdout.getvalue()");
       } else {
-        // [최적화 2] Proxy 객체의 메모리 누수 원천 차단
         if (result && typeof result.toJs === 'function') {
           output = result.toJs({ dict_converter: Object.fromEntries });
           result.destroy(); 
@@ -320,7 +398,6 @@ while (true) {
       const errorMessage = (error.message || "").trim();
 
       if (errorType === "FinalOutput") {
-        // [무결성 확보] 에러 처리 중 JsProxy 누수 차단
         const errorArgsStr = pyodide.runPython("last_exception_args()");
         const errorArgs = errorArgsStr ? JSON.parse(errorArgsStr) : [];
         const answer = errorArgs[0] || null;
@@ -328,7 +405,6 @@ while (true) {
       } else {
         let errorArgs: any[] = [];
         if (errorType !== "SyntaxError") {
-          // [무결성 확보] 에러 처리 중 JsProxy 누수 차단
           const errorArgsStr = pyodide.runPython("last_exception_args()");
           if (errorArgsStr) errorArgs = JSON.parse(errorArgsStr);
         }
@@ -336,8 +412,8 @@ while (true) {
         if (requestId !== undefined) console.log(jsonrpcError(errorCode, errorMessage, requestId, { type: errorType, args: errorArgs }));
       }
     } finally {
+      if (timeoutId !== null) clearTimeout(timeoutId);
       if (setupCompleted) {
-        // [무결성 확보] 실행 후 환경 원복 시 JsProxy 누수 차단
         pyodide.runPython("_restore_execution()");
       }
     }

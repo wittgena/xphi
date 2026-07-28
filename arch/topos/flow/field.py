@@ -11,7 +11,7 @@ import time
 import json
 from typing import Dict, Any, Optional
 
-from arch.topos.bound.tunnel import TunnelFactory, UniversalFacade, from_url
+from arch.topos.tunnel.factory import TunnelFactory, UniversalFacade, from_url
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 
 from phase.bind.rhythm.bridge import RhythmBridge
