@@ -49,6 +49,7 @@ class PayloadKey:
     CODE = "code"
     VARS = "variables"
     DATA = "data"
+    CONTEXT = "context"  # [추가됨] 실행 컨텍스트 전달 키
 
 class ResultKey:
     SUCCESS = "success"
@@ -116,8 +117,15 @@ class WasmBroker:
         res = await self._dispatch_and_wait_async(job_id, payload, response_channel, target_route=self.control_channel)
         return res.success
 
-    # [개선] tier 파라미터 추가
-    async def invoke(self, target_func: Union[str, WasmMethod], payload: str, wasm_path: Optional[str] = None, tier: Optional[str] = None) -> ExecutionResult:
+    # [수정됨] context 파라미터 추가
+    async def invoke(
+        self, 
+        target_func: Union[str, WasmMethod], 
+        payload: str, 
+        wasm_path: Optional[str] = None, 
+        tier: Optional[str] = None,
+        context: Optional[dict] = None  # [추가됨]
+    ) -> ExecutionResult:
         job_id = str(uuid.uuid4())
         response_channel = BrokerChannel.execute_res(job_id)
         
@@ -126,7 +134,8 @@ class WasmBroker:
             PayloadKey.JOB_ID: job_id, 
             PayloadKey.METHOD_FUNC: func_name, 
             PayloadKey.PAYLOAD: payload,
-            PayloadKey.RES_CHANNEL: response_channel
+            PayloadKey.RES_CHANNEL: response_channel,
+            PayloadKey.CONTEXT: context or {}  # [추가됨]
         }
         if wasm_path:
             msg_payload[PayloadKey.WASM_PATH] = wasm_path
@@ -135,7 +144,14 @@ class WasmBroker:
             
         return await self._dispatch_and_wait_async(job_id, msg_payload, response_channel)
 
-    async def execute(self, code: str, variables: Mapping[str, Any] | None = None, tier: Optional[str] = None) -> ExecutionResult:
+    # [수정됨] context 파라미터 추가
+    async def execute(
+        self, 
+        code: str, 
+        variables: Mapping[str, Any] | None = None, 
+        tier: Optional[str] = None,
+        context: Optional[dict] = None  # [추가됨]
+    ) -> ExecutionResult:
         job_id = str(uuid.uuid4())
         response_channel = BrokerChannel.execute_res(job_id)
         msg_payload = {
@@ -145,7 +161,8 @@ class WasmBroker:
                 PayloadKey.CODE: code, 
                 PayloadKey.VARS: variables or {}
             },
-            PayloadKey.RES_CHANNEL: response_channel
+            PayloadKey.RES_CHANNEL: response_channel,
+            PayloadKey.CONTEXT: context or {}
         }
         if tier:
             msg_payload[PayloadKey.TIER] = tier.upper()

@@ -159,6 +159,9 @@ class WasmTaskerDaemon(AbstractDaemon):
         tier_str = payload.get("tier", self.default_tier)
         job_policy = self._get_policy_from_tier(tier_str)
         exec_data = payload.get("payload", payload.get("data", ""))
+        
+        # [추가됨] Broker가 전달한 실행 컨텍스트(시간/시드)를 추출합니다.
+        context = payload.get("context", {})
 
         target_path = self._resolve_wasm_path(wasm_path)
         if not target_path.exists():
@@ -170,7 +173,8 @@ class WasmTaskerDaemon(AbstractDaemon):
             try:
                 ## STAGE 1: Checkpoint (validate_intent)
                 with WasmInterpreter(str(target_path), policy=CgroupPolicy.system()) as wasm_gate:
-                    validation_res = wasm_gate.invoke("validate_intent", json.dumps(payload))
+                    # [수정됨] Checkpoint 평가 시에도 컨텍스트 주입
+                    validation_res = wasm_gate.invoke("validate_intent", json.dumps(payload), context=context)
                     
                     if not validation_res.success:
                         if "not registered" in str(validation_res.error) or "not found" in str(validation_res.error):
@@ -205,10 +209,12 @@ class WasmTaskerDaemon(AbstractDaemon):
                     }
                     
                     self.log.info(f"[{job_id[:8]}] 🔓 Entering Deno Jail (Tier: {job_policy.tier.value})")
+                    # [수정됨] Deno 파이썬 샌드박스로 추출한 컨텍스트 전달
                     result = py_sandbox.execute(
                         code=code_to_run, 
                         variables=variables,
-                        callables=host_capabilities
+                        callables=host_capabilities,
+                        context=context
                     )
                     
                     metrics = py_sandbox.get_metrics()
@@ -228,7 +234,14 @@ class WasmTaskerDaemon(AbstractDaemon):
             try:
                 with WasmInterpreter(str(target_path), policy=job_policy) as wasm_runner:
                     self.log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func} (Tier: {job_policy.tier.value})")
-                    result = wasm_runner.invoke(target_func, exec_data)
+                    
+                    # [수정됨] 안전한 직렬화 보장
+                    if isinstance(exec_data, dict):
+                        exec_data_str = json.dumps(exec_data)
+                    else:
+                        exec_data_str = str(exec_data)
+                        
+                    result = wasm_runner.invoke(target_func, exec_data_str, context=context)
                     metrics = wasm_runner.get_metrics()
                     self.log.info(f"[{job_id[:8]}] 📊 WASM Metrics: {metrics}")
                     return {

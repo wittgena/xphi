@@ -149,7 +149,8 @@ class WasmInterpreter:
     def _serialize_value(self, value: Any) -> str: ...
     def _inject_variables(self, code: str, variables: Mapping[str, Any]) -> str: ...
 
-    def _run_wasm_function(self, target_func_name: str, payload: Any) -> str:
+    # [수정됨] context 파라미터 추가
+    def _run_wasm_function(self, target_func_name: str, payload: Any, context: dict | None = None) -> str:
         self._ensure_engine_started()
         
         if self.valid_methods and target_func_name not in self.valid_methods:
@@ -162,9 +163,15 @@ class WasmInterpreter:
             except json.JSONDecodeError:
                 pass
 
+        context = context or {}
+        if "timestamp" not in context:
+            context["timestamp"] = 0
+        if "seed" not in context:
+            context["seed"] = "dphi_secure_fallback_seed"
+
         routed_request = {
             "method": target_func_name,
-            "context": {},
+            "context": context,
             "payload": actual_payload
         }
         
@@ -199,10 +206,11 @@ class WasmInterpreter:
                 if res_ptr is not None and res_len_legacy is not None:
                     self._wasm_dealloc(self.store, res_ptr, res_len_legacy)
 
-    def invoke(self, target_func: str, payload: str) -> ExecutionResult:
+    # [수정됨] context 파라미터 연동
+    def invoke(self, target_func: str, payload: str, context: dict | None = None) -> ExecutionResult:
         self._check_thread_ownership()
         try:
-            result_str = self._run_wasm_function(target_func, payload)
+            result_str = self._run_wasm_function(target_func, payload, context=context)
             result_data = json.loads(result_str)
             
             if result_data.get("success", False):
@@ -217,11 +225,13 @@ class WasmInterpreter:
         except Exception as e:
             return ExecutionResult(success=False, error=ExecutionError(f"WASM Invoke Failed: {e}"))
 
+    # [수정됨] context 파라미터 시그니처 추가 및 연동
     def execute(
         self,
         code: str,
         variables: Mapping[str, Any] | None = None,
         callables: Mapping[str, Callable[..., Any]] | None = None,
+        context: dict | None = None,
     ) -> ExecutionResult:
         self._check_thread_ownership()
         variables = variables or {}
@@ -232,16 +242,16 @@ class WasmInterpreter:
             return ExecutionResult(success=False, error=e)
 
         try:
-             result_str = self._run_wasm_function("execute_code", injected_code)
+             result_str = self._run_wasm_function("execute_code", injected_code, context=context)
              result_data = json.loads(result_str)
              
              if result_data.get("success", False):
-                  inner_data = result_data.get("data", {})
-                  actual_output = inner_data.get("output", "")
-                  return ExecutionResult(success=True, output=actual_output)
+                 inner_data = result_data.get("data", {})
+                 actual_output = inner_data.get("output", "")
+                 return ExecutionResult(success=True, output=actual_output)
              else:
-                  error_msg = result_data.get("error", "Unknown execution error")
-                  return ExecutionResult(success=False, error=ExecutionError(error_msg))
+                 error_msg = result_data.get("error", "Unknown execution error")
+                 return ExecutionResult(success=False, error=ExecutionError(error_msg))
         except Exception as e:
              return ExecutionResult(success=False, error=ExecutionError(f"WASM Execution Failed: {e}"))
 
@@ -259,8 +269,15 @@ class WasmInterpreter:
     def __exit__(self, *_):
         self.shutdown()
 
-    def __call__(self, code: str, variables=None, callables=None) -> ExecutionResult:
-        return self.execute(code, variables, callables)
+    # [수정됨] context 파라미터 연동
+    def __call__(
+        self, 
+        code: str, 
+        variables=None, 
+        callables=None, 
+        context: dict | None = None
+    ) -> ExecutionResult:
+        return self.execute(code, variables, callables, context)
 
     def shutdown(self) -> None:
         self.engine = None

@@ -1,6 +1,4 @@
 # watcher.dphi.scheme.scenario.ecosystem
-## @lineage: watcher.dphi.resolver.scenario.ecosystem
-## @lineage: phase.wasm.resolver.scenario.ecosystem
 import time
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519

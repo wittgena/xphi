@@ -8,22 +8,24 @@ log = get_emitter("scenario.sandbox")
 
 class SandboxScenarios(SchemeRunner):
     """@desc: Core execution engine, resource isolation, and state generation scenarios"""
+    
     async def run_all(self):
         log.info("\n=== [START] Executing Sandbox & Compute Scenarios ===")
         await self._set_worker_policy("SYSTEM")
         
-        """샌드박스 보안 및 자원 격리"""
+        # 1. Sandbox Security & Resource Isolation
         await self._test_wasmcg_resilience()
         await self._test_legacy_execution()
+        await self._test_non_deterministic_isolation()
         await self._test_guardrail_validation()
         
-        """인과성 제어 및 의존성 역전"""
+        # 2. Causality Control & Dependency Injection
         await self._test_topos_and_phase()
         await self._test_tripartite_parity()
         await self._test_dependency_injection()
         await self._test_ffi_robustness()
         
-        """연료(Fuel) 통제 및 구조적 한계 테스트"""
+        # 3. Fuel Control & Structural Boundary Tests
         await self._test_fuel_linear_profiling()
         await self._test_dynamic_policy_and_exhaustion()
         await self._test_concurrency_and_pool_scaling()
@@ -49,6 +51,68 @@ class SandboxScenarios(SchemeRunner):
     async def _test_legacy_execution(self):
         log.info("\n--- Running Suite: Legacy Code Execution ---")
         await self._run_case("Legacy: Normal Execution", "execute_code", "x = 10\nprint(x)", expected_success=True)
+
+    # =====================================================================
+    # Determinism API & System Resource Access Denial Tests
+    # =====================================================================
+    async def _test_non_deterministic_isolation(self):
+        log.info("\n--- Running Suite: Determinism & System Call Isolation ---")
+        
+        # 1. System Resource (File/Net) Isolation Tests (Negative)
+        io_code = "with open('/etc/passwd', 'r') as f:\n    print(f.read())"
+        await self._run_case("Isolation: Deny File System Access", "execute_code", io_code, expected_success=False)
+        
+        net_code = "import urllib.request\nreq = urllib.request.urlopen('http://localhost')\nprint(req.read())"
+        await self._run_case("Isolation: Deny Network Access", "execute_code", net_code, expected_success=False)
+
+        # 2. Zero-Trust Fallback Mechanism Test
+        # When context is not injected, the sandbox must fallback to 0.0, preventing OS time leak.
+        time_code = "import time\nprint(time.time())"
+        res_time = await self.broker.execute(code=time_code)
+        if res_time.success and float(res_time.output.strip()) == 0.0:
+            log.info("  [PASS] Determinism: Sandbox enforces 0.0s fallback time.")
+            self.success_count += 1
+        else:
+            log.error(f"  [FAIL] Determinism: Time fallback failed. Output: {res_time.output}")
+            self.fail_count += 1
+
+        # 3. Idempotency & Deterministic PRNG Verification
+        random_code = "import random, os\nprint(f'{random.random()}|{os.urandom(4).hex()}')"
+        
+        # Execute the same code twice without injecting context (Expect identical fallback seed application)
+        res_rand1 = await self.broker.execute(code=random_code)
+        res_rand2 = await self.broker.execute(code=random_code)
+        
+        if res_rand1.success and res_rand2.success and (res_rand1.output == res_rand2.output):
+            log.info(f"  [PASS] Determinism: PRNG sequences are 100% identical ({res_rand1.output.strip()}).")
+            self.success_count += 1
+        else:
+            log.error("  [FAIL] Determinism: PRNG outputs diverge. Sandbox is not deterministic.")
+            self.fail_count += 1
+
+        # 4. Dynamic Context Injection Verification
+        injected_context = {
+            "timestamp": 1600000000,
+            "seed": "proof_of_compute_seed_777"
+        }
+        
+        injection_code = "import time, random\nprint(f'{time.time()}|{random.random()}')"
+        
+        # Explicitly inject context via Broker
+        res_inject = await self.broker.execute(code=injection_code, context=injected_context)
+        
+        if res_inject.success:
+            out_time, out_rand = res_inject.output.strip().split('|')
+            # Cast to float first to handle potential "1600000000.0" from python's time.time(), then to int
+            if int(float(out_time)) == 1600000000:
+                log.info(f"  [PASS] Determinism: Sandbox correctly adopted injected context (Time: {out_time}, Rand: {out_rand}).")
+                self.success_count += 1
+            else:
+                log.error(f"  [FAIL] Determinism: Context injection failed. Output: {res_inject.output}")
+                self.fail_count += 1
+        else:
+            log.error("  [FAIL] Determinism: Context injected execution crashed.")
+            self.fail_count += 1
 
     async def _test_guardrail_validation(self):
         log.info("\n--- Running Suite: Guardrail Validation ---")
@@ -112,7 +176,7 @@ class SandboxScenarios(SchemeRunner):
             self.fail_count += 1
             return
             
-        recovery_result = await self.broker.invoke("execute_code", "print('I survived')")
+        recovery_result = await self.broker.execute(code="print('I survived')")
         if recovery_result.success:
             log.info("  [PASS] System survived the crash and isolated the fault.")
             self.success_count += 1

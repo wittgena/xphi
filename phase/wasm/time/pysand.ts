@@ -1,5 +1,5 @@
 // pysand.ts
-// @desc: Optimized, Type-Safe, and Memory-Leak-Free Pyodide Sandbox Runner for Deno (with Cgroup features)
+// @desc: Optimized, Type-Safe, and Memory-Leak-Free Pyodide Sandbox Runner for Deno (with Cgroup & Determinism features)
 import pyodideModule from "npm:pyodide/pyodide.js";
 import { readLines } from "https://deno.land/std@0.186.0/io/mod.ts";
 
@@ -32,10 +32,11 @@ interface JsProxy {
   destroy: () => void;
 }
 
-// Python Code Templates (Optimized with Virtual Cgroup & Metrics)
+// Python Code Templates (Optimized with Virtual Cgroup, Metrics & Determinism)
 const PYTHON_SETUP_CODE = `
 import sys, io, json
 import tracemalloc
+import time, os, hashlib, random
 
 # 메모리 텔레메트리 시작
 tracemalloc.start()
@@ -43,7 +44,46 @@ tracemalloc.start()
 old_stdout, old_stderr = sys.stdout, sys.stderr
 buf_stdout, buf_stderr = io.StringIO(), io.StringIO()
 
-# 가상 Cgroup 상태 저장소
+# ==============================================================================
+# 1. 결정론적 실행을 위한 가상 컨텍스트 (Non-determinism Isolation)
+# ==============================================================================
+_virtual_context = {
+    "time": 0.0,
+    "seed_counter": 0,
+    "base_seed": b"dphi_default_seed"
+}
+
+# time.time 모킹
+_original_time = time.time
+def _mock_time():
+    return _virtual_context["time"]
+time.time = _mock_time
+
+# os.urandom 모킹 (시드 기반 결정론적 바이트 생성)
+_original_urandom = os.urandom
+def _mock_urandom(size):
+    _virtual_context["seed_counter"] += 1
+    state = _virtual_context["base_seed"] + str(_virtual_context["seed_counter"]).encode()
+    
+    result = b""
+    while len(result) < size:
+        state = hashlib.sha256(state).digest()
+        result += state
+    return result[:size]
+os.urandom = _mock_urandom
+
+def _apply_execution_context(ts, seed_string):
+    """Host(Broker)로부터 주입받은 시간과 시드로 상태를 동기화합니다."""
+    if ts is not None:
+        _virtual_context["time"] = float(ts)
+    if seed_string is not None:
+        _virtual_context["base_seed"] = seed_string.encode('utf-8')
+        _virtual_context["seed_counter"] = 0
+        random.seed(_virtual_context["base_seed"]) # 내장 random 모듈도 시드 고정
+
+# ==============================================================================
+# 2. 자원 격리를 위한 Cgroup 상태 저장소 (Fuel & Memory)
+# ==============================================================================
 _cgroup_state = {
     "fuel_quota": None,
     "fuel_consumed": 0,
@@ -83,6 +123,9 @@ def _get_metrics():
         "fuel_remaining": fuel_remaining
     })
 
+# ==============================================================================
+# 3. 입출력 격리 및 시스템 함수
+# ==============================================================================
 def _prepare_execution():
     buf_stdout.seek(0)
     buf_stdout.truncate(0)
@@ -193,7 +236,7 @@ globalThis.addEventListener("unhandledrejection", (event) => {
 // Globals & Initialization
 const pyodide = await pyodideModule.loadPyodide();
 
-// [추가] 하드 타임아웃 시 C 레벨에서 파이썬 실행을 멈추기 위한 인터럽트 버퍼
+// 하드 타임아웃 시 C 레벨에서 파이썬 실행을 멈추기 위한 인터럽트 버퍼
 const interruptBuffer = new Uint8Array(new SharedArrayBuffer(1));
 pyodide.setInterruptBuffer(interruptBuffer);
 
@@ -336,7 +379,6 @@ while (true) {
     continue;
   }
 
-  // [추가] Cgroup 정책 주입 RPC 처리
   if (method === "apply_cgroup") {
     const { fuel = null, mem_bytes = null } = params;
     try {
@@ -348,7 +390,6 @@ while (true) {
     continue;
   }
 
-  // [추가] Metrics 조회 RPC 처리
   if (method === "get_metrics") {
     try {
       const metricsStr = pyodide.runPython("_get_metrics()");
@@ -361,6 +402,9 @@ while (true) {
 
   if (method === "execute") {
     const code = params.code || "";
+    // [추가됨] 컨텍스트 파라미터 수신 (Host에서 time, seed 등을 전달)
+    const context = params.context || {}; 
+    
     let setupCompleted = false;
     let timeoutId: number | null = null;
 
@@ -369,10 +413,14 @@ while (true) {
         await pyodide.loadPackagesFromImports(code);
       }
       
+      // [추가됨] 실행 직전 샌드박스 내부에 가상 컨텍스트 동기화
+      const ts = context.timestamp !== undefined ? context.timestamp : 'None';
+      const seed = context.seed !== undefined ? toPythonLiteral(context.seed) : 'None';
+      pyodide.runPython(`_apply_execution_context(${ts}, ${seed})`);
+      
       pyodide.runPython("_prepare_execution()");
       setupCompleted = true;
 
-      // [추가] Host의 15초 타임아웃 발생 전(12초), 샌드박스 내부에서 안전하게 KeyboardInterrupt(2) 유도
       interruptBuffer[0] = 0;
       timeoutId = setTimeout(() => {
         interruptBuffer[0] = 2; 

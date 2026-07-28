@@ -16,7 +16,7 @@ from typing import Any, Callable, Mapping
 from phase.runtime.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
 from phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
-from watcher.dphi.cgroup import CgroupPolicy, Tier  # [추가됨] Cgroup 통제용
+from watcher.dphi.cgroup import CgroupPolicy, Tier
 
 TIME_ROOT = resolve_path("time")
 LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
@@ -33,7 +33,7 @@ class PythonInterpreter:
         enable_env_vars: list[str] | None = None,
         enable_network_access: list[str] | None = None,
         sync_files: bool = True,
-        policy: CgroupPolicy | None = None,  # [추가됨] Cgroup 정책 주입
+        policy: CgroupPolicy | None = None,
     ) -> None:
         if isinstance(deno_command, dict):
             raise TypeError("deno_command must be a list of strings")
@@ -198,8 +198,7 @@ class PythonInterpreter:
             pass 
 
     def _apply_cgroup_policy(self) -> None:
-        """[추가됨] 샌드박스 내부의 파이썬 인터프리터에 Cgroup 정책(Fuel, Memory)을 동적으로 주입합니다."""
-        # Tier가 STANDARD인 경우에만 오버헤드가 있는 settrace(가상 Fuel)를 적용
+        """샌드박스 내부의 파이썬 인터프리터에 Cgroup 정책(Fuel, Memory)을 동적으로 주입합니다."""
         use_fuel = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else None
         params = {
             "fuel": use_fuel,
@@ -224,8 +223,6 @@ class PythonInterpreter:
                 raise ProtocolError("Deno executable not found.") from e
             
             self._health_check()
-            
-            # [추가됨] 샌드박스 구동 확인 직후, 현재 티어에 맞는 Cgroup 정책 주입
             self._apply_cgroup_policy()
 
     _MAX_SKIP_LINES = 100
@@ -357,7 +354,6 @@ class PythonInterpreter:
         self._send_request("inject_var", {"name": name, "value": value}, f"injecting variable '{name}'")
 
     def get_metrics(self) -> dict:
-        """[추가됨] 현재 샌드박스의 리소스 사용량(메모리, Fuel)을 조회하여 반환합니다."""
         if not self.deno_process or self.deno_process.poll() is not None:
             return {}
         try:
@@ -375,10 +371,18 @@ class PythonInterpreter:
         code: str,
         variables: Mapping[str, Any] | None = None,
         callables: Mapping[str, Callable[..., Any]] | None = None,
+        context: dict | None = None, # [추가됨] 실행 컨텍스트 (시간, 시드 등)
     ) -> ExecutionResult:
         self._check_thread_ownership()
         variables = variables or {}
         callables = callables or {}
+        context = context or {}
+
+        # [추가됨] 상위 레이어에서 컨텍스트를 넘겨주지 않더라도 샌드박스가 비결정적 상태가 되지 않도록 방어 (Zero-Trust 폴백)
+        if "timestamp" not in context:
+            context["timestamp"] = 0
+        if "seed" not in context:
+            context["seed"] = "dphi_secure_fallback_seed"
         
         try:
             code = self._inject_variables(code, variables)
@@ -395,7 +399,13 @@ class PythonInterpreter:
 
         self._request_id += 1
         execute_request_id = self._request_id
-        input_data = JsonRpcMessage.request("execute", {"code": code}, execute_request_id)
+        
+        # [수정됨] RPC Payload에 code와 함께 context 맵을 포함하여 전송
+        payload = {
+            "code": code,
+            "context": context
+        }
+        input_data = JsonRpcMessage.request("execute", payload, execute_request_id)
         log.error(f"[Deno RPC Request] -> {input_data}")
 
         try:
@@ -464,8 +474,9 @@ class PythonInterpreter:
         code: str,
         variables: Mapping[str, Any] | None = None,
         callables: Mapping[str, Callable[..., Any]] | None = None,
+        context: dict | None = None, # [추가됨] 시그니처 동기화
     ) -> ExecutionResult:
-        return self.execute(code, variables, callables)
+        return self.execute(code, variables, callables, context)
 
     def shutdown(self) -> None:
         if self.deno_process and self.deno_process.poll() is None:

@@ -1,8 +1,4 @@
 # phase.runtime.daemon.task.event
-## @lineage: phase.runtime.task.event
-## @lineage: phase.runtime.cli.task
-## @lineage: phase.executor.event.task
-## @lineage: arch.executor.event.task
 import time
 import uuid
 import json

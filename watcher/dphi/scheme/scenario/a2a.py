@@ -1,6 +1,4 @@
 # watcher.dphi.scheme.scenario.a2a
-## @lineage: watcher.dphi.resolver.scenario.a2a
-## @lineage: phase.wasm.resolver.scenario.a2a
 import time
 import hashlib
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -74,16 +72,12 @@ print(analyze_risk())
     async def _test_a2a_ledger_inscription(self):
         log.info("\n--- Running Suite: Phase 4 - Cryptographic Ledger Inscription ---")
         await self._set_worker_policy("SYSTEM")
-        
         repo_commit = StateAdapter.build_repo_commit(
             nexus_id=907049,
             parent_nexus_id=0,
             parent_commit_id="proof-hash-xyz"
         )
-        
         sig_hex = self._generate_signature(repo_commit)
-        
-        # [FIXED] Multi-sig & Dynamic ACL 구조에 맞추어 인자 변경 (1-of-1 서명)
         payload = StateAdapter.build_inscribe_payload(
             nexus_id=907049,
             parent_nexus_id=None,
