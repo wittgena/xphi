@@ -52,6 +52,9 @@ class A2AScenarios(SchemeRunner):
     async def _test_a2a_trustless_execution(self):
         log.info("\n--- Running Suite: Phase 2 - Trustless Execution (Sandboxed) ---")
         await self._set_worker_policy("STANDARD")
+        
+        # Even if 'random' or 'time' were used here, the deterministic fallback ensures 
+        # identical output hashes across all verifying nodes for PoC verification.
         code_payload = """
 def analyze_risk():
     risk_score = 42.5
@@ -85,7 +88,7 @@ print(analyze_risk())
             signers=[self.pubkey_hex],
             signatures=[sig_hex],
             threshold=1,
-            allowed_signers=[self.pubkey_hex]
+            allowed_signers=[self.pubkey_hex],
         )
         
         await self._run_case("A2A: Inscribe Transaction for State Finality (Nexus ID)", "inscribe_actor", payload, expected_success=True)

@@ -239,7 +239,7 @@ class PythonInterpreter:
                     return response_line
             
             if time.time() - start_time > self.execution_timeout:
-                log.error(f"Deno execution timed out ({self.execution_timeout}s) during {context}. Forcing termination.")
+                log.debug(f"Deno execution timed out ({self.execution_timeout}s) during {context}. Forcing termination.")
                 self.shutdown()
                 raise ProtocolError(f"Execution Timeout ({self.execution_timeout}s) {context}")
 
@@ -248,9 +248,9 @@ class PythonInterpreter:
                 raise ProtocolError(f"Deno exited unexpectedly (code {exit_code}) {context}")
 
     def _parse_response_line(self, response_line: str, context: str) -> dict | None:
-        log.error(f"[Deno RPC Response] <- {response_line}")
+        log.debug(f"[Deno RPC Response] <- {response_line}")
         if not response_line.startswith("{"):
-            log.error(f"[Deno Output Leak] {context}: {response_line}")
+            log.debug(f"[Deno Output Leak] {context}: {response_line}")
             return None
         try:
             return json.loads(response_line)
@@ -378,7 +378,6 @@ class PythonInterpreter:
         callables = callables or {}
         context = context or {}
 
-        # [추가됨] 상위 레이어에서 컨텍스트를 넘겨주지 않더라도 샌드박스가 비결정적 상태가 되지 않도록 방어 (Zero-Trust 폴백)
         if "timestamp" not in context:
             context["timestamp"] = 0
         if "seed" not in context:
@@ -399,14 +398,12 @@ class PythonInterpreter:
 
         self._request_id += 1
         execute_request_id = self._request_id
-        
-        # [수정됨] RPC Payload에 code와 함께 context 맵을 포함하여 전송
         payload = {
             "code": code,
             "context": context
         }
         input_data = JsonRpcMessage.request("execute", payload, execute_request_id)
-        log.error(f"[Deno RPC Request] -> {input_data}")
+        log.info(f"[Deno RPC Request] -> {input_data}")
 
         try:
             self.deno_process.stdin.write(input_data + "\n")
