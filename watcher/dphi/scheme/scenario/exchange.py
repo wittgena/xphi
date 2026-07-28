@@ -1,4 +1,5 @@
-# watcher.dphi.scheme.d3fi.exchange
+# watcher.dphi.scheme.scenario.exchange
+## @lineage: watcher.dphi.scheme.d3fi.exchange
 ## @lineage: watcher.dphi.resolver.d3fi.exchange
 import time
 import json
@@ -7,7 +8,7 @@ from typing import List
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from watcher.dphi.adapter.exchange import D3fiExchangeAdapter
+from watcher.dphi.adapter.exchange import ExchangeAdapter
 from watcher.dphi.adapter.state import StateAdapter
 from watcher.dphi.scheme.runner import SchemeRunner
 from watcher.plane.emitter import get_emitter
@@ -39,7 +40,7 @@ class ExchangeScenario(SchemeRunner):
         self.field_pub = self._get_pub_hex(self.field_key)
         
         # [NEW] 3. 결제 어댑터(환전소) 인스턴스화
-        self.exchange_adapter = D3fiExchangeAdapter(clearing_house_pub_key=self.field_pub)
+        self.exchange_adapter = ExchangeAdapter(clearing_house_pub_key=self.field_pub)
         self.last_receipt = None
 
     def _get_pub_hex(self, priv_key):

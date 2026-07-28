@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from arch.topos.bound.tunnel import UniversalFacade
 from arch.contract.event.tunnelbus import TunnelEventBus
-from phase.runtime.task.supervisor import Dispatcher
+from phase.runtime.daemon.task.supervisor import Dispatcher
 
 @dataclass
 class RuntimeContext:

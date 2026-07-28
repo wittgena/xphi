@@ -1,4 +1,6 @@
-# phase.runtime.bridge.memory
+# phase.runtime.mesh.memory
+## @lineage: phase.runtime.mesh.bridge.memory
+## @lineage: phase.runtime.bridge.memory
 ## @lineage: watcher.kernel.bridge.memory
 ## @lineage: logos.gate.memory.factory
 import os
@@ -8,7 +10,7 @@ from acp.connection import Connection, StreamEvent, StreamDirection
 
 from arch.topos.bound.tunnel import UniversalFacade
 
-from phase.runtime.bridge.queue import RpcTask, RpcTaskKind
+from phase.runtime.mesh.queue import RpcTask, RpcTaskKind
 from watcher.kernel.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
 from watcher.plane.emitter import get_emitter
 

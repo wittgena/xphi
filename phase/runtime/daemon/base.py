@@ -10,8 +10,8 @@ from contextlib import suppress
 from arch.topos.bound.tunnel import UniversalFacade
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.contract.event.bus import AsyncEventBus
-from phase.runtime.task.supervisor import Dispatcher
-from phase.runtime.receptor.bootstrap import receptor_bootstrap
+from phase.runtime.daemon.task.supervisor import Dispatcher
+from phase.runtime.daemon.receptor.bootstrap import receptor_bootstrap
 from phase.runtime.sensor import SurfaceSensor
 from watcher.plane.emitter import get_emitter
 

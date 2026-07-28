@@ -1,4 +1,6 @@
-# phase.runtime.bridge.schema
+# phase.runtime.mesh.schema
+## @lineage: phase.runtime.mesh.bridge.schema
+## @lineage: phase.runtime.bridge.schema
 ## @lineage: watcher.kernel.bridge.schema
 ## @lineage: arch.topos.ingress.schema
 ## @lineage: fiber.gateway.ingress.schema

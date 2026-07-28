@@ -1,4 +1,5 @@
-# phase.runtime.receptor.topos
+# phase.runtime.daemon.receptor.topos
+## @lineage: phase.runtime.receptor.topos
 import time
 import json
 from typing import Optional, Dict, List
@@ -48,8 +49,8 @@ def build_system_topos() -> List[TopologicalStructure]:
 
     phase = []
     with suppress(ImportError): import phase.bind.resolver as m; phase.append(m.__name__)
-    with suppress(ImportError): import phase.runtime.receptor.bootstrap as m; phase.append(m.__name__)
-    with suppress(ImportError): import phase.runtime.receptor.kernel as m; phase.append(m.__name__)
+    with suppress(ImportError): import phase.runtime.daemon.receptor.bootstrap as m; phase.append(m.__name__)
+    with suppress(ImportError): import phase.runtime.daemon.receptor.kernel as m; phase.append(m.__name__)
 
     if phase:
         structures.append(TopologicalStructure(name="phase.runtime", members=phase))

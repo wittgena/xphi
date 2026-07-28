@@ -1,4 +1,6 @@
-# phase.runtime.bridge.queue
+# phase.runtime.mesh.queue
+## @lineage: phase.runtime.mesh.bridge.queue
+## @lineage: phase.runtime.bridge.queue
 ## @lineage: watcher.kernel.bridge.queue
 ## @lineage: logos.gate.message.queue
 ## @lineage: watcher.kernel.message.queue
@@ -16,7 +18,7 @@ from typing import Any, Protocol
 from enum import Enum
 
 from arch.gov.bridge.store.message import MessageStateStore
-from phase.runtime.task.supervisor import TaskSupervisor
+from phase.runtime.daemon.task.supervisor import TaskSupervisor
 
 RequestRunner = Callable[[dict[str, Any]], Awaitable[Any]]
 NotificationRunner = Callable[[dict[str, Any]], Awaitable[None]]

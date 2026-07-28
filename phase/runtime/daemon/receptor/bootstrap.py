@@ -1,4 +1,5 @@
-# phase.runtime.receptor.bootstrap
+# phase.runtime.daemon.receptor.bootstrap
+## @lineage: phase.runtime.receptor.bootstrap
 """@flow: Sink(망) → Surface(위상장) → ReceptorKernel(다중 렌즈) → SourceTracer(감각/방어) 마운트"""
 import asyncio
 from pathlib import Path
@@ -8,8 +9,8 @@ from typing import List
 from arch.topos.bound.tunnel import UniversalFacade
 
 from phase.bind.resolver import find_current_self
-from phase.runtime.receptor.topos import ReceptorTopos, build_system_topos
-from phase.runtime.receptor.kernel import ReceptorKernel
+from phase.runtime.daemon.receptor.topos import ReceptorTopos, build_system_topos
+from phase.runtime.daemon.receptor.kernel import ReceptorKernel
 from watcher.plane.sink import TunnelSink 
 
 from watcher.tracer.source import TracerSource

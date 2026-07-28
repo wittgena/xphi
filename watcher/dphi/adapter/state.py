@@ -1,13 +1,7 @@
 # watcher.dphi.adapter.state
-## @lineage: phase.wasm.resolver.adapter
 import canonicaljson
 
 class StateAdapter:
-    """
-    @module: StateAdapter
-    @desc: Strict schema adapter ensuring Python dictionary compliance with Rust WASM FFI struct memory layouts.
-    """
-
     @staticmethod
     def to_canonical_bytes(data: dict) -> bytes:
         """Enforce RFC 8785 Canonical JSON (JCS) for deterministic hashing."""

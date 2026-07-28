@@ -1,6 +1,6 @@
 # phase.runtime.daemon.bootstrap
 from phase.runtime.context import RuntimeContext
-from phase.runtime.task.supervisor import TaskSupervisor
+from phase.runtime.daemon.task.supervisor import TaskSupervisor
 from phase.runtime.daemon.base import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
 from phase.runtime.daemon.dynamics import DynamicsDaemon
 from phase.runtime.daemon.event import EventBusDaemon
@@ -26,7 +26,7 @@ def mount_core_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
 def mount_app_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     """L2 Application Layer: 비즈니스 레벨 데몬 장착 (WasmTasker 등)"""
     try:
-        from phase.runtime.task.wasm import WasmTaskerDaemon
+        from phase.runtime.daemon.task.wasm import WasmTaskerDaemon
         wasm_daemon = WasmTaskerDaemon(tunnel=ctx.tunnel, supervisor=supervisor)
         supervisor.mount_daemon(wasm_daemon)
         log.info("L2 Plugin Mounted: WasmTaskerDaemon")

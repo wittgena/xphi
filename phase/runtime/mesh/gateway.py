@@ -1,20 +1,13 @@
-# phase.runtime.bridge.gateway
-## @lineage: watcher.kernel.bridge.gateway
-## @lineage: arch.topos.ingress.gateway
-"""
-@desc: 
-- Interceptor Bridge middleware decoupling Agent/Ingress execution from the Kernel Store.
-- Acts as a structural adapter: translates 3D ingress streams into the 2D logic streams 
-  required by the deterministic WASM kernel (via KernelStore pipeline).
-"""
+# phase.runtime.mesh.gateway
+## @lineage: phase.runtime.mesh.bridge.gateway
 import uuid
 from typing import Any, Dict, Optional
 
-from phase.runtime.bridge.schema import LogicStream as IngressLogicStream
+from phase.runtime.mesh.schema import LogicStream as IngressLogicStream
 from watcher.kernel.ledger import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("ingress.gateway", phase="KERNEL")
+log = get_emitter("mesh.gateway", phase="KERNEL")
 
 class ToposGateway:
     """@desc: Compliant middleware & Adapter bridging external Ingress to the unified KernelStore"""

@@ -1,10 +1,11 @@
-# phase.runtime.receptor.kernel
+# phase.runtime.daemon.receptor.kernel
+## @lineage: phase.runtime.receptor.kernel
 """@flow: Environment(Sync) → SourceTracer(Membrane) → Ψ(PhaseSurface) → ReceptorKernel(Multi-Lens) → Rupture(emit)"""
 import asyncio
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from phase.runtime.receptor.topos import ReceptorTopos
+from phase.runtime.daemon.receptor.topos import ReceptorTopos
 from arch.xor.metric.trajectory import (
     Point, 
     WindowedTrajectory, 

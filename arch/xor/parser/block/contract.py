@@ -20,12 +20,6 @@ class Contract(BaseModel):
         json_dumps=lambda v, *, default: orjson.dumps(v, default=default).decode()
     )
 
-    id: ToposId = Field(description="이벤트 자체의 고유 Snowflake ID")
-    timestamp: int = Field(
-        default_factory=lambda: int(time.time() * 1000), 
-        description="밀리초 타임스탬프 (Topos ID의 41-bit time_delta와 정렬 가능)"
-    )
-
     topos_id: Optional[ToposId] = Field(default=None, description="소속 Topos 공간 ID")
     phase_id: Optional[Uint32] = Field(default=None, description="32-bit 차분 신호 (Epoch, Tick, Mag)")
     nexus_id: Optional[Uint32] = Field(default=None, description="Topos(Low32) ^ Phase XOR 결과값")

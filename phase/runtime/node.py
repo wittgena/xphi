@@ -19,7 +19,7 @@ from phase.bind.resolver import find_current_self
 from phase.executor.swarm import SwarmExecutor
 
 from phase.runtime.sensor import SurfaceSensor, SurfaceActuator
-from phase.runtime.task.supervisor import TaskSupervisor, Dispatcher
+from phase.runtime.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from phase.runtime.inter.anchor import NodeInterpreter, AnchorFlow
 from phase.runtime.context import RuntimeContext
 from phase.runtime.daemon.bootstrap import mount_core_layer, mount_app_layer
