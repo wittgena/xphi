@@ -1,6 +1,4 @@
 # watcher.dphi.scheme.scenario.exchange
-## @lineage: watcher.dphi.scheme.d3fi.exchange
-## @lineage: watcher.dphi.resolver.d3fi.exchange
 import time
 import json
 import hashlib

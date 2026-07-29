@@ -1,6 +1,4 @@
 # arch.topos.workflow
-## @lineage: arch.xor.workflow
-## @lineage: anchor.registry.router.workflow
 """@desc: A native, lightweight, metaclass-driven event workflow engine"""
 import asyncio
 import inspect

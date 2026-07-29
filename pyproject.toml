@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 
 dependencies = [
-    "uvloop", "redis", "networkx", "pyyaml", "watchdog", "rocksdict", "libcst", "pydantic", "httpx", "eclipse-zenoh"
+    "uvloop", "redis", "networkx", "pyyaml", "watchdog", "rocksdict", "libcst", "pydantic", "fastapi", "httpx", "eclipse-zenoh", "mcp"
 ]
 
 [project.scripts]

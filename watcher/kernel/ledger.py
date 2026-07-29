@@ -16,15 +16,14 @@ from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
 from rocksdict import Rdict, Options, AccessType
 
-from watcher.plane.emitter import get_emitter
-from phase.bind.resolver import resolve_path
 from arch.topos.tunnel.factory import TunnelFactory
+from phase.bind.resolver import resolve_path
+
 from watcher.dphi.broker import WasmBroker  
 from watcher.dphi.adapter.sign import NodeSigner
-
-# [EVOLUTION] Import StateAdapter for JCS (RFC 8785) Compliance
 from watcher.dphi.adapter.state import StateAdapter
 from watcher.kernel.audit.warden import AuditWarden
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter("kernel.ledger", phase="KERNEL")
 
@@ -35,10 +34,6 @@ class LedgerRole(Enum):
     FOLLOWER = "PROPOSER"    # Read-Only mode; proposes raw streams to Mempool
 
 def deterministic_hash(data: Dict[str, Any]) -> str:
-    """
-    Generates a deterministic integrity hash (SHA-256) via JCS (RFC 8785).
-    [EVOLUTION] Replaced standard json.dumps with StateAdapter.to_canonical_bytes to guarantee 1:1 match with WASM FFI.
-    """
     canonical_bytes = StateAdapter.to_canonical_bytes(data)
     return hashlib.sha256(canonical_bytes).hexdigest()
 
@@ -111,14 +106,9 @@ class KernelLedger:
             else:
                 raise 
 
-        # [EVOLUTION] IoC Registration: Bind KernelStore's persistence pipeline to the Warden Sensor
         AuditWarden.register_anomaly_handler(self._handle_warden_anomaly)
 
     def _handle_warden_anomaly(self, action: str, details: str) -> None:
-        """
-        @desc: Callback handler for AuditWarden. Packages raw sensor signals into ToposBlobs 
-               and persists them physically, completing the immune system circuit.
-        """
         blob = ToposBlob(
             action=f"SYS_WARDEN_GUARD::{action}", 
             from_state="host.python.sandbox", 
@@ -167,18 +157,9 @@ class KernelLedger:
         return None
 
     def _save_kernel_unsafe(self, commit: KernelCommit) -> str:
-        """
-        @desc: [PRIVATE] Physical disk write for KernelCommits.
-               Strictly forbidden to be called directly from outside.
-        """
         return self._put_object("commit", asdict(commit))
 
     def seal_system_epoch(self, commit: KernelCommit, signatures: List[str], threshold: int = 1) -> str:
-        """
-        @desc: [PRIVILEGED WRAPPER] Ring 0 Entry Point.
-               Used by align.commit to finalize physical states without WASM re-evaluation.
-               Requires Multi-Sig threshold validation.
-        """
         if not signatures:
             error_msg = "System Epoch Seal Rejected: No signatures provided."
             log.critical(f"[KernelStore: PRIVILEGE] {error_msg}")
@@ -186,14 +167,11 @@ class KernelLedger:
             raise PermissionError(error_msg)
 
         signer = NodeSigner.get_instance()
-        
-        # [EVOLUTION] Convert the KernelCommit to JCS exactly as LedgerAuthAdapter does for signing
         canonical_bytes = StateAdapter.to_canonical_bytes(asdict(commit))
-        
         valid_count = 0
         for sig in signatures:
             try:
-                # NodeSigner verifies the signature against the canonical payload hash
+                ## NodeSigner verifies the signature against the canonical payload hash
                 if signer.verify_signature(canonical_bytes, sig):
                     valid_count += 1
             except Exception as e:
@@ -210,17 +188,12 @@ class KernelLedger:
         return self._save_kernel_unsafe(commit)
 
     async def propose_and_seal(self, stream: LogicStream) -> Optional[SealedKernel]:
-        """
-        @desc: The Unified Execution Gateway for external/ingress traffic.
-               Delegates ALL validation to `dphi.wasm`.
-        """
         if self.role == LedgerRole.FOLLOWER:
             stream_data = {"id": stream.id, "action": stream.action, "payload": stream.payload, "metadata": stream.metadata}
             self.broker.stream_produce("ledger:mempool:logic_streams", stream_data)
             return None
 
         parent_hash = self.get_head_hash(stream.id) or "genesis"
-
         transition_payload = {
             "intent_action": stream.action,
             "intent_payload": stream.payload,

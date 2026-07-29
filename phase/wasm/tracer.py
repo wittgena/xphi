@@ -1,6 +1,4 @@
 # phase.wasm.tracer
-## @lineage: watcher.dphi.wasm.tracer
-## @lineage: watcher.kernel.dphi.wasm.tracer
 import sys
 import asyncio
 import base64
