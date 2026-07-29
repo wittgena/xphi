@@ -1,8 +1,8 @@
 # arch.topos.server.mcp
-## @lineage: atoa.secure.server.mcp
+# arch.topos.server.mcp (개선본)
 import inspect
 import json
-from typing import Any, Optional
+from typing import Any, Optional, List
 import httpx
 
 from fastapi import FastAPI
@@ -14,33 +14,37 @@ from mcp_types import TextContent
 from mcp.server.mcpserver.server import MCPServer
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("atoa.secure.mcp")
+from arch.topos.server.sentinel import SpecValidator
+from phase.runtime.mesh.gateway import ToposGateway
 
-class SecurityFirewallMiddleware:
-    """ASGI Middleware to intercept HTTP traffic, control payload sizes, and enforce access."""
+log = get_emitter("server.mcp", phase="DEFENSE")
+
+class SentinelFirewallMiddleware:
+    """ASGI Middleware integrating strict validation and Volumetric defense."""
     def __init__(self, app, max_body_size: int = 1024 * 1024 * 5):
         self.app = app
         self.max_body_size = max_body_size
+        self.validator = SpecValidator()
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
 
-        # @tag: mitigation_payload_limit - Prevent Memory Exhaustion DoS
-        content_length = 0
-        for name, value in scope.get("headers", []):
-            if name == b"content-length":
-                content_length = int(value)
-                break
-                
+        headers = dict(scope.get("headers", []))
+        
+        # [FIX 1] Chunked Encoding 차단 (Middleware Bypass 방어)
+        # Transfer-Encoding: chunked를 악용한 OOM 우회 공격을 원천 차단합니다.
+        if b"chunked" in headers.get(b"transfer-encoding", b""):
+            response = JSONResponse({"detail": "Chunked encoding not permitted by Membrane"}, status_code=411)
+            return await response(scope, receive, send)
+
+        content_length = int(headers.get(b"content-length", 0))
         if content_length > self.max_body_size:
             response = JSONResponse({"detail": "Payload Too Large"}, status_code=413)
             return await response(scope, receive, send)
-
-        # @tag: mitigation_auth_bypass - Custom route protection
+            
         path = scope.get("path", "")
         if path.startswith("/custom"):
-            headers = dict(scope.get("headers", []))
             if b"authorization" not in headers:
                 response = JSONResponse({"detail": "Unauthorized Custom Route"}, status_code=401)
                 return await response(scope, receive, send)
@@ -49,29 +53,27 @@ class SecurityFirewallMiddleware:
 
 
 class FastAPIMCPAdapter:
-    """Automated Bridge: Scans FastAPI routes and dynamically projects them into MCP Tools."""
+    """Automated Bridge with strict auth propagation and context retention."""
     def __init__(self, mcp_server: "SecureMCPServer", fastapi_app: FastAPI):
         self.mcp_server = mcp_server
         self.app = fastapi_app
 
-    def register_routes(self, tag_filter: Optional[str] = None, exclude_paths: Optional[list[str]] = None):
-        exclude_paths = exclude_paths or ["/openapi.json", "/docs", "/redoc"]
+    def register_routes(self, allowed_tags: List[str]):
+        # [FIX 2] Over-projection 방어: Blacklist -> Whitelist 구조로 변경
+        # 개발자가 명시적으로 'mcp-exposed' 태그를 부여한 안전한 라우트만 도구로 변환합니다.
         registered_count = 0
 
         for route in self.app.routes:
             if not isinstance(route, APIRoute):
                 continue
 
-            if route.path in exclude_paths:
-                continue
-
-            if tag_filter and tag_filter not in (route.tags or []):
+            if not route.tags or not any(tag in allowed_tags for tag in route.tags):
                 continue
 
             self._project_route_to_mcp_tool(route)
             registered_count += 1
 
-        log.info(f"[MCP Adapter] Dynamically registered {registered_count} FastAPI routes as MCP Tools.")
+        log.info(f"[MCP Adapter] Safely registered {registered_count} FastAPI routes via Whitelist.")
 
     def _project_route_to_mcp_tool(self, route: APIRoute):
         tool_name = route.name or route.path.strip("/").replace("/", "_")
@@ -83,8 +85,15 @@ class FastAPIMCPAdapter:
         docstring = f"[REST Endpoint: {http_method} {path}]\n{description}"
 
         # Internal Loopback Dispatcher
-        async def dynamic_tool_handler(**kwargs) -> str:
-            async with httpx.AsyncClient(app=self.app, base_url="http://internal-loopback") as client:
+        async def dynamic_tool_handler(ctx: Any = None, **kwargs) -> str:
+            # [FIX 3] Auth Bypass 방어 (Security Context Propagation)
+            # LLM 스키마에서는 Depends를 제거하더라도, 런타임에는 MCP 클라이언트의 원래 세션/인증 헤더를
+            # 백엔드 루프백 호출(httpx)에 강제로 주입하여 FastAPI의 권한 검증이 동작하게 만듭니다.
+            client_headers = {}
+            if ctx and hasattr(ctx, "session_token"):
+                client_headers["Authorization"] = f"Bearer {ctx.session_token}"
+
+            async with httpx.AsyncClient(app=self.app, base_url="http://internal-loopback", headers=client_headers) as client:
                 try:
                     if http_method == "GET":
                         response = await client.get(path, params=kwargs)
@@ -106,7 +115,7 @@ class FastAPIMCPAdapter:
         dynamic_tool_handler.__name__ = tool_name
         dynamic_tool_handler.__doc__ = docstring
 
-        # Strip FastAPI-specific dependencies (like Depends/Request) from the schema
+        # LLM에게 노출되는 스키마에서만 시스템 파라미터를 숨김 처리
         original_sig = inspect.signature(route.endpoint)
         clean_params = []
         for param in original_sig.parameters.values():
@@ -117,17 +126,39 @@ class FastAPIMCPAdapter:
         dynamic_tool_handler.__signature__ = original_sig.replace(parameters=clean_params)
 
         self.mcp_server.tool()(dynamic_tool_handler)
-        log.debug(f"[MCP Adapter] Tool mapped: {tool_name} -> [{http_method}] {path}")
+        log.debug(f"[MCP Adapter] Tool mapped safely: {tool_name} -> [{http_method}] {path}")
 
 
 class SecureMCPServer(MCPServer):
-    def bind_fastapi(self, app: FastAPI, tag_filter: Optional[str] = None):
-        """Binds a FastAPI application and projects its routes as MCP tools."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # [NEW] Sentinel의 핵심 인가 엔진 연결
+        self.gateway = ToposGateway()
+
+    def bind_fastapi(self, app: FastAPI, allowed_tags: List[str] = ["mcp-exposed"]):
+        """Binds a FastAPI application securely using Whitelist projection."""
         adapter = FastAPIMCPAdapter(self, app)
-        adapter.register_routes(tag_filter=tag_filter)
+        adapter.register_routes(allowed_tags=allowed_tags)
 
     async def _handle_call_tool(self, ctx, params):
-        # @tag: mitigation_info_leak - Mask tool execution error messages
+        # [FIX 4] Tool Poisoning / OS Command Injection 방어 (Gateway 인가)
+        # LLM이 특정 도구를 호출하기 직전, 파라미터 내부에 악성 셸 명령어나
+        # 인젝션 구문이 있는지 Sentinel의 ToposGateway가 평가하고 인가합니다.
+        tool_name = params.name
+        
+        is_authorized = await self.gateway.authorize(
+            action_id=f"invoke_tool_{tool_name}",
+            action="INVOKE_TOOL",
+            payload={"tool": tool_name, "params": params.arguments}
+        )
+        
+        if not is_authorized:
+            log.warning(f"[Security] Tool '{tool_name}' blocked by ToposGateway (Possible Prompt Injection).")
+            return type('Result', (), {'is_error': True, 'content': [
+                TextContent(type="text", text="Security Exception: Tool execution blocked by Sentinel Gateway.")
+            ]})()
+
+        # 인가 성공 시에만 도구 실행
         result = await super()._handle_call_tool(ctx, params)
         
         if getattr(result, "is_error", False):
@@ -140,11 +171,9 @@ class SecureMCPServer(MCPServer):
         return result
 
     def sse_app(self, **kwargs) -> Any:
-        # @tag: mitigation_asgi_bypass_sse
         app = super().sse_app(**kwargs)
-        return SecurityFirewallMiddleware(app)
+        return SentinelFirewallMiddleware(app)
 
     def streamable_http_app(self, **kwargs) -> Any:
-        # @tag: mitigation_asgi_bypass_http
         app = super().streamable_http_app(**kwargs)
-        return SecurityFirewallMiddleware(app)
+        return SentinelFirewallMiddleware(app)

@@ -43,7 +43,7 @@ DEFAULT_BOUND_SKELETON = {
         "ledger": ":anchor:/ledger",
         "log": ":io:/log",
         "ailog": ":io:/ailog",
-        "sandbox": ":workspace:/sandbox",
+        "sandbox": ":workspace:/dphi",
         "time": ":watcher:/dphi/time",
         "surface": ":io:/surface",
         "contract": ":contract:",
