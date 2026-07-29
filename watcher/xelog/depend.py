@@ -1,5 +1,4 @@
 # watcher.xelog.depend
-## @lineage: topos.xelog.depend
 from fastapi import Request
 
 from arch.topos.tunnel.subs import DistributedPubSub

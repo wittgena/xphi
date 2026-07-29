@@ -1,5 +1,4 @@
 # watcher.xelog.edge.a2a.profile
-## @lineage: topos.xelog.edge.a2a.profile
 from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
