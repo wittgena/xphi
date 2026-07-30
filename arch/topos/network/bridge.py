@@ -1,6 +1,4 @@
 # arch.topos.network.bridge
-## @lineage: arch.network.bridge
-## @lineage: phi.net.bridge.rpc
 import uuid
 from typing import Any
 from arch.topos.network.channel.pipeline import DuplexChannel, ChannelContext

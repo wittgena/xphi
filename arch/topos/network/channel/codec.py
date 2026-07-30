@@ -1,5 +1,4 @@
 # arch.topos.network.channel.codec
-## @lineage: arch.network.channel.codec
 import json
 from typing import Any
 from arch.topos.network.channel.pipeline import DuplexChannel, ChannelContext

@@ -1,6 +1,4 @@
 # arch.topos.network.factory
-## @lineage: arch.network.factory
-## @lineage: phi.net.protocol.factory
 import asyncio
 import logging
 from typing import Callable, List, Optional
