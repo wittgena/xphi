@@ -1,5 +1,6 @@
 # phase.wasm.tester.dphi
 import sys
+import json
 import asyncio
 from typing import Tuple
 
@@ -16,15 +17,12 @@ from phase.runtime.daemon.task.supervisor import TaskSupervisor
 from phase.runtime.daemon.task.wasm import WasmTaskerDaemon
 from watcher.dphi.broker import WasmBroker
 
-from watcher.plane.emitter import get_emitter
+from watcher.plane.emitter import get_emitter, flow_scope
+from phase.wasm.auditor import CanonicalProofAuditor
 
 log = get_emitter("tester.dphi")
 
 class WasmTester:
-    """
-    @desc: Handles the orchestration of WASM environment setup, worker execution,
-           and multi-dimensional scenario testing with live observation.
-    """
     def __init__(self, wasm_module_path: str, sandbox_root: str, suites: list[str] = None):
         self.wasm_module_path = wasm_module_path
         self.sandbox_root = sandbox_root
@@ -32,11 +30,10 @@ class WasmTester:
         self.last_error_context = ""
         self.auditors = [] 
         self.suites = suites or ["all"]
+        self.test_execution_hash = None
 
     async def _await_rupture(self) -> None:
-        """
-        @desc: Polls for a Collapse signal in the background while tests are actively running.
-        """
+        """@desc: Polls for a Collapse signal in the background while tests are actively running"""
         while not self.rupture_confirmed:
             for auditor in self.auditors:
                 if getattr(auditor, 'is_collapsed', False) or getattr(auditor, 'is_exhausted', False):
@@ -47,9 +44,7 @@ class WasmTester:
             await asyncio.sleep(0.5)
 
     async def _run_all_suites(self, broker: WasmBroker) -> int:
-        """
-        @desc: Sequentially executes only the selected scenario suites within an asynchronous context.
-        """
+        """@desc: Sequentially executes only the selected scenario suites within an asynchronous context"""
         total_fails = 0
         run_all = "all" in self.suites
         
@@ -86,12 +81,14 @@ class WasmTester:
         return total_fails
 
     async def execute(self) -> Tuple[bool, str]:
-        """
-        @desc: Constructs the test sandbox and executes the scenarios asynchronously.
-        """
         log.info("\n--- [START] Orchestrating Distributed WASM Environment (Delegated) ---")
         supervisor = None
         tunnel = None
+        
+        ## Canonical Auditor 생성 및 생명주기 등록
+        proof_auditor = CanonicalProofAuditor()
+        self.auditors.append(proof_auditor)
+        proof_auditor.attach()
         
         try:
             tunnel = await TunnelFactory.get_default()
@@ -104,7 +101,7 @@ class WasmTester:
                 default_wasm_path=self.wasm_module_path
             )
             
-            # Isolate the test-specific stream to fundamentally block interference from phantom/zombie daemons.
+            ## Isolate the test-specific stream to fundamentally block interference from phantom/zombie daemons.
             test_stream = "wasm:execute:stream:tester_isolated"
             test_control = "wasm:control:req:tester_isolated"
             
@@ -116,39 +113,61 @@ class WasmTester:
             await asyncio.sleep(1) 
             
             log.info("[SYSTEM] Initializing WasmBroker & Scenarios...")
-            # The broker also routes its commands to the isolated test stream.
-            broker = WasmBroker(request_stream=test_stream, timeout=5.0)
+            broker = WasmBroker(
+                request_stream=test_stream, 
+                timeout=5.0,
+                target_auditor=proof_auditor
+            )
             broker.control_channel = test_control
             
-            observer_task = asyncio.create_task(self._await_rupture())
-            
-            # Create the scenario task directly in the event loop without thread delegation.
-            scenario_task = asyncio.create_task(self._run_all_suites(broker))
-            
-            done, pending = await asyncio.wait(
-                [observer_task, scenario_task], 
-                return_when=asyncio.FIRST_COMPLETED
-            )
-            
-            for task in pending:
-                task.cancel()
+            ## flow_scope를 통해 테스트 환경 전체에 고유 분산 Trace ID 주입
+            with flow_scope(phase="TEST_EXECUTION", flow_id=proof_auditor.flow_id):
+                observer_task = asyncio.create_task(self._await_rupture())
                 
-            if self.rupture_confirmed:
-                return False, self.last_error_context
+                ## Create the scenario task directly in the event loop without thread delegation.
+                scenario_task = asyncio.create_task(self._run_all_suites(broker))
+                done, pending = await asyncio.wait(
+                    [observer_task, scenario_task], 
+                    return_when=asyncio.FIRST_COMPLETED
+                )
+                
+                for task in pending:
+                    task.cancel()
+                    
+                if self.rupture_confirmed:
+                    return False, self.last_error_context
 
-            if scenario_task in done:
-                total_fails = scenario_task.result()
-                if total_fails > 0:
-                    err_msg = f"Test suites failed with {total_fails} total errors. Likely Semantic Hang, Trap, or Signature Mismatch."
-                    return False, err_msg
-                
-            return True, ""
-            
+                if scenario_task in done:
+                    total_fails = scenario_task.result()
+                    if total_fails > 0:
+                        err_msg = f"Test suites failed with {total_fails} total errors. Likely Semantic Hang, Trap, or Signature Mismatch."
+                        return False, err_msg
+                    
+                    log.info("\n[SYSTEM] Generating Canonical Proof for entire test run...")
+                    canonical_payload = proof_auditor.generate_payload()
+                    self.canonical_events_captured = len(proof_auditor.canonical_records)
+                    if not canonical_payload or canonical_payload == "[]":
+                        err_msg = "[Ledger] Canonical payload is empty. Structural projection failed."
+                        log.error(err_msg)
+                        return False, err_msg
+                    
+                    try:
+                        proof_res = await broker.invoke("compute_root_fingerprint", canonical_payload)
+                        if proof_res.success:
+                            self.test_execution_hash = json.loads(proof_res.output).get("fingerprint")
+                            log.info(f"[Ledger] Test Execution Proof successfully sealed! Hash: {self.test_execution_hash}")
+                        else:
+                            log.error(f"[Ledger] Failed to seal test execution: {proof_res.error.message}")
+                    except Exception as proof_err:
+                        log.error(f"[Ledger] Exception during proof generation: {proof_err}")
+                    return True, ""
         except Exception as e:
             log.error(f"[FATAL] Test orchestration crashed: {e}", exc_info=True)
             return False, str(e)
             
         finally:
+            if proof_auditor:
+                proof_auditor.detach()
             if supervisor:
                 log.info("[SYSTEM] Tearing down Sandbox (Shutting down Supervisor)...")
                 await supervisor.shutdown()

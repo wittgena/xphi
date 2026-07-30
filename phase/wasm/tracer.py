@@ -7,12 +7,12 @@ from pathlib import Path
 from typing import Tuple, Optional
 from dataclasses import asdict
 
-from watcher.dphi.adapter.sign import LedgerAuthAdapter
 from phase.bind.resolver import resolve_path
 from phase.runtime.inter.wasm import WasmInterpreter
-
-from watcher.dphi.cgroup import CgroupPolicy
 from phase.wasm.builder import WasmBuilder
+
+from watcher.dphi.adapter.sign import LedgerAuthAdapter
+from watcher.dphi.cgroup import CgroupPolicy
 from watcher.kernel.ledger import KernelLedger, KernelCommit, LedgerRole
 from watcher.tracer.bound import BaseTracer
 from watcher.plane.emitter import get_emitter
@@ -23,12 +23,14 @@ TIME_ROOT = resolve_path("time")
 DEST_WASM_FILE = TIME_ROOT / "dphi.wasm"
 REGISTRY_FILE = TIME_ROOT / "registry.json"
 STREAM_ID = "wasm_binary_lineage"
+PROOF_STREAM_ID = "wasm_compute_proofs" 
 
 class WasmTracer(BaseTracer):
     def __init__(self, timeout: int = 300, tester=None):
         super().__init__(tracer_name="wasm.tracer", timeout=timeout)
         self.store = KernelLedger()
         self.tester = tester
+        self.current_lineage_hash = None 
 
     async def verify_cache_or_build(self) -> Tuple[bool, str]:
         head_hash = self.store.get_head_hash(STREAM_ID) or "0000000"
@@ -55,6 +57,7 @@ class WasmTracer(BaseTracer):
                     res_data = json.loads(result.output)
                     if res_data.get("lineage_hash") == head_hash:
                         self.log.info(f"[Ledger] Integrity verified. Hash: {head_hash[:8]}")
+                        self.current_lineage_hash = head_hash
                         needs_build = False
             except Exception as e:
                 self.log.error(f"[ERROR] Verification crashed: {e}")
@@ -78,6 +81,7 @@ class WasmTracer(BaseTracer):
             if result.success:
                 res_data = json.loads(result.output)
                 new_hash = res_data["lineage_hash"]
+                self.current_lineage_hash = new_hash 
                 
                 commit = KernelCommit(
                     stream_id=STREAM_ID, 
@@ -88,17 +92,13 @@ class WasmTracer(BaseTracer):
                 )
                 
                 try:
-                    ## Sign the KernelCommit payload via the unified Auth Adapter
                     signature_hex = LedgerAuthAdapter.sign_state_payload(asdict(commit))
                     
-                    ## Consensus Role Check (FOLLOWER 방어 로직)
                     if hasattr(self.store, 'role') and self.store.role == LedgerRole.FOLLOWER:
                         self.log.warning("[Ledger] Node is FOLLOWER. Bypassing physical disk seal and proposing to Mempool.")
-                        # FOLLOWER는 직접 seal_system_epoch를 호출하지 않고 Mempool에 제안(Propose)만 수행
                         self.store._put_object("commit_proposal", asdict(commit))
                         self.store.update_head(STREAM_ID, new_hash)
                     else:
-                        # LEADER인 경우에만 Ring 0 Privileged Seal 수행
                         self.store.seal_system_epoch(
                             commit=commit,
                             signatures=[signature_hex],
@@ -134,24 +134,67 @@ class WasmTracer(BaseTracer):
                 )
             else:
                 self.log.info("[SYSTEM] Using injected WasmTester instance.")
+            
             return await self.tester.execute()
+            
         except Exception as e:
             self.log.error(f"[FATAL] Failed to delegate orchestration: {e}")
             return False, str(e)
 
     def _gather_telemetry_context(self) -> dict:
         context = {}
-        if not self.tester or not hasattr(self.tester, 'auditors'):
+        if not self.tester:
             return context
-            
-        for auditor in self.tester.auditors:
-            if auditor.__class__.__name__ == "WasmTelemetryAuditor":
-                context["max_recursion_depth"] = auditor.max_depth
-                context["health_flag"] = auditor.health_flag
-            elif auditor.__class__.__name__ == "WasmEntropyAuditor":
-                context["fuel_consumed"] = auditor.total_fuel_used
-                
+
+        if hasattr(self.tester, 'auditors'):
+            for auditor in self.tester.auditors:
+                if auditor.__class__.__name__ == "WasmTelemetryAuditor":
+                    context["max_recursion_depth"] = getattr(auditor, 'max_depth', 0)
+                    context["health_flag"] = getattr(auditor, 'health_flag', 0)
+                elif auditor.__class__.__name__ == "WasmEntropyAuditor":
+                    context["fuel_consumed"] = getattr(auditor, 'total_fuel_used', 0)
+                    
+        # context["canonical_events_captured"] = getattr(self.tester, 'canonical_events_captured', 0)
+        context["canonical_events_captured"] = getattr(self.tester, 'canonical_events_captured', 0)
         return context
+
+    async def seal_test_proof(self) -> None:
+        proof_hash = getattr(self.tester, "test_execution_hash", None)
+        if not proof_hash or not self.current_lineage_hash:
+            err_msg = "Critical Structural Fault: Test execution succeeded but Canonical Proof Hash is missing."
+            self.log.error(f"[Ledger] {err_msg}")
+            raise RuntimeError(err_msg)
+
+        self.log.info(f"[Ledger] Binding Canonical Proof ({proof_hash[:8]}) to WASM Code ({self.current_lineage_hash[:8]})...")
+        
+        if REGISTRY_FILE.exists():
+            with open(REGISTRY_FILE, "r", encoding="utf-8") as f:
+                reg_data = json.load(f)
+            
+            proofs = reg_data.get("execution_proofs", [])
+            if proof_hash not in proofs:
+                proofs.append(proof_hash)
+            reg_data["execution_proofs"] = proofs
+            reg_data["latest_proof"] = proof_hash
+            
+            with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
+                json.dump(reg_data, f, indent=4)
+                
+        commit = KernelCommit(
+            stream_id=PROOF_STREAM_ID,
+            executable_payload="Canonical Test Execution Proof",
+            tension_at_seal=0.0,
+            blob_hashes=[self.current_lineage_hash, proof_hash], 
+            parent_hash=self.store.get_head_hash(PROOF_STREAM_ID) or "0000000"
+        )
+        try:
+            signature_hex = LedgerAuthAdapter.sign_state_payload(asdict(commit))
+            if hasattr(self.store, 'role') and self.store.role != LedgerRole.FOLLOWER:
+                 self.store.seal_system_epoch(commit=commit, signatures=[signature_hex], threshold=1)
+                 self.store.update_head(PROOF_STREAM_ID, proof_hash)
+                 self.log.info("[Ledger] Canonical Proof Inscription Successful.")
+        except Exception as e:
+            self.log.warning(f"[Ledger] Proof Inscription Failed (Non-fatal): {e}")
 
     async def execute(self) -> None:
         self.log.crit("## @trace.init: WASM Lifecycle (AgentBot Removed)")
@@ -160,8 +203,13 @@ class WasmTracer(BaseTracer):
         if build_ok:
             test_ok, test_err = await self.orchestrate_tests()
             if test_ok:
-                self.log.info("## @trace.success: System stabilized.")
-                return
+                try:
+                    await self.seal_test_proof()
+                    self.log.info("## @trace.success: System stabilized.")
+                    self.log.info(f"Final Telemetry: {self._gather_telemetry_context()}")
+                    return
+                except Exception as e:
+                    last_error = str(e)
             else:
                 last_error = test_err
         else:

@@ -42,7 +42,6 @@ class StreamTransducer:
         if not auth_header:
             raise PermissionError("Boundary breach: Missing stateless authorization.")
 
-        # [FIX] JSON Parsing Bomb 방어: Pydantic 이전의 파싱 단계에서 발생하는 크래시 방지
         try:
             body_str = raw_body.decode('utf-8')
             parsed_json = json.loads(body_str)
@@ -200,7 +199,6 @@ class ChaosPayloadLibrary:
     ]
 
     SMUGGLING = [
-        # [FIX] 무의미한 원시 HTTP 문자열 제거 및 어플리케이션 계층 JSON Smuggling으로 교체
         lambda: b'{"version": "1.0", "smuggled": {"version": "2.0", "bypass": true}}', 
         lambda: b'{"method": "initialize", "params": {"__proto__": {"admin": true}}}', 
         lambda: b'{"action": "initialize", "protocolVersion": "1.0\\u0000", "bypass": true}'
@@ -212,7 +210,6 @@ class ChaosPayloadLibrary:
         lambda: b"<?xml version='1.0'?><root>bypass</root>"
     ]
 
-    # [NEW] MCP 환경 특화 공격 벡터 (간접 프롬프트 인젝션 및 도구 중독)
     MCP_PROMPT_INJECTION = [
         lambda: json.dumps({
             "action": "read_resource",
@@ -226,7 +223,6 @@ class ChaosPayloadLibrary:
         }).encode()
     ]
 
-    # [NEW] OS Command Injection 벡터 (invoke 액션 악용)
     MCP_COMMAND_INJECTION = [
         lambda: json.dumps({
             "action": "invoke",
@@ -240,7 +236,6 @@ class ChaosPayloadLibrary:
         }).encode()
     ]
 
-    # [NEW] Path Traversal 벡터 (read_resource 액션 샌드박스 우회 시도)
     MCP_PATH_TRAVERSAL = [
         lambda: json.dumps({
             "action": "read_resource",
@@ -268,7 +263,6 @@ class IngressRouter:
                 flow_ctx["intent"] = safe_stream.payload.intent.value
 
                 is_authorized = await self.gateway.authorize_ingress(safe_stream)
-                
                 if not is_authorized:
                     flow_ctx["ledger_status"] = "denied"
                     log.warning("Topological sealing denied by the WASM Kernel Spatial Fence.")
@@ -277,7 +271,6 @@ class IngressRouter:
                 flow_ctx["ledger_status"] = "authorized"
                 log.info("Request successfully sealed into the manifold by Kernel Store.")
                 return {"status": "success", "intent": safe_stream.payload.intent.value}
-                
             except ValueError as ve:
                 log.warning(f"Ingress boundary dropped payload: {ve}")
                 return {"status": "dropped", "reason": "Spec invariant violation"}
@@ -289,7 +282,6 @@ class DefenseSentinel:
     """@desc: Chaos simulator that constantly attacks the router to ensure defensive integrity."""
     def __init__(self, router: IngressRouter):
         self.router = router
-        # [FIX] 공격 카테고리에 MCP 특화 위협 3종 세트 추가
         self.attack_categories = [
             ("OOM_Parser_Exhaustion_Attack", ChaosPayloadLibrary.OOM),
             ("Polymorphic_Protocol_Smuggling", ChaosPayloadLibrary.SMUGGLING),
@@ -312,8 +304,6 @@ class DefenseSentinel:
                         raw_body=payload,
                         client_ip="127.0.0.1"
                     )
-                    
-                    # 방어 실패 시(dropped나 denied가 아닌 경우) 경고 발생
                     if result.get("status") not in ["dropped", "denied"]:
                         log.critical(
                             f"[BREACH_ALERT] Boundary Defenses Compromised! "

@@ -18,16 +18,9 @@ from watcher.plane.emitter import get_emitter, flow_scope
 from watcher.xelog.depend import get_wasm_broker, get_pubsub
 from watcher.kernel.audit.ledger import AuditLedger, get_audit_ledger
 
-# 통합 Emitter 사용
 log = get_emitter("edge.ingress")
-
-# 단일 라우터로 통합 (prefix "/v1" 공유)
 ingress_edge = APIRouter(prefix="/v1", tags=["Log Ingress"])
 
-
-# ==========================================
-# 1. OTLP Standard Telemetry Ingress
-# ==========================================
 @ingress_edge.post("/logs", status_code=status.HTTP_200_OK)
 async def otlp_logs_export(
     payload: ExportLogsServiceRequest = Body(...),
