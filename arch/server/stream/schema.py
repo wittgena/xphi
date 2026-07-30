@@ -1,9 +1,5 @@
-# phase.runtime.mesh.schema
-## @lineage: phase.runtime.mesh.bridge.schema
-## @lineage: phase.runtime.bridge.schema
-## @lineage: watcher.kernel.bridge.schema
-## @lineage: arch.topos.ingress.schema
-## @lineage: fiber.gateway.ingress.schema
+# arch.server.stream.schema
+## @lineage: phase.runtime.mesh.schema
 from pydantic import BaseModel, Field
 from typing import Any, Dict
 from enum import Enum

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from aiohttp import web
 from pydantic import BaseModel, Field, ValidationError
 
-from phase.runtime.mesh.schema import (
+from arch.server.stream.schema import (
     LogicStream,
     StreamMetadata,
     StreamIdentity,
