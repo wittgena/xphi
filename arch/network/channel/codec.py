@@ -1,5 +1,4 @@
 # arch.network.channel.codec
-## @lineage: phi.net.channel.codec
 import json
 from typing import Any
 from arch.network.channel.pipeline import DuplexChannel, ChannelContext
