@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Literal, Optional, Union, Annotated
 from pydantic import BaseModel, Field, ConfigDict
 from fastapi import HTTPException, status
 
-from arch.contract.audit.promise import future, Promise, NotYetCrystallized
+from watcher.kernel.audit.contract.promise import future, Promise, NotYetCrystallized
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("audit.gov")

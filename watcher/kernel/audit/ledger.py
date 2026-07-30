@@ -9,7 +9,7 @@ from typing import Any, Dict
 
 from pydantic import SecretStr
 
-from arch.contract.audit.model import AuditLogResponse
+from watcher.kernel.audit.contract.model import AuditLogResponse
 from arch.xor.secret.cipher import Cipher
 from phase.runtime.mesh.gateway import ToposGateway
 from watcher.kernel.audit.warden import AuditWarden

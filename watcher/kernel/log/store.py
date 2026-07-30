@@ -8,7 +8,7 @@ import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 
-from arch.contract.audit.model import LogstEvent
+from watcher.kernel.audit.contract.model import LogstEvent
 from phase.runtime.mesh.gateway import ToposGateway
 from watcher.kernel.audit.warden import AuditWarden
 from watcher.plane.emitter import get_emitter

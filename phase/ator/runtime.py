@@ -4,7 +4,7 @@ import json
 from typing import Dict, Any, List
 from watcher.dphi.broker import WasmBroker
 from watcher.plane.emitter import get_logger
-from arch.gov.flow import PhaseFlow, FlowState
+from arch.contract.gov.flow import PhaseFlow, FlowState
 
 log = get_logger("ator.runtime")
 

@@ -6,7 +6,7 @@ from typing import Optional, Dict, List
 from contextlib import suppress
 
 from watcher.plane.sink import EmitterSink
-from arch.xor.metric.trajectory import TopologicalStructure
+from watcher.plane.metric.trajectory import TopologicalStructure
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("receptor.topos")
@@ -39,7 +39,7 @@ class ReceptorTopos:
 def build_system_topos() -> List[TopologicalStructure]:
     structures = []
     arch = []
-    with suppress(ImportError): import arch.topos.bound.sensor as m; arch.append(m.__name__)
+    with suppress(ImportError): import arch.bound.sensor as m; arch.append(m.__name__)
     with suppress(ImportError): import arch.topos.tunnel.surface as m; arch.append(m.__name__)
     with suppress(ImportError): import arch.topos.tunnel.factory as m; arch.append(m.__name__)
 

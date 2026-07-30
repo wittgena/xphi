@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 
-from arch.topos.bound.exchange.config import billing_config
+from arch.bound.exchange.config import billing_config
 from watcher.xelog.profile import BenchProfile
 from watcher.dphi.cgroup import Tier
 

@@ -14,7 +14,7 @@ from phase.runtime.daemon.receptor.kernel import ReceptorKernel
 from watcher.plane.sink import TunnelSink 
 
 from watcher.tracer.source import TracerSource
-from arch.xor.metric.trajectory import TopologicalStructure
+from watcher.plane.metric.trajectory import TopologicalStructure
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("receptor.bootstrap")

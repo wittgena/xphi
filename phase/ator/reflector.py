@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Dict
 
 from phase.ator.runtime import AtorRuntime
-from arch.gov.flow import PhaseFlow, FlowState, Align, Resonance, Transduction
+from arch.contract.gov.flow import PhaseFlow, FlowState, Align, Resonance, Transduction
 from arch.contract.registry.unified import contract
 from watcher.plane.emitter import get_logger
 

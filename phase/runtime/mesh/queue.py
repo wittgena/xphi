@@ -17,7 +17,7 @@ from contextlib import suppress
 from typing import Any, Protocol
 from enum import Enum
 
-from arch.gov.bridge.store.message import MessageStateStore
+from arch.xor.bridge.store.message import MessageStateStore
 from phase.runtime.daemon.task.supervisor import TaskSupervisor
 
 RequestRunner = Callable[[dict[str, Any]], Awaitable[Any]]

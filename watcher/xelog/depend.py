@@ -2,7 +2,7 @@
 from fastapi import Request
 
 from arch.topos.tunnel.subs import DistributedPubSub
-from arch.topos.bound.ingress.policy import (
+from arch.bound.ingress.policy import (
     IngressPolicyEngine, 
     ToposSequencer, 
     FuelAllocator, 

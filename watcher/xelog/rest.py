@@ -7,8 +7,8 @@ from fastapi import APIRouter, FastAPI, Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
-from arch.topos.server.mcp import SecureMCPServer, SentinelFirewallMiddleware
-from arch.topos.server.middleware import WasTelemetry, LocalMiddleware
+from arch.server.gov.mcp import SecureMCPServer, SentinelFirewallMiddleware
+from arch.server.gov.middleware import WasTelemetry, LocalMiddleware
 from arch.topos.tunnel.subs import DistributedPubSub
 from arch.topos.tunnel.factory import UniversalFacade
 

@@ -14,7 +14,7 @@ from phase.bind.resolver import find_current_self
 from phase.executor.dynamics import DynamicsExecutor
 from phase.runtime.node import NodeRuntime
 
-from arch.topos.flow.cont import LoopCarrier
+from phase.executor.flow.cont import LoopCarrier
 from watcher.plane.emitter import get_emitter
 
 @contract.watcher("kernel.inversion")

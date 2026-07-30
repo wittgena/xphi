@@ -10,7 +10,7 @@ from arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
 from arch.contract.event.next import next_id
 
 from phase.runtime.daemon.base import AbstractDaemon
-from arch.topos.flow.cont import LoopCarrier, DynamicsXe
+from phase.executor.flow.cont import LoopCarrier, DynamicsXe
 
 class DynamicsDaemon(AbstractDaemon):
     """

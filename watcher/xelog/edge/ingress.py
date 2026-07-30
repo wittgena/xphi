@@ -9,8 +9,8 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Header, Response, status, Depends, BackgroundTasks, HTTPException
 
 from arch.topos.tunnel.subs import DistributedPubSub
-from arch.contract.audit.model import AuditLogRequest, AuditLogResponse, AuditResult, AuditEnvelope
-from arch.contract.audit.otlp import ExportLogsServiceRequest
+from watcher.kernel.audit.contract.model import AuditLogRequest, AuditLogResponse, AuditResult, AuditEnvelope
+from watcher.kernel.audit.contract.otlp import ExportLogsServiceRequest
 from watcher.xelog.state.schema import EdgeState, EdgeHeader
 from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.state import StateAdapter

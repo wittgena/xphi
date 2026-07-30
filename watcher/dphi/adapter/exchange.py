@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List
 import time
 
-from arch.topos.bound.exchange.config import billing_config
+from arch.bound.exchange.config import billing_config
 from watcher.dphi.cgroup import Tier
 from watcher.plane.emitter import get_emitter
 
