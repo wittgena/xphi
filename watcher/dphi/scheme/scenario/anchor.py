@@ -2,6 +2,7 @@
 import time
 import json
 import hashlib
+from typing import Any
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
@@ -13,10 +14,11 @@ log = get_emitter("scenario.anchor")
 
 class TrustlessEpochBase(SchemeRunner):
     """@desc: Base scenario executor for the 5-Flow Epoch Lifecycle with Multi-sig support."""
-    def __init__(self, broker, scenario_name: str):
+    def __init__(self, broker: Any, scenario_name: str):
         super().__init__(broker)
         self.scenario_name = scenario_name
         
+        # [Topology] 3개의 노드로 구성된 위원회 (Tripartite Committee)
         self.committee_keys = [ed25519.Ed25519PrivateKey.generate() for _ in range(3)]
         self.committee_pubs = [
             k.public_key().public_bytes(
@@ -24,19 +26,19 @@ class TrustlessEpochBase(SchemeRunner):
             ).hex() for k in self.committee_keys
         ]
 
-    def _sign_multisig(self, signers: list, commit_dict: dict) -> list:
+    def _sign_multisig(self, signers: list[ed25519.Ed25519PrivateKey], commit_dict: dict[str, Any]) -> list[str]:
         """Generates an array of Ed25519 signatures from JCS deterministic hash."""
         canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
         commit_hash = hashlib.sha256(canonical_bytes).hexdigest().encode('utf-8')
         return [k.sign(commit_hash).hex() for k in signers]
 
-    async def execute_anchor_lifecycle(self, topo: int, press: int, rupture: bool):
+    async def execute_anchor_lifecycle(self, topo: int, press: int, rupture: bool) -> None:
         log.info(f"\n=== [Lifecycle START] {self.scenario_name} ===")
         
         # ---------------------------------------------------------
         # [Flow 1] Initialization: Requesting Parity Triplet
         # ---------------------------------------------------------
-        log.info(f"--- [Flow 1] Initialization: Requesting Parity Triplet ---")
+        log.info("--- [Flow 1] Initialization: Requesting Parity Triplet ---")
         current_ts = int(time.time() * 1000)
         init_req = {"ts": current_ts, "topo": topo, "press": press, "rupture": rupture, "injected_tick": None}
         
@@ -52,13 +54,13 @@ class TrustlessEpochBase(SchemeRunner):
         # ---------------------------------------------------------
         # [Flow 2] Inscription: Gathering Local Node States
         # ---------------------------------------------------------
-        log.info(f"--- [Flow 2] Inscription: Gathering Local Node States ---")
+        log.info("--- [Flow 2] Inscription: Gathering Local Node States ---")
         repos = await self.hook_inscribe_nodes(parity_triplet)
         
         # ---------------------------------------------------------
         # [Flow 3] Sealing: Cryptographic Epoch Alignment (Multi-sig)
         # ---------------------------------------------------------
-        log.info(f"--- [Flow 3] Sealing: Cryptographic Epoch Alignment ---")
+        log.info("--- [Flow 3] Sealing: Cryptographic Epoch Alignment ---")
         seal_payload = await self.hook_seal_epoch(parity_triplet, repos, current_ts)
         
         seal_res = await self.broker.invoke("seal_epoch", json.dumps(seal_payload))
@@ -73,7 +75,7 @@ class TrustlessEpochBase(SchemeRunner):
         # ---------------------------------------------------------
         # [Flow 4] Transition: Validating & Applying State Evolution
         # ---------------------------------------------------------
-        log.info(f"--- [Flow 4] Transition: Validating & Applying State Evolution ---")
+        log.info("--- [Flow 4] Transition: Validating & Applying State Evolution ---")
         anchor_result = sealed_data.get("anchor_result", sealed_data)
         commit_hash = anchor_result.get("commit_hash", "mock_fallback_hash_0x99")
         
@@ -90,7 +92,7 @@ class TrustlessEpochBase(SchemeRunner):
         # ---------------------------------------------------------
         # [Flow 5] Finality: Zero-Trust Parity & Recovery Verification
         # ---------------------------------------------------------
-        log.info(f"--- [Flow 5] Finality: Zero-Trust Parity & Recovery Verification ---")
+        log.info("--- [Flow 5] Finality: Zero-Trust Parity & Recovery Verification ---")
         t_id_low32 = int(parity_triplet["topos_id"].split('_')[-1]) if '_' in parity_triplet["topos_id"] else 0
         parity_req = {
             "topos_id_low32": t_id_low32,
@@ -100,18 +102,27 @@ class TrustlessEpochBase(SchemeRunner):
         await self._run_case(f"{self.scenario_name} (Flow 5): Verify Parity Completeness", "verify_parity", parity_req, expected_success=True)
 
     # Subclass hooks
-    async def hook_inscribe_nodes(self, parity_triplet: dict) -> dict: raise NotImplementedError
-    async def hook_seal_epoch(self, parity_triplet: dict, repos: dict, timestamp: int) -> dict: raise NotImplementedError
-    async def hook_build_phase_root(self, commit_hash: str, repos: dict) -> dict: raise NotImplementedError
+    async def hook_inscribe_nodes(self, parity_triplet: dict[str, Any]) -> dict[str, str]: 
+        raise NotImplementedError
+    async def hook_seal_epoch(self, parity_triplet: dict[str, Any], repos: dict[str, str], timestamp: int) -> dict[str, Any]: 
+        raise NotImplementedError
+    async def hook_build_phase_root(self, commit_hash: str, repos: dict[str, str]) -> dict[str, Any]: 
+        raise NotImplementedError
 
 
 class SwarmConsensusScenario(TrustlessEpochBase):
-    def __init__(self, broker):
+    def __init__(self, broker: Any):
         super().__init__(broker, "AI Agent Swarm Consensus (M-of-N)")
         
-    async def hook_inscribe_nodes(self, parity_triplet: dict) -> dict:
+    async def hook_inscribe_nodes(self, parity_triplet: dict[str, Any]) -> dict[str, str]:
         nexus_id = parity_triplet["nexus_id"]
-        agents = {"CodeAgent": "hash-code-v1", "SecurityAgent": "hash-sec-v1"}
+        
+        # [Alignment Fix] 3-Tier Agent Topology 완성
+        agents = {
+            "CodeAgent": "hash-code-v1",       # 1. Action (실행)
+            "SecurityAgent": "hash-sec-v1",    # 2. Constraint (검증)
+            "GovAgent": "hash-gov-v1"          # 3. Routing & Consensus (거버넌스/합의)
+        }
         
         for agent_name, state_hash in agents.items():
             # Individual node inscriptions require 1-of-1 self-signature
@@ -131,7 +142,7 @@ class SwarmConsensusScenario(TrustlessEpochBase):
             
         return agents
 
-    async def hook_seal_epoch(self, parity_triplet: dict, repos: dict, timestamp: int) -> dict:
+    async def hook_seal_epoch(self, parity_triplet: dict[str, Any], repos: dict[str, str], timestamp: int) -> dict[str, Any]:
         anchor_commit = StateAdapter.build_anchor_commit(
             parity=parity_triplet, parent_nexus_id=0, parent_commit_id="swarm-base",
             repos=repos, cached_states={}
@@ -147,16 +158,18 @@ class SwarmConsensusScenario(TrustlessEpochBase):
             allowed_signers=self.committee_pubs
         )
 
-    async def hook_build_phase_root(self, commit_hash: str, repos: dict) -> dict:
+    async def hook_build_phase_root(self, commit_hash: str, repos: dict[str, str]) -> dict[str, Any]:
         return StateAdapter.adapt_swarm_to_phase_root(commit_hash, agents_dict=repos)
 
 
 class ProvenanceAlignmentScenario(TrustlessEpochBase):
-    def __init__(self, broker):
+    def __init__(self, broker: Any):
         super().__init__(broker, "Cross-Repo Provenance Alignment (M-of-N)")
         
-    async def hook_inscribe_nodes(self, parity_triplet: dict) -> dict:
+    async def hook_inscribe_nodes(self, parity_triplet: dict[str, Any]) -> dict[str, str]:
         nexus_id = parity_triplet["nexus_id"]
+        
+        # 데이터/코드 레포지토리에 대한 M-of-N 검증용 구조 (유지)
         repos = {
             "ml_training_code": "git-hash-code-77",
             "model_weights": "git-hash-weights-99"
@@ -178,7 +191,7 @@ class ProvenanceAlignmentScenario(TrustlessEpochBase):
             
         return repos
 
-    async def hook_seal_epoch(self, parity_triplet: dict, repos: dict, timestamp: int) -> dict:
+    async def hook_seal_epoch(self, parity_triplet: dict[str, Any], repos: dict[str, str], timestamp: int) -> dict[str, Any]:
         anchor_commit = StateAdapter.build_anchor_commit(
             parity=parity_triplet, parent_nexus_id=907040, parent_commit_id="infra-state-v1",
             repos=repos, cached_states={"hyperparameters": "git-hash-hyper-old"}
@@ -196,7 +209,7 @@ class ProvenanceAlignmentScenario(TrustlessEpochBase):
             allowed_signers=self.committee_pubs
         )
 
-    async def hook_build_phase_root(self, commit_hash: str, repos: dict) -> dict:
+    async def hook_build_phase_root(self, commit_hash: str, repos: dict[str, str]) -> dict[str, Any]:
         return StateAdapter.adapt_provenance_to_phase_root(commit_hash, repos_dict=repos)
 
 class AnchorScenarios(SchemeRunner):
