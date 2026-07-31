@@ -1,14 +1,4 @@
 # arch.contract.gov.gate
-## @lineage: arch.gov.gate
-## @lineage: phase.gov.proto.gate
-## @lineage: arch.proto.phase.gate
-"""
-@desc: Internal unified UUID helper.
-Acts as a proxy that wraps the 64-bit ToposId into a standard 128-bit UUIDv4 format.
-This ensures chronological sortability and traceability while maintaining strict
-compatibility with external libraries (like LiteLLM) that expect standard UUIDs.
-"""
-
 import uuid as _std_uuid
 import random
 from arch.contract.event.next import generator

@@ -39,6 +39,7 @@ DEFAULT_BOUND_SKELETON = {
         "theoria": "theoria",
         "io": ":io:",
         "ext": ":anchor:/ext",
+        "chat": ":io:/chat",
         "memory": ":anchor:/memory",
         "ledger": ":anchor:/ledger",
         "log": ":io:/log",
