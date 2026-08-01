@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pydantic import Field, PrivateAttr, SecretStr
 
-from arch.bound.surge.disc import DiscMixin, SurgeBaseModel
+from arch.model.surge.disc import DiscMixin, SurgeBaseModel
 from watcher.plane.emitter import get_logger
 
 logger = get_logger(__name__)

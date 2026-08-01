@@ -1,5 +1,4 @@
 # watcher.kernel.audit.billing
-## @lineage: topos.xelog.audit.billing
 import json
 from typing import Any, List
 from watcher.dphi.broker import WasmBroker, WasmMethod

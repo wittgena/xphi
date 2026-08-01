@@ -3,14 +3,11 @@ import hashlib
 from base64 import b64encode
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import SecretStr
-from watcher.plane.emitter import get_logger
+from watcher.plane.emitter import get_emitter
 
-logger = get_logger(__name__)
+log = get_emitter(__name__)
 
 class Cipher:
-    """
-    Fernet 대칭 키 암호화를 사용하여 SecretStr 값의 암호화 및 복호화를 처리하는 클래스입니다.
-    """
     def __init__(self, secret_key: str):
         self.secret_key = secret_key
         self._fernet: Fernet | None = None
@@ -34,7 +31,7 @@ class Cipher:
             return SecretStr(decrypted)
         except InvalidToken as e:
             # 암호화 키가 다르거나 토큰이 유효하지 않을 때 발생하는 구체적인 예외 처리
-            logger.warning(
+            log.warning(
                 f"Failed to decrypt secret value (setting to None): {e}. "
                 "This may occur when loading conversations encrypted with a different "
                 "key or when upgrading from older versions."
@@ -42,7 +39,7 @@ class Cipher:
             return None
         except Exception as e:
             # 기타 예상치 못한 에러 로깅 추가
-            logger.error(f"Unexpected error during decryption: {e}")
+            log.error(f"Unexpected error during decryption: {e}")
             return None
 
     def _get_fernet(self) -> Fernet:

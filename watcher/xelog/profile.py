@@ -3,11 +3,11 @@ import os
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from arch.bound.profile.sandbox import MetabolicProfile, SandboxResolver
-from arch.bound.exchange.config import billing_config, tier_config
+from arch.kernel.resolver.sandbox import MetabolicProfile, SandboxResolver
 from arch.xor.parser.block.contract import CoherenceState
 from phase.wasm.executor import WasmExecutor, TaskContext, SandboxEnv
 from watcher.dphi.cgroup import CgroupPolicy, Tier
+from watcher.dphi.exchange.config import billing_config, tier_config
 from watcher.plane.emitter import get_logger
 from watcher.kernel.audit.billing import execute_billing_verification, VerificationError
 

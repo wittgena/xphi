@@ -39,7 +39,7 @@ class ReceptorTopos:
 def build_system_topos() -> List[TopologicalStructure]:
     structures = []
     arch = []
-    with suppress(ImportError): import arch.bound.sensor as m; arch.append(m.__name__)
+    with suppress(ImportError): import arch.model.sensor as m; arch.append(m.__name__)
     with suppress(ImportError): import arch.topos.tunnel.surface as m; arch.append(m.__name__)
     with suppress(ImportError): import arch.topos.tunnel.factory as m; arch.append(m.__name__)
 

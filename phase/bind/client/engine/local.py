@@ -5,7 +5,7 @@ import subprocess
 import requests
 import json
 
-from arch.contract.schema.resonance import BridgeEvent
+from arch.model.contract.resonance import BridgeEvent
 from arch.contract.gov.gate import uuid4
 from watcher.plane.emitter import get_emitter
 

@@ -4,8 +4,8 @@ import json
 import time
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from arch.bound.exchange.config import tier_config
-from arch.bound.ingress.policy import IngressPolicyEngine, get_ingress_policy
+from watcher.dphi.exchange.config import tier_config
+from arch.kernel.gov.ingress.policy import IngressPolicyEngine, get_ingress_policy
 from watcher.xelog.depend import get_wasm_broker, get_exchange_adapter
 from watcher.xelog.state.schema import (
     EdgeState,

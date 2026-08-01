@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Optional
 
-from arch.server.stream.schema import LogicStream as IngressLogicStream
+from arch.kernel.stream.schema import LogicStream as IngressLogicStream
 from watcher.kernel.ledger import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from watcher.plane.emitter import get_emitter
 
