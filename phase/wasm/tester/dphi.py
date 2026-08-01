@@ -34,14 +34,17 @@ class WasmTester:
 
     async def _await_rupture(self) -> None:
         """@desc: Polls for a Collapse signal in the background while tests are actively running"""
-        while not self.rupture_confirmed:
-            for auditor in self.auditors:
-                if getattr(auditor, 'is_collapsed', False) or getattr(auditor, 'is_exhausted', False):
-                    self.rupture_confirmed = True
-                    self.last_error_context = f"Auditor '{auditor.__class__.__name__}' detected fatal system collapse."
-                    log.crit(f"[FATAL] {self.last_error_context}")
-                    return
-            await asyncio.sleep(0.5)
+        try:
+            while not self.rupture_confirmed:
+                for auditor in self.auditors:
+                    if getattr(auditor, 'is_collapsed', False) or getattr(auditor, 'is_exhausted', False):
+                        self.rupture_confirmed = True
+                        self.last_error_context = f"Auditor '{auditor.__class__.__name__}' detected fatal system collapse."
+                        log.crit(f"[FATAL] {self.last_error_context}")
+                        return
+                await asyncio.sleep(0.5)
+        except asyncio.CancelledError:
+            pass # 정상적인 태스크 취소 흐름
 
     async def _run_all_suites(self, broker: WasmBroker) -> int:
         """@desc: Sequentially executes only the selected scenario suites within an asynchronous context"""
@@ -84,8 +87,6 @@ class WasmTester:
         log.info("\n--- [START] Orchestrating Distributed WASM Environment (Delegated) ---")
         supervisor = None
         tunnel = None
-        
-        ## Canonical Auditor 생성 및 생명주기 등록
         proof_auditor = CanonicalProofAuditor()
         self.auditors.append(proof_auditor)
         proof_auditor.attach()
@@ -101,7 +102,6 @@ class WasmTester:
                 default_wasm_path=self.wasm_module_path
             )
             
-            ## Isolate the test-specific stream to fundamentally block interference from phantom/zombie daemons.
             test_stream = "wasm:execute:stream:tester_isolated"
             test_control = "wasm:control:req:tester_isolated"
             
@@ -120,19 +120,22 @@ class WasmTester:
             )
             broker.control_channel = test_control
             
-            ## flow_scope를 통해 테스트 환경 전체에 고유 분산 Trace ID 주입
             with flow_scope(phase="TEST_EXECUTION", flow_id=proof_auditor.flow_id):
                 observer_task = asyncio.create_task(self._await_rupture())
-                
-                ## Create the scenario task directly in the event loop without thread delegation.
                 scenario_task = asyncio.create_task(self._run_all_suites(broker))
+                
                 done, pending = await asyncio.wait(
                     [observer_task, scenario_task], 
                     return_when=asyncio.FIRST_COMPLETED
                 )
                 
+                # [개선] 보류 중인(Pending) 백그라운드 태스크의 안전한 취소 및 정리 보장
                 for task in pending:
                     task.cancel()
+                    
+                # 취소된 태스크들이 리소스를 완전히 반환할 때까지 대기
+                if pending:
+                    await asyncio.gather(*pending, return_exceptions=True)
                     
                 if self.rupture_confirmed:
                     return False, self.last_error_context
@@ -146,6 +149,7 @@ class WasmTester:
                     log.info("\n[SYSTEM] Generating Canonical Proof for entire test run...")
                     canonical_payload = proof_auditor.generate_payload()
                     self.canonical_events_captured = len(proof_auditor.canonical_records)
+                    
                     if not canonical_payload or canonical_payload == "[]":
                         err_msg = "[Ledger] Canonical payload is empty. Structural projection failed."
                         log.error(err_msg)
@@ -153,14 +157,17 @@ class WasmTester:
                     
                     try:
                         proof_res = await broker.invoke("compute_root_fingerprint", canonical_payload)
-                        if proof_res.success:
+                        if getattr(proof_res, 'success', False):
                             self.test_execution_hash = json.loads(proof_res.output).get("fingerprint")
                             log.info(f"[Ledger] Test Execution Proof successfully sealed! Hash: {self.test_execution_hash}")
                         else:
-                            log.error(f"[Ledger] Failed to seal test execution: {proof_res.error.message}")
+                            error_msg = getattr(proof_res.error, 'message', 'Unknown Error') if hasattr(proof_res, 'error') else 'Unknown Error'
+                            log.error(f"[Ledger] Failed to seal test execution: {error_msg}")
                     except Exception as proof_err:
                         log.error(f"[Ledger] Exception during proof generation: {proof_err}")
+                        
                     return True, ""
+                    
         except Exception as e:
             log.error(f"[FATAL] Test orchestration crashed: {e}", exc_info=True)
             return False, str(e)
@@ -173,6 +180,7 @@ class WasmTester:
                 await supervisor.shutdown()
                 
             if tunnel:
+                # KernelReactor 라이프사이클에 맞춘 안전한 터널 종료
                 if hasattr(tunnel.state_store, 'aclose'):
                     await tunnel.state_store.aclose()
                 elif hasattr(tunnel.state_store, 'close'):
