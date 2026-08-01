@@ -7,13 +7,13 @@ from fastapi import APIRouter, FastAPI, Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader
 from pydantic import BaseModel
 
-from arch.kernel.gov.mcp import SecureMCPServer, SentinelFirewallMiddleware
-from arch.kernel.gov.middleware import WasTelemetry, LocalMiddleware
+from kernel.arch.gov.server.mcp import SecureMCPServer, SentinelFirewallMiddleware
+from kernel.arch.gov.server.middleware import WasTelemetry, LocalMiddleware
 from arch.topos.tunnel.subs import DistributedPubSub
 from arch.topos.tunnel.factory import UniversalFacade
 
 from watcher.dphi.broker import WasmBroker
-from watcher.kernel.log.store import LogStreamStore
+from kernel.arch.stream.store import LogStreamStore
 from watcher.xelog.edge.a2a.router import a2a_router
 from watcher.xelog.edge.ingress import ingress_edge
 from watcher.xelog.edge.anchor import anchor_edge

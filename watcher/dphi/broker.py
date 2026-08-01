@@ -6,7 +6,7 @@ from enum import Enum
 from typing import Optional, Any, Mapping, Union
 
 from arch.topos.tunnel.factory import TunnelFactory
-from phase.runtime.inter.protocol import ExecutionResult, ExecutionError
+from phase.wasm.inter.protocol import ExecutionResult, ExecutionError
 from watcher.plane.emitter import get_emitter, _flow_context
 
 log = get_emitter("wasm.broker")

@@ -17,7 +17,7 @@ from arch.contract.registry.unified import contract
 from arch.contract.interface import ISystemRegime, IPhaseField, IPhaseAtor
 from arch.contract.event.psi import PsiEvent
 from phase.executor.dynamics import DynamicsExecutor
-from phase.runtime.node import NodeRuntime
+from kernel.phase.runtime.node import NodeRuntime
 from phase.bind.resolver import find_current_self
 
 from phase.executor.flow.cont import LoopCarrier

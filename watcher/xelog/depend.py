@@ -2,14 +2,14 @@
 from fastapi import Request
 
 from arch.topos.tunnel.subs import DistributedPubSub
-from arch.kernel.gov.ingress.policy import (
+from kernel.arch.gov.ingress.policy import (
     IngressPolicyEngine, 
     ToposSequencer, 
     FuelAllocator, 
     HealthMonitor
 )
-from watcher.kernel.audit.ledger import AuditLedger
-from watcher.kernel.log.store import LogStreamStore
+from kernel.ledger.audit import AuditLedger
+from kernel.arch.stream.store import LogStreamStore
 from watcher.xelog.profile import BenchProfile
 from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.anchor import NexusAnchor

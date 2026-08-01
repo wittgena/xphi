@@ -9,14 +9,14 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Header, Response, status, Depends, BackgroundTasks, HTTPException
 
 from arch.topos.tunnel.subs import DistributedPubSub
-from watcher.kernel.audit.contract.model import AuditLogRequest, AuditLogResponse, AuditResult, AuditEnvelope
-from watcher.kernel.audit.contract.otlp import ExportLogsServiceRequest
+from kernel.arch.contract.model import AuditLogRequest, AuditLogResponse, AuditResult, AuditEnvelope
+from kernel.arch.contract.otlp import ExportLogsServiceRequest
 from watcher.xelog.state.schema import EdgeState, EdgeHeader
 from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter, flow_scope
 from watcher.xelog.depend import get_wasm_broker, get_pubsub
-from watcher.kernel.audit.ledger import AuditLedger, get_audit_ledger
+from kernel.ledger.audit import AuditLedger, get_audit_ledger
 
 log = get_emitter("edge.ingress")
 ingress_edge = APIRouter(prefix="/v1", tags=["Log Ingress"])

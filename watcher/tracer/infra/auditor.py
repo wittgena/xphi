@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional, Union
 from arch.xor.parser.ruleset import CompiledEngine
 from arch.xor.parser.stream import LocalStreamRulesetParser
 
-from watcher.tracer.resolver.log import LogResolver
+from arch.contract.resolver.log import LogResolver
 from watcher.tracer.bound import (
     BaseAuditor, 
     BaseStreamAuditor, 
