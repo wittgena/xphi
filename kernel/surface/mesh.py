@@ -1,4 +1,5 @@
-# kernel.mesh
+# kernel.surface.mesh
+## @lineage: kernel.mesh
 """
 @desc: Distributed Policy Orchestrator (Control Plane for Envoy ext_proc)
 @flow: Syscall Sandbox -> Broker Initialization -> Policy Engine & State Mesh Assembly -> Stream Handler Activation

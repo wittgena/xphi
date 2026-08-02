@@ -1,4 +1,5 @@
-# phase.runtime.inter.python
+# phase.wasm.inter.python
+## @lineage: phase.runtime.inter.python
 """@desc: Local interpreter for secure Python code execution using Deno/Pyodide"""
 import functools
 import inspect

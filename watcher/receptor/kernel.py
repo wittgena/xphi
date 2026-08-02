@@ -1,4 +1,5 @@
-# phase.runtime.daemon.receptor.kernel
+# watcher.receptor.kernel
+## @lineage: phase.runtime.daemon.receptor.kernel
 """@flow: Environment(Sync) → SourceTracer(Membrane) → Ψ(PhaseSurface) → ReceptorKernel(Multi-Lens) → Rupture(emit)"""
 import asyncio
 from datetime import datetime

@@ -1,4 +1,5 @@
-# kernel.state.spec
+# kernel.phase.state.spec
+## @lineage: kernel.state.spec
 ## @lineage: watcher.kernel.state.spec
 ## @lineage: arch.contract.state.spec
 import enum 

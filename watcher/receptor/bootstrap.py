@@ -1,4 +1,5 @@
-# phase.runtime.daemon.receptor.bootstrap
+# watcher.receptor.bootstrap
+## @lineage: phase.runtime.daemon.receptor.bootstrap
 ## @lineage: phase.runtime.receptor.bootstrap
 """@flow: Sink(망) → Surface(위상장) → ReceptorKernel(다중 렌즈) → SourceTracer(감각/방어) 마운트"""
 import asyncio

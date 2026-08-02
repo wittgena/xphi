@@ -1,4 +1,5 @@
-# kernel.receptor
+# kernel.arch.gov.ingress.receptor
+## @lineage: kernel.receptor
 ## @lineage: watcher.kernel.receptor
 """
 @desc: 

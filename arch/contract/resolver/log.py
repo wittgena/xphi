@@ -1,4 +1,5 @@
-# watcher.tracer.resolver.log
+# arch.contract.resolver.log
+## @lineage: watcher.tracer.resolver.log
 import json
 from typing import List, Tuple, Dict, Any, Optional, Generic, TypeVar
 from arch.xor.parser.stream import ElasticDSLRulesetParser

@@ -1,4 +1,5 @@
-# kernel.arch.reactor
+# kernel.phase.reactor
+## @lineage: kernel.arch.reactor
 ## @lineage: arch.kernel.reactor
 import asyncio
 import sys

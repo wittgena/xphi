@@ -1,4 +1,5 @@
-# phase.runtime.daemon.bootstrap
+# kernel.daemon.bootstrap
+## @lineage: phase.runtime.daemon.bootstrap
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.daemon.task.supervisor import TaskSupervisor
 from kernel.daemon.base import SensorDaemon, CaptureDaemon, HeartbeatDaemon, SignalDaemon, ReceptorDaemon
