@@ -1,9 +1,4 @@
 # arch.model.surge.disc
-## @lineage: arch.bound.surge.disc
-## @lineage: arch.topos.bound.surge.disc
-## @lineage: arch.topos.surge.disc
-## @lineage: arch.topos.state.disc
-## @lineage: topos.medium.subst.disc
 import inspect
 import logging
 import threading

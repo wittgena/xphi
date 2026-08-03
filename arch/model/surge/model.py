@@ -1,6 +1,4 @@
 # arch.model.surge.model
-## @lineage: arch.bound.surge.model
-## @lineage: arch.topos.bound.surge.model
 from pydantic import BaseModel, model_validator, ConfigDict
 from typing import Any, Type, TypeVar
 import dataclasses
