@@ -2,13 +2,14 @@
 from fastapi import Request
 
 from arch.topos.tunnel.subs import DistributedPubSub
+from arch.xor.secret.auditor import SecretAuditor
 from kernel.topos.gov.ingress.policy import (
     IngressPolicyEngine, 
     ToposSequencer, 
     FuelAllocator, 
     HealthMonitor
 )
-from kernel.dphi.ledger.audit import AuditLedger
+
 from kernel.topos.stream.store import LogStreamStore
 from watcher.xelog.profile import BenchProfile
 from kernel.dphi.broker import WasmBroker
@@ -59,6 +60,6 @@ async def get_pubsub(request: Request) -> DistributedPubSub:
     return request.app.state.pubsub
 
 ## Ecosystem & Audit
-async def get_audit_ledger(request: Request) -> AuditLedger:
+async def get_secret_auditor(request: Request) -> SecretAuditor:
     """PII 마스킹 및 감사 로그 기록기 주입"""
-    return request.app.state.audit_ledger
+    return request.app.state.secret_auditor

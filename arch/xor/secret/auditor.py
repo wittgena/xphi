@@ -1,6 +1,4 @@
-# kernel.dphi.ledger.audit
-## @lineage: kernel.ledger.audit
-## @lineage: watcher.kernel.audit.ledger
+# arch.xor.secret.auditor
 import os
 import asyncio
 import hashlib
@@ -17,12 +15,10 @@ from kernel.topos.gov.warden import AuditWarden
 
 logger = logging.getLogger("audit.ledger")
 
-class AuditLedger:
+class SecretAuditor:
     def __init__(self, cipher: Cipher, gateway: ToposGateway = None):
         self.cipher = cipher
         self.gateway = gateway or ToposGateway()
-        
-        # List of keys considered Personally Identifiable Information (PII)
         self.sensitive_keys = {"email", "ip_address", "password", "token", "secret"}
 
     async def append_to_ledger_and_prove(self, event: Dict[str, Any], needs_proof: bool = False) -> AuditLogResponse:
@@ -31,8 +27,6 @@ class AuditLedger:
         
         sanitized_event = await asyncio.to_thread(self._encrypt_sensitive_data, event)
         event_hash = await asyncio.to_thread(self._generate_deterministic_hash, sanitized_event)
-        
-        # [EVOLUTION] Warden 억지 호출 제거. Gateway를 통해 WASM 커널에 합의(Seal) 제안.
         is_authorized = await self.gateway.authorize(
             action_id=f"pangea_audit_{event_hash[:8]}",
             action="PANGEA_AUDIT_LOG_APPEND",
@@ -43,7 +37,6 @@ class AuditLedger:
         if not is_authorized:
             error_msg = f"Audit event {event_hash[:8]} rejected by WASM Spatial Fence."
             logger.error(f"[ToposLedger] BLOCKED: {error_msg}")
-            # 커널이 비즈니스 로그를 차단했다면, 이는 시스템 무결성 위협일 수 있으므로 이때만 Warden에 이상징후 보고
             AuditWarden.record_anomaly(action="audit.ledger.kernel_block", details=error_msg)
             
             return AuditLogResponse(
@@ -53,7 +46,6 @@ class AuditLedger:
                 signature=None
             )
 
-        ## Generate mock Merkle Proof if requested (To be replaced with actual Kernel Ledger root trace)
         merkle_proof = None
         if needs_proof:
             merkle_proof = f"proof_merkle_{event_hash}_{hashlib.md5(event_hash.encode()).hexdigest()}"
@@ -84,12 +76,11 @@ class AuditLedger:
         return encrypted_payload
 
     def _generate_deterministic_hash(self, event: Dict[str, Any]) -> str:
-        """Generates a deterministic hash for the event payload"""
         deterministic_str = json.dumps(event, sort_keys=True, separators=(',', ':')).encode('utf-8')
         return hashlib.sha256(deterministic_str).hexdigest()
 
 
-async def get_audit_ledger() -> AuditLedger:
+async def get_secret_auditor() -> SecretAuditor:
     secret_key = os.getenv("BRANE_LEDGER_CIPHER_KEY", "mock-secret-key-for-dev-only")
     cipher_instance = Cipher(secret_key=secret_key)
-    return AuditLedger(cipher=cipher_instance)
+    return SecretAuditor(cipher=cipher_instance)

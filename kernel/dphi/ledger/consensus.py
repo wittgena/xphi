@@ -1,13 +1,4 @@
 # kernel.dphi.ledger.consensus
-## @lineage: kernel.ledger.consensus
-## @lineage: watcher.kernel.ledger
-"""
-@desc: 
-- Consensus-aware Merkle Store & Unified Entry Gateway for dphi.wasm Kernel.
-- Implements Ring-based protection:
-  1. Ring 3 (propose_and_seal): For external ingress, heavily validated by WASM Spatial Fence.
-  2. Ring 0 (seal_system_epoch): For internal core sync (e.g., align.commit), protected by Multi-Sig Cryptography.
-"""
 import time
 import json
 import hashlib

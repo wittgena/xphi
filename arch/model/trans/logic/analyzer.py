@@ -17,7 +17,7 @@ from pathlib import Path
 from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
-from arch.model.contract.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
+from arch.contract.model.graph import MetaModel, NodeData, EdgeData, LoopEdgeData, GraphSchema
 from watcher.plane.emitter import get_emitter
 from kernel.phase.bind.resolver import resolve_path
 from arch.model.trans.logic.transformer import LogicTransformer

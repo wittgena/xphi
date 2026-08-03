@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from arch.model.surge.model import DynamicSurgeModel
+from arch.xor.surge.model import DynamicSurgeModel
 from arch.xor.secret.manager import get_secret_str
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.exchange.config import billing_config

@@ -1,4 +1,5 @@
-# arch.model.surge.disc
+# arch.xor.surge.disc
+## @lineage: arch.model.surge.disc
 import inspect
 import logging
 import threading
@@ -19,7 +20,7 @@ from pydantic import (
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
-from arch.model.surge.model import SurgeBaseModel
+from arch.xor.surge.model import SurgeBaseModel
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
@@ -95,10 +96,6 @@ def _get_checked_concrete_subclasses(cls: type) -> dict[str, type]:
     return result
 
 def _melt_alien_objects(obj: Any) -> Any:
-    """
-    재귀적으로 데이터를 순회하며, Pydantic 객체나 Dataclass 등
-    '외부 네임스페이스'에서 온 객체들을 순수 딕셔너리로 강제 융해(Melt)시킵니다.
-    """
     if isinstance(obj, dict):
         return {k: _melt_alien_objects(v) for k, v in obj.items()}
     elif isinstance(obj, (list, tuple, set)):

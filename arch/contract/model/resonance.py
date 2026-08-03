@@ -1,4 +1,5 @@
-# arch.model.contract.resonance
+# arch.contract.model.resonance
+## @lineage: arch.model.contract.resonance
 ## @lineage: arch.contract.schema.resonance
 ## @lineage: arch.proto.schema.resonance
 ## @lineage: arch.proto.resonance

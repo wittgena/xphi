@@ -1,12 +1,13 @@
-# arch.model.surge.model
+# arch.xor.surge.model
+## @lineage: arch.model.surge.model
 from pydantic import BaseModel, model_validator, ConfigDict
 from typing import Any, Type, TypeVar
 import dataclasses
+import orjson
 
 T = TypeVar("T", bound="SurgeBaseModel")
 
 def _melt_alien_objects(obj: Any) -> Any:
-    """이종 네임스페이스에서 온 모든 실체(Instance)를 순수 데이터 질료(Primitive)로 해체"""
     if isinstance(obj, type):
         return obj
 
@@ -29,8 +30,6 @@ def _melt_alien_objects(obj: Any) -> Any:
     return obj
 
 class SurgeBaseModel(BaseModel):
-    """Topological Crucible"""
-    
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         populate_by_name=True,
@@ -54,11 +53,36 @@ class SurgeBaseModel(BaseModel):
             instance.model_post_init(None)
         return instance
 
+    def model_dump_orjson(
+        self, 
+        option: int = None, 
+        default=None, 
+        mode: str = 'python',
+        **kwargs
+    ) -> str:
+        dumped_data = self.model_dump(mode=mode, **kwargs)
+        dumps_args = {"default": default}
+        if option is not None:
+            dumps_args["option"] = option
+            
+        return orjson.dumps(dumped_data, **dumps_args).decode('utf-8')
+
+    def model_dump_orjson_bytes(
+        self, 
+        option: int = None, 
+        default=None, 
+        mode: str = 'python',
+        **kwargs
+    ) -> bytes:
+        dumped_data = self.model_dump(mode=mode, **kwargs)
+        dumps_args = {"default": default}
+        if option is not None:
+            dumps_args["option"] = option
+            
+        return orjson.dumps(dumped_data, **dumps_args)
+
+
 class DynamicSurgeModel(SurgeBaseModel):
-    """
-    - 동적 스키마(extra='allow')를 지원
-    - Dict-like 접근(obj['key'])을 Pydantic V2에 맞게 안전하게 제공하는 확장 모델
-    """
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
         populate_by_name=True,

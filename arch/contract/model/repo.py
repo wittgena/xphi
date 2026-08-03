@@ -1,4 +1,5 @@
-# arch.model.contract.repo
+# arch.contract.model.repo
+## @lineage: arch.model.contract.repo
 ## @lineage: arch.contract.schema.repo
 from dataclasses import dataclass, asdict, field
 from typing import Dict

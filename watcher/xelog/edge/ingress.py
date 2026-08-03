@@ -1,5 +1,4 @@
 # watcher.xelog.edge.ingress
-## @lineage: topos.xelog.edge.ingress
 import json
 import time
 import uuid
@@ -16,7 +15,7 @@ from kernel.dphi.broker import WasmBroker
 from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter, flow_scope
 from watcher.xelog.depend import get_wasm_broker, get_pubsub
-from kernel.dphi.ledger.audit import AuditLedger, get_audit_ledger
+from arch.xor.secret.auditor import SecretAuditor, get_secret_auditor
 
 log = get_emitter("edge.ingress")
 ingress_edge = APIRouter(prefix="/v1", tags=["Log Ingress"])
@@ -29,7 +28,6 @@ async def otlp_logs_export(
     broker: WasmBroker = Depends(get_wasm_broker),
     auth_token: Annotated[str | None, Header(alias="Authorization")] = None, 
 ):
-    """OTLP 표준 로그 수집 및 Usage Intent WASM 증명"""
     try:
         # 1. 원본 해싱
         payload_dict = payload.model_dump(exclude_none=True)
@@ -88,14 +86,10 @@ async def otlp_logs_export(
             headers={EdgeHeader.STATE: EdgeState.ERROR}
         )
 
-
-# ==========================================
-# 2. Custom Audit Log Ingress
-# ==========================================
 @ingress_edge.post("/audit/log", status_code=status.HTTP_200_OK)
 async def audit_log(
     payload: AuditLogRequest,
-    topos_ledger: AuditLedger = Depends(get_audit_ledger),
+    secret_auditor: SecretAuditor = Depends(get_secret_auditor),
     broker: WasmBroker = Depends(get_wasm_broker)
 ) -> AuditLogResponse:
     """단건 Audit Event의 PII 마스킹 및 WASM 위변조 방지 증명 반환"""
@@ -103,7 +97,7 @@ async def audit_log(
     event_dict = payload.event.model_dump(exclude_none=True)
     
     # 1. PII 마스킹
-    sanitized_event = topos_ledger._encrypt_sensitive_data(event_dict)
+    sanitized_event = secret_auditor._encrypt_sensitive_data(event_dict)
     
     # 2. WASM Kernel Seal
     canonical_payload = StateAdapter.to_canonical_bytes(sanitized_event).decode('utf-8')

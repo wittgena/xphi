@@ -1,10 +1,9 @@
 # arch.xor.parser.block.contract
-import time
-import orjson
 from enum import Enum
 from typing import Optional, Dict, Any
 from typing_extensions import Annotated
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import Field
+from arch.xor.surge.model import DynamicSurgeModel 
 
 class CoherenceState(str, Enum):
     STREAMING = "STREAMING"
@@ -14,12 +13,7 @@ class CoherenceState(str, Enum):
 Uint32 = Annotated[int, Field(ge=0, le=4294967295, description="Rust FFI 호환 uint32")]
 ToposId = Annotated[str, Field(pattern=r"^\d+$", description="Topological Snowflake ID (64-bit str)")]
 
-class Contract(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-        json_dumps=lambda v, *, default: orjson.dumps(v, default=default).decode()
-    )
-
+class Contract(DynamicSurgeModel):
     topos_id: Optional[ToposId] = Field(default=None, description="소속 Topos 공간 ID")
     phase_id: Optional[Uint32] = Field(default=None, description="32-bit 차분 신호 (Epoch, Tick, Mag)")
     nexus_id: Optional[Uint32] = Field(default=None, description="Topos(Low32) ^ Phase XOR 결과값")

@@ -1,4 +1,5 @@
-# arch.model.contract.graph
+# arch.contract.model.graph
+## @lineage: arch.model.contract.graph
 ## @lineage: arch.contract.schema.graph
 ## @lineage: arch.proto.schema.graph
 ## @lineage: arch.proto.graph
