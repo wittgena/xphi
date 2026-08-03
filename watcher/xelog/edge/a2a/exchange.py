@@ -1,5 +1,4 @@
 # watcher.xelog.edge.a2a.exchange
-## @lineage: topos.xelog.edge.a2a.exchange
 import json
 import time
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -15,7 +14,7 @@ from watcher.xelog.state.schema import (
 )
 from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.state import StateAdapter
-from watcher.dphi.adapter.exchange import ExchangeAdapter
+from watcher.dphi.adapter.eco import ExchangeAdapter
 from watcher.dphi.cgroup import Tier
 
 exchange_edge = APIRouter()

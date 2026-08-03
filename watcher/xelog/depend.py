@@ -13,7 +13,7 @@ from kernel.arch.stream.store import LogStreamStore
 from watcher.xelog.profile import BenchProfile
 from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.anchor import NexusAnchor
-from watcher.dphi.adapter.exchange import ExchangeAdapter
+from watcher.dphi.adapter.eco import ExchangeAdapter
 from watcher.dphi.adapter.sign import NodeSigner
 
 

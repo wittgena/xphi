@@ -4,13 +4,12 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
-from watcher.dphi.adapter.exchange import TransactionReceipt
+from watcher.dphi.adapter.eco import TransactionReceipt
 from watcher.dphi.broker import WasmBroker
 from watcher.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("wasm.anchor")
-
+log = get_emitter("adapter.anchor")
 
 @dataclass
 class AnchorProposal:
