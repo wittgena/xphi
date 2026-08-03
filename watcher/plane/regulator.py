@@ -7,9 +7,9 @@ from typing import Dict, List, Optional
 from pathlib import Path
 
 from arch.contract.event.next import LogEvent, next_phase_id
-from phase.bind.resolver import resolve_path
+from kernel.phase.bind.resolver import resolve_path
 
-from watcher.plane.flow.meter import default_telemetry
+from kernel.phase.runtime.flow.meter import default_telemetry
 from watcher.plane.observer.event import EventObserver
 from watcher.plane.surface.tunnel import TunnelSurface
 from watcher.plane.surface.console import ConsoleSurface

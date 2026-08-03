@@ -21,7 +21,7 @@ from collections import Counter
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict
 from watcher.plane.emitter import get_emitter
-from phase.bind.resolver import resolve_path
+from kernel.phase.bind.resolver import resolve_path
 
 class LogicTransformer:
     """

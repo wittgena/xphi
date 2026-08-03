@@ -16,14 +16,14 @@ from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from arch.contract.registry.unified import registry
 from arch.contract.discovery import discover_modules
 
-from phase.bind.resolver import find_current_self
-from phase.executor.swarm import SwarmExecutor
+from kernel.phase.bind.resolver import find_current_self
+from kernel.phase.runtime.executor.swarm import SwarmExecutor
 
 from kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
-from kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from phase.wasm.inter.anchor import NodeInterpreter, AnchorFlow
+from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
+from kernel.dphi.wasm.inter.anchor import NodeInterpreter, AnchorFlow
 from kernel.phase.runtime.context import RuntimeContext
-from kernel.daemon.bootstrap import mount_core_layer, mount_app_layer
+from kernel.phase.daemon.bootstrap import mount_core_layer, mount_app_layer
 
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter

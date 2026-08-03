@@ -3,9 +3,9 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
 
-from watcher.dphi.exchange.config import billing_config
+from kernel.dphi.exchange.config import billing_config
 from watcher.xelog.profile import BenchProfile
-from watcher.dphi.cgroup import Tier
+from kernel.dphi.cgroup import Tier
 
 profile_edge = APIRouter()
 

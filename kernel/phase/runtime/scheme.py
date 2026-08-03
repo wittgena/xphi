@@ -4,9 +4,9 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from phase.wasm.executor import WasmExecutor, TaskContext, EffectResolver
+from kernel.dphi.wasm.executor import WasmExecutor, TaskContext, EffectResolver
 from arch.xor.parser.block.contract import Contract, CoherenceState
-from watcher.dphi.broker import WasmBroker
+from kernel.dphi.broker import WasmBroker
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("runtime.scheme")

@@ -9,9 +9,9 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from watcher.xelog.depend import get_wasm_broker, get_logstream_store
-from kernel.arch.stream.store import LogStreamStore
-from watcher.dphi.broker import WasmBroker, WasmMethod
-from watcher.dphi.adapter.state import StateAdapter
+from kernel.topos.stream.store import LogStreamStore
+from kernel.dphi.broker import WasmBroker, WasmMethod
+from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("edge.ledger")

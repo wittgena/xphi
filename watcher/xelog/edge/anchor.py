@@ -8,7 +8,7 @@ from watcher.xelog.state.schema import (
     AnchorProposalRequest,
     AnchorSealResponse
 )
-from watcher.dphi.adapter.anchor import NexusAnchor, AnchorProposal
+from kernel.dphi.adapter.anchor import NexusAnchor, AnchorProposal
 
 anchor_edge = APIRouter(prefix="/v1/anchor", tags=["Anchor (Consensus)"])
 

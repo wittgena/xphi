@@ -5,8 +5,8 @@ import json
 import time
 
 from watcher.xelog.depend import get_wasm_broker
-from watcher.dphi.broker import WasmBroker
-from watcher.dphi.adapter.state import StateAdapter
+from kernel.dphi.broker import WasmBroker
+from kernel.dphi.adapter.state import StateAdapter
 from watcher.xelog.state.schema import (
     EdgeState,
     IntentValidationRequest, IntentValidationResponse,

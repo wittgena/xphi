@@ -3,13 +3,13 @@ import os
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 
-from kernel.arch.resolver.sandbox import MetabolicProfile, SandboxResolver
+from kernel.topos.resolver.sandbox import MetabolicProfile, SandboxResolver
 from arch.xor.parser.block.contract import CoherenceState
-from phase.wasm.executor import WasmExecutor, TaskContext, SandboxEnv
-from watcher.dphi.cgroup import CgroupPolicy, Tier
-from watcher.dphi.exchange.config import billing_config, tier_config
+from kernel.dphi.wasm.executor import WasmExecutor, TaskContext, SandboxEnv
+from kernel.dphi.cgroup import CgroupPolicy, Tier
+from kernel.dphi.exchange.config import billing_config, tier_config
 from watcher.plane.emitter import get_logger
-from kernel.arch.gov.billing import execute_billing_verification, VerificationError
+from kernel.topos.gov.billing import execute_billing_verification, VerificationError
 
 log = get_logger("bench.profile")
 

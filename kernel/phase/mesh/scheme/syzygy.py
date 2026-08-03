@@ -6,10 +6,10 @@ import time
 from typing import Optional, Dict
 
 from arch.xor.parser.block.contract import Contract, CoherenceState
-from phase.wasm.executor import TaskContext, EffectResolver
+from kernel.dphi.wasm.executor import TaskContext, EffectResolver
 from kernel.phase.runtime.scheme import RuntimeSchemeRunner
 from watcher.plane.emitter import get_emitter
-from watcher.dphi.adapter.state import StateAdapter
+from kernel.dphi.adapter.state import StateAdapter
 
 log = get_emitter("scheme.syzygy")
 

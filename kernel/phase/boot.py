@@ -12,16 +12,16 @@ from arch.contract.registry.unified import registry
 from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.bus import AsyncEventBus
 
-from phase.bind.redirector import PhaseAirlock
-from phase.executor.swarm import SwarmExecutor
+from kernel.phase.bind.redirector import PhaseAirlock
+from kernel.phase.runtime.executor.swarm import SwarmExecutor
 
 from watcher.plane.regulator import default_plane
-from watcher.plane.flow.executor import FlowExecutor
+from kernel.phase.runtime.flow.executor import FlowExecutor
 from watcher.plane.emitter import get_emitter
 
-from kernel.arch.gov.ingress.receptor import PolymorphicReceptor
-from kernel.ledger.consensus import KernelLedger
-from kernel.surface.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
+from kernel.topos.gov.ingress.receptor import PolymorphicReceptor
+from kernel.dphi.ledger.consensus import KernelLedger
+from watcher.plane.router.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
 from kernel.phase.runtime.node import NodeRuntime, install_os_signal
 from kernel.phase.signal import PhaseSignal
 from kernel.phase.mesh.memory import BridgeMemory

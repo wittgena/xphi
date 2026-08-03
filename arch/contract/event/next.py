@@ -5,7 +5,7 @@ import threading
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, Annotated, Tuple
-from phase.bind.resolver import resolve_identity
+from kernel.phase.bind.resolver import resolve_identity
 from datetime import UTC, datetime
 from pydantic import Field
 

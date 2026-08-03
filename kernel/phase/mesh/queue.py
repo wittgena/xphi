@@ -19,7 +19,7 @@ from typing import Any, Protocol
 from enum import Enum
 
 from arch.xor.store.message import MessageStateStore
-from kernel.daemon.task.supervisor import TaskSupervisor
+from kernel.phase.daemon.task.supervisor import TaskSupervisor
 
 RequestRunner = Callable[[dict[str, Any]], Awaitable[Any]]
 NotificationRunner = Callable[[dict[str, Any]], Awaitable[None]]

@@ -3,8 +3,8 @@ import json
 import time
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from watcher.dphi.exchange.config import tier_config
-from kernel.arch.gov.ingress.policy import IngressPolicyEngine, get_ingress_policy
+from kernel.dphi.exchange.config import tier_config
+from kernel.topos.gov.ingress.policy import IngressPolicyEngine, get_ingress_policy
 from watcher.xelog.depend import get_wasm_broker, get_exchange_adapter
 from watcher.xelog.state.schema import (
     EdgeState,
@@ -12,10 +12,10 @@ from watcher.xelog.state.schema import (
     EpochInitPayload,
     ClearingReceiptRequest, ClearingReceiptResponse
 )
-from watcher.dphi.broker import WasmBroker
-from watcher.dphi.adapter.state import StateAdapter
-from watcher.dphi.adapter.eco import ExchangeAdapter
-from watcher.dphi.cgroup import Tier
+from kernel.dphi.broker import WasmBroker
+from kernel.dphi.adapter.state import StateAdapter
+from kernel.dphi.adapter.eco import ExchangeAdapter
+from kernel.dphi.cgroup import Tier
 
 exchange_edge = APIRouter()
 

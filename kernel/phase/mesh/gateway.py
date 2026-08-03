@@ -7,8 +7,8 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Optional
 
-from kernel.arch.stream.schema import LogicStream as IngressLogicStream
-from kernel.ledger.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
+from kernel.topos.stream.schema import LogicStream as IngressLogicStream
+from kernel.dphi.ledger.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("mesh.gateway", phase="KERNEL")

@@ -49,7 +49,7 @@ def build_system_topos() -> List[TopologicalStructure]:
 
 
     phase = []
-    with suppress(ImportError): import phase.bind.resolver as m; phase.append(m.__name__)
+    with suppress(ImportError): import kernel.phase.bind.resolver as m; phase.append(m.__name__)
     with suppress(ImportError): import watcher.receptor.bootstrap as m; phase.append(m.__name__)
     with suppress(ImportError): import watcher.receptor.kernel as m; phase.append(m.__name__)
 
@@ -58,7 +58,7 @@ def build_system_topos() -> List[TopologicalStructure]:
 
     watcher = []
     with suppress(ImportError): import kernel.resonance as m; watcher.append(m.__name__)
-    with suppress(ImportError): import kernel.ledger.consensus as m; watcher.append(m.__name__)
+    with suppress(ImportError): import kernel.dphi.ledger.consensus as m; watcher.append(m.__name__)
     with suppress(ImportError): import kernel.singularity as m; watcher.append(m.__name__)
 
     if watcher:
