@@ -11,7 +11,7 @@ from dataclasses import asdict
 
 from kernel.bind.resolver import resolve_path
 from kernel.bind.inter.wasm import WasmInterpreter
-from kernel.dphi.wasm.builder import WasmBuilder
+from watcher.wasm.builder import WasmBuilder
 
 from kernel.dphi.adapter.sign import LedgerAuthAdapter
 from kernel.dphi.cgroup import CgroupPolicy
@@ -128,7 +128,7 @@ class WasmTracer(BaseTracer):
         self.log.info("\n--- [START] Delegating Orchestration to WasmTester ---")
         try:
             if not self.tester:
-                from kernel.dphi.wasm.tester.dphi import WasmTester
+                from watcher.wasm.tester.dphi import WasmTester
                 self.log.info("[SYSTEM] Initializing default WasmTester...")
                 self.tester = WasmTester(
                     wasm_module_path=str(DEST_WASM_FILE),

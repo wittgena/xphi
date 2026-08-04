@@ -6,7 +6,7 @@ import time
 from typing import Optional, Dict
 
 from arch.xor.parser.block.contract import Contract, CoherenceState
-from kernel.dphi.wasm.executor import TaskContext, EffectResolver
+from watcher.wasm.executor import TaskContext, EffectResolver
 from kernel.phase.runtime.scheme import RuntimeSchemeRunner
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.adapter.state import StateAdapter

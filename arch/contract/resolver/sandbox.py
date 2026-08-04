@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass, asdict, field
 from typing import Dict, Any, Optional, Union
 
-from kernel.dphi.wasm.executor import EffectResolver, SandboxEnv
+from watcher.wasm.executor import EffectResolver, SandboxEnv
 from watcher.plane.emitter import get_logger
 from kernel.dphi.broker import WasmBroker
 from kernel.dphi.cgroup import CgroupPolicy, Tier
