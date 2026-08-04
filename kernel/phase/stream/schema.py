@@ -1,8 +1,5 @@
-# kernel.topos.stream.schema
-## @lineage: kernel.arch.stream.schema
-## @lineage: arch.kernel.stream.schema
-## @lineage: arch.server.stream.schema
-## @lineage: phase.runtime.mesh.schema
+# kernel.phase.stream.schema
+## @lineage: kernel.topos.stream.schema
 from pydantic import BaseModel, Field
 from typing import Any, Dict
 from enum import Enum

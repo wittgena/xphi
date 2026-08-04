@@ -38,15 +38,9 @@ import sys, io, json
 import tracemalloc
 import time, os, hashlib, random
 
-# 메모리 텔레메트리 시작
 tracemalloc.start()
-
 old_stdout, old_stderr = sys.stdout, sys.stderr
 buf_stdout, buf_stderr = io.StringIO(), io.StringIO()
-
-# ==============================================================================
-# 1. 결정론적 실행을 위한 가상 컨텍스트 (Non-determinism Isolation)
-# ==============================================================================
 _virtual_context = {
     "time": 0.0,
     "seed_counter": 0,
@@ -81,9 +75,6 @@ def _apply_execution_context(ts, seed_string):
         _virtual_context["seed_counter"] = 0
         random.seed(_virtual_context["base_seed"]) # 내장 random 모듈도 시드 고정
 
-# ==============================================================================
-# 2. 자원 격리를 위한 Cgroup 상태 저장소 (Fuel & Memory)
-# ==============================================================================
 _cgroup_state = {
     "fuel_quota": None,
     "fuel_consumed": 0,
@@ -123,9 +114,6 @@ def _get_metrics():
         "fuel_remaining": fuel_remaining
     })
 
-# ==============================================================================
-# 3. 입출력 격리 및 시스템 함수
-# ==============================================================================
 def _prepare_execution():
     buf_stdout.seek(0)
     buf_stdout.truncate(0)

@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from aiohttp import web
 from pydantic import BaseModel, Field, ValidationError
 
-from kernel.topos.stream.schema import (
+from kernel.phase.stream.schema import (
     LogicStream,
     StreamMetadata,
     StreamIdentity,

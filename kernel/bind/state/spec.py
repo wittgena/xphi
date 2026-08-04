@@ -1,8 +1,5 @@
-# kernel.topos.state.spec
-## @lineage: kernel.phase.state.spec
-## @lineage: kernel.state.spec
-## @lineage: watcher.kernel.state.spec
-## @lineage: arch.contract.state.spec
+# kernel.bind.state.spec
+## @lineage: kernel.topos.state.spec
 import enum 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
