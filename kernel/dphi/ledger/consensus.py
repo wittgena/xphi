@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from rocksdict import Rdict, Options, AccessType
 
 from arch.topos.tunnel.factory import TunnelFactory
-from kernel.phase.bind.resolver import resolve_path
+from kernel.bind.resolver import resolve_path
 from kernel.topos.gov.warden import AuditWarden
 
 from kernel.dphi.broker import WasmBroker  

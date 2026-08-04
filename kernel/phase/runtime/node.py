@@ -1,5 +1,4 @@
 # kernel.phase.runtime.node
-## @lineage: phase.runtime.node
 import asyncio
 import signal
 import time
@@ -16,14 +15,17 @@ from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from arch.contract.registry.unified import registry
 from arch.contract.discovery import discover_modules
 
-from kernel.phase.bind.resolver import find_current_self
+from kernel.bind.resolver import find_current_self
 from kernel.phase.runtime.executor.swarm import SwarmExecutor
 
 from kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from kernel.inter.anchor import NodeInterpreter, AnchorFlow
+from kernel.bind.inter.node import NodeInterpreter, AnchorFlow
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.daemon.bootstrap import mount_core_layer, mount_app_layer
+
+# [정렬] WASM 샌드박스로 Intent를 전송할 비동기 브로커 추가
+from kernel.dphi.broker import WasmBroker
 
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
@@ -76,7 +78,10 @@ class NodeRuntime(IPhaseAtor):
 
         self.bus: Optional[TunnelEventBus] = None
         self.log = get_emitter("node.runtime", phase="SYSTEM")
+        
+        self.broker: Optional[WasmBroker] = None  # [정렬] IPC 통신을 담당할 Broker 상태 공간 확보
         self.interpreter = None
+        
         self.dispatcher = None
         self.sensor = None
         self.actuator = None
@@ -126,11 +131,11 @@ class NodeRuntime(IPhaseAtor):
         """
         [정렬 완료] 
         1. executor 실행을 제거하여 Dispatcher 파이프라인과 중복 방지
-        2. async def -> def 로 변경하여 Dispatcher가 자동으로 스레드 풀(Thread Pool)로 격리하도록 최적화
+        2. WASM Broker를 통한 비동기 상태 판단에 순응하기 위해 async 핸들러로 전환
         """
-        def handler(psi: PsiEvent):
-            ## Judgment by the reflex system (CPU-Bound Sync Task)
-            judgment = self.interpreter.process(psi.carrier)
+        async def handler(psi: PsiEvent):
+            ## Judgment by the reflex system (I/O-Bound Async Task via WASM Broker)
+            judgment = await self.interpreter.process(psi.carrier)
 
             return {
                 "psi": judgment.psi_symbol,
@@ -169,7 +174,11 @@ class NodeRuntime(IPhaseAtor):
             all_recepts = {"system:signal", "system:ping"}
 
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
-        self.interpreter = NodeInterpreter(anchor)
+        
+        # [정렬 완료] WasmBroker 인스턴스화 및 NodeInterpreter에 주입 (명시적 키워드 인자 사용)
+        self.broker = WasmBroker()
+        self.interpreter = NodeInterpreter(broker=self.broker, anchor=anchor)
+        
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")
 
         self.sensor = SurfaceSensor(tunnel=self.tunnel)
@@ -204,10 +213,6 @@ class NodeRuntime(IPhaseAtor):
         self.log.info("App Plugin Layer mounted successfully.")
         self.log.info("All components orchestrated under TaskSupervisor.")
 
-        mount_app_layer(self.supervisor, self.ctx)
-        self.log.info("App Plugin Layer mounted successfully.")
-        self.log.info("All components orchestrated under TaskSupervisor.")
-
     async def shutdown(self):
         if not self.running: return
 
@@ -236,7 +241,8 @@ class NodeRuntime(IPhaseAtor):
         current_boundaries = getattr(self.interpreter.anchor, 'recept_boundaries', None)
         stable_anchor = AnchorFlow.bootstrap(current_boundaries)
         
-        self.interpreter = NodeInterpreter(stable_anchor)
+        # [정렬 완료] 패닉 복구 시에도 동일하게 WasmBroker 참조를 주입
+        self.interpreter = NodeInterpreter(broker=self.broker, anchor=stable_anchor)
         
         # [개선] Dispatcher의 핸들러 속성 업데이트 (새로운 구조 반영)
         if self.dispatcher:

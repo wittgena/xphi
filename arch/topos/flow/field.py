@@ -15,7 +15,7 @@ from typing import Dict, Any, Optional
 from arch.topos.tunnel.factory import TunnelFactory, UniversalFacade, from_url
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 
-from kernel.phase.bind.rhythm.bridge import RhythmBridge
+from kernel.bind.rhythm.bridge import RhythmBridge
 from watcher.plane.emitter import get_emitter
 from arch.topos.flow.particle import ToposManifold, Particle
 from arch.topos.flow.tension import TensionAccumulator, PhaseProjector, ToposCollapse, ReentryInversion

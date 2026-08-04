@@ -1,4 +1,5 @@
-# kernel.phase.bind.resolver
+# kernel.bind.resolver
+## @lineage: kernel.phase.bind.resolver
 ## @lineage: phase.bind.resolver
 import os
 import json
@@ -46,7 +47,7 @@ def _get_around_context() -> tuple[str, dict]:
         import bind.around as around_mod
     except ImportError:
         try:
-            import kernel.phase.bind.around as around_mod
+            import kernel.bind.around as around_mod
         except ImportError as e:
             raise RuntimeError(f"Critical dependency missing: 'around' module not found. ({e})")
     

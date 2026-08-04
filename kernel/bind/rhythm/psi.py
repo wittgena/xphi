@@ -1,4 +1,5 @@
-# kernel.phase.bind.rhythm.psi
+# kernel.bind.rhythm.psi
+## @lineage: kernel.phase.bind.rhythm.psi
 ## @lineage: phase.bind.rhythm.psi
 ## @lineage: phase.dynamics.rhythm.psi
 ## @lineage: phase.rhythm.psi

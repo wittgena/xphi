@@ -11,7 +11,7 @@ import os
 import traceback
 from pathlib import Path
 from typing import Optional, Set
-from kernel.phase.bind.resolver import load_bound, find_current_self
+from kernel.bind.resolver import load_bound, find_current_self
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("contract.discovery")

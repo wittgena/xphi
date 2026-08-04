@@ -9,9 +9,9 @@ from typing import Optional
 from contextlib import suppress
 
 from kernel.phase.daemon.base import AbstractDaemon
-from kernel.inter.wasm import WasmInterpreter
-from kernel.inter.python import PythonInterpreter
-from kernel.phase.bind.resolver import resolve_path
+from kernel.bind.inter.wasm import WasmInterpreter
+from kernel.bind.inter.python import PythonInterpreter
+from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter, flow_scope
 from kernel.dphi.cgroup import CgroupPolicy, Tier
 

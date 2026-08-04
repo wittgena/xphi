@@ -9,7 +9,7 @@ from dataclasses import replace, asdict
 from typing import Dict, List, Protocol, Optional
 from pathlib import Path
 from arch.contract.event.next import LogEvent
-from kernel.phase.bind.resolver import resolve_path
+from kernel.bind.resolver import resolve_path
 from watcher.plane.observer.event import EventObserver
 
 class ConsoleSurface(EventObserver):

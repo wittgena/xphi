@@ -1,6 +1,6 @@
 # watcher.tracer.registry
 ## @lineage: topos.audit.tracer.registry
-from kernel.phase.bind.resolver import resolve_path
+from kernel.bind.resolver import resolve_path
 
 class TargetRegistry:
     _RULESET_RUSTC_OOM = {

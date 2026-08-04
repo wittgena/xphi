@@ -1,4 +1,5 @@
-# kernel.inter.wasm
+# kernel.bind.inter.wasm
+## @lineage: kernel.inter.wasm
 ## @lineage: kernel.dphi.wasm.inter.wasm
 ## @lineage: phase.wasm.inter.wasm
 ## @lineage: phase.runtime.inter.wasm
@@ -18,8 +19,8 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
-from kernel.phase.bind.resolver import find_current_self, get_invoker, resolve_path
+from kernel.bind.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
+from kernel.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy
 

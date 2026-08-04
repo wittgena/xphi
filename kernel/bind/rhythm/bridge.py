@@ -1,4 +1,5 @@
-# kernel.phase.bind.rhythm.bridge
+# kernel.bind.rhythm.bridge
+## @lineage: kernel.phase.bind.rhythm.bridge
 ## @lineage: phase.bind.rhythm.bridge
 import json
 from typing import Dict, Any, Optional

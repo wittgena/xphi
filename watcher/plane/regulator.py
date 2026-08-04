@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from pathlib import Path
 
 from arch.contract.event.next import LogEvent, next_phase_id
-from kernel.phase.bind.resolver import resolve_path
+from kernel.bind.resolver import resolve_path
 
 from kernel.phase.runtime.flow.meter import default_telemetry
 from watcher.plane.observer.event import EventObserver

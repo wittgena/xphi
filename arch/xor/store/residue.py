@@ -11,7 +11,7 @@ from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
 from arch.contract.event.psi import PsiType
 from watcher.plane.emitter import get_logger
-from kernel.phase.bind.resolver import find_current_self, resolve_path
+from kernel.bind.resolver import find_current_self, resolve_path
 from kernel.phase.runtime.node import NodeRuntime
 from arch.contract.executor import BaseExecutor
 

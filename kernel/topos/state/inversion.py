@@ -12,7 +12,7 @@ from arch.contract.interface import ICriticalDetector, IPhaseField, IDynamicsKer
 from arch.contract.registry.unified import registry, contract
 from arch.contract.discovery import discover_modules
 
-from kernel.phase.bind.resolver import find_current_self
+from kernel.bind.resolver import find_current_self
 from kernel.phase.runtime.executor.dynamics import DynamicsExecutor
 from kernel.phase.runtime.node import NodeRuntime
 

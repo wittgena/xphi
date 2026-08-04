@@ -1,4 +1,5 @@
-# kernel.inter.python
+# kernel.bind.inter.python
+## @lineage: kernel.inter.python
 ## @lineage: kernel.dphi.wasm.inter.python
 ## @lineage: phase.wasm.inter.python
 ## @lineage: phase.runtime.inter.python
@@ -16,8 +17,8 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-from kernel.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
-from kernel.phase.bind.resolver import find_current_self, get_invoker, resolve_path
+from kernel.bind.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
+from kernel.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import CgroupPolicy, Tier
 

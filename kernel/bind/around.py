@@ -1,4 +1,5 @@
-# kernel.phase.bind.around
+# kernel.bind.around
+## @lineage: kernel.phase.bind.around
 ## @lineage: phase.bind.around
 import os
 import sys

@@ -9,7 +9,7 @@ from typing import List
 
 from arch.topos.tunnel.factory import UniversalFacade
 
-from kernel.phase.bind.resolver import find_current_self
+from kernel.bind.resolver import find_current_self
 from watcher.receptor.topos import ReceptorTopos, build_system_topos
 from watcher.receptor.kernel import ReceptorKernel
 from watcher.plane.sink import TunnelSink 

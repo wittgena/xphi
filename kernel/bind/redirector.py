@@ -1,11 +1,12 @@
-# kernel.phase.bind.redirector
+# kernel.bind.redirector
+## @lineage: kernel.phase.bind.redirector
 ## @lineage: phase.bind.redirector
 import sys
 import types
 import importlib.util
 from pathlib import Path
 from typing import Optional, Union
-from kernel.phase.bind.resolver import find_current_self
+from kernel.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("bind.redirector")

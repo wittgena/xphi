@@ -8,7 +8,7 @@ import json
 import time
 from pathlib import Path
 
-from kernel.phase.bind.resolver import resolve_path
+from kernel.bind.resolver import resolve_path
 from watcher.tracer.bound import BaseTracer
 
 THEORIA_ROOT = resolve_path("theoria")

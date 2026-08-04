@@ -1,4 +1,5 @@
-# kernel.inter.node
+# kernel.bind.inter.node
+## @lineage: kernel.inter.node
 import json
 import __future__
 from abc import ABC, abstractmethod

@@ -1,4 +1,5 @@
-# kernel.phase.bind.rhythm.receptor
+# kernel.bind.rhythm.receptor
+## @lineage: kernel.phase.bind.rhythm.receptor
 ## @lineage: phase.bind.rhythm.receptor
 ## @lineage: phase.dynamics.rhythm.receptor
 ## @lineage: phase.rhythm.receptor
@@ -10,7 +11,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Optional
 from watcher.plane.emitter import get_emitter
-from kernel.phase.bind.rhythm.psi import RhythmPsi, RhythmSignature
+from kernel.bind.rhythm.psi import RhythmPsi, RhythmSignature
 
 log = get_emitter("rhythm.receptor")
 

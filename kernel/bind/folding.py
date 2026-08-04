@@ -1,4 +1,5 @@
-# kernel.phase.bind.folding
+# kernel.bind.folding
+## @lineage: kernel.phase.bind.folding
 ## @lineage: phase.bind.folding
 ## @lineage: phase.bound.folding
 ## @lineage: topos.bound.folding

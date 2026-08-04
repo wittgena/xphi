@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, Optional, List, Tuple
 from rocksdict import Rdict, Options, AccessType
 
-from kernel.phase.bind.resolver import resolve_path
+from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("kernel.ledger.reader", phase="KERNEL")

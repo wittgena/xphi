@@ -1,4 +1,5 @@
-# kernel.phase.bind.client.stream
+# kernel.bind.client.stream
+## @lineage: kernel.phase.bind.client.stream
 ## @lineage: phase.bind.client.stream
 ## @lineage: phase.bound.client.stream
 ## @lineage: phase.reflect.client.stream

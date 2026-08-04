@@ -49,7 +49,7 @@ def build_system_topos() -> List[TopologicalStructure]:
 
 
     phase = []
-    with suppress(ImportError): import kernel.phase.bind.resolver as m; phase.append(m.__name__)
+    with suppress(ImportError): import kernel.bind.resolver as m; phase.append(m.__name__)
     with suppress(ImportError): import watcher.receptor.bootstrap as m; phase.append(m.__name__)
     with suppress(ImportError): import watcher.receptor.kernel as m; phase.append(m.__name__)
 

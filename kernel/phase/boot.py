@@ -12,7 +12,7 @@ from arch.contract.registry.unified import registry
 from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.bus import AsyncEventBus
 
-from kernel.phase.bind.redirector import PhaseAirlock
+from kernel.bind.redirector import PhaseAirlock
 from kernel.phase.runtime.executor.swarm import SwarmExecutor
 
 from watcher.plane.regulator import default_plane

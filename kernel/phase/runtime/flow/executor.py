@@ -16,7 +16,7 @@ from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
 from arch.contract.event.next import next_id
 from arch.contract.event.psi import PsiEvent, PsiCarrier
-from kernel.phase.bind.resolver import find_current_self
+from kernel.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("flow.executor")
@@ -160,7 +160,7 @@ def dispatch_flow_cli(command_name: str, entry_func: Callable, file_path: str):
 
     bound_args, remain = parse_local(sys.argv[1:])
     
-    from kernel.phase.bind.resolver import get_invoker
+    from kernel.bind.resolver import get_invoker
     invoker, command = get_invoker(Path(file_path))
     
     payload = { 

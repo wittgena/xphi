@@ -19,7 +19,7 @@ from arch.contract.interface import ISystemRegime, IPhaseField, IPhaseAtor
 from arch.contract.event.psi import PsiEvent
 from kernel.phase.runtime.executor.dynamics import DynamicsExecutor
 from kernel.phase.runtime.node import NodeRuntime
-from kernel.phase.bind.resolver import find_current_self
+from kernel.bind.resolver import find_current_self
 
 from arch.topos.flow.cont import LoopCarrier
 from watcher.plane.emitter import get_emitter

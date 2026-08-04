@@ -18,7 +18,7 @@ from arch.contract.registry.unified import registry
 from arch.contract.executor import BaseExecutor
 
 from arch.topos.tunnel.factory import TunnelFactory
-from kernel.phase.bind.resolver import get_invoker
+from kernel.bind.resolver import get_invoker
 from kernel.phase.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
 
 from watcher.plane.emitter import get_emitter, flow_scope

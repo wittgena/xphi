@@ -1,4 +1,5 @@
-# kernel.phase.bind.rhythm.coupler
+# kernel.bind.rhythm.coupler
+## @lineage: kernel.phase.bind.rhythm.coupler
 ## @lineage: phase.bind.rhythm.coupler
 ## @lineage: phase.dynamics.rhythm.coupler
 ## @lineage: phase.rhythm.coupler
