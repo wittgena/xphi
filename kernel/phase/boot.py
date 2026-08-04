@@ -19,9 +19,9 @@ from watcher.plane.regulator import default_plane
 from kernel.phase.runtime.flow.executor import FlowExecutor
 from watcher.plane.emitter import get_emitter
 
-from kernel.topos.gov.ingress.receptor import PolymorphicReceptor
+from arch.gov.ingress.receptor import PolymorphicReceptor
 from kernel.dphi.ledger.consensus import KernelLedger
-from watcher.plane.router.mesh import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
+from kernel.phase.mesh.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
 from kernel.phase.runtime.node import NodeRuntime, install_os_signal
 from kernel.phase.signal import PhaseSignal
 from kernel.phase.mesh.memory import BridgeMemory

@@ -8,10 +8,10 @@ from typing import Any, Dict
 
 from pydantic import SecretStr
 
-from kernel.topos.contract.model import AuditLogResponse
+from watcher.receptor.contract.model import AuditLogResponse
 from arch.xor.secret.cipher import Cipher
 from kernel.phase.mesh.gateway import ToposGateway
-from kernel.topos.gov.warden import AuditWarden
+from arch.gov.warden import AuditWarden
 
 logger = logging.getLogger("audit.ledger")
 

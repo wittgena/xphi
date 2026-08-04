@@ -1,8 +1,4 @@
 # arch.contract.model.graph
-## @lineage: arch.model.contract.graph
-## @lineage: arch.contract.schema.graph
-## @lineage: arch.proto.schema.graph
-## @lineage: arch.proto.graph
 from typing import TypedDict, List, Dict, Any
 from dataclasses import dataclass, asdict, field
 

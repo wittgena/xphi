@@ -1,8 +1,4 @@
 # arch.contract.model.resonance
-## @lineage: arch.model.contract.resonance
-## @lineage: arch.contract.schema.resonance
-## @lineage: arch.proto.schema.resonance
-## @lineage: arch.proto.resonance
 from dataclasses import dataclass, field, asdict
 from typing import List, Dict, Set, Optional
 

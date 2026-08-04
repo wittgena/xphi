@@ -8,7 +8,7 @@ import requests
 import json
 
 from arch.contract.model.resonance import BridgeEvent
-from arch.contract.gov.gate import uuid4
+from arch.model.phase.gate import uuid4
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')

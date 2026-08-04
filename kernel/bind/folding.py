@@ -9,7 +9,7 @@ import inspect
 import functools
 import logging
 from typing import Dict, Any
-from arch.topos.ator.transcript.spec import TranscriptSpec
+from watcher.ator.transcript.spec import TranscriptSpec
 
 log = logging.getLogger("bind.folding")
 

@@ -10,7 +10,7 @@ import difflib
 import libcst as cst
 from typing import List, Tuple
 from pathlib import Path
-from arch.contract.gov.aligner import PhaseAligner, AlignRecord
+from arch.model.phase.aligner import PhaseAligner, AlignRecord
 from arch.model.trans.imports.transformer import ImportTransformer, RelativeImportTransformer
 from watcher.plane.emitter import get_emitter, flow_scope
 

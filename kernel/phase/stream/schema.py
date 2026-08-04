@@ -1,5 +1,4 @@
 # kernel.phase.stream.schema
-## @lineage: kernel.topos.stream.schema
 from pydantic import BaseModel, Field
 from typing import Any, Dict
 from enum import Enum

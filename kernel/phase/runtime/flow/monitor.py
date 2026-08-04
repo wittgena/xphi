@@ -13,7 +13,7 @@ import functools
 from pathlib import Path
 from typing import Any, Callable
 from watcher.plane.emitter import get_logger, get_emitter
-from arch.contract.gov.flow import PhaseFlow, FlowState
+from arch.model.phase.flow import PhaseFlow, FlowState
 
 log = get_logger("flow.monitor")
 monitor_emitter = get_emitter("flow.monitor", phase="observe", boundary="telemetry")

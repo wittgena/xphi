@@ -1,11 +1,10 @@
 # watcher.tracer.infra.repro
-## @lineage: topos.audit.tracer.infra.repro
 import sys
 import asyncio
 from functools import wraps
 from typing import Dict, Callable
 
-from watcher.tracer.registry import TargetRegistry
+from arch.contract.registry.tracer import TracerRegistry
 from watcher.tracer.infra.auditor import LeakObserverAuditor, ContainerStateAuditor, EntropyAuditor, UniversalLogAuditor
 
 from watcher.tracer.bound import ReproBaseTracer, LifecycleOp, PhaseOp
@@ -47,7 +46,7 @@ class InfrastructureMixin:
 class ReproTracer(ReproBaseTracer, InfrastructureMixin):
     def __init__(self, target_name: str = "repro_worker", timeout: int = 35):
         super().__init__(target_name=target_name, timeout=timeout)
-        self.config = TargetRegistry.get(target_name)
+        self.config = TracerRegistry.get(target_name)
         self.workspace = self.config["workspace_path"]
         
         self.compose_file = self.config.get("compose_file", "docker-compose.yml")
@@ -97,7 +96,7 @@ class ReproTracer(ReproBaseTracer, InfrastructureMixin):
 class OOMTracer(ReproBaseTracer, InfrastructureMixin):
     def __init__(self, target_name: str, timeout: int = 60):
         super().__init__(target_name=target_name, timeout=timeout)
-        self.config = TargetRegistry.get(target_name)
+        self.config = TracerRegistry.get(target_name)
         self.workspace = self.config["workspace_path"]
         
         c_name = self.config["container_name"]

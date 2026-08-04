@@ -17,7 +17,7 @@ from kernel.bind.resolver import find_current_self
 from kernel.phase.runtime.executor.dynamics import DynamicsExecutor
 from kernel.phase.runtime.node import NodeRuntime
 
-from arch.topos.flow.cont import LoopCarrier
+from watcher.ator.flow.cont import LoopCarrier
 from watcher.plane.emitter import get_emitter
 
 @contract.watcher("kernel.inversion")

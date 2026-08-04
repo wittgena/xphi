@@ -7,7 +7,7 @@ import json
 from typing import Optional, Any
 
 from arch.contract.event.psi import PsiEvent
-from arch.contract.gov.flow import PhaseFlow
+from arch.model.phase.flow import PhaseFlow
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("node.pool")
