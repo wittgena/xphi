@@ -1,4 +1,5 @@
-# kernel.dphi.wasm.inter.python
+# kernel.inter.python
+## @lineage: kernel.dphi.wasm.inter.python
 ## @lineage: phase.wasm.inter.python
 ## @lineage: phase.runtime.inter.python
 """@desc: Local interpreter for secure Python code execution using Deno/Pyodide"""
@@ -15,7 +16,7 @@ from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-from kernel.dphi.wasm.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
+from kernel.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
 from kernel.phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import CgroupPolicy, Tier

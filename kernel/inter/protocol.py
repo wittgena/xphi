@@ -1,4 +1,5 @@
-# kernel.dphi.wasm.inter.protocol
+# kernel.inter.protocol
+## @lineage: kernel.dphi.wasm.inter.protocol
 ## @lineage: phase.wasm.inter.protocol
 ## @lineage: phase.runtime.inter.protocol
 import json

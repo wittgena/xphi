@@ -7,7 +7,7 @@ from contextlib import contextmanager
 import uuid
 from arch.contract.event.psi import PsiCarrier
 from watcher.plane.emitter import get_emitter
-from kernel.dphi.wasm.inter.anchor import NodeInterpreter, AnchoredIR, AnchorFlow
+from kernel.inter.anchor import NodeInterpreter, AnchoredIR, AnchorFlow
 
 log = get_emitter("state.node0")
 

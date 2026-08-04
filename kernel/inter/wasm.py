@@ -1,4 +1,5 @@
-# kernel.dphi.wasm.inter.wasm
+# kernel.inter.wasm
+## @lineage: kernel.dphi.wasm.inter.wasm
 ## @lineage: phase.wasm.inter.wasm
 ## @lineage: phase.runtime.inter.wasm
 """@desc: Local interpreter for secure Python code execution using Wasmtime/RustPython"""
@@ -17,7 +18,7 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.dphi.wasm.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
+from kernel.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
 from kernel.phase.bind.resolver import find_current_self, get_invoker, resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy

@@ -1,7 +1,5 @@
-# kernel.dphi.wasm.inter.anchor
-## @lineage: phase.wasm.inter.anchor
-## @lineage: phase.runtime.inter.anchor
-## @lineage: phase.runtime.interpreter
+# kernel.inter.anchor
+## @lineage: kernel.dphi.wasm.inter.anchor
 import __future__
 import time
 from abc import ABC, abstractmethod

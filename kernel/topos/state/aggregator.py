@@ -7,7 +7,7 @@ from typing import Dict, Any, List
 
 from arch.topos.tunnel.factory import UniversalFacade
 from arch.contract.event.psi import PsiCarrier
-from kernel.dphi.wasm.inter.anchor import NodeInterpreter
+from kernel.inter.anchor import NodeInterpreter
 
 @dataclass
 class CoreState:

@@ -21,7 +21,7 @@ from kernel.phase.runtime.executor.swarm import SwarmExecutor
 
 from kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from kernel.dphi.wasm.inter.anchor import NodeInterpreter, AnchorFlow
+from kernel.inter.anchor import NodeInterpreter, AnchorFlow
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.daemon.bootstrap import mount_core_layer, mount_app_layer
 
