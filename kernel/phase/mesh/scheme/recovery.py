@@ -11,7 +11,7 @@ from kernel.dphi.adapter.state import StateAdapter
 from kernel.dphi.ledger.consensus import KernelLedger, KernelCommit
 from kernel.phase.runtime.scheme import RuntimeSchemeRunner
 
-from watcher.wasm.executor import TaskContext, EffectResolver
+from kernel.dphi.sandbox.executor import TaskContext, EffectResolver
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("scheme.recovery")

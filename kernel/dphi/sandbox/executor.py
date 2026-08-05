@@ -1,6 +1,5 @@
-# watcher.wasm.executor
-## @lineage: kernel.dphi.wasm.executor
-## @lineage: phase.wasm.executor
+# kernel.dphi.sandbox.executor
+## @lineage: watcher.wasm.executor
 import json
 import time
 from dataclasses import dataclass, field
@@ -42,12 +41,12 @@ class TaskContext:
             self.phase_id = triplet["phase_id"]
             self.nexus_id = triplet["nexus_id"]
 
-SOURCE_NAME = "wasm_executor"
+SOURCE_NAME = "sandbox_executor"
 WASM_KIND_INFO = "INFO"
 WASM_KIND_TRANSITION = "TRANSITION"
 WASM_MSG_IO_REQUIRED = "IO_REQUIRED"
 
-class WasmExecutor:
+class SandboxExecutor:
     def __init__(self, resolvers: Optional[Dict[str, EffectResolver]] = None):
         self.broker = WasmBroker()
         self.resolvers = resolvers or {}

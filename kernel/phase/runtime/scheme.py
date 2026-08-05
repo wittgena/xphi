@@ -4,7 +4,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
-from watcher.wasm.executor import WasmExecutor, TaskContext, EffectResolver
+from kernel.dphi.sandbox.executor import SandboxExecutor, TaskContext, EffectResolver
 from arch.xor.parser.block.contract import Contract, CoherenceState
 from kernel.dphi.broker import WasmBroker
 from watcher.plane.emitter import get_emitter
@@ -14,7 +14,7 @@ log = get_emitter("runtime.scheme")
 class RuntimeSchemeRunner(ABC):
     def __init__(self, broker: WasmBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
         self.broker = broker
-        self.executor = WasmExecutor(resolvers=resolvers)
+        self.executor = SandboxExecutor(resolvers=resolvers)
         self.is_running = False
 
     async def watch_and_react(self, initial_context: TaskContext):

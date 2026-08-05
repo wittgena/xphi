@@ -1,13 +1,5 @@
-# watcher.wasm.receptor
-## @lineage: kernel.dphi.wasm.receptor
-## @lineage: phase.wasm.receptor
-## @lineage: watcher.dphi.wasm.receptor
-"""
-@desc: Cellular Membrane Receptor for dphi.wasm Kernel.
-@role: Ingests non-deterministic external signals (Agent/Deno proofs), 
-       validates cryptographic invariants, enforces WasmCG policies, 
-       and transduces them into deterministic Topological Transitions (Entries).
-"""
+# watcher.receptor.wasm
+## @lineage: watcher.wasm.receptor
 import json
 import time
 import hashlib
@@ -19,14 +11,10 @@ from kernel.dphi.broker import WasmBroker
 from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("wasm.receptor")
-
+log = get_emitter("receptor.wasm")
 
 @dataclass
 class ReceptorSignal:
-    """
-    @desc: 외부 감각/운동 기관(Deno/Agent)이 커널 자극을 위해 제출하는 원시 신호 패킷
-    """
     requester_id: str
     intent_action: str
     proposed_payload: Dict[str, Any]
@@ -37,9 +25,6 @@ class ReceptorSignal:
 
 @dataclass
 class ReceptorBindingResult:
-    """
-    @desc: WASM 수용체가 신호를 결합(Binding)하고 위상 전이를 유도한 최종 결과
-    """
     is_bound: bool
     receptor_id: str
     commit_hash: Optional[str] = None
@@ -47,12 +32,7 @@ class ReceptorBindingResult:
     fuel_consumed: int = 0
     rupture_reason: Optional[str] = None
 
-
 class WasmReceptor:
-    """
-    @desc: dphi.wasm 멤브레인에 부착된 동적 진입점 수용체(Receptor).
-           외부의 카오스(비결정론)를 커널 내부의 질서(위상 상태)로 번역 및 신호 전달.
-    """
     def __init__(self, broker: WasmBroker, receptor_id: str = "rec_core_v1"):
         self.broker = broker
         self.receptor_id = receptor_id
@@ -64,13 +44,6 @@ class WasmReceptor:
         return hashlib.sha256(canonical_bytes).hexdigest()
 
     async def transduce_signal(self, signal: ReceptorSignal) -> ReceptorBindingResult:
-        """
-        @flow:
-          1. Intent Validation (입국 심사)
-          2. Off-chain Compute Proof Audit (연산 증명 검증)
-          3. Cryptographic Inscription (노드 신원 서명 각인)
-          4. Topological State Transduction (WASM 전이)
-        """
         log.info(f"[{self.receptor_id}] ⚡ Ingesting external signal: '{signal.intent_action}' from [{signal.requester_id}]")
 
         ## Phase 1: Intent Validation (의도 및 가스비 한도 검증)
