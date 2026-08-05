@@ -52,18 +52,19 @@ class X402SettlementReceipt(DynamicSurgeModel):
     payer_wallet: str
     settled_at: int
 
+# 🌟 ALIGNMENT: Purged `clearing_signatures` from the Core Receipt. It is now a pure state representation.
 class TransactionReceipt(DynamicSurgeModel):
     job_id: str
     topos_id: str
     parity_hash: str
-    clearing_signatures: List[str] 
     fuel_consumed: int
     settlement_status: str
 
+# 🌟 ALIGNMENT: Replaced `validators` with `attestations` to reflect the Notary/Witness Wrapper pattern.
 class SettlementPayload(DynamicSurgeModel):
     batch_id: str
     state_root: str  # 블록체인/DA 제출 표준에 맞춘 문자열
-    validators: List[str]
+    attestations: List[str] 
     gas_used: int
     timestamp: int
 
@@ -171,8 +172,8 @@ class ExchangeAdapter:
     def finalize_settlement(
         self, 
         entangled_state: dict, 
-        signatures: List[str], 
         cost_metrics: dict, 
+        signatures: Optional[List[str]] = None, # Maintained gracefully for Workflow.py backward compatibility
         tier: Tier = Tier.SYSTEM
     ) -> TransactionReceipt:
         parity = entangled_state.get("parity", {})
@@ -182,21 +183,26 @@ class ExchangeAdapter:
         fuel_consumed = cost_metrics.get("fuel_consumed", 0)
         estimated_usd = self._quantize_fuel_cost(fuel_consumed, tier)
         log.info(f"[Exchange Adapter] Settlement Finalized. Topos: {parity_topos_id}, Parity: {parity_phase_id}, Cost: ${estimated_usd:.6f}")
+        
         return TransactionReceipt(
             job_id=str(parity_topos_id),
             topos_id=str(parity_topos_id),
             parity_hash=str(entangled_state.get("state_hash", parity_phase_id)), 
-            clearing_signatures=signatures,
             fuel_consumed=fuel_consumed,
             settlement_status="COMMITTED_TO_NEXUS"
         )
         
-    def generate_settlement_payload(self, receipt: TransactionReceipt) -> SettlementPayload:
-        """@desc: Translates a TransactionReceipt into a strict external payload."""
+    # 🌟 ALIGNMENT: Accepts `attestations` to wrap the pure receipt for external dispatch.
+    def generate_settlement_payload(
+        self, 
+        receipt: TransactionReceipt,
+        attestations: Optional[List[str]] = None
+    ) -> SettlementPayload:
+        """@desc: Translates a pure TransactionReceipt into a strict external payload wrapped with Notary Attestations."""
         return SettlementPayload(
             batch_id=receipt.job_id,
             state_root=receipt.parity_hash,
-            validators=receipt.clearing_signatures,
+            attestations=attestations or [],
             gas_used=receipt.fuel_consumed,
             timestamp=int(time.time())
         )

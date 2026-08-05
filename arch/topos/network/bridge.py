@@ -54,36 +54,24 @@ class RpcBridge(DuplexChannel):
         loop = asyncio.get_running_loop()
         fut = loop.create_future()
         self.pending_requests[req_id] = fut
-        
-        # [핵심 수정]: Payload(kwargs)를 오염시키지 않고, 파이프라인 Context에 요청 ID를 보관
-        # 이렇게 하면 엄격한 파라미터 필터링(Router)을 거치더라도 식별자가 유실되지 않습니다.
         self.ctx.set_attr("current_req_id", req_id)
         
-        # 1. Outbound(write) 파이프라인 실행 및 반환된 Future 캡처
         write_future = await self.ctx.fire_write(payload)
-        
-        # 2. 파이프라인의 끝단(Transport)에서 에러가 발생했는지 확인
         if isinstance(write_future, asyncio.Future) and write_future.exception():
             self.pending_requests.pop(req_id, None)
             raise write_future.exception()
             
-        # 3. 정상 전송 완료 시, Inbound(channel_read)로부터의 응답을 대기
         return await asyncio.wait_for(fut, timeout=timeout)
 
     async def channel_read(self, ctx: ChannelContext, msg: Any):
-        # 1. Context 속성에 저장해둔 로컬 파이프라인 요청 ID 확인 (LLM 엔진 응답 매핑용)
         req_id = ctx.get_attr("current_req_id")
         if req_id and req_id in self.pending_requests:
             self.pending_requests.pop(req_id).set_result(msg)
             ctx.set_attr("current_req_id", None)  # 처리 후 초기화
             return
-            
-        # 2. Payload 내부에 식별자가 섞여 들어온 경우 확인 (범용 TCP 네트워크 하위 호환성)
         elif isinstance(msg, dict) and "_req_id" in msg:
             fallback_req_id = msg["_req_id"]
             if fallback_req_id in self.pending_requests:
                 self.pending_requests.pop(fallback_req_id).set_result(msg)
                 return
-
-        # 매핑되지 않은 메시지는 상위 파이프라인으로 단순 통과(Bypass)
         await ctx.fire_channel_read(msg)

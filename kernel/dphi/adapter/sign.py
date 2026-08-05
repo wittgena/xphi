@@ -73,13 +73,8 @@ class NodeSigner:
         # Step 3: Return the resulting hexadecimal signature
         return signed.signature.hex()
 
-    # =================================================================
-    # [핵심 추가] 누락되었던 서명 검증(Verify) 메서드 구현
-    # =================================================================
     def verify_signature(self, canonical_bytes: bytes, signature_hex: str, pubkey_hex: Optional[str] = None) -> bool:
-        """
-        Verifies an Ed25519 signature against the given payload.
-        """
+        """Verifies an Ed25519 signature against the given payload"""
         try:
             # 1. 서명할 때와 동일하게 Canonical Hash String 생성
             payload_hash_str = hashlib.sha256(canonical_bytes).hexdigest()

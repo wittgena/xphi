@@ -1,6 +1,4 @@
 # kernel.phase.mesh.scheme.syzygy
-## @lineage: phase.runtime.mesh.scheme.syzygy
-## @lineage: swarm.mesh.scheme.syzygy
 import json
 import time
 from typing import Optional, Dict

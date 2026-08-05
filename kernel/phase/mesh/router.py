@@ -1,6 +1,4 @@
 # kernel.phase.mesh.router
-## @lineage: watcher.plane.router.mesh
-## @lineage: kernel.surface.mesh
 import sys
 import os
 import asyncio

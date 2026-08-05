@@ -1,6 +1,4 @@
 # kernel.phase.mesh.scheme.recovery
-## @lineage: phase.runtime.mesh.scheme.recovery
-## @lineage: swarm.mesh.scheme.recovery
 import time
 import json
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -8,11 +6,13 @@ from cryptography.hazmat.primitives import serialization
 from typing import Optional, Dict
 
 from arch.xor.parser.block.contract import Contract, CoherenceState
-from watcher.wasm.executor import TaskContext, EffectResolver
-from kernel.phase.runtime.scheme import RuntimeSchemeRunner
-from watcher.plane.emitter import get_emitter
+
 from kernel.dphi.adapter.state import StateAdapter
 from kernel.dphi.ledger.consensus import KernelLedger, KernelCommit
+from kernel.phase.runtime.scheme import RuntimeSchemeRunner
+
+from watcher.wasm.executor import TaskContext, EffectResolver
+from watcher.plane.emitter import get_emitter
 
 log = get_emitter("scheme.recovery")
 

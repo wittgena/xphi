@@ -1,12 +1,4 @@
 # kernel.phase.mesh.queue
-## @lineage: phase.runtime.mesh.queue
-## @lineage: phase.runtime.mesh.bridge.queue
-## @lineage: phase.runtime.bridge.queue
-## @lineage: watcher.kernel.bridge.queue
-## @lineage: logos.gate.message.queue
-## @lineage: watcher.kernel.message.queue
-## @lineage: xphi.kernel.task.queue
-## @lineage: anchor.phase.kernel.task.queue
 from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable

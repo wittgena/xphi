@@ -1,6 +1,4 @@
 # kernel.dphi.exchange.config
-## @lineage: watcher.dphi.exchange.config
-## @lineage: arch.bound.exchange.config
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Dict
