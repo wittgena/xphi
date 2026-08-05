@@ -4,7 +4,7 @@ from pathlib import Path
 import hashlib
 import nacl.signing
 import nacl.encoding
-import nacl.exceptions # [추가] 예외 처리를 위해 필요
+import nacl.exceptions
 from cryptography.hazmat.primitives import serialization
 from typing import Dict, Any, Optional
 
@@ -14,10 +14,7 @@ from watcher.plane.emitter import get_emitter
 log = get_emitter("crypto.signer")
 
 class NodeSigner:
-    """
-    Singleton identity manager responsible for hierarchical key loading 
-    and deterministic cryptographic signature generation for the node.
-    """
+    """Singleton identity manager responsible for hierarchical key loading and deterministic cryptographic signature generation for the node"""
     _instance = None
 
     def __init__(self):
@@ -61,36 +58,28 @@ class NodeSigner:
         return nacl.signing.SigningKey.generate()
 
     def sign_payload(self, canonical_bytes: bytes) -> str:
-        """
-        Generates an Ed25519 signature for the given payload.
-        """
-        # Step 1: Generate the SHA-256 hex string of the canonical bytes
+        """Generates an Ed25519 signature for the given payload"""
         payload_hash_str = hashlib.sha256(canonical_bytes).hexdigest()
-        
-        # Step 2: Sign the UTF-8 encoded hash string
         signed = self.signing_key.sign(payload_hash_str.encode('utf-8'))
-        
-        # Step 3: Return the resulting hexadecimal signature
         return signed.signature.hex()
 
     def verify_signature(self, canonical_bytes: bytes, signature_hex: str, pubkey_hex: Optional[str] = None) -> bool:
         """Verifies an Ed25519 signature against the given payload"""
         try:
-            # 1. 서명할 때와 동일하게 Canonical Hash String 생성
+            ## 서명할 때와 동일하게 Canonical Hash String 생성
             payload_hash_str = hashlib.sha256(canonical_bytes).hexdigest()
             message_bytes = payload_hash_str.encode('utf-8')
             signature_bytes = bytes.fromhex(signature_hex)
 
-            # 2. 공개키가 명시적으로 주어지면 해당 키 사용, 없으면 자기 자신의 공개키 사용
+            ## 공개키가 명시적으로 주어지면 해당 키 사용, 없으면 자기 자신의 공개키 사용
             if pubkey_hex:
                 vk = nacl.signing.VerifyKey(pubkey_hex, encoder=nacl.encoding.HexEncoder)
             else:
                 vk = self.verify_key
 
-            # 3. 서명 검증 (실패 시 nacl.exceptions.BadSignatureError 발생)
+            ## 서명 검증 (실패 시 nacl.exceptions.BadSignatureError 발생)
             vk.verify(message_bytes, signature_bytes)
             return True
-            
         except (nacl.exceptions.BadSignatureError, ValueError) as e:
             log.debug(f"[Crypto] Invalid signature detected: {e}")
             return False
@@ -98,15 +87,7 @@ class NodeSigner:
             log.error(f"[Crypto] Verification process failed: {e}")
             return False
 
-
 class LedgerAuthAdapter:
-    """
-    @module: LedgerAuthAdapter
-    @desc: 
-    - Ledger 상태 전이를 위한 보안/인증 전용 어댑터.
-    - 객체(Dict)를 Canonical JCS로 변환 후 물리적 노드 키로 서명합니다.
-    """
-
     @staticmethod
     def sign_state_payload(payload_dict: Dict[str, Any]) -> str:
         canonical_bytes = StateAdapter.to_canonical_bytes(payload_dict)

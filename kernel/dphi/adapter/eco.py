@@ -192,7 +192,6 @@ class ExchangeAdapter:
             settlement_status="COMMITTED_TO_NEXUS"
         )
         
-    # 🌟 ALIGNMENT: Accepts `attestations` to wrap the pure receipt for external dispatch.
     def generate_settlement_payload(
         self, 
         receipt: TransactionReceipt,
