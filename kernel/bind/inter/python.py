@@ -1,8 +1,4 @@
 # kernel.bind.inter.python
-## @lineage: kernel.inter.python
-## @lineage: kernel.dphi.wasm.inter.python
-## @lineage: phase.wasm.inter.python
-## @lineage: phase.runtime.inter.python
 """@desc: Local interpreter for secure Python code execution using Deno/Pyodide"""
 import functools
 import inspect
@@ -18,15 +14,13 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 
 from kernel.bind.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
-from kernel.bind.resolver import find_current_self, get_invoker, resolve_path
+from kernel.bind.resolver import find_current_self, resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import CgroupPolicy, Tier
 
+log = get_emitter("inter.python", phase="SYSTEM")
 TIME_ROOT = resolve_path("time")
 LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
-
-_invoker_full, MODULE_NAMESPACE = get_invoker(Path(__file__))
-log = get_emitter(MODULE_NAMESPACE, phase="SYSTEM")
 
 class PythonInterpreter:
     def __init__(

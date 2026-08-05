@@ -1,6 +1,4 @@
 # kernel.bind.around
-## @lineage: kernel.phase.bind.around
-## @lineage: phase.bind.around
 import os
 import sys
 import shutil
@@ -16,8 +14,8 @@ log = logging.getLogger("around")
 
 CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
-PTH_FILENAME = "brane.pth"
-CORES = ["brane", "fiber", "theoria", "xphi"]
+PTH_FILENAME = "xphi.pth"
+CORES = ["fiber", "surgent", "theoria", "xphi"]
 
 ## Default minimum skeleton to prevent resolver crashes if bound.json doesn't exist
 DEFAULT_BOUND_SKELETON = {
@@ -36,7 +34,6 @@ DEFAULT_BOUND_SKELETON = {
         "phase": "xphi/phase"
     },
     "paths": {
-        "brane": "brane",
         "fiber": "fiber",
         "theoria": "theoria",
         "io": ":io:",
@@ -86,10 +83,6 @@ def determine_execution_mode() -> str:
 
 
 def resolve_workspace_root() -> Path:
-    """
-    @helper: Dynamically resolve the workspace root (e.g., 'self/') without relying on cwd.
-    @desc: Traverses upwards looking for a known core directory (e.g., 'brane' or 'xphi') to identify the root.
-    """
     current = CURRENT_DIR
     while current.parent != current:
         if current.name in CORES:
