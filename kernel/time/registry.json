@@ -1,5 +1,5 @@
 {
-    "generated_at": 1785929641.04305,
+    "generated_at": 1785942984.792227,
     "methods": [
         "execute_code",
         "verify_packet",
@@ -21,9 +21,5 @@
     ],
     "schema_version": "Draft-07",
     "parent_hash": "0000000",
-    "lineage_hash": "ba1785f766cc83c47ef5db67f65e86f17b7af55bc3a970aa6340ffe6457bd451",
-    "execution_proofs": [
-        "55fb753ade78297b034c1fbee8db3dd12b972a5e58ec8d354e6d74da873e8b69"
-    ],
-    "latest_proof": "55fb753ade78297b034c1fbee8db3dd12b972a5e58ec8d354e6d74da873e8b69"
+    "lineage_hash": "ba1785f766cc83c47ef5db67f65e86f17b7af55bc3a970aa6340ffe6457bd451"
 }

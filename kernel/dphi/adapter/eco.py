@@ -26,7 +26,6 @@ class Ap2MandatePayload(DynamicSurgeModel):
     target_action: str
     constraints: Ap2MandateConstraints
     issued_at: int
-    # 🌟 [개선] 동적 정책(delegation_tier 등)을 수용하기 위한 메타데이터 필드 추가
     metadata: Optional[Dict[str, Any]] = None
 
 class Ap2Authorization(DynamicSurgeModel):
@@ -68,10 +67,6 @@ class SettlementPayload(DynamicSurgeModel):
     gas_used: int
     timestamp: int
 
-
-# ==============================================================================
-# 1. Eco Adapter (Economy & Micropayment Layer)
-# ==============================================================================
 class EcoAdapter:
     @classmethod
     def build_ap2_mandate(
@@ -81,7 +76,7 @@ class EcoAdapter:
         max_spend_usdc: str, 
         signer_key: ed25519.Ed25519PrivateKey,
         validity_ms: int = 3600000,
-        **kwargs # 🌟 [개선] TypeError 방지: 추가 정책 메타데이터(delegation_tier 등) 유연 수용
+        **kwargs
     ) -> Ap2MandateResult:
         """@desc: Creates a Verifiable Credential-like Mandate for agent authorization."""
         expiration_ts = int(time.time() * 1000) + validity_ms
@@ -96,9 +91,8 @@ class EcoAdapter:
             target_action=target_action,
             constraints=constraints,
             issued_at=int(time.time() * 1000),
-            metadata=kwargs if kwargs else None # 🌟 추가 인자들을 payload 내에 포함하여 서명 무결성 확보
+            metadata=kwargs if kwargs else None
         )
-        
         mandate_dict = payload.model_dump(exclude_none=True)
         canonical_bytes = json.dumps(mandate_dict, sort_keys=True, separators=(',', ':')).encode('utf-8')
         signature = signer_key.sign(hashlib.sha256(canonical_bytes).digest()).hex()
@@ -165,10 +159,6 @@ class EcoAdapter:
             
         return updated_state
 
-
-# ==============================================================================
-# 2. Exchange Adapter (System & Clearing Layer)
-# ==============================================================================
 class ExchangeAdapter:
     def __init__(self, clearing_house_pub_key: str):
         self.clearing_house_pub = clearing_house_pub_key
@@ -191,9 +181,7 @@ class ExchangeAdapter:
         
         fuel_consumed = cost_metrics.get("fuel_consumed", 0)
         estimated_usd = self._quantize_fuel_cost(fuel_consumed, tier)
-        
         log.info(f"[Exchange Adapter] Settlement Finalized. Topos: {parity_topos_id}, Parity: {parity_phase_id}, Cost: ${estimated_usd:.6f}")
-        
         return TransactionReceipt(
             job_id=str(parity_topos_id),
             topos_id=str(parity_topos_id),
@@ -213,10 +201,6 @@ class ExchangeAdapter:
             timestamp=int(time.time())
         )
 
-
-# ==============================================================================
-# 3. Wallet Adapter (Infrastructure Layer)
-# ==============================================================================
 def inject_and_clear_secrets(secrets: dict[str, str], action_fn: callable):
     os.environ.update(secrets)
     try:
@@ -226,10 +210,18 @@ def inject_and_clear_secrets(secrets: dict[str, str], action_fn: callable):
             os.environ.pop(k, None)
 
 class WalletAdapter:
-    def __init__(self, network_id: str = "base-sepolia", simulate: bool = False):
+    def __init__(
+        self, 
+        network_id: str = "base-sepolia", 
+        simulate: bool = False,
+        api_name: Optional[str] = None,
+        api_pkey: Optional[str] = None
+    ):
         self.network_id = network_id
         self.simulate = simulate
         self.wallet = None
+        self._api_name = api_name
+        self._api_pkey = api_pkey
         
         if not self.simulate:
             self._initialize_secure_wallet()
@@ -241,13 +233,14 @@ class WalletAdapter:
             log.error("[Wallet] coinbase_agentkit not installed.")
             raise RuntimeError("Missing required SDK for secure wallet") from e
 
-        api_name = get_secret_str("CDP_API_KEY_NAME")
-        api_pkey = get_secret_str("CDP_API_KEY_PRIVATE_KEY")
+        api_name = self._api_name or get_secret_str("CDP_API_KEY_NAME")
+        api_pkey = self._api_pkey or get_secret_str("CDP_API_KEY_PRIVATE_KEY")
         
         if not api_name or not api_pkey:
-            log.error("[Wallet] CDP API Keys missing in SecretManager.")
+            log.error("[Wallet] CDP API Keys missing.")
             raise ValueError("Incomplete credentials for CDP Wallet initialization")
 
+        api_pkey = api_pkey.replace('\\n', '\n')
         injected_secrets = {
             "CDP_API_KEY_NAME": api_name,
             "CDP_API_KEY_PRIVATE_KEY": api_pkey
@@ -258,36 +251,7 @@ class WalletAdapter:
                 injected_secrets, 
                 lambda: CdpWalletProvider.create_wallet(network_id=self.network_id)
             )
-            log.info(f"[Wallet] CDP Wallet created successfully on {self.network_id} (Secured via SecretManager)")
+            log.info(f"[Wallet] CDP Wallet created successfully on {self.network_id}")
         except Exception as e:
             log.error(f"[Wallet] Failed to initialize CDP Wallet: {e}")
-            raise
-
-    def fund_wallet(self, asset: str = "usdc", amount: str = "0.1") -> bool:
-        if self.simulate:
-            log.info(f"[Wallet-Sim] Simulated funding {amount} {asset}.")
-            return True
-            
-        log.info(f"[Wallet] Requesting faucet for {amount} {asset}...")
-        try:
-            self.wallet.fund(asset=asset, amount=amount)
-            return True
-        except Exception as e:
-            log.error(f"[Wallet] Faucet funding failed: {e}")
-            raise
-
-    def transfer(self, to_address: str, amount: str, asset: str = "usdc") -> str:
-        if self.simulate:
-            mock_hash = f"0xsim_{int(time.time()*1000)}"
-            log.info(f"[Wallet-Sim] Transferred {amount} {asset} to {to_address}. Tx: {mock_hash}")
-            return mock_hash
-
-        log.info(f"[Wallet] Transferring {amount} {asset} to {to_address}...")
-        try:
-            receipt = self.wallet.transfer(to_address=to_address, amount=amount, asset=asset)
-            tx_hash = getattr(receipt, "transaction_hash", getattr(receipt, "hash", str(receipt)))
-            log.info(f"[Wallet] Transfer success. Tx: {tx_hash}")
-            return tx_hash
-        except Exception as e:
-            log.error(f"[Wallet] Transfer failed: {e}")
             raise
