@@ -9,10 +9,11 @@
 @flow: ψ → ator interaction → Φ drift → ∂Φ detection → rupture → new Φ regime
 """
 from __future__ import annotations
-from typing import Tuple, List, Dict, Any, Optional
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import List, Dict, Optional, Any, Protocol
+from typing import List, Dict, Optional, Any, Protocol, Callable, Tuple
+from fastapi import APIRouter
+
 from arch.contract.event.psi import PsiEvent
 
 class IPhaseField(ABC):
@@ -100,3 +101,14 @@ class IBoundExecutor(ABC):
     async def execute(self, field: IPhaseField) -> bool:
         """returns: bool → boundary success / failure"""
         pass
+
+class ContractRouter(APIRouter):
+    def __init__(self, namespace: str, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.namespace = namespace
+
+    def add_api_route(self, path: str, endpoint: Callable[..., Any], **kwargs: Any) -> None:
+        if "name" not in kwargs:
+            kwargs["name"] = f"{self.namespace}.{endpoint.__name__}"
+            
+        super().add_api_route(path, endpoint, **kwargs)

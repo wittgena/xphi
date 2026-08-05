@@ -1,5 +1,4 @@
 # kernel.dphi.scheme.runner
-## @lineage: watcher.dphi.scheme.runner
 import time
 import json
 import hashlib

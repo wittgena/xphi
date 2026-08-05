@@ -1,5 +1,4 @@
 # kernel.dphi.filter
-## @lineage: watcher.dphi.filter
 import json
 from typing import Dict, Any, List, Tuple
 

@@ -1,20 +1,27 @@
 # kernel.dphi.ledger.oracle
 import json
-from typing import Any, Dict, Optional, List, Tuple
+from typing import Any, Dict, Optional, List
 from rocksdict import Rdict, Options, AccessType
 
 from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
+from kernel.dphi.broker import WasmBroker, WasmMethod
+from kernel.dphi.adapter.state import StateAdapter
 
-log = get_emitter("kernel.ledger.reader", phase="KERNEL")
+log = get_emitter("ledger.oracle", phase="KERNEL")
 LEDGER_DB_PATH = resolve_path("ledger")
 
 class LedgerOracle:
-    def __init__(self, path: str = LEDGER_DB_PATH):
+    """
+    원장의 얽힌 상태(Entangled State)를 읽어내어, 
+    StateAdapter를 통한 정규화(Canonicalization) 후 WASM 엔진을 통해 결정론적으로 붕괴(Collapse)시키는 관측자.
+    """
+    def __init__(self, broker: WasmBroker, path: str = LEDGER_DB_PATH):
+        self.broker = broker
         ro_opt = Options()
         try:
             self.db = Rdict(str(path), ro_opt, access_type=AccessType.read_only())
-            log.info("[LedgerOracle] Mounted ledger DB in Read-Only mode for proof verification.")
+            log.info("[LedgerOracle] Mounted ledger DB in Read-Only mode. Canonical WASM Broker attached.")
         except Exception as e:
             log.error(f"[LedgerOracle] Failed to mount ledger DB: {e}")
             raise
@@ -29,52 +36,96 @@ class LedgerOracle:
             return json.loads(self.db[key].decode('utf-8'))
         return None
 
-    def get_stream_head(self, stream_id: str) -> Optional[str]:
-        key = f"ref:{stream_id}".encode('utf-8')
-        if key in self.db:
-            return self.db[key].decode('utf-8')
-        return None
+    # =====================================================================
+    # [1] WASM 기반의 결정론적 관측 및 붕괴 (Observer-driven Collapse)
+    # =====================================================================
+    async def observe_nexus(self, epoch_hash: str) -> Dict[str, Any]:
+        """
+        특정 Epoch를 관측합니다. StateAdapter를 이용해 엄격하게 포맷팅된 
+        Payload를 WASM 샌드박스로 넘겨 붕괴(Collapse)를 실행합니다.
+        """
+        snapshot = self._get_raw_object("commit", epoch_hash)
+        if not snapshot:
+            raise ValueError(f"Epoch not found in Ledger: {epoch_hash}")
 
-    def get_snapshot_proof(self, commit_hash: str) -> Optional[Dict[str, Any]]:
-        return self._get_raw_object("commit", commit_hash)
+        entangled_state = snapshot.get("entangled_state", {})
+        if not entangled_state.get("has_contention", False):
+            return {"epoch_hash": epoch_hash, "resolved_state": snapshot, "is_collapsed": False}
 
-    def get_blob_evidence(self, blob_hash: str) -> Optional[Dict[str, Any]]:
-        return self._get_raw_object("blob", blob_hash)
+        # 1. State Node (Phase Root) 안전한 빌드
+        raw_phase_root = snapshot.get("phase_root")
+        if raw_phase_root:
+            phase_root = StateAdapter.build_core_node(
+                name=raw_phase_root.get("name", "root"), 
+                content=raw_phase_root.get("content", ""), 
+                children=raw_phase_root.get("children")
+            )
+        else:
+            phase_root = StateAdapter.build_core_node("root", snapshot.get("parent_hash", "genesis"))
 
-    def verify_kernel_lineage(self, start_commit_hash: str, depth: int = 5) -> Dict[str, Any]:
+        evo_ctx = StateAdapter.build_evolution_context(phase_root=phase_root)
+        transition_payload = StateAdapter.build_transition_payload(
+            intent_action="COLLAPSE_ENTANGLEMENT",
+            intent_payload=entangled_state,
+            evolution_ctx=evo_ctx
+        )
+
+        canonical_payload = StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8')
+        log.info(f"[LedgerOracle] Injecting canonical entanglement into WASM for collapse. Epoch: {epoch_hash[:8]}")
+        exec_result = await self.broker.invoke(
+            target_func=WasmMethod.EXECUTE_TRANSITION,
+            payload=canonical_payload,
+            tier="KERNEL"
+        )
+
+        if not exec_result.success:
+            log.error(f"[LedgerOracle] WASM Collapse Failed: {exec_result.error.msg}")
+            raise RuntimeError(f"WASM State Transition Failed: {exec_result.error.msg}")
+
+        collapsed_state = json.loads(exec_result.output)
+        return {
+            "epoch_hash": epoch_hash,
+            "parent_hash": snapshot.get("parent_hash"),
+            "resolved_state": collapsed_state.get("final_root"),
+            "residues": collapsed_state.get("all_residues", []),
+            "is_collapsed": True
+        }
+
+    async def verify_kernel_lineage(self, start_commit_hash: str, depth: int = 5) -> Dict[str, Any]:
+        """StateAdapter를 통해 ParityTriplet을 조립하여 WASM 엔진에서 무결성을 검증합니다."""
         chain_trace = []
         current_hash = start_commit_hash
         traversed_depth = 0
 
         while current_hash and current_hash != "genesis" and traversed_depth < depth:
-            snapshot = self.get_snapshot_proof(current_hash)
+            snapshot = self._get_raw_object("commit", current_hash)
             if not snapshot:
-                log.warning(f"[LedgerOracle] Lineage ruptured at {current_hash[:8]}")
-                return {
-                    "is_valid": False, 
-                    "rupture_hash": current_hash, 
-                    "trace": chain_trace
-                }
+                return {"is_valid": False, "rupture_hash": current_hash, "trace": chain_trace}
             
+            parity_req = StateAdapter.build_parity_triplet(
+                topos_id=str(snapshot.get("topos_id", "0")),
+                phase_id=int(snapshot.get("phase_id", 0)),
+                nexus_id=int(snapshot.get("nexus_id", 0))
+            )
+            
+            canonical_parity = StateAdapter.to_canonical_bytes(parity_req).decode('utf-8')
+            res = await self.broker.invoke(WasmMethod.VERIFY_PARITY, canonical_parity)
+            if not res.success:
+                log.warning(f"[LedgerOracle] WASM Parity verification crashed at {current_hash[:8]}")
+                return {"is_valid": False, "rupture_hash": current_hash, "trace": chain_trace}
+
+            output = json.loads(res.output)
+            is_valid = output.get("is_valid", False)
+            if not is_valid and "recovered_missing" in output:
+                log.warning(f"[LedgerOracle] ⚠️ Parity fractured but recovered via XOR at {current_hash[:8]}")
+                is_valid = True
+
+            if not is_valid:
+                log.warning(f"[LedgerOracle] Parity invalid at {current_hash[:8]}")
+                return {"is_valid": False, "rupture_hash": current_hash, "trace": chain_trace}
+
             chain_trace.append(current_hash)
             current_hash = snapshot.get("parent_hash")
             traversed_depth += 1
 
-        return {
-            "is_valid": True,
-            "reached_genesis": current_hash == "genesis",
-            "trace": chain_trace
-        }
-
-    def verify_billing_continuity(self, current_continuity_proof: str, expected_previous_nexus: str) -> bool:
-        epoch_state = self.get_snapshot_proof(current_continuity_proof) 
-        if not epoch_state:
-            log.error(f"[LedgerOracle:Billing] Proof not found: {current_continuity_proof}")
-            return False
-
-        recorded_previous = epoch_state.get("previous_nexus")
-        if recorded_previous != expected_previous_nexus:
-            log.error(f"[LedgerOracle:Billing] XOR Linkage Mismatch. Expected: {expected_previous_nexus}, Found: {recorded_previous}")
-            return False
-            
-        return True
+        return {"is_valid": True, "reached_genesis": current_hash == "genesis", "trace": chain_trace}

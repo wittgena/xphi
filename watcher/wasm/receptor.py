@@ -1,4 +1,5 @@
-# kernel.dphi.wasm.receptor
+# watcher.wasm.receptor
+## @lineage: kernel.dphi.wasm.receptor
 ## @lineage: phase.wasm.receptor
 ## @lineage: watcher.dphi.wasm.receptor
 """
