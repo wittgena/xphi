@@ -1,12 +1,11 @@
 # arch.topos.tunnel.subs
-## @lineage: arch.topos.bound.interface.subs
 import asyncio
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import TypeVar, Optional
+from typing import TypeVar, Optional, Any, List
 
-from pydantic import ConfigDict
+from pydantic import ConfigDict, BaseModel
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from arch.contract.event.next import next_id
@@ -26,40 +25,15 @@ class Subscriber[T](ABC):
     async def close(self):
         """Clean up this subscriber"""
 
-
-@dataclass
-class PubSub[T]:
-    _subscribers: dict[ToposId, Subscriber[T]] = field(default_factory=dict)
-
-    def subscribe(self, subscriber: Subscriber[T]) -> ToposId:
-        subscriber_id = next_id()
-        self._subscribers[subscriber_id] = subscriber
-        logger.debug(f"Subscribed subscriber with ID: {subscriber_id}")
-        return subscriber_id
-
-    def unsubscribe(self, subscriber_id: ToposId) -> bool:
-        if subscriber_id in self._subscribers:
-            del self._subscribers[subscriber_id]
-            logger.debug(f"Unsubscribed subscriber with ID: {subscriber_id}")
-            return True
-        else:
-            logger.warning(
-                f"Attempted to unsubscribe unknown subscriber ID: {subscriber_id}"
-            )
-            return False
-
-    async def __call__(self, event: T) -> None:
-        for subscriber_id, subscriber in list(self._subscribers.items()):
-            try:
-                await subscriber(event)
-            except Exception as e:
-                logger.error(f"Error in subscriber {subscriber_id}: {e}", exc_info=True)
-
-    async def close(self):
-        await asyncio.gather(
-            *[subscriber.close() for subscriber in self._subscribers.values()]
-        )
-        self._subscribers.clear()
+def _safe_serialize(obj: Any) -> str:
+    """객체를 안전하게 JSON 문자열로 직렬화합니다."""
+    if isinstance(obj, BaseModel):
+        return obj.model_dump_json()
+    elif isinstance(obj, dict):
+        return json.dumps(obj, default=str)
+    elif hasattr(obj, "__dict__"):
+        return json.dumps(obj.__dict__, default=str)
+    return json.dumps(obj)
 
 @pydantic_dataclass(config=ConfigDict(arbitrary_types_allowed=True))
 class DistributedPubSub[T]:
@@ -109,8 +83,19 @@ class DistributedPubSub[T]:
         return False
 
     async def __call__(self, event: T) -> None:
-        event_payload = json.dumps(event if isinstance(event, dict) else event.__dict__)
+        """단건 이벤트 발행"""
+        event_payload = _safe_serialize(event)
         await self.tunnel.publish(self.channel, event_payload)
+
+    # [핵심 수정] 누락되어 있던 publish_batch 메서드 구현
+    async def publish_batch(self, topic: str, events: List[Any]) -> None:
+        """다건(Batch) 이벤트를 특정 토픽 메타데이터와 함께 발행"""
+        batch_payload = _safe_serialize({
+            "topic": topic,
+            "events": events
+        })
+        await self.tunnel.publish(self.channel, batch_payload)
+        logger.debug(f"Published batch of {len(events)} events to {topic}")
 
     async def close(self):
         if self._listener_task and not self._listener_task.done():

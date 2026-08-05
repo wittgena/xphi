@@ -182,7 +182,13 @@ class KernelLedger:
 
     async def propose_and_seal(self, stream: LogicStream) -> Optional[SealedKernel]:
         if self.role == LedgerRole.FOLLOWER:
-            stream_data = {"id": stream.id, "action": stream.action, "payload": stream.payload, "metadata": stream.metadata}
+            # [핵심 수정] Redis Stream 저장을 위해 payload와 metadata를 안전하게 직렬화(Serialization)
+            stream_data = {
+                "id": str(stream.id), 
+                "action": str(stream.action), 
+                "payload": json.dumps(stream.payload) if isinstance(stream.payload, (dict, list)) else str(stream.payload), 
+                "metadata": json.dumps(stream.metadata) if isinstance(stream.metadata, dict) else str(stream.metadata)
+            }
             self.broker.stream_produce("ledger:mempool:logic_streams", stream_data)
             return None
 

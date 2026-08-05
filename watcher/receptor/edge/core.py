@@ -72,7 +72,6 @@ async def otlp_logs_export(
         with flow_scope(phase="OTLP_INGRESS", bound="edge"):
             log.info(f"[OTLP Anchor] Secured batch. ContentHash: {content_hash[:8]}, Fingerprint: {fingerprint[:16]}")
 
-        # 4. 브로드캐스트 (비동기 처리)
         topic_name = "otlp_global_stream" 
         bg_tasks.add_task(pubsub.publish_batch, topic=topic_name, events=[payload_dict])
         
@@ -146,9 +145,6 @@ async def audit_log(
         result=audit_result
     )
 
-# =====================================================================
-# 2. Ledger Stream (기존 ledger_edge)
-# =====================================================================
 class LedgerEventSchema(BaseModel):
     action: str
     user_id: str
@@ -258,12 +254,14 @@ async def seal_state(
         receptor_id=req.receptor_id,
         proposed_parity=req.proposed_parity.model_dump(),
         parent_nexus_id=req.parent_nexus_id,
+        self_parent_state=req.self_parent_state,  # 🌟 [핵심 수정] Pydantic 요청에서 받은 self_parent_state 명시적 매핑
         repos=req.repos,
         signers=req.signers,
         signatures=req.signatures,
         timestamp=req.timestamp
     )
     result = await nexus.anchor_state(proposal)
+    
     if not result.is_sealed:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

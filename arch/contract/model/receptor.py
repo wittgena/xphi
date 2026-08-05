@@ -1,4 +1,5 @@
-# watcher.receptor.xe.state.schema
+# arch.contract.model.receptor
+## @lineage: watcher.receptor.xe.state.schema
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List
@@ -79,6 +80,9 @@ class AnchorProposalRequest(BaseModel):
     receptor_id: str = Field(..., description="수용자 에이전트 식별자")
     proposed_parity: ParityTripletSchema = Field(..., description="제안된 패리티 삼중항")
     parent_nexus_id: int = Field(default=0, ge=0, le=4294967295, description="부모 넥서스 ID")
+
+    self_parent_state: str = Field(..., description="부모 상태(Parent State)의 해시값")
+
     repos: Dict[str, str] = Field(default_factory=dict, description="상태 저장소 맵")
     signers: List[str] = Field(default_factory=list, description="서명자 목록")
     signatures: List[str] = Field(default_factory=list, description="암호학적 서명 목록")

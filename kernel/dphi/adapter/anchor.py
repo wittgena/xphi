@@ -1,5 +1,4 @@
 # kernel.dphi.adapter.anchor
-## @lineage: watcher.dphi.adapter.anchor
 import json
 import time
 from dataclasses import dataclass, field
@@ -17,6 +16,7 @@ class AnchorProposal:
     receptor_id: str
     proposed_parity: Dict[str, Any]
     parent_nexus_id: int
+    self_parent_state: str      # 🌟 [구조 개선] 이전 상태의 해시를 명시적으로 가리키는 필드 추가
     repos: Dict[str, str]
     signers: List[str]          # 합의에 참여한 노드/에이전트들의 공개키
     signatures: List[str]       # 각 노드의 Ed25519 서명
@@ -56,7 +56,9 @@ class NexusAnchor:
         return is_valid
 
     async def anchor_state(self, proposal: AnchorProposal) -> AnchorResult:
-        log.info(f"[Nexus] ⚓ Anchoring topological state from [{proposal.receptor_id}]...")
+        # 로그에도 연결되는 부모(Parent)의 해시 정보를 함께 출력하도록 개선
+        log.info(f"[Nexus] ⚓ Anchoring topological state from [{proposal.receptor_id}] (Parent: {proposal.self_parent_state[:8]})...")
+        
         if not await self._verify_tripartite_parity(proposal.proposed_parity):
             log.critical("[Nexus] 💥 Topological Rupture Detected! Parity Check Failed.")
             return AnchorResult(
@@ -67,7 +69,7 @@ class NexusAnchor:
         seal_payload = StateAdapter.build_seal_epoch_payload(
             parity=proposal.proposed_parity,
             parent_nexus_id=proposal.parent_nexus_id,
-            self_parent_state="genesis",
+            self_parent_state=proposal.self_parent_state,  # 🌟 [핵심 개선] "genesis" 하드코딩 제거! 동적 할당
             repos=proposal.repos,
             cached_states={},
             timestamp=proposal.timestamp,
@@ -95,7 +97,7 @@ class NexusAnchor:
         receipt = TransactionReceipt(
             job_id=f"nexus_{new_nexus_id}_{int(time.time())}",
             topos_id=proposal.proposed_parity.get("topos_id", "0"),
-            unified_parity_hash=commit_hash,
+            parity_hash=commit_hash,
             clearing_signatures=proposal.signatures,
             fuel_consumed=getattr(seal_res, 'fuel_consumed', 0),
             settlement_status="COMMITTED_TO_NEXUS"

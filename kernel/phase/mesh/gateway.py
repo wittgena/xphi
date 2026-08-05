@@ -1,5 +1,4 @@
 # kernel.phase.mesh.gateway
-## @lineage: phase.runtime.mesh.gateway
 import uuid
 import time
 import json
@@ -24,7 +23,6 @@ class TokenBucketLimiter:
     def consume(self, identity_id: str, cost: int) -> bool:
         now = time.time()
         
-        # 경과 시간에 따른 토큰 충전
         elapsed = now - self.last_refill[identity_id]
         self.tokens[identity_id] = min(
             self.capacity, 
@@ -32,26 +30,17 @@ class TokenBucketLimiter:
         )
         self.last_refill[identity_id] = now
 
-        # 비용 지불 가능 여부 확인
         if self.tokens[identity_id] >= cost:
             self.tokens[identity_id] -= cost
             return True
         return False
 
 
-# =====================================================================
-# [NEW] Defense Layer 2: Payload Sanitizer (Deep Content Inspection)
-# =====================================================================
 class PayloadSanitizer:
     """LLM이 생성한 파라미터 내부에 악성 패턴(명령어, 샌드박스 탈출 등)이 있는지 심층 검사"""
     
-    # 1. OS Command Injection 패턴 (파이프, 세미콜론, 백틱, 서브쉘 등)
     OS_INJECTION_PATTERN = re.compile(r"(?:;|\||&&|`|\$\()")
-    
-    # 2. Path Traversal 패턴 (상위 디렉토리 이동 및 인코딩 우회)
     TRAVERSAL_PATTERN = re.compile(r"(?:\.\./|\.\.\\|%2e%2e%2f)", re.IGNORECASE)
-    
-    # 3. 프롬프트 인젝션 / 탈옥(Jailbreak) 키워드
     PROMPT_INJECTION_KEYWORDS = [
         "ignore previous instructions", 
         "ignore all previous instructions",
@@ -66,7 +55,6 @@ class PayloadSanitizer:
             return True
             
         try:
-            # Payload를 평면화(Flatten)하여 검사하기 위해 JSON 문자열로 직렬화
             raw_text = json.dumps(payload).lower()
             
             if cls.OS_INJECTION_PATTERN.search(raw_text):
@@ -84,7 +72,7 @@ class PayloadSanitizer:
             return True
         except Exception as e:
             log.error(f"[Sanitizer] Failed to parse payload: {e}. Defaulting to BLOCKED.")
-            return False  # 파싱 불가 페이로드는 안전을 위해 차단 (Fail-Closed)
+            return False 
 
 class ToposGateway:
     """@desc: Compliant middleware & Adapter bridging external Ingress to the unified KernelStore"""
@@ -96,32 +84,41 @@ class ToposGateway:
             "INVOKE_TOOL": 5,
             "INJECT_QUARANTINE_RULE": 10,
             "INJECT_META_RULE": 10,
-            "SECURITY_TENSION_ALERT": 0  # 시스템 알럿은 비용 면제
+            "LOGSTREAM_BULK_INSERT": 1, # 내부 시스템 로깅 액션
+            "SECURITY_TENSION_ALERT": 0  
         }
 
     async def authorize_ingress(self, stream: IngressLogicStream) -> bool:
-        """@desc: Structural adapter for Ingress validation"""
+        """
+        @desc: Structural adapter for Ingress validation using Pydantic Schema.
+               이 메서드가 호출되면 파이썬 타입 안정성이 보장됩니다.
+        """
         action_id = str(stream.meta.stream_id)
-        action = stream.payload.intent.value
-        payload = stream.payload.parameters
+        # payload.parameters 내에 "action" 키가 명시되어 있다면 오버라이드 (LogStreamStore 호환)
+        action = stream.payload.parameters.get("action", stream.payload.intent.value) 
+        payload = stream.payload.parameters.get("data", stream.payload.parameters)
+        
         metadata = {
             "is_authenticated": stream.identity.is_authenticated,
             "stateless_token": stream.identity.stateless_token_id,
             "client_ip": stream.meta.client_ip,
-            "protocol_version": stream.meta.original_protocol.value
+            "protocol_version": stream.meta.original_protocol.value,
         }
+        
+        # 추가 메타데이터 병합
+        if "meta" in stream.payload.parameters:
+            metadata.update(stream.payload.parameters["meta"])
+
         return await self.authorize(action_id=action_id, action=action, payload=payload, metadata=metadata)
 
     async def authorize(self, action_id: str, action: str, payload: Any, metadata: Optional[Dict[str, Any]] = None) -> bool:
         """
         @desc: The single choke-point for agent action validation.
-        @flow: Quota -> Sanitizer -> KernelLogicStream -> KernelStore(propose_and_seal) -> WASM -> Boolean Signal
         """
         if metadata is None:
             metadata = {}
 
         ## Step 1: Quota Check (Rate Limiting)
-        ## 식별자가 없으면 IP, IP도 없으면 익명(anonymous)으로 처리하여 토큰 차감
         identity_id = metadata.get("stateless_token") or metadata.get("client_ip") or "anonymous_agent"
         cost = self.action_costs.get(action, 1)
         
@@ -130,7 +127,6 @@ class ToposGateway:
             return False
 
         ## Step 2: Deep Content Inspection (Payload Sanitizer)
-        ## 비용 검증을 통과한 유효한 트래픽에 대해서만 정규식/시맨틱 분석 수행
         if not PayloadSanitizer.inspect(payload):
             log.critical(f"[Gateway] BLOCKED (Semantic Breach): Malicious signature detected in payload for action '{action}'.")
             return False
@@ -152,7 +148,7 @@ class ToposGateway:
             else:
                 if hasattr(self.store, 'role') and self.store.role == LedgerRole.FOLLOWER:
                     log.info(f"[Gateway] PROPOSED: Stream {kernel_stream.id} delegated to Mempool (FOLLOWER mode).")
-                    return True  # Acknowledged into the consensus pipeline
+                    return True
                 else:
                     log.warning(f"[Gateway] BLOCKED: Stream {kernel_stream.id} rejected by WASM Kernel Spatial Fence.")
                     return False

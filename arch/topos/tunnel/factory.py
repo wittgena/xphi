@@ -1,12 +1,4 @@
 # arch.topos.tunnel.factory
-## @lineage: arch.topos.bound.tunnel
-"""
-@desc: Universal Message/State Tunnel (Async & Sync Implementation)
-@flow: 
-- Defaults to asynchronous processing, while providing a minimal 
-- facade for synchronous environments where an async event loop is unavailable
-- [ENHANCED] Supports background WASM telemetry auditing without blocking the main event loop.
-"""
 import redis
 import redis.asyncio as actual_redis
 import redis.exceptions
@@ -15,7 +7,7 @@ import asyncio
 from typing import Optional, Any, List, Tuple
 from arch.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
-log = logging.getLogger("bound.tunnel")
+log = logging.getLogger("tunnel.factory")
 
 class UniversalPubSub:
     def __init__(self, protocol: BackendProtocol, actual_pubsub=None, mq_client=None):
@@ -180,7 +172,6 @@ class UniversalFacadeSync:
     def __getattr__(self, name: str):
         return getattr(self.state_store, name)
 
-
 class TunnelFactory:
     _async_instance: Optional[UniversalFacade] = None
     _sync_instance: Optional[UniversalFacadeSync] = None
@@ -204,10 +195,6 @@ class TunnelFactory:
         
     @classmethod
     async def get_provenant(cls, wasm_broker, **kwargs) -> UniversalFacade:
-        """
-        [ENHANCED] Provisions an asynchronous tunnel bound with a WasmBroker 
-        to enable transparent background telemetry auditing.
-        """
         tunnel = await cls.get_default(**kwargs)
         tunnel.bind_wasm_broker(wasm_broker)
         return tunnel

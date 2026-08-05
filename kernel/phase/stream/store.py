@@ -1,5 +1,4 @@
 # kernel.phase.stream.store
-## @lineage: kernel.topos.stream.store
 import asyncio
 import uuid
 import httpx
@@ -8,28 +7,34 @@ import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 
-from kernel.bind.state.spec import TransRule, NodeType
-from watcher.receptor.contract.model import LogstEvent
 from arch.gov.warden import AuditWarden
+from kernel.bind.state.spec import TransRule, NodeType
 from kernel.dphi.ledger.consensus import KernelLedger
 from kernel.phase.mesh.gateway import ToposGateway
 
+# [핵심 추가] Schema 명시적 임포트
+from kernel.phase.stream.schema import (
+    LogicStream, 
+    StreamMetadata, 
+    StreamIdentity, 
+    LogicPayload, 
+    ActionIntent, 
+    ProtocolSource
+)
+from watcher.receptor.contract.model import LogstEvent
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("log.store", phase="INGRESS")
-
 _gateway_instance = ToposGateway()
 
 @dataclass
 class SurgentManifest:
-    """Immutable manifest structure enclosed within .surgent_manifest.json"""
     base_commit_hash: str
     head_commit_hash: str
     telemetry_pressure: Dict[str, Any]  
     proposed_rules: List[Dict[str, Any]] 
 
 class GatekeeperEngine:
-    """Pure mathematical function f executing T_n = f(T_{n-1}, P_{n-1})"""
     
     @staticmethod
     def calculate_resonance_intensity(telemetry: Dict[str, Any]) -> float:
@@ -50,8 +55,6 @@ class GatekeeperEngine:
         return rules
 
 class PullRequestGatekeeper:
-    """Automated trustless boundary pipeline enforcing topological continuity proofs"""
-    
     def __init__(self, manifest_data: Dict[str, Any], store: Optional[KernelLedger] = None):
         self.manifest = SurgentManifest(
             base_commit_hash=manifest_data.get("base_commit_hash", ""),
@@ -66,7 +69,6 @@ class PullRequestGatekeeper:
         return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
     def execute_merkle_continuity_check(self) -> bool:
-        """Phase 1: Validates ancestral lineage against the physical KernelStore"""
         latest_root = self.store.get_head_hash(self.core_stream_id) or "GENESIS_HASH"
         if self.manifest.base_commit_hash != latest_root:
             log.error(
@@ -102,6 +104,7 @@ class PullRequestGatekeeper:
         log.info(f"[Gatekeeper] Proof Verified. Kernel Head matches PR Base ({self.manifest.base_commit_hash[:8]}). Executing automatic bypass merge.")
         return True
 
+
 class LogStreamStore:
     def __init__(self, gateway: ToposGateway = None, storage_endpoint: str = "http://internal-store:8000"):
         self.gateway = gateway or _gateway_instance
@@ -113,44 +116,56 @@ class LogStreamStore:
             return True
 
         event_count = len(events)
-        action_id = f"logstream_{stream_name}_{uuid.uuid4().hex[:8]}"
-        
-        # Calculate raw physical telemetry pressure (Data extraction only)
+        stream_uuid = uuid.uuid4()
         telemetry_pressure = await asyncio.to_thread(self._extract_telemetry_pressure, events)
         tension_score = GatekeeperEngine.calculate_resonance_intensity(telemetry_pressure)
         
-        # Inject tension score as metadata for WASM Kernel to judge
         if metadata is None:
             metadata = {}
         metadata["telemetry_tension_score"] = tension_score
 
-        payload = {
+        payload_dict = {
             "stream_name": stream_name, 
             "count": event_count,
             "pressure": telemetry_pressure
         }
         
-        is_authorized = await self.gateway.authorize(
-            action_id=action_id, 
-            action="LOGSTREAM_BULK_INSERT",
-            payload=payload, 
-            metadata=metadata
+        # [핵심 수정] 무분별한 dict 전달이나 json 직렬화 대신 Schema(LogicStream) 구성
+        logic_stream = LogicStream(
+            meta=StreamMetadata(
+                stream_id=stream_uuid,
+                original_protocol=ProtocolSource.UNKNOWN, # 백엔드 내부 호출이므로
+                content_length=len(str(payload_dict)),
+                client_ip="internal_logstore"
+            ),
+            identity=StreamIdentity(
+                is_authenticated=True,
+                stateless_token_id="internal_logstore_agent",
+                granted_scopes=["LOGSTREAM_BULK_INSERT"]
+            ),
+            payload=LogicPayload(
+                # ActionIntent 열거형에 매핑 (INVOKE_TOOL을 시스템 툴 호출격으로 간주)
+                intent=ActionIntent.INVOKE_TOOL, 
+                parameters={"action": "LOGSTREAM_BULK_INSERT", "data": payload_dict, "meta": metadata}
+            )
         )
+
+        # Gateway에 단일 객체 전달
+        is_authorized = await self.gateway.authorize_ingress(logic_stream)
 
         if not is_authorized:
             msg = f"Unauthorized bulk insert attempt to stream '{stream_name}' blocked by Kernel Store."
             log.warning(f"[LogtailStore] BLOCKED: {msg}")
-            AuditWarden._record_anomaly(action="logstream.kernel_block", details=msg)
+            AuditWarden.record_anomaly(action="logstream.kernel_block", details=msg)
             return False
 
         if tension_score > 10.0:
             msg = f"High structural tension ({tension_score}) accepted by kernel in stream '{stream_name}'."
             log.error(f"[LogtailStore] TENSION ALERT: {msg}")
-            AuditWarden._record_anomaly(action="logstream.high_tension_logged", details=msg)
+            AuditWarden.record_anomaly(action="logstream.high_tension_logged", details=msg)
 
         try:
             log.debug(f"[LogtailStore] Authorized by Kernel. Executing insert of {event_count} events.")
-            # response = await self._client.post(f"/api/v1/logstream/{stream_name}", json=...)
             return True
         except Exception as e:
             log.error(f"[LogtailStore] Bulk append failed during execution: {e}")

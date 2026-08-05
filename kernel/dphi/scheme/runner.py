@@ -2,7 +2,7 @@
 import time
 import json
 import hashlib
-from typing import Any
+from typing import Any, Dict, List, Optional
 import httpx
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
@@ -23,7 +23,7 @@ class BaseRunner:
     def __init__(self):
         self.success_count = 0
         self.fail_count = 0
-        self.last_failed_context = []
+        self.last_failed_context: List[str] = []
 
     def report(self):
         log.info(f"\n=== [DONE] Scenarios Completed: {self.success_count} Passed, {self.fail_count} Failed ===")
@@ -34,16 +34,16 @@ class BaseRunner:
 
     def _record_success(self, elapsed_ms: float, msg: str):
         self.success_count += 1
-        log.info(f"  [PASS] Time: {elapsed_ms:.2f}ms | Output: {msg[:150]}")
+        safe_msg = str(msg)[:150].replace('\n', ' ')
+        log.info(f"  [PASS] Time: {elapsed_ms:.2f}ms | Output: {safe_msg}")
 
     def _record_fail(self, elapsed_ms: float, error_msg: str, context: str):
         self.fail_count += 1
         log.error(f"  [FAIL] Time: {elapsed_ms:.2f}ms | Details: {error_msg}")
         self.last_failed_context.append(context)
 
-
 class SchemeRunner(BaseRunner):
-    def __init__(self, broker):
+    def __init__(self, broker: Any):
         super().__init__()
         self.broker = broker
 
@@ -75,13 +75,12 @@ class SchemeRunner(BaseRunner):
                 f"Function: {target_func} | Input: {safe_payload_str}... | Error: {err_msg}"
             )
 
-
 class WebRunner(BaseRunner):
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, client: Optional[httpx.AsyncClient] = None):
         super().__init__()
         self.base_url = base_url
-        self.client = httpx.AsyncClient(base_url=base_url, timeout=10.0)
-        
+        self._is_injected_client = client is not None
+        self.client = client or httpx.AsyncClient(base_url=base_url, timeout=10.0)
         self.committee_keys = [ed25519.Ed25519PrivateKey.generate() for _ in range(3)]
         self.committee_pubs = [
             k.public_key().public_bytes(
@@ -89,7 +88,12 @@ class WebRunner(BaseRunner):
             ).hex() for k in self.committee_keys
         ]
 
-    async def _run_api_case(self, title: str, method: str, endpoint: str, payload: dict, expected_status: int = 200) -> httpx.Response | None:
+    async def teardown(self):
+        """WebRunner가 자체 생성한 클라이언트인 경우 리소스를 정리합니다."""
+        if not self._is_injected_client and not self.client.is_closed:
+            await self.client.aclose()
+
+    async def _run_api_case(self, title: str, method: str, endpoint: str, payload: Dict[str, Any], expected_status: int = 200) -> Optional[httpx.Response]:
         log.info(f"\n[TEST] {title} ({method} {endpoint})")
         start_time = time.time()
         
@@ -103,8 +107,8 @@ class WebRunner(BaseRunner):
             else:
                 self._record_fail(
                     elapsed_ms,
-                    f"Expected: {expected_status}, Got: {res.status_code}. {res.text}",
-                    f"Endpoint: {endpoint} | Error: {res.text}"
+                    f"Expected: {expected_status}, Got: {res.status_code}. Response: {res.text[:100]}",
+                    f"Endpoint: {endpoint} | Error: {res.text[:200]}"
                 )
                 return res
         except Exception as e:
@@ -112,11 +116,10 @@ class WebRunner(BaseRunner):
             log.error(f"  [CRITICAL FAIL] Network/Execution Error: {str(e)}")
             return None
 
-    def _sign_payload(self, signers: list, payload_dict: dict) -> list:
+    def _sign_payload(self, signers: List[ed25519.Ed25519PrivateKey], payload_dict: Dict[str, Any]) -> List[str]:
         raw_json_bytes = StateAdapter.to_canonical_bytes(payload_dict)
         commit_hash = hashlib.sha256(raw_json_bytes).digest()
         return [k.sign(commit_hash).hex() for k in signers]
-
 
 class EpochBase(SchemeRunner):
     def __init__(self, broker: Any, scenario_name: str, simulate_wallet: bool = True):
@@ -132,7 +135,7 @@ class EpochBase(SchemeRunner):
         if not self.wallet_adapter.simulate:
             self.wallet_adapter.fund_wallet()
 
-    def _sign_multisig(self, signers: list[ed25519.Ed25519PrivateKey], commit_dict: dict[str, Any]) -> list[str]:
+    def _sign_multisig(self, signers: List[ed25519.Ed25519PrivateKey], commit_dict: Dict[str, Any]) -> List[str]:
         canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
         commit_hash = hashlib.sha256(canonical_bytes).hexdigest().encode('utf-8')
         return [k.sign(commit_hash).hex() for k in signers]
@@ -197,17 +200,17 @@ class EpochBase(SchemeRunner):
             self.fail_count += 1
             return
 
-    async def hook_validate_mandate(self) -> Ap2MandateResult | None: 
+    async def hook_validate_mandate(self) -> Optional[Ap2MandateResult]: 
         return None
         
-    async def hook_inscribe_nodes(self, parity_triplet: dict[str, Any]) -> dict[str, str]: 
+    async def hook_inscribe_nodes(self, parity_triplet: Dict[str, Any]) -> Dict[str, str]: 
         raise NotImplementedError
         
-    async def hook_process_payment(self) -> X402SettlementReceipt | None: 
+    async def hook_process_payment(self) -> Optional[X402SettlementReceipt]: 
         return None
         
-    async def hook_seal_epoch(self, parity_triplet: dict[str, Any], repos: dict[str, str], economy_state: dict[str, Any], timestamp: int) -> dict[str, Any]: 
+    async def hook_seal_epoch(self, parity_triplet: Dict[str, Any], repos: Dict[str, str], economy_state: Dict[str, Any], timestamp: int) -> Dict[str, Any]: 
         raise NotImplementedError
         
-    async def hook_build_phase_root(self, commit_hash: str, repos: dict[str, str]) -> dict[str, Any]: 
+    async def hook_build_phase_root(self, commit_hash: str, repos: Dict[str, str]) -> Dict[str, Any]: 
         raise NotImplementedError

@@ -1,13 +1,12 @@
 # kernel.dphi.adapter.sign
-## @lineage: watcher.dphi.adapter.sign
-## @lineage: arch.crypto.signer
 import os
 from pathlib import Path
 import hashlib
 import nacl.signing
 import nacl.encoding
+import nacl.exceptions # [추가] 예외 처리를 위해 필요
 from cryptography.hazmat.primitives import serialization
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
@@ -34,13 +33,6 @@ class NodeSigner:
         return cls._instance
 
     def _load_key_chain(self) -> nacl.signing.SigningKey:
-        """
-        Resolves the node's signing key through a prioritized fallback mechanism.
-        
-        Priority 1: Environment variable (Server/Daemon environment)
-        Priority 2: Local SSH Ed25519 key (Developer CLI environment)
-        Priority 3: Ephemeral auto-generation (In-memory fallback)
-        """
         # Priority 1: Load a 64-character raw hex seed from environment variables
         env_seed = os.environ.get("XPHI_NODE_SEED")
         if env_seed and len(env_seed) == 64:
@@ -50,13 +42,11 @@ class NodeSigner:
         ssh_key_path = Path.home() / ".ssh" / "id_ed25519"
         if ssh_key_path.exists():
             try:
-                # Parse the OpenSSH private key (assuming no passphrase)
                 with open(ssh_key_path, "rb") as key_file:
                     private_key = serialization.load_ssh_private_key(
                         key_file.read(),
                         password=None
                     )
-                # Convert the cryptography key object to PyNaCl compatible raw bytes
                 raw_bytes = private_key.private_bytes(
                     encoding=serialization.Encoding.Raw,
                     format=serialization.PrivateFormat.Raw,
@@ -73,15 +63,6 @@ class NodeSigner:
     def sign_payload(self, canonical_bytes: bytes) -> str:
         """
         Generates an Ed25519 signature for the given payload.
-        
-        [CRITICAL ARCHITECTURE NOTE]
-        This method must perfectly mirror the WASM engine's verification logic. 
-        The WASM spatial fence expects the signature to be generated against the 
-        SHA-256 hex string representation of the Canonical JSON (JCS) payload.
-        Args:
-            canonical_bytes (bytes): The deterministically serialized JSON data.
-        Returns:
-            str: A 128-character hexadecimal string representing the signature.
         """
         # Step 1: Generate the SHA-256 hex string of the canonical bytes
         payload_hash_str = hashlib.sha256(canonical_bytes).hexdigest()
@@ -91,6 +72,37 @@ class NodeSigner:
         
         # Step 3: Return the resulting hexadecimal signature
         return signed.signature.hex()
+
+    # =================================================================
+    # [핵심 추가] 누락되었던 서명 검증(Verify) 메서드 구현
+    # =================================================================
+    def verify_signature(self, canonical_bytes: bytes, signature_hex: str, pubkey_hex: Optional[str] = None) -> bool:
+        """
+        Verifies an Ed25519 signature against the given payload.
+        """
+        try:
+            # 1. 서명할 때와 동일하게 Canonical Hash String 생성
+            payload_hash_str = hashlib.sha256(canonical_bytes).hexdigest()
+            message_bytes = payload_hash_str.encode('utf-8')
+            signature_bytes = bytes.fromhex(signature_hex)
+
+            # 2. 공개키가 명시적으로 주어지면 해당 키 사용, 없으면 자기 자신의 공개키 사용
+            if pubkey_hex:
+                vk = nacl.signing.VerifyKey(pubkey_hex, encoder=nacl.encoding.HexEncoder)
+            else:
+                vk = self.verify_key
+
+            # 3. 서명 검증 (실패 시 nacl.exceptions.BadSignatureError 발생)
+            vk.verify(message_bytes, signature_bytes)
+            return True
+            
+        except (nacl.exceptions.BadSignatureError, ValueError) as e:
+            log.debug(f"[Crypto] Invalid signature detected: {e}")
+            return False
+        except Exception as e:
+            log.error(f"[Crypto] Verification process failed: {e}")
+            return False
+
 
 class LedgerAuthAdapter:
     """
@@ -102,17 +114,10 @@ class LedgerAuthAdapter:
 
     @staticmethod
     def sign_state_payload(payload_dict: Dict[str, Any]) -> str:
-        """
-        주어진 딕셔너리를 FFI 호환 JCS(Canonical JSON)로 변환하고 서명합니다.
-        """
-        # 1. StateAdapter를 이용해 결정론적 바이트 변환 (JCS)
         canonical_bytes = StateAdapter.to_canonical_bytes(payload_dict)
-        
-        # 2. 물리 노드의 Signer 인스턴스를 통해 서명
         signer = NodeSigner.get_instance()
         return signer.sign_payload(canonical_bytes)
         
     @staticmethod
     def get_signer_pubkey() -> str:
-        """현재 노드의 공개키 반환 (Multi-Sig 스키마 빌드용)"""
         return NodeSigner.get_instance().pubkey_hex

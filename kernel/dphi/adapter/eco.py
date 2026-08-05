@@ -1,10 +1,9 @@
 # kernel.dphi.adapter.eco
-## @lineage: watcher.dphi.adapter.eco
 import os
 import time
 import json
 import hashlib
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
@@ -55,18 +54,21 @@ class X402SettlementReceipt(DynamicSurgeModel):
 class TransactionReceipt(DynamicSurgeModel):
     job_id: str
     topos_id: str
-    unified_parity_hash: int  
+    parity_hash: str
     clearing_signatures: List[str] 
     fuel_consumed: int
     settlement_status: str
 
 class SettlementPayload(DynamicSurgeModel):
     batch_id: str
-    state_root: int
+    state_root: str  # 🌟 [수정 완료] 블록체인/DA 제출 표준에 맞게 int -> str 로 변경
     validators: List[str]
     gas_used: int
     timestamp: int
 
+# ==============================================================================
+# 1. Eco Adapter (Economy & Micropayment Layer)
+# ==============================================================================
 class EcoAdapter:
     @classmethod
     def build_ap2_mandate(
@@ -79,13 +81,12 @@ class EcoAdapter:
     ) -> Ap2MandateResult:
         """@desc: Creates a Verifiable Credential-like Mandate for agent authorization."""
         expiration_ts = int(time.time() * 1000) + validity_ms
-        
-        constraints = Ap2MandateConstraints.suture(
+        constraints = Ap2MandateConstraints(
             max_spend_usdc=max_spend_usdc,
             expiration_ts=expiration_ts
         )
         
-        payload = Ap2MandatePayload.suture(
+        payload = Ap2MandatePayload(
             protocol="AP2-v1.0",
             requester_id=requester_id,
             target_action=target_action,
@@ -93,7 +94,6 @@ class EcoAdapter:
             issued_at=int(time.time() * 1000)
         )
         
-        # Pydantic V2 model_dump() 사용
         mandate_dict = payload.model_dump()
         canonical_bytes = json.dumps(mandate_dict, sort_keys=True, separators=(',', ':')).encode('utf-8')
         signature = signer_key.sign(hashlib.sha256(canonical_bytes).digest()).hex()
@@ -101,13 +101,13 @@ class EcoAdapter:
             encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
         ).hex()
 
-        auth = Ap2Authorization.suture(signer_pub=pubhex, signature=signature)
-        return Ap2MandateResult.suture(mandate=payload, authorization=auth)
+        auth = Ap2Authorization(signer_pub=pubhex, signature=signature)
+        return Ap2MandateResult(mandate=payload, authorization=auth)
 
     @classmethod
     def build_x402_invoice(cls, payee_address: str, amount_usdc: str, resource_id: str) -> X402Invoice:
         """@desc: Generates an HTTP 402 Payment Required invoice for M2M interactions."""
-        return X402Invoice.suture(
+        return X402Invoice(
             status="HTTP_402_PAYMENT_REQUIRED",
             x_payment_protocol="x402/base-sepolia",
             pay_to=payee_address,
@@ -132,11 +132,10 @@ class EcoAdapter:
                 asset="usdc"
             )
         else:
-            # 시뮬레이션
             mock_tx_seed = f"{invoice.pay_to}_{invoice.amount_usdc}_{time.time()}".encode('utf-8')
             tx_hash = f"0x{hashlib.sha256(mock_tx_seed).hexdigest()}"
 
-        return X402SettlementReceipt.suture(
+        return X402SettlementReceipt(
             receipt_id=f"rcpt_{tx_hash[2:14]}",
             tx_hash=tx_hash,
             network=invoice.x_payment_protocol,
@@ -149,16 +148,10 @@ class EcoAdapter:
     def embed_economy_state(
         cls, 
         base_cached_states: Dict[str, Any], 
-        mandate: Ap2MandateResult | None = None, 
-        receipt: X402SettlementReceipt | None = None
+        mandate: Optional[Ap2MandateResult] = None, 
+        receipt: Optional[X402SettlementReceipt] = None
     ) -> Dict[str, Any]:
-        """
-        @desc: Embeds strictly typed models back to raw dicts into the generic cached state.
-        Adapter maintains rigid type contracts. Any bypass must explicitly pass `None`.
-        """
         updated_state = dict(base_cached_states) if base_cached_states else {}
-        
-        # 유연한 예외 처리(dict, hasattr 등)를 배제하고 명확한 모델 타입이 있을 때만 덤프 허용
         if mandate is not None:
             updated_state["ap2_mandate"] = mandate.model_dump()
             
@@ -166,7 +159,6 @@ class EcoAdapter:
             updated_state["x402_settlement_receipt"] = receipt.model_dump()
             
         return updated_state
-
 
 # ==============================================================================
 # 2. Exchange Adapter (System & Clearing Layer)
@@ -188,17 +180,19 @@ class ExchangeAdapter:
         tier: Tier = Tier.SYSTEM
     ) -> TransactionReceipt:
         parity = entangled_state.get("parity", {})
-        unified_topos = parity.get("topos_id", f"unknown_batch_{int(time.time())}")
-        unified_phase = parity.get("phase_id", 0) 
+        parity_topos_id = parity.get("topos_id", f"unknown_batch_{int(time.time())}")
+        parity_phase_id = parity.get("phase_id", 0) 
         
         fuel_consumed = cost_metrics.get("fuel_consumed", 0)
         estimated_usd = self._quantize_fuel_cost(fuel_consumed, tier)
         
-        log.info(f"[Exchange Adapter] Settlement Finalized. Topos: {unified_topos}, Parity: {unified_phase}, Cost: ${estimated_usd:.6f}")
-        return TransactionReceipt.suture(
-            job_id=unified_topos,
-            topos_id=unified_topos,
-            unified_parity_hash=unified_phase,
+        log.info(f"[Exchange Adapter] Settlement Finalized. Topos: {parity_topos_id}, Parity: {parity_phase_id}, Cost: ${estimated_usd:.6f}")
+        
+        # 🌟 [수정 완료] 명시적 문자열(str) 캐스팅으로 Pydantic의 Type Strictness 완벽 대응
+        return TransactionReceipt(
+            job_id=str(parity_topos_id),
+            topos_id=str(parity_topos_id),
+            parity_hash=str(entangled_state.get("state_hash", parity_phase_id)), 
             clearing_signatures=signatures,
             fuel_consumed=fuel_consumed,
             settlement_status="COMMITTED_TO_NEXUS"
@@ -206,9 +200,10 @@ class ExchangeAdapter:
         
     def generate_settlement_payload(self, receipt: TransactionReceipt) -> SettlementPayload:
         """@desc: Translates a TransactionReceipt into a strict external payload."""
-        return SettlementPayload.suture(
+        # receipt.parity_hash(str) -> SettlementPayload.state_root(str) 로 완벽 호환됩니다.
+        return SettlementPayload(
             batch_id=receipt.job_id,
-            state_root=receipt.unified_parity_hash,
+            state_root=receipt.parity_hash,
             validators=receipt.clearing_signatures,
             gas_used=receipt.fuel_consumed,
             timestamp=int(time.time())
