@@ -11,7 +11,7 @@ from arch.gov.ingress.policy import (
     FuelAllocator, 
     HealthMonitor
 )
-
+from arch.xor.parser.otlp import StrictOtlpExtractionEngine
 from kernel.phase.stream.store import LogStreamStore
 from kernel.dphi.broker import WasmBroker
 from kernel.dphi.adapter.anchor import NexusAnchor
@@ -89,6 +89,10 @@ async def get_ingress_policy(request: Request) -> IngressPolicyEngine:
 async def get_pubsub(request: Request) -> DistributedPubSub:
     """글로벌 브로드캐스트 및 이벤트 파이프라인 주입"""
     return _get_state_attr(request, "pubsub")
+
+## Parsing & Extraction Engine
+async def get_otlp_engine(request: Request) -> StrictOtlpExtractionEngine:
+    return _get_state_attr(request, "otlp_engine")
 
 ## Ecosystem & Audit
 async def get_secret_auditor(request: Request) -> SecretAuditor:

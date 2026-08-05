@@ -3,6 +3,7 @@ import json
 import time
 import uuid
 import hashlib
+import orjson  # 🌟 고속 직렬화 및 파싱을 위한 모듈 추가
 from datetime import datetime, timezone
 from typing import Annotated, List, Dict, Any, Optional
 
@@ -16,11 +17,12 @@ from arch.contract.model.receptor import (
     ParityTripletSchema, AnchorProposalRequest, AnchorSealResponse
 )
 from arch.xor.secret.auditor import SecretAuditor, get_secret_auditor
+from arch.xor.parser.otlp import StrictOtlpExtractionEngine  # 🌟 신규 파서 타입 힌팅
 
-from watcher.receptor.contract.model import AuditLogRequest, AuditLogResponse, AuditResult, AuditEnvelope
-from watcher.receptor.contract.otlp import ExportLogsServiceRequest
+from watcher.receptor.contract.model import AuditLogRequest, AuditLogResponse, AuditResult, AuditEnvelope, ExportLogsServiceRequest
 from watcher.receptor.xe.depend import (
-    get_wasm_broker, get_pubsub, get_logstream_store, get_nexus_anchor
+    get_wasm_broker, get_pubsub, get_logstream_store, get_nexus_anchor,
+    get_otlp_engine  # 🌟 신규 DI 추가
 )
 from watcher.plane.emitter import get_emitter, flow_scope
 
@@ -39,24 +41,44 @@ async def otlp_logs_export(
     bg_tasks: BackgroundTasks = BackgroundTasks(),
     pubsub: DistributedPubSub = Depends(get_pubsub),
     broker: WasmBroker = Depends(get_wasm_broker),
+    otlp_engine: StrictOtlpExtractionEngine = Depends(get_otlp_engine),  # 🌟 Strict 엔진 주입
     auth_token: Annotated[str | None, Header(alias="Authorization")] = None, 
 ):
     try:
+        # 1. Pydantic 1차 방어를 통과한 데이터를 고속 직렬화 (엔진 입력용)
         payload_dict = payload.model_dump(exclude_none=True)
-        raw_json_bytes = json.dumps(payload_dict, sort_keys=True).encode('utf-8')
+        raw_json_bytes = orjson.dumps(payload_dict)
         content_hash = hashlib.sha256(raw_json_bytes).hexdigest()
-        genai_metrics = payload.extract_genai_metrics()
+        
+        # 2. 🌟 Strict OTLP Parser 적용: 쓰레기 데이터 검증 및 결정론적 추출
+        try:
+            extracted_metrics = otlp_engine.execute(raw_json_bytes)
+        except ValueError as e:
+            # Membrane 방어: OTLP 규격 위반 시 WASM 진입을 차단하고 422 에러 반환
+            log.warning(f"[OTLP Ingress] Blocked malformed payload: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, 
+                detail=str(e),
+                headers={EdgeHeader.STATE: EdgeState.ERROR}
+            )
+
+        # 3. WASM 합의를 위한 결정론적 Payload 생성 (순수 데이터만 포함)
         kernel_payload = {
             "action": "seal_otlp_transaction",
             "content_hash": content_hash,
             "usage_intent": {
-                "tenant_id": genai_metrics.get("tenant_id", "anonymous"),
-                "model_name": genai_metrics.get("model", "default-model"),
-                "usage": genai_metrics.get("usage", {})
+                "tenant_id": extracted_metrics.get("tenant_id", "anonymous"),
+                "model_name": extracted_metrics.get("model", "default-model"),
+                "usage": {
+                    "prompt_tokens": extracted_metrics.get("prompt_tokens", 0),
+                    "completion_tokens": extracted_metrics.get("completion_tokens", 0),
+                    "reasoning_tokens": extracted_metrics.get("reasoning_tokens", 0)
+                }
             },
-            "metrics_summary": genai_metrics
+            "metrics_summary": extracted_metrics
         }
         
+        # 4. WASM 브로커 호출 및 검증
         canonical_payload = StateAdapter.to_canonical_bytes(kernel_payload).decode('utf-8')
         res = await broker.invoke("compute_root_fingerprint", canonical_payload)
         
@@ -67,11 +89,12 @@ async def otlp_logs_export(
                 headers={EdgeHeader.STATE: EdgeState.ERROR, EdgeHeader.ERROR_DETAIL: "Kernel Seal Rejected"}
             )
             
-        fingerprint = json.loads(res.output).get("fingerprint")
+        fingerprint = orjson.loads(res.output).get("fingerprint")
         
         with flow_scope(phase="OTLP_INGRESS", bound="edge"):
             log.info(f"[OTLP Anchor] Secured batch. ContentHash: {content_hash[:8]}, Fingerprint: {fingerprint[:16]}")
 
+        # 5. PubSub (비동기 처리용 원본 데이터 전송)
         topic_name = "otlp_global_stream" 
         bg_tasks.add_task(pubsub.publish_batch, topic=topic_name, events=[payload_dict])
         
@@ -254,7 +277,7 @@ async def seal_state(
         receptor_id=req.receptor_id,
         proposed_parity=req.proposed_parity.model_dump(),
         parent_nexus_id=req.parent_nexus_id,
-        self_parent_state=req.self_parent_state,  # 🌟 [핵심 수정] Pydantic 요청에서 받은 self_parent_state 명시적 매핑
+        self_parent_state=req.self_parent_state,
         repos=req.repos,
         signers=req.signers,
         signatures=req.signatures,

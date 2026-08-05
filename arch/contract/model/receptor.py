@@ -1,5 +1,4 @@
 # arch.contract.model.receptor
-## @lineage: watcher.receptor.xe.state.schema
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List

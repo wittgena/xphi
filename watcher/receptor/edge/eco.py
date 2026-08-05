@@ -31,9 +31,6 @@ compute_edge = ContractRouter(namespace="eco.compute", prefix="/compute", tags=[
 exchange_edge = ContractRouter(namespace="eco.exchange", prefix="/exchange", tags=["Eco Exchange"])
 profile_edge = ContractRouter(namespace="eco.profile", prefix="/profile", tags=["Eco Profile"])
 
-# =====================================================================
-# 1. Eco Compute
-# =====================================================================
 @compute_edge.post(
     "/intent/validate", 
     summary="1. Validate Intent", 

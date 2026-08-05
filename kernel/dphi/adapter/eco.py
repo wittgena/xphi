@@ -26,6 +26,8 @@ class Ap2MandatePayload(DynamicSurgeModel):
     target_action: str
     constraints: Ap2MandateConstraints
     issued_at: int
+    # 🌟 [개선] 동적 정책(delegation_tier 등)을 수용하기 위한 메타데이터 필드 추가
+    metadata: Optional[Dict[str, Any]] = None
 
 class Ap2Authorization(DynamicSurgeModel):
     signer_pub: str
@@ -61,10 +63,11 @@ class TransactionReceipt(DynamicSurgeModel):
 
 class SettlementPayload(DynamicSurgeModel):
     batch_id: str
-    state_root: str  # 🌟 [수정 완료] 블록체인/DA 제출 표준에 맞게 int -> str 로 변경
+    state_root: str  # 블록체인/DA 제출 표준에 맞춘 문자열
     validators: List[str]
     gas_used: int
     timestamp: int
+
 
 # ==============================================================================
 # 1. Eco Adapter (Economy & Micropayment Layer)
@@ -77,7 +80,8 @@ class EcoAdapter:
         target_action: str, 
         max_spend_usdc: str, 
         signer_key: ed25519.Ed25519PrivateKey,
-        validity_ms: int = 3600000
+        validity_ms: int = 3600000,
+        **kwargs # 🌟 [개선] TypeError 방지: 추가 정책 메타데이터(delegation_tier 등) 유연 수용
     ) -> Ap2MandateResult:
         """@desc: Creates a Verifiable Credential-like Mandate for agent authorization."""
         expiration_ts = int(time.time() * 1000) + validity_ms
@@ -91,10 +95,11 @@ class EcoAdapter:
             requester_id=requester_id,
             target_action=target_action,
             constraints=constraints,
-            issued_at=int(time.time() * 1000)
+            issued_at=int(time.time() * 1000),
+            metadata=kwargs if kwargs else None # 🌟 추가 인자들을 payload 내에 포함하여 서명 무결성 확보
         )
         
-        mandate_dict = payload.model_dump()
+        mandate_dict = payload.model_dump(exclude_none=True)
         canonical_bytes = json.dumps(mandate_dict, sort_keys=True, separators=(',', ':')).encode('utf-8')
         signature = signer_key.sign(hashlib.sha256(canonical_bytes).digest()).hex()
         pubhex = signer_key.public_key().public_bytes(
@@ -153,12 +158,13 @@ class EcoAdapter:
     ) -> Dict[str, Any]:
         updated_state = dict(base_cached_states) if base_cached_states else {}
         if mandate is not None:
-            updated_state["ap2_mandate"] = mandate.model_dump()
+            updated_state["ap2_mandate"] = mandate.model_dump(exclude_none=True)
             
         if receipt is not None:
-            updated_state["x402_settlement_receipt"] = receipt.model_dump()
+            updated_state["x402_settlement_receipt"] = receipt.model_dump(exclude_none=True)
             
         return updated_state
+
 
 # ==============================================================================
 # 2. Exchange Adapter (System & Clearing Layer)
@@ -188,7 +194,6 @@ class ExchangeAdapter:
         
         log.info(f"[Exchange Adapter] Settlement Finalized. Topos: {parity_topos_id}, Parity: {parity_phase_id}, Cost: ${estimated_usd:.6f}")
         
-        # 🌟 [수정 완료] 명시적 문자열(str) 캐스팅으로 Pydantic의 Type Strictness 완벽 대응
         return TransactionReceipt(
             job_id=str(parity_topos_id),
             topos_id=str(parity_topos_id),
@@ -200,7 +205,6 @@ class ExchangeAdapter:
         
     def generate_settlement_payload(self, receipt: TransactionReceipt) -> SettlementPayload:
         """@desc: Translates a TransactionReceipt into a strict external payload."""
-        # receipt.parity_hash(str) -> SettlementPayload.state_root(str) 로 완벽 호환됩니다.
         return SettlementPayload(
             batch_id=receipt.job_id,
             state_root=receipt.parity_hash,

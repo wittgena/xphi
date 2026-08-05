@@ -1,9 +1,10 @@
 # watcher.receptor.contract.model
-## @lineage: kernel.topos.contract.model
-## @lineage: kernel.arch.contract.model
-from typing import Any, ClassVar
+from typing import Any, ClassVar, List, Optional, Dict
 from pydantic import BaseModel, ConfigDict, Field
 
+# ==========================================
+# 1. 일반 로그 및 과금 모델 (유지)
+# ==========================================
 class LogstEvent(BaseModel):
     """비정형 로그 스트리밍을 위한 단일 이벤트 모델"""
     timestamp: str = Field(description="ISO 8601 format timestamp")
@@ -44,6 +45,9 @@ class LogstEventPayload(BaseModel):
     company_id: str | None = None
     metadata: dict[str, Any] | None = None
 
+# ==========================================
+# 2. Audit (보안/감사) 모델 (유지)
+# ==========================================
 class AuditEvent(BaseModel):
     message: str
     actor: str | None = None
@@ -75,3 +79,40 @@ class AuditLogResponse(BaseModel):
     response_time: str | None = None
     status: str
     result: AuditResult
+
+# ==========================================
+# 3. OTLP 모델 (개선)
+# ==========================================
+class KeyValue(BaseModel):
+    key: str
+    value: dict[str, Any]
+    
+    @property
+    def get_value(self) -> Any:
+        if not self.value: return None
+        return next(iter(self.value.values()), None)
+
+class LogRecord(BaseModel):
+    timeUnixNano: str
+    severityNumber: Optional[int] = None
+    severityText: Optional[str] = None
+    body: dict[str, Any] = Field(default_factory=dict)
+    attributes: List[KeyValue] = Field(default_factory=list)
+    traceId: Optional[str] = None
+    spanId: Optional[str] = None
+
+class ScopeLogs(BaseModel):
+    scope: dict[str, Any] = Field(default_factory=dict)
+    logRecords: List[LogRecord] = Field(default_factory=list)
+
+class ResourceLogs(BaseModel):
+    resource: dict[str, Any] = Field(default_factory=dict)
+    scopeLogs: List[ScopeLogs] = Field(default_factory=list)
+
+class ExportLogsServiceRequest(BaseModel):
+    """
+    [개선사항]
+    1. default_factory=list 를 제거하여 OTLP의 최상위 필수 키(`resourceLogs`) 누락 시 FastAPI에서 즉시 422 에러를 반환하게 합니다.
+    2. 데이터 파싱 로직(`extract_genai_metrics`)은 arch.xor.parser.otlp의 StrictOtlpExtractionEngine으로 이관되어 삭제되었습니다.
+    """
+    resourceLogs: List[ResourceLogs]
