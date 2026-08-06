@@ -17,31 +17,22 @@ from arch.contract.discovery import discover_modules
 
 from kernel.bind.resolver import find_current_self
 from kernel.phase.runtime.executor.swarm import SwarmExecutor
-
 from kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from kernel.bind.inter.node import NodeInterpreter, AnchorFlow
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.daemon.bootstrap import mount_core_layer, mount_app_layer
-
-# [정렬] WASM 샌드박스로 Intent를 전송할 비동기 브로커 추가
 from kernel.dphi.broker import WasmBroker
-
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
 
 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
+# [개선] 더 이상 사용하지 않는 레거시 키("queue", "signal") 제거 및 정리
 RUNTIME_KEY = {
-    "queue": "runtime:queue",
-    "active": "runtime:active",
-    "signal": "runtime:signal",
-    "receptor_leader": "runtime:receptor:leader",
-    "heartbeat_pattern": "runtime:heartbeat:*",
     "node": "runtime:node:{node_id}",
     "index_requires": "runtime:index:requires:{req_key}",
-    "index_emits": "runtime:index:emits:{emit_key}",
-    "heartbeat": "runtime:heartbeat:{node_id}"
+    "index_emits": "runtime:index:emits:{emit_key}"
 }
 
 class RuntimeKeyResolver:
@@ -62,7 +53,7 @@ runtime_keys = RuntimeKeyResolver()
 class NodeRuntime(IPhaseAtor):
     """
     @runtime.node: closed-loop control manifold
-    @flow: ψ(EventBus) → global queue → CaptureDaemon → Dispatcher → Φ(Interpreter/Plugins)
+    @flow: ψ(EventBus/Local) → Dispatcher → Φ(Interpreter/Plugins)
     """
     def __init__(self, executor=None, idle_timeout=353):
         self._id = f"node-{next_id()}" 
@@ -79,7 +70,7 @@ class NodeRuntime(IPhaseAtor):
         self.bus: Optional[TunnelEventBus] = None
         self.log = get_emitter("node.runtime", phase="SYSTEM")
         
-        self.broker: Optional[WasmBroker] = None  # [정렬] IPC 통신을 담당할 Broker 상태 공간 확보
+        self.broker: Optional[WasmBroker] = None  # IPC 통신을 담당할 Broker 상태 공간 확보
         self.interpreter = None
         
         self.dispatcher = None
@@ -117,21 +108,21 @@ class NodeRuntime(IPhaseAtor):
             self.running = True
 
     async def react(self, event: PsiEvent, field: IPhaseField, bus: IEventBus):
-        """@desc: EventBusDaemon이 로컬 전파(Dispatch) 시 호출하는 리액션. 큐로 밀어넣어 처리를 오프로드합니다."""
-        if self.running and self.tunnel:
-            async def push_task():
-                try:
-                    await self.tunnel.lpush(runtime_keys.get("queue"), event.to_json())
-                except Exception as e:
-                    self.log.error(f"Failed to push event to local queue: {e}")
-            
-            self.supervisor.create(push_task(), name=f"Escalate-{event.symbol}")
+        """
+        @desc: 로컬 내부(혹은 Subscribed)에서 발생한 이벤트를 수신하는 리액션.
+        [개선] 레거시 큐(lpush) 병목을 완전히 제거하고 즉시 Dispatcher로 넘겨 Zero-Latency 달성.
+        """
+        if self.running and self.dispatcher:
+            try:
+                # 큐를 타지 않고 엔진에 즉시 위임 (메모리 레벨 디스패치)
+                self.dispatcher.dispatch(event)
+            except Exception as e:
+                self.log.error(f"Failed to directly dispatch event {event.symbol}: {e}")
 
     def _create_phase_handler(self):
         """
-        [정렬 완료] 
         1. executor 실행을 제거하여 Dispatcher 파이프라인과 중복 방지
-        2. WASM Broker를 통한 비동기 상태 판단에 순응하기 위해 async 핸들러로 전환
+        2. WASM Broker를 통한 비동기 상태 판단에 순응하기 위해 async 핸들러로 유지
         """
         async def handler(psi: PsiEvent):
             ## Judgment by the reflex system (I/O-Bound Async Task via WASM Broker)
@@ -175,7 +166,7 @@ class NodeRuntime(IPhaseAtor):
 
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
         
-        # [정렬 완료] WasmBroker 인스턴스화 및 NodeInterpreter에 주입 (명시적 키워드 인자 사용)
+        # WasmBroker 인스턴스화 및 NodeInterpreter에 주입
         self.broker = WasmBroker()
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=anchor)
         
@@ -192,7 +183,7 @@ class NodeRuntime(IPhaseAtor):
             actuator=self.actuator,
         )
         
-        # 3. [핵심 개선] 의존성 주입(DI) 컨텍스트 생성
+        # 3. 의존성 주입(DI) 컨텍스트 생성
         self.ctx = RuntimeContext(
             node_id=self.node_id,
             tunnel=self.tunnel,
@@ -205,7 +196,7 @@ class NodeRuntime(IPhaseAtor):
             shutdown_hook=self.shutdown # NodeRuntime의 shutdown을 데몬들이 호출할 수 있도록 위임
         )
 
-        # 4. [핵심 개선] 계층화된 데몬 장착 (NodeRuntime은 데몬 목록 및 생명주기를 모름)
+        # 4. 계층화된 통합 데몬(3종) 장착
         mount_core_layer(self.supervisor, self.ctx)
         self.log.info("Core Infra Layer mounted successfully.")
 
@@ -241,10 +232,9 @@ class NodeRuntime(IPhaseAtor):
         current_boundaries = getattr(self.interpreter.anchor, 'recept_boundaries', None)
         stable_anchor = AnchorFlow.bootstrap(current_boundaries)
         
-        # [정렬 완료] 패닉 복구 시에도 동일하게 WasmBroker 참조를 주입
+        # 패닉 복구 시에도 동일하게 WasmBroker 참조를 주입
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=stable_anchor)
         
-        # [개선] Dispatcher의 핸들러 속성 업데이트 (새로운 구조 반영)
         if self.dispatcher:
             self.dispatcher.default_handler = self._create_phase_handler() 
             
@@ -295,6 +285,7 @@ class NodeRuntime(IPhaseAtor):
                 await self.tunnel.srem(emit_idx_key, self.node_id)
                 
         self.log.info("Node and capability indexes deregistered.")
+
 
 def install_os_signal(node: NodeRuntime):
     """@phase: OS binding and bootstrap"""

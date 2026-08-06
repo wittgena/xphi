@@ -1,6 +1,4 @@
 # kernel.phase.runtime.executor.cli
-## @lineage: phase.executor.cli
-## @lineage: phase.reflect.cli.executor
 import os
 import sys
 import uuid
@@ -20,6 +18,7 @@ from arch.contract.executor import BaseExecutor
 from arch.topos.tunnel.factory import TunnelFactory
 from kernel.bind.resolver import get_invoker
 from kernel.phase.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
+from kernel.phase.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
 
 from watcher.plane.emitter import get_emitter, flow_scope
 from watcher.plane.regulator import console_surface
@@ -192,25 +191,20 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
     timeout_sec = payload.get("_context", {}).get("timeout", 60.0)
     
     ## Ambient Node Spawning Logic
-    ## @step.1: Assess swarm availability by counting registered nodes
-    active_node_keys = await tunnel.keys("runtime:node:*")
+    ## @step.1: Assess swarm availability by counting registered nodes (Refined: use heartbeat)
+    active_node_keys = await tunnel.keys(KEY_HEARTBEAT_PATTERN)
     node_count = len(active_node_keys)
-    queue_len = await tunnel.llen("runtime:queue")
     
-    ## @step.2: Determine spawn conditions based on dynamic load factor
-    MAX_LOAD_PER_NODE = 3
-    is_overloaded = node_count > 0 and (queue_len / node_count) >= MAX_LOAD_PER_NODE
-    should_spawn = (node_count == 0) or is_overloaded
+    ## @step.2: Determine spawn conditions based on active nodes
+    # [수정] Stream 환경에 맞춰 xlen 오판 로직을 제거하고, Cold Start(0대)일 때만 띄우도록 단순화
+    should_spawn = (node_count == 0)
     
     if should_spawn:
         ## @step.3: Prevent spawn storms using a distributed lock (10s expiry)
         lock_acquired = await tunnel.set("runtime:spawn_lock", "LOCKED", nx=True, ex=10)
         
         if lock_acquired:
-            if node_count == 0:
-                log.info("[CLI] No active nodes detected. Spawning background Ambient Node...")
-            else:
-                log.warn(f"[CLI] High load detected (Queue: {queue_len}, Nodes: {node_count}). Spawning additional Node...")
+            log.info("[CLI] No active nodes detected. Spawning background Ambient Node...")
             
             # Spawn node process as a background daemon
             subprocess.Popen(
@@ -224,7 +218,7 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
             ## @step.4: Deterministic boot wait for node registration (Max 7.5s)
             for _ in range(15):  
                 await asyncio.sleep(0.5)
-                current_nodes = await tunnel.keys("runtime:node:*")
+                current_nodes = await tunnel.keys(KEY_HEARTBEAT_PATTERN)
                 if len(current_nodes) > node_count:
                     break
         else:
@@ -256,8 +250,9 @@ async def _async_run_in_node(task_instance, command_name: str, payload: dict):
             context={"response_channel": response_channel}
         )
         
-        ## Push event to the runtime queue via Tunnel
-        await tunnel.lpush("runtime:queue", json.dumps(asdict(trigger_event)))
+        # [핵심 변경] 레거시 queue lpush 제거 -> Stream XADD 주입 방식으로 변경 (Double-hop 방지)
+        event_json = json.dumps(asdict(trigger_event))
+        await tunnel.state_store.xadd(TOPIC_BUS_STREAM, {"data": event_json})
 
         try:
             ## Wait for node reflection with Dynamic Timeout

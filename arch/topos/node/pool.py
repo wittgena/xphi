@@ -6,8 +6,10 @@ import random
 import json
 from typing import Optional, Any
 
-from arch.contract.event.psi import PsiEvent
+from arch.contract.event.psi import PsiEvent, PsiCarrier
 from arch.model.phase.flow import PhaseFlow
+from kernel.phase.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PREFIX
+from kernel.phase.runtime.node import runtime_keys
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("node.pool")
@@ -21,19 +23,31 @@ class NodeProxy:
 
     async def _dispatch_async(self, flow: PhaseFlow):
         try:
-            # PsiEvent를 활용한 메시지 패키징 (시스템의 PIR 인터페이스 규격에 맞게 조정 가능)
-            event_payload = json.dumps({
-                "target": self.target_node_id,
-                "role": self.role,
-                "flow_payload": flow.payload,
-                "flow_aspect": getattr(flow, "aspect", "default")
-            })
+            carrier = PsiCarrier(
+                kind="DELEGATION",
+                tag=self.role,
+                payload={
+                    "target_node": self.target_node_id,
+                    "flow_payload": flow.payload,
+                    "flow_aspect": getattr(flow, "aspect", "default")
+                }
+            )
+            event = PsiEvent(
+                event_id=f"proxy-{uuid.uuid4().hex[:8]}",
+                source_id=self.runtime.node_id if hasattr(self.runtime, 'node_id') else "unknown",
+                scope="GLOBAL",
+                parent_id=None,
+                tick=1,
+                carrier=carrier
+            )
             
-            # 대상 노드가 수신하는 고유 Redis List(Queue)로 Push
-            target_queue = f"runtime:queue:{self.target_node_id}"
-            await self.runtime.bus.lpush(target_queue, event_payload)
-            log.debug(f"[RemoteProxy] Successfully dispatched flow to {self.target_node_id} (Role: {self.role})")
-            
+            event_json = json.dumps(event.to_dict() if hasattr(event, 'to_dict') else event.__dict__)
+            tunnel = self.runtime.tunnel
+            if not tunnel:
+                raise RuntimeError("NodeProxy requires a connected tunnel.")
+                
+            await tunnel.state_store.xadd(TOPIC_BUS_STREAM, {"data": event_json})
+            log.debug(f"[RemoteProxy] Successfully dispatched flow to {self.target_node_id} via Stream (Role: {self.role})")
         except Exception as e:
             log.error(f"[RemoteProxy] Dispatch failed for {self.target_node_id}: {e}")
             raise
@@ -54,16 +68,14 @@ class NodePool:
             self.main_loop = asyncio.get_event_loop()
 
     @property
-    def bus(self):
-        """런타임 노드에서 항상 최신의 redis 인스턴스를 가져옵니다."""
-        if self.runtime.bus is None:
-            # 아직 바인딩되지 않은 경우에 대한 방어 로직 (선택)
-            log.warning("[NodePool] Accessing redis before node.start().")
-        return self.runtime.bus
+    def tunnel(self):
+        if not self.runtime or not hasattr(self.runtime, 'tunnel') or self.runtime.tunnel is None:
+            log.warning("[NodePool] Accessing tunnel before node.start().")
+            return None
+        return self.runtime.tunnel
 
     def get(self, role: str) -> NodeProxy:
         try:
-            # 기존 _resolve_target 대신, 대기/생성이 포함된 래퍼 코루틴 호출
             future = asyncio.run_coroutine_threadsafe(
                 self._resolve_with_retry_or_spawn(role), 
                 self.main_loop
@@ -90,38 +102,42 @@ class NodePool:
         """요구되는 역량을 수행할 수 있는 임시 워커를 생성하여 Redis에 등록"""
         fallback_id = f"node-fallback-{role}-{uuid.uuid4().hex[:6]}"
         
-        ## Redis 글로벌 인덱스에 역량 강제 등록
+        tunnel = self.tunnel
+        if not tunnel:
+            raise RuntimeError("Cannot spawn fallback agent without an active tunnel.")
+            
         capability_key = f"capability:{role}"
-        await self.bus.sadd(f"runtime:index:emits:{capability_key}", fallback_id)
+        emit_idx_key = runtime_keys.get("index_emits", emit_key=capability_key)
+        await tunnel.sadd(emit_idx_key, fallback_id)
         
-        ## 생존(Heartbeat) 기록 (임시로 60초 부여)
-        await self.bus.set(f"runtime:heartbeat:{fallback_id}", int(time.time()), ex=60)
+        await tunnel.set(f"{KEY_HEARTBEAT_PREFIX}{fallback_id}", int(time.time()), ex=60)
         log.info(f"[Auto-Provision] Fallback agent '{fallback_id}' successfully spawned and registered.")
-        
         return fallback_id
 
     async def _resolve_target(self, role: str) -> Optional[str]:
-        capability_key = f"capability:{role}"
-        index_key = f"runtime:index:emits:{capability_key}"
+        tunnel = self.tunnel
         
         retry_count = 0
-        while self.bus is None and retry_count < 5:
-            log.info("[NodePool] Waiting for Redis to be initialized...")
+        while tunnel is None and retry_count < 5:
+            log.info("[NodePool] Waiting for Tunnel to be initialized...")
             await asyncio.sleep(1.0)
+            tunnel = self.tunnel
             retry_count += 1
 
-        if self.bus is None:
-            log.error("[NodePool] Redis is not available after wait.")
+        if tunnel is None:
+            log.error("[NodePool] Tunnel is not available after wait.")
             return None
 
-        capable_nodes = await self.bus.smembers(index_key)
+        capability_key = f"capability:{role}"
+        index_key = runtime_keys.get("index_emits", emit_key=capability_key)
+        capable_nodes = await tunnel.smembers(index_key)
         if not capable_nodes:
             return None
             
         alive_nodes = []
         for n_id in capable_nodes:
             n_id_str = n_id.decode('utf-8') if isinstance(n_id, bytes) else n_id
-            if await self.bus.exists(f"runtime:heartbeat:{n_id_str}"):
+            if await tunnel.exists(f"{KEY_HEARTBEAT_PREFIX}{n_id_str}"):
                 alive_nodes.append(n_id_str)
                 
         if not alive_nodes:

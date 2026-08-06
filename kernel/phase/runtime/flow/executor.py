@@ -1,5 +1,4 @@
 # kernel.phase.runtime.flow.executor
-## @lineage: watcher.plane.flow.executor
 import os
 import sys
 import json
@@ -17,6 +16,7 @@ from arch.contract.registry.unified import registry
 from arch.contract.event.next import next_id
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from kernel.bind.resolver import find_current_self
+from kernel.phase.daemon.bootstrap import TOPIC_BUS_STREAM
 from watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("flow.executor")
@@ -147,6 +147,7 @@ class FlowExecutor(BaseExecutor):
 
         return []
 
+
 def dispatch_flow_cli(command_name: str, entry_func: Callable, file_path: str):
     """
     @role: Universal Flow Execution Router
@@ -210,6 +211,7 @@ async def _async_run_flow_proxy(command_name: str, payload: dict):
     task_id = f"flow-{uuid.uuid4().hex[:8]}"
     response_channel = f"res:{task_id}"
     log_channel = f"log:{task_id}"
+    
     pubsub = tunnel.pubsub()
     await pubsub.subscribe(response_channel, log_channel)
 
@@ -228,7 +230,10 @@ async def _async_run_flow_proxy(command_name: str, payload: dict):
     except TypeError:
         event_data = trigger_event.__dict__
         
-    await tunnel.lpush("runtime:queue", json.dumps(event_data))
+    # [핵심 개선] 레거시 queue lpush 제거 -> Stream XADD 방식 통일
+    event_json = json.dumps(event_data)
+    await tunnel.state_store.xadd(TOPIC_BUS_STREAM, {"data": event_json})
+    
     timeout_sec = payload.get("_context", {}).get("timeout", 300.0)
     try:
         async with asyncio.timeout(timeout_sec):
@@ -254,12 +259,10 @@ async def _async_run_flow_proxy(command_name: str, payload: dict):
     except TimeoutError:
         print(f" └─ [\033[91m{FlowState.TIMEOUT}\033[0m] Node failed to converge within {timeout_sec}s.")
     finally:
-        if hasattr(pubsub, 'unsubscribe'):
-            await pubsub.unsubscribe(response_channel)
-        if hasattr(pubsub, 'close'):
-            await pubsub.close()
-        if hasattr(tunnel, 'close'):
-            await tunnel.close()
+        await pubsub.close()
+        if hasattr(tunnel.state_store, 'aclose'):
+            await tunnel.state_store.aclose()
+
 
 def execute_flow_cli_task(command_name: str, payload: dict):
     """Triggers the remote proxy and monitors the flow stream."""
