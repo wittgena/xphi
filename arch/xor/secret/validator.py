@@ -7,7 +7,7 @@ from base64 import b64encode
 from pydantic import BaseModel
 from cryptography.fernet import Fernet
 
-from mesh.model.config.resolver import config
+from arch.model.config import config
 from arch.xor.secret.cipher import Cipher
 from watcher.plane.emitter import get_logger
 

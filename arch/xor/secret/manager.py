@@ -8,7 +8,7 @@ import httpx
 from typing import Optional, Union, Dict, Tuple
 
 from arch.xor.secret.client import get_secret_from_vendor
-from mesh.model.config.resolver import config
+from arch.model.config import config
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("secret.manager")

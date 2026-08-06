@@ -14,6 +14,7 @@ from arch.contract.event.bus import AsyncEventBus
 from arch.contract.event.next import next_id
 from arch.contract.registry.unified import registry
 
+from kernel.phase.daemon.base import AbstractDaemon
 from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.runtime.sensor import SurfaceSensor
@@ -31,30 +32,6 @@ KEY_HEARTBEAT_PREFIX    = "runtime:heartbeat:"
 KEY_HEARTBEAT_PATTERN   = "runtime:heartbeat:*"
 KEY_ACTIVE              = "runtime:active"
 KEY_RECEPTOR_LEADER     = "runtime:receptor:leader"
-
-class AbstractDaemon(ABC):
-    """@loop.contract: 스스로의 생명주기를 가지는 독립적 주기 컴포넌트"""
-    def __init__(self, name: str):
-        self.name = name
-        self.running = False
-        self.task: Optional[asyncio.Task] = None
-        self.log = get_emitter(f"daemon.{name.lower()}", phase="SYSTEM")
-
-    async def start(self) -> asyncio.Task:
-        self.running = True
-        self.task = asyncio.create_task(self.run(), name=f"Daemon-{self.name}")
-        return self.task
-
-    async def stop(self):
-        self.running = False
-        if self.task and not self.task.done():
-            self.task.cancel()
-            with suppress(asyncio.CancelledError):
-                await self.task
-
-    @abstractmethod
-    async def run(self):
-        pass
 
 class EventBusDaemon(AbstractDaemon):
     def __init__(self, tunnel: UniversalFacade, dispatcher: Dispatcher, node_id: str, 
