@@ -27,13 +27,6 @@ class ConfigResolver:
         env_key = name.upper()
         if env_key in os.environ:
             return os.environ[env_key]
-
-        try:
-            import xphi
-            if hasattr(xphi, name):
-                return getattr(xphi, name)
-        except ImportError:
-            pass
         raise AttributeError(f"'{type(self).__name__}' object (brane config) has no attribute '{name}'")
     
     def __setattr__(self, name: str, value: Any):
@@ -42,10 +35,5 @@ class ConfigResolver:
             return
 
         self._local_overrides[name] = value
-        try:
-            import xphi
-            setattr(xphi, name, value)
-        except ImportError:
-            pass
 
 config = ConfigResolver()
