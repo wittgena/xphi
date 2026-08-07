@@ -1,8 +1,4 @@
 # kernel.bind.inter.protocol
-## @lineage: kernel.inter.protocol
-## @lineage: kernel.dphi.wasm.inter.protocol
-## @lineage: phase.wasm.inter.protocol
-## @lineage: phase.runtime.inter.protocol
 import json
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Protocol, runtime_checkable, Optional

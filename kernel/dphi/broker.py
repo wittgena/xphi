@@ -1,5 +1,4 @@
 # kernel.dphi.broker
-## @lineage: watcher.dphi.broker
 import json
 import uuid
 import asyncio
@@ -14,6 +13,7 @@ log = get_emitter("wasm.broker")
 
 class WasmMethod(str, Enum):
     EXECUTE_CODE = "execute_code"
+    EXECUTE_SOL = "execute_sol"
     VERIFY_PACKET = "verify_packet"
     COMPUTE_ROOT_FINGERPRINT = "compute_root_fingerprint"
     EVALUATE_TENSION = "evaluate_tension"
@@ -96,7 +96,13 @@ class WasmBroker:
                                 if result_data.get(ResultKey.SUCCESS):
                                     return ExecutionResult(success=True, output=result_data.get(ResultKey.OUTPUT, "", ), metrics=metrics)
                                 else:
-                                    return ExecutionResult(success=False, error=ExecutionError(result_data.get(ResultKey.ERROR, "Unknown Execution Error")))
+                                    # return ExecutionResult(success=False, error=ExecutionError(result_data.get(ResultKey.ERROR, "Unknown Execution Error")))
+                                    return ExecutionResult(
+                                        success=False, 
+                                        output=result_data.get(ResultKey.OUTPUT, ""),
+                                        error=ExecutionError(result_data.get(ResultKey.ERROR, "Unknown Execution Error")),
+                                        metrics=metrics
+                                    )
                             except json.JSONDecodeError:
                                 log.warning(f"[{job_id[:8]}] Unparseable response received, skipping.")
                                 continue
@@ -155,7 +161,7 @@ class WasmBroker:
 
     async def execute(
         self, 
-        code: str, 
+        code: Union[str, dict],  
         variables: Mapping[str, Any] | None = None, 
         tier: Optional[str] = None,
         context: Optional[dict] = None
@@ -164,16 +170,31 @@ class WasmBroker:
         response_channel = BrokerChannel.execute_res(job_id)
         active_context = context if context is not None else _flow_context.get()
         
-        msg_payload = {
-            PayloadKey.JOB_ID: job_id,
-            PayloadKey.METHOD_FUNC: WasmMethod.EXECUTE_CODE.value, 
-            PayloadKey.PAYLOAD: {
+        target_wasm = None
+        
+        # 입력 형태가 딕셔너리(EVM용 페이로드)인지 문자열(Python 코드)인지 판별하여 분기
+        if isinstance(code, dict):
+            method_func = WasmMethod.EXECUTE_SOL.value
+            payload_data = code  
+            target_wasm = "drevm.wasm"  # [핵심] EVM 환경은 drevm.wasm으로 강제 라우팅
+        else:
+            method_func = WasmMethod.EXECUTE_CODE.value
+            payload_data = {
                 PayloadKey.CODE: code, 
                 PayloadKey.VARS: variables or {}
-            },
+            }
+
+        msg_payload = {
+            PayloadKey.JOB_ID: job_id,
+            PayloadKey.METHOD_FUNC: method_func, 
+            PayloadKey.PAYLOAD: payload_data,
             PayloadKey.RES_CHANNEL: response_channel,
             PayloadKey.CONTEXT: active_context
         }
+        
+        if target_wasm:
+            msg_payload[PayloadKey.WASM_PATH] = target_wasm
+            
         if tier:
             msg_payload[PayloadKey.TIER] = tier.upper()
             

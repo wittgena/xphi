@@ -1,6 +1,4 @@
 # kernel.phase.daemon.task.wasm
-## @lineage: kernel.daemon.task.wasm
-## @lineage: phase.runtime.daemon.task.wasm
 import json
 import asyncio
 import uuid
@@ -11,6 +9,7 @@ from contextlib import suppress
 from kernel.phase.daemon.base import AbstractDaemon
 from kernel.bind.inter.wasm import WasmInterpreter
 from kernel.bind.inter.python import PythonInterpreter
+from kernel.bind.inter.sol import SolInterpreter
 from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter, flow_scope
 from kernel.dphi.cgroup import CgroupPolicy, Tier
@@ -19,10 +18,12 @@ TIME_ROOT = resolve_path("time")
 
 class WasmTaskerDaemon(AbstractDaemon):
     """
-    @role: Secure Execution Daemon (Bifurcated Routing)
+    @role: Secure Execution Daemon (Multi-WASM Bifurcated Routing)
     @flow: 
-        [ROUTE A] target == 'execute_code' -> Checkpoint(WASM validate: SYSTEM) -> Jail(Deno: TIER)
-        [ROUTE B] target != 'execute_code' -> Direct WASM Kernel Execution (WASM: TIER)
+        [ROUTE A] Guarded Execution (Requires 'validate_intent' via Core dphi.wasm)
+            ├─ execute_sol -> drevm.wasm (Pure Rust EVM Sandbox)
+            └─ execute_code -> Deno Jail (Python Legacy)
+        [ROUTE B] Direct Core Execution (Topology, Resonance, State) -> target WASM (dphi.wasm)
     """
     def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
         super().__init__("WasmTasker")
@@ -168,20 +169,24 @@ class WasmTaskerDaemon(AbstractDaemon):
         with flow_scope(**context):
             
             target_path = self._resolve_wasm_path(wasm_path)
-            if not target_path.exists():
+            # execute_code(Python/Deno)의 경우 WASM 바이너리가 불필요하므로 예외 처리
+            if not target_path.exists() and target_func != "execute_code":
                 error_msg = f"WASM binary not found: {target_path}"
                 self.log.warn(f"[{job_id[:8]}] {error_msg}")
                 return {"success": False, "output": "", "error": error_msg}
 
-            if target_func == "execute_code":
+            # ROUTE A: Guarded Execution (Requires 'validate_intent' Checkpoint)
+            if target_func in ("execute_code", "execute_sol"):
                 try:
-                    ## STAGE 1: Checkpoint (validate_intent)
-                    with WasmInterpreter(str(target_path), policy=CgroupPolicy.system()) as wasm_gate:
+                    ## STAGE 1: Checkpoint (validate_intent via Core Dphi WASM)
+                    # 보안 검증은 실행 엔진(drevm)이 아닌 코어 엔진(dphi.wasm)의 프로토콜 룰셋을 따름
+                    core_wasm_path = self._resolve_wasm_path(self.default_wasm_path)
+                    with WasmInterpreter(str(core_wasm_path), policy=CgroupPolicy.system()) as wasm_gate:
                         validation_res = wasm_gate.invoke("validate_intent", json.dumps(payload), context=context)
                         
                         if not validation_res.success:
                             if "not registered" in str(validation_res.error) or "not found" in str(validation_res.error):
-                                self.log.debug(f"[{job_id[:8]}] 'validate_intent' missing in WASM. Bypassing checkpoint.")
+                                self.log.debug(f"[{job_id[:8]}] 'validate_intent' missing in Core WASM. Bypassing checkpoint.")
                                 safe_payload = exec_data
                             else:
                                 self.log.error(f"[{job_id[:8]}] WASM Gateway crashed: {validation_res.error}")
@@ -195,50 +200,76 @@ class WasmTaskerDaemon(AbstractDaemon):
                             
                             safe_payload = val_data.get("safe_payload", exec_data)
 
-                    ## STAGE 2: Jail (Deno Sandbox)
-                    with PythonInterpreter(enable_network_access=None, policy=job_policy) as py_sandbox:
-                        if isinstance(safe_payload, str):
-                            code_to_run = safe_payload
-                            variables = {}
-                        elif isinstance(safe_payload, dict):
-                            code_to_run = safe_payload.get("code", safe_payload.get("data", ""))
-                            variables = safe_payload.get("variables", {})
-                        else:
-                            code_to_run = ""
-                            variables = {}
+                    ## STAGE 2: Secure Execution Enclave
+                    if target_func == "execute_sol":
+                        # Multi-VM EVM Sandbox (drevm.wasm)
+                        with SolInterpreter(wasm_module_name=target_path.name, policy=job_policy) as evm_sandbox:
+                            safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
+                            if isinstance(safe_payload, str):
+                                with suppress(Exception):
+                                    safe_dict = json.loads(safe_payload)
+                                    
+                            self.log.info(f"[{job_id[:8]}] 🔓 Entering Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value})")
+                            
+                            result = evm_sandbox.execute(
+                                target_address=safe_dict.get("target_address", ""),
+                                calldata=safe_dict.get("calldata", ""),
+                                state_snapshot=safe_dict.get("state_snapshot", {}),
+                                context=context
+                            )
+                            
+                            metrics = evm_sandbox.get_metrics()
+                            if result.success:
+                                with suppress(Exception):
+                                    out_dict = json.loads(result.output)
+                                    metrics["gas_used"] = out_dict.get("gas_used", 0)
+                            self.log.info(f"[{job_id[:8]}] 📊 EVM Sandbox Metrics: {metrics}")
+                    
+                    else:
+                        # Legacy Python Sandbox (Deno)
+                        with PythonInterpreter(enable_network_access=None, policy=job_policy) as py_sandbox:
+                            if isinstance(safe_payload, str):
+                                code_to_run = safe_payload
+                                variables = {}
+                            elif isinstance(safe_payload, dict):
+                                code_to_run = safe_payload.get("code", safe_payload.get("data", ""))
+                                variables = safe_payload.get("variables", {})
+                            else:
+                                code_to_run = ""
+                                variables = {}
 
-                        host_capabilities = {
-                            "system_ping": lambda: "pong_from_host"
-                        }
-                        
-                        self.log.info(f"[{job_id[:8]}] 🔓 Entering Deno Jail (Tier: {job_policy.tier.value})")
-                        result = py_sandbox.execute(
-                            code=code_to_run, 
-                            variables=variables,
-                            callables=host_capabilities,
-                            context=context
-                        )
-                        
-                        metrics = py_sandbox.get_metrics()
-                        self.log.info(f"[{job_id[:8]}] 📊 Sandbox Metrics: {metrics}")
-                        
-                        # [핵심 변경] 실행 결과를 반환할 때 수집된 metrics를 함께 탑재하여 상위(Meta-Boundary)로 투영합니다.
-                        return {
-                            "success": result.success,
-                            "output": result.output if result.success else "",
-                            "error": str(result.error) if not result.success else "",
-                            "metrics": metrics
-                        }
+                            host_capabilities = {
+                                "system_ping": lambda: "pong_from_host"
+                            }
+                            
+                            self.log.info(f"[{job_id[:8]}] 🔓 Entering Python Legacy Jail (Tier: {job_policy.tier.value})")
+                            result = py_sandbox.execute(
+                                code=code_to_run, 
+                                variables=variables,
+                                callables=host_capabilities,
+                                context=context
+                            )
+                            
+                            metrics = py_sandbox.get_metrics()
+                            self.log.info(f"[{job_id[:8]}] 📊 Sandbox Metrics: {metrics}")
+                            
+                    return {
+                        "success": result.success,
+                        # "output": result.output if result.success else "",
+                        "output": result.output,
+                        "error": str(result.error) if not result.success else "",
+                        "metrics": metrics
+                    }
                         
                 except Exception as e:
                     self.log.error(f"[{job_id[:8]}] Execution crashed: {e}", exc_info=True)
                     return {"success": False, "output": "", "error": f"Execution Error: {e}"}
 
-            ## ROUTE B: Pure WASM Execution (Topology, Resonance, State Collapse)
+            ## ROUTE B: Pure WASM Core Execution (Topology, Resonance, State Collapse)
             else:
                 try:
                     with WasmInterpreter(str(target_path), policy=job_policy) as wasm_runner:
-                        self.log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func} (Tier: {job_policy.tier.value})")
+                        self.log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func} via {target_path.name} (Tier: {job_policy.tier.value})")
                         
                         if isinstance(exec_data, dict):
                             exec_data_str = json.dumps(exec_data)
@@ -247,6 +278,7 @@ class WasmTaskerDaemon(AbstractDaemon):
                             
                         result = wasm_runner.invoke(target_func, exec_data_str, context=context)
                         metrics = wasm_runner.get_metrics()
+                        
                         self.log.info(f"[{job_id[:8]}] 📊 WASM Metrics: {metrics}")
                         return {
                             "success": result.success,

@@ -224,7 +224,6 @@ class WasmInterpreter:
         except Exception as e:
             return ExecutionResult(success=False, error=ExecutionError(f"WASM Invoke Failed: {e}"))
 
-    # [수정됨] context 파라미터 시그니처 추가 및 연동
     def execute(
         self,
         code: str,
