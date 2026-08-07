@@ -1,13 +1,5 @@
-# arch.gov.ingress.receptor
-## @lineage: kernel.topos.gov.ingress.receptor
-## @lineage: kernel.arch.gov.ingress.receptor
-## @lineage: kernel.receptor
-## @lineage: watcher.kernel.receptor
-"""
-@desc: 
-- Polymorphic Ingress Boundary (Data Plane Receptor)
-- Binds external proxy traffic into Brane's internal routing mechanisms
-"""
+# watcher.receptor.ingress.manifold
+## @lineage: arch.gov.ingress.receptor
 import asyncio
 import os
 from typing import Optional, Dict, Any
@@ -18,11 +10,7 @@ from watcher.plane.emitter import get_emitter
 
 log = get_emitter("ingress.receptor", phase="anchor")
 
-class PolymorphicReceptor:
-    """
-    @role: Context-aware traffic receiver. 
-    @action: Routes traffic directly via memory bridge (if local) or via EventBus (if distributed).
-    """
+class ManifoldReceptor:
     def __init__(self, bus: AsyncEventBus, bridge: Optional[Any] = None):
         self.bus = bus
         self.bridge = bridge

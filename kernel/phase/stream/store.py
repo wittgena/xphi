@@ -7,7 +7,7 @@ import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 
-from arch.gov.warden import AuditWarden
+from kernel.phase.audit.warden import AuditWarden
 from kernel.bind.state.spec import TransRule, NodeType
 from kernel.dphi.ledger.consensus import KernelLedger
 from kernel.phase.mesh.gateway import ToposGateway
