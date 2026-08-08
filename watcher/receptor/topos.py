@@ -1,6 +1,4 @@
 # watcher.receptor.topos
-## @lineage: phase.runtime.daemon.receptor.topos
-## @lineage: phase.runtime.receptor.topos
 import time
 import json
 from typing import Optional, Dict, List

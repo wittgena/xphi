@@ -4,7 +4,7 @@ import json
 import threading
 import os
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
 
 try:
     import wasmtime
@@ -23,14 +23,14 @@ class DvmInterpreter:
     def __init__(
         self,
         wasm_module_name: str = "dvm.wasm",
-        policy: CgroupPolicy | None = None,
+        policy: Optional[CgroupPolicy] = None,
     ) -> None:
         if wasmtime is None:
             raise ImportError("The 'wasmtime' package is required. Please install it.")
             
         self.wasm_module_path = str(Path(TIME_ROOT) / wasm_module_name)
         self.policy = policy or CgroupPolicy.standard()
-        self._owner_thread: int | None = None
+        self._owner_thread: Optional[int] = None
         self._execution_count = 0
 
         # Wasmtime Core
@@ -43,10 +43,8 @@ class DvmInterpreter:
         # Wasm Exports (ABI)
         self._wasm_alloc = None
         self._wasm_dealloc = None
-        self._wasm_execute_evm = None
-        
-        self.cg = WasmCgroup(cgroup_name=f"evm-worker-{id(self)}", policy=self.policy)
-        
+        self._wasm_execute_router = None
+        self.cg = WasmCgroup(cgroup_name=f"multi-vm-worker-{id(self)}", policy=self.policy)
         self._ensure_engine_started()
 
     def _check_thread_ownership(self) -> None:
@@ -54,7 +52,7 @@ class DvmInterpreter:
         if self._owner_thread is None:
             self._owner_thread = current_thread
         elif self._owner_thread != current_thread:
-            raise RuntimeError("SolInterpreter is not thread-safe. Instantiate per thread.")
+            raise RuntimeError("DvmInterpreter is not thread-safe. Instantiate per thread.")
 
     def _ensure_engine_started(self) -> None:
         if self.instance is not None:
@@ -63,9 +61,7 @@ class DvmInterpreter:
         try:
             config = wasmtime.Config()
             self.cg.apply_to_config(config)
-            
             self.engine = wasmtime.Engine(config)
-            
             if not os.path.exists(self.wasm_module_path):
                 raise FileNotFoundError(f"WASM Artifact not found: {self.wasm_module_path}")
                 
@@ -82,22 +78,69 @@ class DvmInterpreter:
             linker = wasmtime.Linker(self.engine)
             linker.define_wasi()
 
+            ## Host Function 주입
+            def invoke_native_svm_callback(caller: 'wasmtime.Caller', input_ptr: int) -> int:
+                memory = caller.get("memory")
+                alloc = caller.get("alloc")
+                
+                ## WASM 메모리에서 페이로드 읽기 (NULL 종료 바이트까지)
+                chunk_size = 256
+                result_bytes = bytearray()
+                curr_ptr = input_ptr
+                while True:
+                    chunk = memory.read(caller, curr_ptr, curr_ptr + chunk_size)
+                    null_idx = chunk.find(b'\x00')
+                    if null_idx != -1:
+                        result_bytes.extend(chunk[:null_idx])
+                        break
+                    result_bytes.extend(chunk)
+                    curr_ptr += chunk_size
+                    
+                json_str = result_bytes.decode('utf-8')
+                
+                try:
+                    svm_payload = json.loads(json_str)
+                    program_id = svm_payload.get('program_id', 'unknown')
+                    log.info(f"[SVM Native Host] Executing SVM Program: {program_id}")
+                    
+                    # native_engine.execute(svm_payload)
+                    svm_result = {
+                        "success": True,
+                        "gas_used": 0,
+                        "output": "0x",
+                        "revert_reason": None
+                    }
+                except Exception as e:
+                    svm_result = {"success": False, "revert_reason": f"Native SVM Error: {str(e)}"}
+                    
+                # 2. 실행 결과를 직렬화하여 다시 WASM 메모리에 할당 후 포인터 반환
+                res_bytes = json.dumps(svm_result).encode('utf-8') + b'\x00'
+                res_ptr = alloc(caller, len(res_bytes))
+                memory.write(caller, res_bytes, res_ptr)
+                return res_ptr
+
+            # Host Function 시그니처: i32(포인터) 받아서 i32(포인터) 반환
+            func_type = wasmtime.FuncType([wasmtime.ValType.i32()], [wasmtime.ValType.i32()])
+            linker.define_func("env", "invoke_native_svm", func_type, invoke_native_svm_callback)
+            # ==========================================
+
             self.instance = linker.instantiate(self.store, self.module)
             self.memory = self.instance.exports(self.store)["memory"]
             
             exports = self.instance.exports(self.store)
             self._wasm_alloc = exports.get("alloc")
             self._wasm_dealloc = exports.get("dealloc")
-            self._wasm_execute_evm = exports.get("execute_evm")
+            self._wasm_execute_router = exports.get("execute_router") # execute_evm -> execute_router 로 교체
             
-            if not all([self._wasm_alloc, self._wasm_dealloc, self._wasm_execute_evm]):
-                raise ExecutionError("dvm.wasm missing required exports: 'alloc', 'dealloc', or 'execute_evm'")
+            if not all([self._wasm_alloc, self._wasm_dealloc, self._wasm_execute_router]):
+                raise ExecutionError("dvm.wasm missing required exports: 'alloc', 'dealloc', or 'execute_router'")
 
         except Exception as e:
             raise ExecutionError(f"Failed to initialize dvm.wasm engine: {e}")
 
     def execute(
         self,
+        vm_target: str,
         target_address: str,
         calldata: str,
         state_snapshot: Union[Dict[str, Any], str],
@@ -117,45 +160,56 @@ class DvmInterpreter:
             except: context = {}
         context = context or {}
 
-        # 1. 컨텍스트에서 트랜잭션 및 블록 환경 변수 동적 추출
-        caller = context.get("caller") or context.get("caller_address")
-        value = str(context.get("value", "0"))
-        
-        block_info = context.get("block", {})
-        block_context = None
-        if block_info:
-            block_context = {
-                "timestamp": int(block_info.get("timestamp", 0)),
-                "block_number": int(block_info.get("block_number", 0)),
-                "coinbase": block_info.get("coinbase"),
-                "chain_id": int(block_info.get("chain_id", 1)) if block_info.get("chain_id") else None
-            }
-
-        # 2. Payload Assembly (dvm.wasm 이 요구하는 확장된 EvmInput 구조체 형태)
         gas_limit = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else 30_000_000
-        
-        evm_input = {
-            "target_address": target_address,
-            "calldata": calldata,
-            "gas_limit": gas_limit,
-            "state_snapshot": state_snapshot
-        }
 
-        # WASM 측의 Option<T> 역직렬화를 위해 값이 있을 때만 필드 추가
-        if caller:
-            evm_input["caller_address"] = caller
-        if value and value != "0":
-            evm_input["value"] = value
-        if block_context:
-            evm_input["block_context"] = block_context
+        # 1. VM Target 에 따른 페이로드 조립 분기
+        if vm_target.upper() == "EVM":
+            caller = context.get("caller") or context.get("caller_address")
+            value = str(context.get("value", "0"))
+            block_info = context.get("block", {})
+            block_context = None
+            if block_info:
+                block_context = {
+                    "timestamp": int(block_info.get("timestamp", 0)),
+                    "block_number": int(block_info.get("block_number", 0)),
+                    "coinbase": block_info.get("coinbase"),
+                    "chain_id": int(block_info.get("chain_id", 1)) if block_info.get("chain_id") else None
+                }
+
+            inner_payload = {
+                "target_address": target_address,
+                "calldata": calldata,
+                "gas_limit": gas_limit,
+                "state_snapshot": state_snapshot
+            }
+            if caller: inner_payload["caller_address"] = caller
+            if value and value != "0": inner_payload["value"] = value
+            if block_context: inner_payload["block_context"] = block_context
+
+        elif vm_target.upper() == "SVM":
+            inner_payload = {
+                "program_id": target_address,
+                "instruction_data": calldata,
+                "gas_limit": gas_limit,
+                "accounts": state_snapshot
+            }
+            
+        else:
+            return ExecutionResult(success=False, error=ExecutionError(f"Unsupported VM Target: {vm_target}"))
+
+        # 2. 통합 라우팅 페이로드(Unified Input) 패키징
+        unified_input = {
+            "vm_target": vm_target.upper(),
+            "payload": inner_payload
+        }
         
-        log.info(f"[dvm.wasm] Executing TX on {target_address} (Gas Limit: {gas_limit})")
+        log.info(f"[dvm.wasm] Routing TX to {vm_target.upper()} on {target_address} (Gas Limit: {gas_limit})")
         
         try:
             self._ensure_engine_started()
             
             # 3. Rust CStr 포맷을 맞추기 위해 JSON 문자열 끝에 널 바이트('\x00') 추가
-            payload_bytes = json.dumps(evm_input).encode('utf-8') + b'\x00'
+            payload_bytes = json.dumps(unified_input).encode('utf-8') + b'\x00'
             req_len = len(payload_bytes)
             
             # 4. WASM Memory 에 할당(Alloc) 후 기록(Write)
@@ -163,11 +217,11 @@ class DvmInterpreter:
             self.memory.write(self.store, payload_bytes, code_ptr)
             
             try:
-                # 5. EVM 실행 (순수 Rust 엔진 연산)
-                res_ptr = self._wasm_execute_evm(self.store, code_ptr)
+                # 5. Multi-VM 라우터 실행 (EVM은 내부처리, SVM은 역호출 콜백)
+                res_ptr = self._wasm_execute_router(self.store, code_ptr)
                 
                 if res_ptr == 0:
-                    raise ExecutionError("WASM EVM Execution returned null pointer.")
+                    raise ExecutionError("WASM Execution returned null pointer.")
                     
                 # 6. WASM 메모리에서 널 바이트('\x00')를 만날 때까지 결과 읽어오기 (C-String Read)
                 chunk_size = 256
@@ -190,7 +244,7 @@ class DvmInterpreter:
                 if code_ptr is not None:
                     self._wasm_dealloc(self.store, code_ptr, req_len)
                     
-            # 8. dvm.wasm 의 결과(EvmOutput) 파싱 및 표준화
+            # 8. 결과 파싱 및 표준화 (EVM, SVM 공통 포맷)
             result_data = json.loads(result_str)
             success = result_data.get("success", False)
             gas_used = str(result_data.get("gas_used", 0))
@@ -223,7 +277,7 @@ class DvmInterpreter:
         
         self._wasm_alloc = None
         self._wasm_dealloc = None
-        self._wasm_execute_evm = None
+        self._wasm_execute_router = None
         self._owner_thread = None
 
     def __enter__(self):
