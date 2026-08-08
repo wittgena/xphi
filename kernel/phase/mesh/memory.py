@@ -1,16 +1,10 @@
 # kernel.phase.mesh.memory
-## @lineage: phase.runtime.mesh.memory
-## @lineage: phase.runtime.mesh.bridge.memory
-## @lineage: phase.runtime.bridge.memory
-## @lineage: watcher.kernel.bridge.memory
-## @lineage: logos.gate.memory.factory
 import os
 import asyncio
 from typing import Optional, Dict, Any, cast
 from acp.connection import Connection, StreamEvent, StreamDirection
 
 from arch.topos.tunnel.factory import UniversalFacade
-
 from kernel.phase.mesh.queue import RpcTask, RpcTaskKind
 from kernel.phase.mesh.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
 from watcher.plane.emitter import get_emitter
@@ -23,17 +17,11 @@ class AbstractRoutingBridge:
         raise NotImplementedError
 
 class DirectMemoryBridge(AbstractRoutingBridge):
-    """
-    @role: In-Memory Fast Path.
-    @desc: Bypasses the distributed message broker entirely. Injects the Control Plane 
-           directly into the Receptor for synchronous-like, zero-copy evaluation.
-    """
     def __init__(self, policy_engine: RoutingPolicyEngine, state_mesh: ClusterStateMesh):
         self.engine = policy_engine
         self.mesh = state_mesh
 
     async def dispatch(self, intent: str, payload: Dict[str, Any]) -> RoutingDecision:
-        ## No serialization, no pub/sub latency. Direct method invocation.
         log.info(f"[Bridge] Direct memory evaluation triggered for intent: {intent}")
         decision = self.engine.evaluate_intent(
             intent=intent, 
@@ -43,11 +31,6 @@ class DirectMemoryBridge(AbstractRoutingBridge):
 
 
 class AcpMemoryBridge(AbstractRoutingBridge):
-    """
-    @role: In-Memory JSON-RPC Bridge.
-    @desc: Bypasses network I/O by directly injecting RpcTasks into the ACP Connection's 
-           MessageQueue and intercepting outgoing responses via StreamObserver.
-    """
     def __init__(self, connection: Connection):
         self.connection = connection
         self.connection.add_observer(self._observe_outgoing)
@@ -55,7 +38,6 @@ class AcpMemoryBridge(AbstractRoutingBridge):
         self._pending_requests: Dict[int, asyncio.Future] = {}
 
     async def dispatch(self, intent: str, payload: Dict[str, Any]) -> RoutingDecision:
-        """외부 트래픽을 ACP RpcTask로 변환하여 큐에 직접 밀어넣습니다."""
         req_id = self._virtual_request_id
         self._virtual_request_id -= 1
 

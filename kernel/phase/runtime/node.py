@@ -1,9 +1,7 @@
 # kernel.phase.runtime.node
 import asyncio
-import signal
 import time
 import json
-import uvloop
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
@@ -25,8 +23,6 @@ from kernel.phase.daemon.bootstrap import mount_core_layer, mount_app_layer
 from kernel.dphi.broker import DphiBroker
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
-
-asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
 # [개선] 더 이상 사용하지 않는 레거시 키("queue", "signal") 제거 및 정리
 RUNTIME_KEY = {
@@ -85,10 +81,6 @@ class NodeRuntime(IPhaseAtor):
         self.log.crit(f"⚠️ Critical fault in Task [{task.get_name()}]: {exc}")
         asyncio.create_task(self.shutdown())
 
-    def _handle_exception(self, loop, context):
-        msg = context.get("exception", context["message"])
-        self.log.crit(f"Unhandled exception in event loop: {msg}")
-
     @property
     def local_manifold(self):
         return registry.registered_nodes
@@ -139,8 +131,6 @@ class NodeRuntime(IPhaseAtor):
         return handler
 
     async def start(self):
-        loop = asyncio.get_running_loop()
-        loop.set_exception_handler(self._handle_exception)
         self.log.info(f"Starting RuntimeNode [{self.node_id}]")
         
         # 1. 인프라 바인딩
@@ -286,30 +276,23 @@ class NodeRuntime(IPhaseAtor):
                 
         self.log.info("Node and capability indexes deregistered.")
 
-
-def install_os_signal(node: NodeRuntime):
-    """@phase: OS binding and bootstrap"""
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        try:
-            loop.add_signal_handler(sig, lambda: asyncio.create_task(node.shutdown()))
-        except NotImplementedError:
-            pass
+_node_instance: Optional[NodeRuntime] = None
 
 async def main_async():
+    global _node_instance
     completion_signal = asyncio.Event()
     executor = SwarmExecutor(completion_signal)
-    node = NodeRuntime(executor=executor)
-    install_os_signal(node) 
     
-    try:
-        await node.start()
-        await node.wait_until_stopped()
-    except asyncio.CancelledError:
-        pass
+    _node_instance = NodeRuntime(executor=executor)
+    
+    await _node_instance.start()
+    await _node_instance.wait_until_stopped()
+
+async def teardown():
+    """Reactor가 종료될 때 호출하여 런타임을 안전하게 셧다운합니다."""
+    if _node_instance and getattr(_node_instance, 'running', False):
+        await _node_instance.shutdown()
 
 if __name__ == "__main__":
-    try:
-        asyncio.run(main_async())
-    except KeyboardInterrupt:
-        pass
+    from kernel.phase.reactor import KernelReactor
+    KernelReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)

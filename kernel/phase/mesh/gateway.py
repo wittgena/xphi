@@ -37,8 +37,6 @@ class TokenBucketLimiter:
 
 
 class PayloadSanitizer:
-    """LLM이 생성한 파라미터 내부에 악성 패턴(명령어, 샌드박스 탈출 등)이 있는지 심층 검사"""
-    
     OS_INJECTION_PATTERN = re.compile(r"(?:;|\||&&|`|\$\()")
     TRAVERSAL_PATTERN = re.compile(r"(?:\.\./|\.\.\\|%2e%2e%2f)", re.IGNORECASE)
     PROMPT_INJECTION_KEYWORDS = [

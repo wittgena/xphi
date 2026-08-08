@@ -1,7 +1,4 @@
 # kernel.phase.boot
-## @lineage: watcher.kernel.boot
-import asyncio
-import uvloop
 import os
 import asyncio
 
@@ -9,26 +6,20 @@ from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.bus import AsyncEventBus
 from arch.contract.executor import BaseExecutor
 from arch.contract.registry.unified import registry
-from arch.topos.tunnel.factory import TunnelFactory
-from arch.contract.event.bus import AsyncEventBus
 
 from kernel.bind.redirector import PhaseAirlock
 from kernel.phase.runtime.executor.swarm import SwarmExecutor
-
-from watcher.plane.regulator import default_plane
 from kernel.phase.runtime.flow.executor import FlowExecutor
-from watcher.plane.emitter import get_emitter
-
-from watcher.receptor.ingress.manifold import ManifoldReceptor
 from kernel.dphi.ledger.consensus import KernelLedger
 from kernel.phase.mesh.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
-from kernel.phase.runtime.node import NodeRuntime, install_os_signal
+from kernel.phase.runtime.node import NodeRuntime
 from kernel.phase.signal import PhaseSignal
-from kernel.phase.mesh.memory import BridgeMemory
+from kernel.phase.reactor import KernelReactor
 
-log = get_emitter("kernel.boot")
+from watcher.plane.regulator import default_plane
+from watcher.plane.emitter import get_emitter
 
-TARGET_REPO = "brane"
+log = get_emitter("phase.boot")
 
 class KernelGateway:
     @classmethod
@@ -41,26 +32,14 @@ class KernelGateway:
         state_mesh = ClusterStateMesh(broker_facade)
         await policy_engine.synchronize_initial_state()
 
-        bridge = BridgeMemory.resolve_bridge(topology, policy_engine, state_mesh)
-        event_bus = getattr(node, 'bus', AsyncEventBus())
-        receptor = ManifoldReceptor(bus=event_bus, bridge=bridge)
-
         asyncio.create_task(policy_engine.watch_policy_updates())
         asyncio.create_task(state_mesh.start_mesh_sync())
-
         if topology == "EXT_PROC":
+            # Note: ExtProcStreamHandler assumes it is available in the environment
             stream_handler = ExtProcStreamHandler(policy_engine, state_mesh)
             asyncio.create_task(stream_handler.serve())
         else:
-            asyncio.create_task(receptor.listen())
-
-class SearcherAdapter:
-    def __init__(self, searcher):
-        self.searcher = searcher
-        
-    def fetch(self, query: str, **kwargs):
-        result = self.searcher.search()
-        return [{"text": f"Searched Class: {v['class']} in {v['module']}", "score": 1.0} for k, v in result.items()]
+            log.info(f"[Orchestrator] Running in {topology} mode. (Ingress Receptor removed)")
 
 class RoutingExecutor(BaseExecutor):
     def __init__(self, completion_signal: asyncio.Event):
@@ -88,15 +67,11 @@ class RoutingExecutor(BaseExecutor):
         context = psi.carrier.payload.get("_context", {})
         command = context.get("command") or psi.carrier.tag
         task_info_list = registry.registered_cli_tasks.get(command)
-        
-        ## @fallback.1: Safely forward dynamic/legacy tasks missing from the registry to the existing Swarm
         if not task_info_list:
             log.info(f"[Router] Unknown/Legacy command '{command}', falling back to SwarmExecutor.")
             return await self.swarm_executor.execute(psi)
 
         task_type = task_info_list[0].get("type", "cli")
-
-        ## @routing: Execute as a new isolated subprocess if the type is 'flow'
         if task_type == "flow":
             log.info(f"[Router] Routing '{command}' -> FlowExecutor (Isolated Subprocess)")
             try:
@@ -109,46 +84,42 @@ class RoutingExecutor(BaseExecutor):
             log.info(f"[Router] Routing '{command}' -> SwarmExecutor (In-memory)")
             return await self.swarm_executor.execute(psi)
 
+_node_instance = None
+
 async def main_async():
+    """비즈니스 로직(컴포넌트 조립 및 구동)만 수행하는 메인 코루틴"""
+    global _node_instance
+    
     log.info("[Boot] Initiating System Bootstrap Sequence...")
     system_bus = AsyncEventBus()
     
     bridge_watcher = PhaseSignal(event_bus=system_bus)
     default_plane.attach(bridge_watcher)
 
-    ## 핵심 런타임 및 Executor 구성
     completion_signal = asyncio.Event()
     executor = RoutingExecutor(completion_signal)
-    node = NodeRuntime(executor=executor)
-    install_os_signal(node)
-
-    ## Gateway 토폴로지 결합 (핵심: boot가 gateway를 호출)
+    
+    _node_instance = NodeRuntime(executor=executor)
     log.info("[Boot] Attaching Gateway Topology...")
-    await KernelGateway.assemble(node)
+    await KernelGateway.assemble(_node_instance)
+    
+    log.info("[Boot] Starting Node Runtime...")
+    await _node_instance.start()
+    await _node_instance.wait_until_stopped() 
 
-    ## 전체 시스템 라이프사이클 시작 및 대기
+async def teardown():
+    """Reactor가 종료 시점에 100% 실행을 보장하는 자원 정리 훅"""
+    log.info("[Boot] Releasing system resources...")
+    if _node_instance and getattr(_node_instance, 'running', False):
+        await _node_instance.shutdown()
+        
+    await TunnelFactory.close_all()
     try:
-        log.info("[Boot] Starting Node Runtime...")
-        await node.start()
-        await node.wait_until_stopped() 
-    except asyncio.CancelledError:
-        log.info("[Boot] Main loop cancelled by system.")
-    finally:
-        if getattr(node, 'running', False):
-            await node.shutdown()
-            
-        log.info("[Boot] Releasing system resources...")
-        await TunnelFactory.close_all()
-        try:
-            KernelLedger().close()
-        except Exception as e:
-            log.warning(f"[Boot] Error while releasing KernelStore lock: {e}")
-            
-        log.info("[Boot] Resource cleanup complete.")
+        KernelLedger().close()
+    except Exception as e:
+        log.warning(f"[Boot] Error while releasing KernelStore lock: {e}")
+        
+    log.info("[Boot] Resource cleanup complete.")
 
 if __name__ == "__main__":
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-    try:
-        asyncio.run(main_async())
-    except KeyboardInterrupt:
-        log.info("\n[System] Shutdown sequence completed by user interrupt. Fade to black.")
+    KernelReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)
