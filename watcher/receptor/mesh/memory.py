@@ -1,12 +1,13 @@
-# kernel.phase.mesh.memory
+# watcher.receptor.mesh.memory
+## @lineage: kernel.phase.mesh.memory
 import os
 import asyncio
 from typing import Optional, Dict, Any, cast
 from acp.connection import Connection, StreamEvent, StreamDirection
 
 from arch.topos.tunnel.factory import UniversalFacade
-from kernel.phase.mesh.queue import RpcTask, RpcTaskKind
-from kernel.phase.mesh.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
+from watcher.receptor.mesh.queue import RpcTask, RpcTaskKind
+from watcher.receptor.mesh.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("bridge.memory")

@@ -1,4 +1,5 @@
-# kernel.phase.mesh.queue
+# watcher.receptor.mesh.queue
+## @lineage: kernel.phase.mesh.queue
 from __future__ import annotations
 import asyncio
 from collections.abc import AsyncIterator, Awaitable, Callable

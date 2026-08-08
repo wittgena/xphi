@@ -20,7 +20,7 @@ from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.runtime.sensor import SurfaceSensor
 from watcher.receptor.bootstrap import receptor_bootstrap
 from watcher.plane.emitter import get_emitter
-from watcher.ator.flow.cont import LoopCarrier, DynamicsXe
+from kernel.phase.runtime.flow.cont import LoopCarrier, DynamicsXe
 
 log = get_emitter("daemon.bootstrap")
 SENSOR_INTERVAL = 1.0

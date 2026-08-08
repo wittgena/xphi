@@ -1,4 +1,5 @@
-# watcher.ator.transcript.spec
+# kernel.bind.transcript.spec
+## @lineage: watcher.ator.transcript.spec
 ## @lineage: arch.topos.ator.transcript.spec
 ## @lineage: phase.ator.transcript.spec
 import re
@@ -9,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from arch.contract.registry.unified import contract
 from arch.xor.parser.lang.md import MdAstParser
 from arch.xor.parser.block.extractor import BlockExtractor
-from watcher.ator.transcript.phi import TranscriptBase
+from kernel.bind.transcript.phi import TranscriptBase
 from watcher.plane.emitter import get_logger
 
 log = get_logger("transcript.spec")

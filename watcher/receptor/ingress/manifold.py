@@ -27,8 +27,8 @@ class ManifoldReceptor:
 
         try:
             from arch.topos.tunnel.factory import TunnelFactory
-            from kernel.phase.mesh.router import RoutingPolicyEngine, ClusterStateMesh
-            from kernel.phase.mesh.memory import BridgeMemory
+            from watcher.receptor.mesh.router import RoutingPolicyEngine, ClusterStateMesh
+            from watcher.receptor.mesh.memory import BridgeMemory
 
             log.info("[Receptor] Bootstrapping internal fast-path routing bridge...")
             broker = await TunnelFactory.get_default()

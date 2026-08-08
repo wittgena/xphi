@@ -1,4 +1,5 @@
-# kernel.phase.audit.secret
+# watcher.receptor.audit.secret
+## @lineage: kernel.phase.audit.secret
 ## @lineage: dphi.epoch.audit.secret
 import os
 import asyncio
@@ -10,8 +11,8 @@ from typing import Any, Dict
 from pydantic import SecretStr
 
 from arch.xor.secret.cipher import Cipher
-from kernel.phase.mesh.gateway import ToposGateway
-from kernel.phase.audit.warden import AuditWarden
+from watcher.receptor.mesh.gateway import ToposGateway
+from watcher.receptor.audit.warden import AuditWarden
 from watcher.receptor.contract.model import AuditLogResponse
 
 logger = logging.getLogger("audit.ledger")
