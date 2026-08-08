@@ -11,7 +11,7 @@ from typing import Any, Dict
 from pydantic import SecretStr
 
 from arch.xor.secret.cipher import Cipher
-from watcher.receptor.mesh.gateway import ToposGateway
+from watcher.receptor.policy.gateway import ToposGateway
 from watcher.receptor.audit.warden import AuditWarden
 from watcher.receptor.contract.model import AuditLogResponse
 

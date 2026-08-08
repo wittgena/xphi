@@ -11,7 +11,7 @@ from kernel.bind.redirector import PhaseAirlock
 from kernel.phase.runtime.executor.swarm import SwarmExecutor
 from kernel.phase.runtime.flow.executor import FlowExecutor
 from kernel.dphi.ledger.consensus import KernelLedger
-from watcher.receptor.mesh.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
+from watcher.receptor.policy.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
 from kernel.phase.runtime.node import NodeRuntime
 from kernel.phase.signal import PhaseSignal
 from kernel.phase.reactor import KernelReactor

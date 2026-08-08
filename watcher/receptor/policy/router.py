@@ -1,5 +1,4 @@
 # watcher.receptor.mesh.router
-## @lineage: kernel.phase.mesh.router
 import sys
 import os
 import asyncio
@@ -111,5 +110,4 @@ class ExtProcStreamHandler:
 
     async def serve(self) -> None:
         log.info("[Gateway] ExtProc Stream Handler bound to gRPC port 50051...")
-        # Mocking the gRPC aio server run loop
         await asyncio.sleep(36000)
