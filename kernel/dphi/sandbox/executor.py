@@ -8,7 +8,7 @@ from enum import Enum
 
 from arch.xor.parser.block.contract import Contract, CoherenceState
 from arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
-from kernel.dphi.broker import WasmBroker, WasmMethod
+from kernel.dphi.broker import DphiBroker, DphiMethod
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import Tier
 
@@ -48,7 +48,7 @@ WASM_MSG_IO_REQUIRED = "IO_REQUIRED"
 
 class SandboxExecutor:
     def __init__(self, resolvers: Optional[Dict[str, EffectResolver]] = None):
-        self.broker = WasmBroker()
+        self.broker = DphiBroker()
         self.resolvers = resolvers or {}
 
     async def execute_stream(self, context: TaskContext) -> AsyncGenerator[Contract, None]:
@@ -71,7 +71,7 @@ class SandboxExecutor:
             }
 
             exec_result = await self.broker.invoke(
-                target_func=WasmMethod.EXECUTE_TRANSITION, 
+                target_func=DphiMethod.EXECUTE_TRANSITION, 
                 payload=json.dumps(request_data),
                 tier=context.tier  # 브로커 레벨 Cgroup 주입
             )

@@ -4,7 +4,7 @@
 import asyncio
 import json
 from typing import Dict, Any, List
-from kernel.dphi.broker import WasmBroker
+from kernel.dphi.broker import DphiBroker
 from watcher.plane.emitter import get_logger
 from arch.model.phase.flow import PhaseFlow, FlowState
 
@@ -24,7 +24,7 @@ class AtorRuntime:
         self.psi_queue = asyncio.Queue()
         self._tasks: List[asyncio.Task] = []
         self._is_active = False
-        self.broker = WasmBroker()
+        self.broker = DphiBroker()
 
     async def _process_queue_loop(self):
         log.info("[RuntimeAtor] Ribosome active. Waiting for mRNA (Ψ) injection...")

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
 from kernel.dphi.adapter.sign import NodeSigner
-from kernel.dphi.broker import WasmBroker
+from kernel.dphi.broker import DphiBroker
 from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
@@ -33,7 +33,7 @@ class ReceptorBindingResult:
     rupture_reason: Optional[str] = None
 
 class WasmReceptor:
-    def __init__(self, broker: WasmBroker, receptor_id: str = "rec_core_v1"):
+    def __init__(self, broker: DphiBroker, receptor_id: str = "rec_core_v1"):
         self.broker = broker
         self.receptor_id = receptor_id
         self.signer = NodeSigner.get_instance()

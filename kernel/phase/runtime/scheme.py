@@ -6,13 +6,13 @@ from typing import Any, Dict, Optional
 
 from kernel.dphi.sandbox.executor import SandboxExecutor, TaskContext, EffectResolver
 from arch.xor.parser.block.contract import Contract, CoherenceState
-from kernel.dphi.broker import WasmBroker
+from kernel.dphi.broker import DphiBroker
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter("runtime.scheme")
 
 class RuntimeSchemeRunner(ABC):
-    def __init__(self, broker: WasmBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
+    def __init__(self, broker: DphiBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
         self.broker = broker
         self.executor = SandboxExecutor(resolvers=resolvers)
         self.is_running = False
@@ -36,7 +36,7 @@ class RuntimeSchemeRunner(ABC):
         self.is_running = False
 
 class AutonomousRecoveryScheme(RuntimeSchemeRunner):
-    def __init__(self, broker: WasmBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
+    def __init__(self, broker: DphiBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
         super().__init__(broker, resolvers)
         # 서명 키 등 복구에 필요한 도구 초기화 (생략)
 

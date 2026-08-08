@@ -11,6 +11,7 @@ from kernel.phase.daemon.base import AbstractDaemon
 from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter, flow_scope
 from kernel.dphi.cgroup import CgroupPolicy
+from kernel.dphi.method import DphiMethod
 
 TIME_ROOT = resolve_path("time")
 
@@ -137,22 +138,17 @@ class WasmTaskerDaemon(AbstractDaemon):
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
 
     def _get_strategy_module(self):
-        """
-        [Late Binding Router]
-        sys.modules에 적재된 최신 task_strategies 모듈을 동적으로 가져옵니다.
-        watchdog(TracerSource)가 리로드하면 항상 새 코드를 반환합니다.
-        """
-        module_name = "kernel.phase.daemon.task.strategy"
+        import kernel.phase.daemon.task.strategy as STRATEGY_PATH
+        module_name = STRATEGY_PATH.__name__
         if module_name in sys.modules:
             return sys.modules[module_name]
-        
         import importlib
         return importlib.import_module(module_name)
 
     def _execute_isolated(self, payload: dict) -> dict:
         """라우팅을 수행하고 최신 로직을 주입받아 실행"""
         job_id = payload.get("job_id", "unknown")
-        target_func = payload.get("target_func", "execute_code")
+        target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE)
         wasm_path = payload.get("wasm_path", self.default_wasm_path)
         tier_str = payload.get("tier", self.default_tier)
         job_policy = self._get_policy_from_tier(tier_str)
@@ -166,13 +162,13 @@ class WasmTaskerDaemon(AbstractDaemon):
             target_path = self._resolve_wasm_path(wasm_path)
             core_wasm_path = self._resolve_wasm_path(self.default_wasm_path)
             
-            if not target_path.exists() and target_func != "execute_code":
+            if not target_path.exists() and target_func != DphiMethod.EXECUTE_CODE:
                 error_msg = f"WASM binary not found: {target_path}"
                 self.log.warning(f"[{job_id[:8]}] {error_msg}")
                 return {"success": False, "output": "", "error": error_msg}
 
             # ROUTE A: Guarded Execution (Requires 'validate_intent' Checkpoint)
-            if target_func in ("execute_code", "execute_dvm"):
+            if target_func in (DphiMethod.EXECUTE_CODE, DphiMethod.EXECUTE_DVM):
                 safe_payload = strategies.validate_intent_checkpoint(
                     payload, exec_data, context, job_id, core_wasm_path, self.log
                 )
@@ -181,7 +177,7 @@ class WasmTaskerDaemon(AbstractDaemon):
                 if isinstance(safe_payload, dict) and "error" in safe_payload and not safe_payload.get("success", True):
                     return safe_payload
 
-                if target_func == "execute_dvm":
+                if target_func == DphiMethod.EXECUTE_DVM:
                     return strategies.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
                 else:
                     return strategies.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)

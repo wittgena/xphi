@@ -22,7 +22,7 @@ from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from kernel.bind.inter.node import NodeInterpreter, AnchorFlow
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.daemon.bootstrap import mount_core_layer, mount_app_layer
-from kernel.dphi.broker import WasmBroker
+from kernel.dphi.broker import DphiBroker
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
 
@@ -70,7 +70,7 @@ class NodeRuntime(IPhaseAtor):
         self.bus: Optional[TunnelEventBus] = None
         self.log = get_emitter("node.runtime", phase="SYSTEM")
         
-        self.broker: Optional[WasmBroker] = None  # IPC 통신을 담당할 Broker 상태 공간 확보
+        self.broker: Optional[DphiBroker] = None  # IPC 통신을 담당할 Broker 상태 공간 확보
         self.interpreter = None
         
         self.dispatcher = None
@@ -167,7 +167,7 @@ class NodeRuntime(IPhaseAtor):
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
         
         # WasmBroker 인스턴스화 및 NodeInterpreter에 주입
-        self.broker = WasmBroker()
+        self.broker = DphiBroker()
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=anchor)
         
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")

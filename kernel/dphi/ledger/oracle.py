@@ -5,7 +5,7 @@ from rocksdict import Rdict, Options, AccessType
 
 from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
-from kernel.dphi.broker import WasmBroker, WasmMethod
+from kernel.dphi.broker import DphiBroker, DphiMethod
 from kernel.dphi.adapter.state import StateAdapter
 
 log = get_emitter("ledger.oracle", phase="KERNEL")
@@ -16,7 +16,7 @@ class LedgerOracle:
     원장의 얽힌 상태(Entangled State)를 읽어내어, 
     StateAdapter를 통한 정규화(Canonicalization) 후 WASM 엔진을 통해 결정론적으로 붕괴(Collapse)시키는 관측자.
     """
-    def __init__(self, broker: WasmBroker, path: str = LEDGER_DB_PATH):
+    def __init__(self, broker: DphiBroker, path: str = LEDGER_DB_PATH):
         self.broker = broker
         ro_opt = Options()
         try:
@@ -73,7 +73,7 @@ class LedgerOracle:
         canonical_payload = StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8')
         log.info(f"[LedgerOracle] Injecting canonical entanglement into WASM for collapse. Epoch: {epoch_hash[:8]}")
         exec_result = await self.broker.invoke(
-            target_func=WasmMethod.EXECUTE_TRANSITION,
+            target_func=DphiMethod.EXECUTE_TRANSITION,
             payload=canonical_payload,
             tier="KERNEL"
         )
@@ -109,7 +109,7 @@ class LedgerOracle:
             )
             
             canonical_parity = StateAdapter.to_canonical_bytes(parity_req).decode('utf-8')
-            res = await self.broker.invoke(WasmMethod.VERIFY_PARITY, canonical_parity)
+            res = await self.broker.invoke(DphiMethod.VERIFY_PARITY, canonical_parity)
             if not res.success:
                 log.warning(f"[LedgerOracle] WASM Parity verification crashed at {current_hash[:8]}")
                 return {"is_valid": False, "rupture_hash": current_hash, "trace": chain_trace}

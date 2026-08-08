@@ -13,7 +13,7 @@ from arch.topos.tunnel.factory import TunnelFactory
 from kernel.bind.resolver import resolve_path
 from kernel.phase.audit.warden import AuditWarden
 
-from kernel.dphi.broker import WasmBroker  
+from kernel.dphi.broker import DphiBroker  
 from kernel.dphi.adapter.sign import NodeSigner
 from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
@@ -83,7 +83,7 @@ class KernelLedger:
             self.db = Rdict(str(target_path), opt)
             self.role = LedgerRole.LEADER
             self.broker = None
-            self.wasm = WasmBroker() 
+            self.wasm = DphiBroker() 
             log.info(f"[Ledger] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
             
         except Exception as e:

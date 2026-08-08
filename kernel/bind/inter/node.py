@@ -9,7 +9,7 @@ from enum import Enum
 from arch.contract.event.next import LogEvent
 from arch.contract.event.psi import PsiCarrier, PhaseField
 from watcher.plane.emitter import get_emitter
-from kernel.dphi.broker import WasmBroker, WasmMethod
+from kernel.dphi.broker import DphiBroker, DphiMethod
 
 log = get_emitter("inter.node")
 
@@ -53,7 +53,7 @@ class AnchorFlow:
         )
 
 class NodeInterpreter:
-    def __init__(self, broker: WasmBroker, anchor: AnchoredIR, field: PhaseField = PhaseField.COHERENT):
+    def __init__(self, broker: DphiBroker, anchor: AnchoredIR, field: PhaseField = PhaseField.COHERENT):
         self.broker = broker
         self.anchor = anchor
         self.current_field = field
@@ -85,7 +85,7 @@ class NodeInterpreter:
             }
         }
         result = await self.broker.invoke(
-            target_func=WasmMethod.EXECUTE_TRANSITION,
+            target_func=DphiMethod.EXECUTE_TRANSITION,
             payload=json.dumps(payload),
             context=context
         )

@@ -7,29 +7,10 @@ from typing import Optional, Any, Mapping, Union
 
 from arch.topos.tunnel.factory import TunnelFactory
 from kernel.bind.inter.protocol import ExecutionResult, ExecutionError
+from kernel.dphi.method import DphiMethod
 from watcher.plane.emitter import get_emitter, _flow_context
 
-log = get_emitter("wasm.broker")
-
-class WasmMethod(str, Enum):
-    EXECUTE_CODE = "execute_code"
-    EXECUTE_DVM = "execute_dvm"
-    VERIFY_PACKET = "verify_packet"
-    COMPUTE_ROOT_FINGERPRINT = "compute_root_fingerprint"
-    EVALUATE_TENSION = "evaluate_tension"
-    VALIDATE_INTENT = "validate_intent"
-    GENERATE_PROOF = "generate_proof"
-    GENERATE_TOPOS_ID = "generate_topos_id"
-    GENERATE_PHASE_ID = "generate_phase_id"
-    INIT_EPOCH = "init_epoch"
-    PROCESS_EVOLUTION = "process_evolution"
-    PROCESS_TOPOS_TICK = "process_topos_tick"
-    INSCRIBE_ACTOR = "inscribe_actor"
-    SEAL_EPOCH = "seal_epoch"
-    VERIFY_BUILD_LINEAGE = "verify_build_lineage"
-    VERIFY_PARITY = "verify_parity"
-    EXECUTE_TRANSITION = "execute_transition"
-    CONFIGURE_TOPOLOGY = "configure_topology"
+log = get_emitter("dphi.broker")
 
 class BrokerChannel:
     EXECUTE_STREAM = "wasm:execute:stream"
@@ -58,7 +39,7 @@ class ResultKey:
     ERROR = "error"
     METRICS = "metrics"
 
-class WasmBroker:
+class DphiBroker:
     def __init__(self, request_stream: str = BrokerChannel.EXECUTE_STREAM, timeout: float = 10.0, target_auditor=None):
         self.request_stream = request_stream
         self.control_channel = BrokerChannel.CONTROL_REQ
@@ -134,7 +115,7 @@ class WasmBroker:
 
     async def invoke(
         self, 
-        target_func: Union[str, WasmMethod], 
+        target_func: Union[str, DphiMethod], 
         payload: str, 
         wasm_path: Optional[str] = None, 
         tier: Optional[str] = None,
@@ -172,11 +153,11 @@ class WasmBroker:
         
         target_wasm = None
         if isinstance(code, dict):
-            method_func = WasmMethod.EXECUTE_DVM.value
+            method_func = DphiMethod.EXECUTE_DVM.value
             payload_data = code  
             target_wasm = "dvm.wasm"
         else:
-            method_func = WasmMethod.EXECUTE_CODE.value
+            method_func = DphiMethod.EXECUTE_CODE.value
             payload_data = {
                 PayloadKey.CODE: code, 
                 PayloadKey.VARS: variables or {}

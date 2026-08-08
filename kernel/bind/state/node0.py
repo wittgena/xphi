@@ -10,7 +10,7 @@ from arch.contract.event.psi import PsiCarrier
 from arch.topos.tunnel.factory import UniversalFacade
 
 from kernel.bind.inter.node import NodeInterpreter, AnchoredIR, AnchorFlow
-from kernel.dphi.broker import WasmMethod
+from kernel.dphi.broker import DphiMethod
 from kernel.dphi.adapter.state import StateAdapter
 
 from watcher.plane.emitter import get_emitter
@@ -82,7 +82,7 @@ class Node0State:
         canonical_payload_str = StateAdapter.to_canonical_bytes(transition_payload_dict).decode('utf-8')
         try:
             await interpreter.broker.invoke(
-                target_func=WasmMethod.EXECUTE_TRANSITION,
+                target_func=DphiMethod.EXECUTE_TRANSITION,
                 payload=canonical_payload_str
             )
         except Exception as e:

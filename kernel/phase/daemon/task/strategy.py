@@ -8,16 +8,19 @@ from kernel.bind.inter.wasm import WasmInterpreter
 from kernel.bind.inter.python import PythonInterpreter
 from kernel.bind.inter.dvm import DvmInterpreter
 from kernel.dphi.cgroup import CgroupPolicy
+from kernel.dphi.method import DphiMethod  # [ADD] DphiMethod Enum 임포트
 
 def validate_intent_checkpoint(payload: dict, exec_data: Any, context: dict, job_id: str, core_wasm_path: Path, log) -> Any:
     """Core dphi.wasm을 통한 인텐트 유효성 및 보안 검증"""
     try:
         with WasmInterpreter(str(core_wasm_path), policy=CgroupPolicy.system()) as wasm_gate:
-            validation_res = wasm_gate.invoke("validate_intent", json.dumps(payload), context=context)
+            # [MODIFIED] 하드코딩된 "validate_intent" 문자열 대신 Enum 사용
+            validation_res = wasm_gate.invoke(DphiMethod.VALIDATE_INTENT, json.dumps(payload), context=context)
             
             if not validation_res.success:
                 if "not registered" in str(validation_res.error) or "not found" in str(validation_res.error):
-                    log.debug(f"[{job_id[:8]}] 'validate_intent' missing in Core WASM. Bypassing checkpoint.")
+                    # [MODIFIED] 로그 메시지에도 Enum 반영
+                    log.debug(f"[{job_id[:8]}] '{DphiMethod.VALIDATE_INTENT}' missing in Core WASM. Bypassing checkpoint.")
                     return exec_data
                 else:
                     log.error(f"[{job_id[:8]}] WASM Gateway crashed: {validation_res.error}")
@@ -43,11 +46,8 @@ def run_dvm_sandbox(target_path: Path, job_policy: CgroupPolicy, safe_payload: A
                 with suppress(Exception):
                     safe_dict = json.loads(safe_payload)
             
-            # [버그 수정 완료] payload에서 vm_target 추출 후 위치 인자로 전달
             vm_target = safe_dict.get("vm_target", "EVM")
-            
             log.info(f"[{job_id[:8]}] 🔓 Entering Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value}, Target: {vm_target})")
-            
             result = dvm_sandbox.execute(
                 vm_target=vm_target, # 누락되었던 필수 위치 인자
                 target_address=safe_dict.get("target_address", ""),
@@ -63,7 +63,6 @@ def run_dvm_sandbox(target_path: Path, job_policy: CgroupPolicy, safe_payload: A
                     metrics["gas_used"] = out_dict.get("gas_used", 0)
                     
             log.info(f"[{job_id[:8]}] 📊 EVM Sandbox Metrics: {metrics}")
-            
             return {
                 "success": result.success,
                 "output": result.output,

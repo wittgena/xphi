@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional, Union
 
 from kernel.dphi.sandbox.executor import EffectResolver, SandboxEnv
 from watcher.plane.emitter import get_logger
-from kernel.dphi.broker import WasmBroker
+from kernel.dphi.broker import DphiBroker
 from kernel.dphi.cgroup import CgroupPolicy, Tier
 
 log = get_logger("adapter.sandbox")
@@ -35,7 +35,7 @@ class MetabolicProfile:
 class SandboxResolver(EffectResolver):
     def __init__(self, profile: Optional[MetabolicProfile] = None):
         self.profile = profile or MetabolicProfile()
-        self.broker = WasmBroker(timeout=self.profile.max_compute_time)
+        self.broker = DphiBroker(timeout=self.profile.max_compute_time)
 
     def _get_policy_from_tier(self, tier: Tier) -> CgroupPolicy:
         if tier == Tier.SYSTEM: 

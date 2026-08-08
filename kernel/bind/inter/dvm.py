@@ -16,6 +16,9 @@ from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy, Tier
 
+# [ADD] Cross-WASM 호출을 위한 WasmInterpreter 임포트
+from kernel.bind.inter.wasm import WasmInterpreter
+
 TIME_ROOT = resolve_path("time")
 log = get_emitter("inter.dvm", phase="SYSTEM")
 
@@ -78,12 +81,12 @@ class DvmInterpreter:
             linker = wasmtime.Linker(self.engine)
             linker.define_wasi()
 
-            ## Host Function 주입
-            def invoke_native_svm_callback(caller: 'wasmtime.Caller', input_ptr: int) -> int:
+            # [개선] dvm.wasm -> Python Host -> dphi.wasm 을 연결하는 Cross-VM 브릿지
+            def invoke_native_vm_callback(caller: 'wasmtime.Caller', input_ptr: int) -> int:
                 memory = caller.get("memory")
                 alloc = caller.get("alloc")
                 
-                ## WASM 메모리에서 페이로드 읽기 (NULL 종료 바이트까지)
+                # 1. EVM (dvm.wasm)에서 전달한 요청 읽기 (C-String Read)
                 chunk_size = 256
                 result_bytes = bytearray()
                 curr_ptr = input_ptr
@@ -99,30 +102,51 @@ class DvmInterpreter:
                 json_str = result_bytes.decode('utf-8')
                 
                 try:
-                    svm_payload = json.loads(json_str)
-                    program_id = svm_payload.get('program_id', 'unknown')
-                    log.info(f"[SVM Native Host] Executing SVM Program: {program_id}")
+                    payload = json.loads(json_str)
+                    vm_target = payload.get("vm_target", "UNKNOWN").upper()
                     
-                    # native_engine.execute(svm_payload)
-                    svm_result = {
-                        "success": True,
-                        "gas_used": 0,
-                        "output": "0x",
-                        "revert_reason": None
-                    }
+                    # 2. 역호출 대상이 DPHI_KERNEL (dphi.wasm) 인 경우
+                    if vm_target == "DPHI_KERNEL":
+                        log.info("[VM Native Host] Cross-VM Call: dvm.wasm -> dphi.wasm")
+                        
+                        # dphi.wasm이 기대하는 PhaseDrift 포맷에 맞게 데이터 조립
+                        dphi_method = payload.get("method", "evaluate_tension")
+                        # dphi.wasm은 ToposContext를 강제하므로 누락 시 디폴트 주입
+                        dphi_context = payload.get("context", {"injected_anchor": 1, "injected_tick": 0})
+                        dphi_payload = payload.get("payload", {})
+                        
+                        # 3. dphi.wasm 인스턴스화 및 역호출 (Cross-WASM Invocation)
+                        dphi_wasm_path = str(Path(TIME_ROOT) / "dphi.wasm")
+                        with WasmInterpreter(dphi_wasm_path, policy=CgroupPolicy.system()) as dphi_kernel:
+                            # 내부 엔트리포인트(invoke_wasm/apply_inversion) 호출
+                            res = dphi_kernel.invoke(dphi_method, json.dumps(dphi_payload), context=dphi_context)
+                            
+                            if res.success:
+                                # dphi.wasm에서 반환된 PhaseResidue 파싱
+                                residue = json.loads(res.output)
+                                native_result = {
+                                    "success": residue.get("success", False),
+                                    "gas_used": 5000, # 호스트 경유 및 dphi 실행에 대한 가상 가스 부과
+                                    "output": residue.get("data", "0x"),
+                                    "revert_reason": residue.get("error")
+                                }
+                            else:
+                                native_result = {"success": False, "revert_reason": f"DPHI Kernel Panic: {res.error}"}
+                    else:
+                        raise ValueError(f"Unknown Native VM Target: {vm_target}")
+
                 except Exception as e:
-                    svm_result = {"success": False, "revert_reason": f"Native SVM Error: {str(e)}"}
+                    log.error(f"Cross-VM Execution Failed: {e}", exc_info=True)
+                    native_result = {"success": False, "revert_reason": f"Host Bridge Error: {str(e)}"}
                     
-                # 2. 실행 결과를 직렬화하여 다시 WASM 메모리에 할당 후 포인터 반환
-                res_bytes = json.dumps(svm_result).encode('utf-8') + b'\x00'
+                # 4. 최종 결과를 직렬화하여 다시 dvm.wasm 메모리에 할당 후 포인터 반환
+                res_bytes = json.dumps(native_result).encode('utf-8') + b'\x00'
                 res_ptr = alloc(caller, len(res_bytes))
                 memory.write(caller, res_bytes, res_ptr)
                 return res_ptr
 
-            # Host Function 시그니처: i32(포인터) 받아서 i32(포인터) 반환
             func_type = wasmtime.FuncType([wasmtime.ValType.i32()], [wasmtime.ValType.i32()])
-            linker.define_func("env", "invoke_native_svm", func_type, invoke_native_svm_callback)
-            # ==========================================
+            linker.define_func("env", "invoke_native_vm", func_type, invoke_native_vm_callback)
 
             self.instance = linker.instantiate(self.store, self.module)
             self.memory = self.instance.exports(self.store)["memory"]
@@ -130,11 +154,9 @@ class DvmInterpreter:
             exports = self.instance.exports(self.store)
             self._wasm_alloc = exports.get("alloc")
             self._wasm_dealloc = exports.get("dealloc")
-            self._wasm_execute_router = exports.get("execute_router") # execute_evm -> execute_router 로 교체
-            
+            self._wasm_execute_router = exports.get("execute_router")
             if not all([self._wasm_alloc, self._wasm_dealloc, self._wasm_execute_router]):
                 raise ExecutionError("dvm.wasm missing required exports: 'alloc', 'dealloc', or 'execute_router'")
-
         except Exception as e:
             raise ExecutionError(f"Failed to initialize dvm.wasm engine: {e}")
 
@@ -217,7 +239,7 @@ class DvmInterpreter:
             self.memory.write(self.store, payload_bytes, code_ptr)
             
             try:
-                # 5. Multi-VM 라우터 실행 (EVM은 내부처리, SVM은 역호출 콜백)
+                # 5. Multi-VM 라우터 실행 (EVM은 내부처리, DPHI 등은 역호출 콜백)
                 res_ptr = self._wasm_execute_router(self.store, code_ptr)
                 
                 if res_ptr == 0:
@@ -250,13 +272,19 @@ class DvmInterpreter:
             gas_used = str(result_data.get("gas_used", 0))
             output_hex = result_data.get("output", "0x")
             revert_reason = result_data.get("revert_reason")
+            
+            # [MODIFIED] Rust REVM 모듈에서 추출된 이벤트 로그와 상태 변경분 매핑
+            logs = result_data.get("logs", [])
+            state_diff = result_data.get("state_diff", {})
+            state_root = result_data.get("state_root", "0x0000000000000000000000000000000000000000000000000000000000000000")
 
             response_payload = {
                 "success": success,
                 "gas_used": gas_used,
-                "state_root": "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "state_root": state_root,
                 "output": output_hex,
-                "logs": [], 
+                "logs": logs,
+                "state_diff": state_diff,
                 "revert_reason": revert_reason
             }
             return ExecutionResult(success=success, output=json.dumps(response_payload))

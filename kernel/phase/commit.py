@@ -7,7 +7,7 @@ import asyncio
 from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
 
-from kernel.dphi.broker import WasmBroker
+from kernel.dphi.broker import DphiBroker
 from kernel.dphi.adapter.sign import LedgerAuthAdapter
 from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
@@ -101,7 +101,7 @@ class EpochManager(Attractor):
 async def anchor_commit(
     repos: List[Attractor], 
     anchor: EpochManager, 
-    broker: WasmBroker, 
+    broker: DphiBroker, 
     message: str, 
     apply: bool = False
 ) -> None:
