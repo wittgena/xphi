@@ -13,7 +13,7 @@ log = get_emitter("wasm.broker")
 
 class WasmMethod(str, Enum):
     EXECUTE_CODE = "execute_code"
-    EXECUTE_SOL = "execute_sol"
+    EXECUTE_DVM = "execute_dvm"
     VERIFY_PACKET = "verify_packet"
     COMPUTE_ROOT_FINGERPRINT = "compute_root_fingerprint"
     EVALUATE_TENSION = "evaluate_tension"
@@ -171,12 +171,10 @@ class WasmBroker:
         active_context = context if context is not None else _flow_context.get()
         
         target_wasm = None
-        
-        # 입력 형태가 딕셔너리(EVM용 페이로드)인지 문자열(Python 코드)인지 판별하여 분기
         if isinstance(code, dict):
-            method_func = WasmMethod.EXECUTE_SOL.value
+            method_func = WasmMethod.EXECUTE_DVM.value
             payload_data = code  
-            target_wasm = "drevm.wasm"  # [핵심] EVM 환경은 drevm.wasm으로 강제 라우팅
+            target_wasm = "dvm.wasm"
         else:
             method_func = WasmMethod.EXECUTE_CODE.value
             payload_data = {

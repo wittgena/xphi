@@ -1,5 +1,5 @@
-# kernel.bind.inter.sol
-"""@desc: Local interpreter for secure Solidity/EVM execution using Wasmtime and drevm.wasm"""
+# kernel.bind.inter.dvm
+"""@desc: Local interpreter for secure Multi VM execution using Wasmtime and dvm.wasm"""
 import json
 import threading
 import os
@@ -17,12 +17,12 @@ from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy, Tier
 
 TIME_ROOT = resolve_path("time")
-log = get_emitter("inter.sol", phase="SYSTEM")
+log = get_emitter("inter.dvm", phase="SYSTEM")
 
-class SolInterpreter:
+class DvmInterpreter:
     def __init__(
         self,
-        wasm_module_name: str = "drevm.wasm",
+        wasm_module_name: str = "dvm.wasm",
         policy: CgroupPolicy | None = None,
     ) -> None:
         if wasmtime is None:
@@ -91,10 +91,10 @@ class SolInterpreter:
             self._wasm_execute_evm = exports.get("execute_evm")
             
             if not all([self._wasm_alloc, self._wasm_dealloc, self._wasm_execute_evm]):
-                raise ExecutionError("drevm.wasm missing required exports: 'alloc', 'dealloc', or 'execute_evm'")
+                raise ExecutionError("dvm.wasm missing required exports: 'alloc', 'dealloc', or 'execute_evm'")
 
         except Exception as e:
-            raise ExecutionError(f"Failed to initialize drevm.wasm engine: {e}")
+            raise ExecutionError(f"Failed to initialize dvm.wasm engine: {e}")
 
     def execute(
         self,
@@ -131,7 +131,7 @@ class SolInterpreter:
                 "chain_id": int(block_info.get("chain_id", 1)) if block_info.get("chain_id") else None
             }
 
-        # 2. Payload Assembly (drevm.wasm 이 요구하는 확장된 EvmInput 구조체 형태)
+        # 2. Payload Assembly (dvm.wasm 이 요구하는 확장된 EvmInput 구조체 형태)
         gas_limit = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else 30_000_000
         
         evm_input = {
@@ -149,7 +149,7 @@ class SolInterpreter:
         if block_context:
             evm_input["block_context"] = block_context
         
-        log.info(f"[drevm.wasm] Executing TX on {target_address} (Gas Limit: {gas_limit})")
+        log.info(f"[dvm.wasm] Executing TX on {target_address} (Gas Limit: {gas_limit})")
         
         try:
             self._ensure_engine_started()
@@ -190,7 +190,7 @@ class SolInterpreter:
                 if code_ptr is not None:
                     self._wasm_dealloc(self.store, code_ptr, req_len)
                     
-            # 8. drevm.wasm 의 결과(EvmOutput) 파싱 및 표준화
+            # 8. dvm.wasm 의 결과(EvmOutput) 파싱 및 표준화
             result_data = json.loads(result_str)
             success = result_data.get("success", False)
             gas_used = str(result_data.get("gas_used", 0))
@@ -205,11 +205,9 @@ class SolInterpreter:
                 "logs": [], 
                 "revert_reason": revert_reason
             }
-
             return ExecutionResult(success=success, output=json.dumps(response_payload))
-
         except Exception as e:
-            return ExecutionResult(success=False, error=ExecutionError(f"drevm Fatal: {str(e)}"))
+            return ExecutionResult(success=False, error=ExecutionError(f"dvm Fatal: {str(e)}"))
 
     def get_metrics(self) -> dict:
         if not self.store or not self.memory:

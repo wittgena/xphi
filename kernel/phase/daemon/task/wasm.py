@@ -9,7 +9,7 @@ from contextlib import suppress
 from kernel.phase.daemon.base import AbstractDaemon
 from kernel.bind.inter.wasm import WasmInterpreter
 from kernel.bind.inter.python import PythonInterpreter
-from kernel.bind.inter.sol import SolInterpreter
+from kernel.bind.inter.dvm import DvmInterpreter
 from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter, flow_scope
 from kernel.dphi.cgroup import CgroupPolicy, Tier
@@ -21,7 +21,7 @@ class WasmTaskerDaemon(AbstractDaemon):
     @role: Secure Execution Daemon (Multi-WASM Bifurcated Routing)
     @flow: 
         [ROUTE A] Guarded Execution (Requires 'validate_intent' via Core dphi.wasm)
-            ├─ execute_sol -> drevm.wasm (Pure Rust EVM Sandbox)
+            ├─ execute_dvm -> dvm.wasm (Rust Multi VM Sandbox)
             └─ execute_code -> Deno Jail (Python Legacy)
         [ROUTE B] Direct Core Execution (Topology, Resonance, State) -> target WASM (dphi.wasm)
     """
@@ -176,10 +176,10 @@ class WasmTaskerDaemon(AbstractDaemon):
                 return {"success": False, "output": "", "error": error_msg}
 
             # ROUTE A: Guarded Execution (Requires 'validate_intent' Checkpoint)
-            if target_func in ("execute_code", "execute_sol"):
+            if target_func in ("execute_code", "execute_dvm"):
                 try:
                     ## STAGE 1: Checkpoint (validate_intent via Core Dphi WASM)
-                    # 보안 검증은 실행 엔진(drevm)이 아닌 코어 엔진(dphi.wasm)의 프로토콜 룰셋을 따름
+                    # 보안 검증은 실행 엔진(dvm)이 아닌 코어 엔진(dphi.wasm)의 프로토콜 룰셋을 따름
                     core_wasm_path = self._resolve_wasm_path(self.default_wasm_path)
                     with WasmInterpreter(str(core_wasm_path), policy=CgroupPolicy.system()) as wasm_gate:
                         validation_res = wasm_gate.invoke("validate_intent", json.dumps(payload), context=context)
@@ -201,32 +201,29 @@ class WasmTaskerDaemon(AbstractDaemon):
                             safe_payload = val_data.get("safe_payload", exec_data)
 
                     ## STAGE 2: Secure Execution Enclave
-                    if target_func == "execute_sol":
-                        # Multi-VM EVM Sandbox (drevm.wasm)
-                        with SolInterpreter(wasm_module_name=target_path.name, policy=job_policy) as evm_sandbox:
+                    if target_func == "execute_dvm":
+                        # Multi-VM Sandbox (dvm.wasm)
+                        with DvmInterpreter(wasm_module_name=target_path.name, policy=job_policy) as dvm_sandbox:
                             safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
                             if isinstance(safe_payload, str):
                                 with suppress(Exception):
                                     safe_dict = json.loads(safe_payload)
                                     
                             self.log.info(f"[{job_id[:8]}] 🔓 Entering Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value})")
-                            
-                            result = evm_sandbox.execute(
+                            result = dvm_sandbox.execute(
                                 target_address=safe_dict.get("target_address", ""),
                                 calldata=safe_dict.get("calldata", ""),
                                 state_snapshot=safe_dict.get("state_snapshot", {}),
                                 context=context
                             )
                             
-                            metrics = evm_sandbox.get_metrics()
+                            metrics = dvm_sandbox.get_metrics()
                             if result.success:
                                 with suppress(Exception):
                                     out_dict = json.loads(result.output)
                                     metrics["gas_used"] = out_dict.get("gas_used", 0)
                             self.log.info(f"[{job_id[:8]}] 📊 EVM Sandbox Metrics: {metrics}")
-                    
                     else:
-                        # Legacy Python Sandbox (Deno)
                         with PythonInterpreter(enable_network_access=None, policy=job_policy) as py_sandbox:
                             if isinstance(safe_payload, str):
                                 code_to_run = safe_payload
@@ -255,7 +252,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                             
                     return {
                         "success": result.success,
-                        # "output": result.output if result.success else "",
                         "output": result.output,
                         "error": str(result.error) if not result.success else "",
                         "metrics": metrics
