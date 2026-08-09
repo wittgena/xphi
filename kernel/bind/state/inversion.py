@@ -1,7 +1,4 @@
 # kernel.bind.state.inversion
-## @lineage: kernel.topos.state.inversion
-## @lineage: kernel.phase.state.inversion
-## @lineage: kernel.state.resonance
 from __future__ import annotations
 import asyncio
 import json

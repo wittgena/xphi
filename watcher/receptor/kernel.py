@@ -153,7 +153,6 @@ class ReceptorKernel:
 
     async def _emit_rupture(self, rupture_type: str, signal_id: str, metrics: dict, structure_name: str = None):
         """파열 이벤트 규격화 및 발행"""
-        print(f"\n⚠️ [ReceptorKernel] {rupture_type} Event: '{signal_id}'")
         trace_record = {
             "event": "xphi_structure_event",
             "rupture_type": rupture_type,
@@ -162,7 +161,6 @@ class ReceptorKernel:
             "metrics": metrics,
             "timestamp": datetime.now().isoformat()
         }
-        # AutoScaler 수신 채널로 직접 발송
         await self.sink.tunnel.publish(CHANNEL_AUTOSCALER, json.dumps(trace_record))
 
     async def emit_analysis_event(self, payload: dict):
@@ -179,7 +177,7 @@ class ReceptorKernel:
     async def watch_psi_feedback(self):
         """시스템 재진입(Re-entry) 궤적 감시"""
         async for msg in self.sink.subscribe(CHANNEL_PSI_FEEDBACK):
-            print(f"🌀 [ReceptorKernel] Re-entry Ψ′ feedback → {msg}")
+            log.debug(f"🌀 [ReceptorKernel] Re-entry Ψ′ feedback → {msg}")
 
     async def start_daemons(self):
         """데몬 부트스트랩"""

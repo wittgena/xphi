@@ -11,7 +11,6 @@ from arch.contract.event.tunnelbus import TunnelEventBus
 from arch.contract.event.next import next_id
 from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from arch.contract.registry.unified import registry
-from arch.contract.discovery import discover_modules
 
 from kernel.bind.resolver import find_current_self
 from kernel.phase.runtime.executor.swarm import SwarmExecutor
@@ -96,10 +95,6 @@ class NodeRuntime(IPhaseAtor):
             self.running = True
 
     async def react(self, event: PsiEvent, field: IPhaseField, bus: IEventBus):
-        """
-        @desc: 로컬 내부(혹은 Subscribed)에서 발생한 이벤트를 수신하는 리액션.
-        큐를 타지 않고 즉시 Dispatcher로 넘겨 Zero-Latency를 달성.
-        """
         if self.running and self.dispatcher:
             try:
                 self.dispatcher.dispatch(event)
@@ -128,8 +123,8 @@ class NodeRuntime(IPhaseAtor):
             self.executor.node = self
 
         watch_dir = find_current_self()
-        discover_modules(watch_dir)
-        self.log.info(f"discovered {len(self.local_manifold)} local phasenodes.")
+        self.log.info(f"Loaded {len(self.local_manifold)} local phasenodes from registry.")
+        
         await self.register_node()
 
         all_recepts = set()
@@ -264,7 +259,3 @@ async def main_async():
 async def teardown():
     if _node_instance and getattr(_node_instance, 'running', False):
         await _node_instance.shutdown()
-
-if __name__ == "__main__":
-    from kernel.phase.reactor import PhaseReactor
-    PhaseReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)

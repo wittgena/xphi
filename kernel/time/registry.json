@@ -21,5 +21,9 @@
     ],
     "schema_version": "Draft-07",
     "parent_hash": "0000000",
-    "lineage_hash": "ba1785f766cc83c47ef5db67f65e86f17b7af55bc3a970aa6340ffe6457bd451"
+    "lineage_hash": "ba1785f766cc83c47ef5db67f65e86f17b7af55bc3a970aa6340ffe6457bd451",
+    "execution_proofs": [
+        "9ccdaa3ae48b00a92291122dc2de61060d83ccd7557f69e555254269ead9f4fa"
+    ],
+    "latest_proof": "9ccdaa3ae48b00a92291122dc2de61060d83ccd7557f69e555254269ead9f4fa"
 }

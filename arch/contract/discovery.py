@@ -1,9 +1,4 @@
 # arch.contract.discovery
-"""
-@desc:
-- Dynamic module discovery and safe-loading mechanism using AST-based static analysis
-- Prevents unauthorized side-effects and heavy dependencies during bootstrap
-"""
 import sys
 import importlib
 import ast

@@ -8,6 +8,7 @@ import importlib
 import traceback
 from watchdog.events import FileSystemEventHandler
 
+from arch.contract.discovery import discover_modules
 from arch.topos.tunnel.factory import UniversalFacade
 from kernel.bind.resolver import find_current_self
 from watcher.plane.sink import TunnelSink 
@@ -71,10 +72,13 @@ class TracerSource(FileSystemEventHandler):
             log.info(f"[Genesis] New structure detected: {module_fqn or event.src_path}")
             payload = {"signal_id": "new_structure_detected", "value": 0.5, "module": module_fqn}
 
+            # [선택적 확장] 새로운 파일이 감지되었을 때 해당 파일만 AST 검증을 수행하도록 로직을 추가할 수 있습니다.
+
         asyncio.run_coroutine_threadsafe(
             self.kernel.emit_analysis_event(payload),
             self.loop
         )
+
 
 async def receptor_bootstrap(tunnel: UniversalFacade, watch_dir: str = SELF_ROOT):
     sink = TunnelSink(tunnel=tunnel) 
@@ -88,6 +92,19 @@ async def receptor_bootstrap(tunnel: UniversalFacade, watch_dir: str = SELF_ROOT
     main_loop = asyncio.get_running_loop()
     event_handler = TracerSource(kernel, main_loop, watch_dir=watch_dir)
     
+    # ---------------------------------------------------------
+    # [핵심 변경점] Receptor 구동 시 최초 1회 전체 시스템 스캔 수행
+    # ---------------------------------------------------------
+    log.info(f"\n[Pre-Flight] Initiating system-wide module discovery at {watch_dir}...")
+    discovery_start = time.time()
+    
+    # Block 방식으로 실행 (부트스트랩 단계이므로 비동기 루프 시작 전 안전하게 수행)
+    discover_modules(Path(watch_dir))
+    
+    elapsed = time.time() - discovery_start
+    log.info(f"[Pre-Flight] Discovery complete in {elapsed:.2f}s. Topology manifest ready.")
+    # ---------------------------------------------------------
+
     observer = Observer()
     observer.schedule(event_handler, path=watch_dir, recursive=True)
     observer.start()
