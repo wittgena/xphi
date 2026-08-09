@@ -50,10 +50,8 @@ class NodeRuntime(IPhaseAtor):
     def __init__(self, executor=None):
         self._id = f"node-{next_id()}" 
         self.node_id = self._id
-        
         self.tunnel: Optional[UniversalFacade] = None
         self.executor = executor
-        
         self.running = True
         self.supervisor = TaskSupervisor(source=f"NodeRuntime-{self._id}")
         self.supervisor.add_error_handler(self._global_task_error)

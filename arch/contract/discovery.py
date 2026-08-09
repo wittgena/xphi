@@ -55,9 +55,8 @@ def _has_top_level_side_effects(py_file: Path) -> bool:
                         continue
 
             return True
-            
     except Exception as e:
-        print(f"[Discover] AST Side-effect Check failed for {py_file.name}: {e}")
+        log.error(f"[Discover] AST Side-effect Check failed for {py_file.name}: {e}")
         return True 
 
     return False
@@ -85,7 +84,7 @@ def _contains_forbidden_imports(py_file: Path, forbidden_libs: Set[str]) -> bool
                     if root_module in forbidden_libs:
                         return True
     except Exception as e:
-        print(f"[Discover] AST Parsing failed for {py_file.name}: {e}")
+        log.erro(f"[Discover] AST Parsing failed for {py_file.name}: {e}")
         return False
 
     return False

@@ -1,4 +1,5 @@
-# kernel.phase.boot
+# kernel.phase.runtime.gateway
+## @lineage: kernel.phase.boot
 import os
 import sys
 import asyncio
