@@ -2,29 +2,25 @@
 import asyncio
 from pathlib import Path
 from watchdog.observers import Observer
-from typing import List
 import time
 import sys
 import importlib
 import traceback
 from watchdog.events import FileSystemEventHandler
-from typing import Dict, List, Optional
-from arch.topos.tunnel.factory import UniversalFacade
 
+from arch.topos.tunnel.factory import UniversalFacade
 from kernel.bind.resolver import find_current_self
-from watcher.receptor.topos import ReceptorTopos, build_system_topos
-from watcher.receptor.kernel import ReceptorKernel
 from watcher.plane.sink import TunnelSink 
-from watcher.plane.metric.trajectory import TopologicalStructure
 from watcher.plane.emitter import get_emitter
+from watcher.receptor.kernel import ReceptorKernel, build_system_topos
 
 log = get_emitter("receptor.bootstrap")
 
 SELF_ROOT = find_current_self()
 
 class TracerSource(FileSystemEventHandler):
-    def __init__(self, surface: ReceptorTopos, loop: asyncio.AbstractEventLoop, watch_dir: str):
-        self.surface = surface
+    def __init__(self, kernel: ReceptorKernel, loop: asyncio.AbstractEventLoop, watch_dir: str):
+        self.kernel = kernel
         self.loop = loop  
         self.watch_dir = Path(watch_dir).resolve()
         self.last_trigger = 0
@@ -76,16 +72,22 @@ class TracerSource(FileSystemEventHandler):
             payload = {"signal_id": "new_structure_detected", "value": 0.5, "module": module_fqn}
 
         asyncio.run_coroutine_threadsafe(
-            self.surface.emit_psi("xphi_analysis_event", payload=payload),
+            self.kernel.emit_analysis_event(payload),
             self.loop
         )
 
 async def receptor_bootstrap(tunnel: UniversalFacade, watch_dir: str = SELF_ROOT):
     sink = TunnelSink(tunnel=tunnel) 
-    surface = ReceptorTopos(sink)
+    system_topos = build_system_topos()
+    kernel = ReceptorKernel(
+        sink=sink, 
+        window_steps=4, 
+        structures=system_topos
+    )
 
     main_loop = asyncio.get_running_loop()
-    event_handler = TracerSource(surface, main_loop, watch_dir=watch_dir)
+    event_handler = TracerSource(kernel, main_loop, watch_dir=watch_dir)
+    
     observer = Observer()
     observer.schedule(event_handler, path=watch_dir, recursive=True)
     observer.start()
@@ -95,16 +97,11 @@ async def receptor_bootstrap(tunnel: UniversalFacade, watch_dir: str = SELF_ROOT
     try:
         while True:
             try:
-                system_topos = build_system_topos()
-                kernel = ReceptorKernel(
-                    surface=surface, 
-                    window_steps=14, 
-                    structures=system_topos
-                )
                 await kernel.start_daemons()
                 
-                current_phase = await surface.get_current_phase()
+                current_phase = await kernel.get_current_phase()
                 log.info(f"[Topology] Mounted structures: {[s.name for s in system_topos]} (Φ={current_phase})")
+                
                 while True:
                     await asyncio.sleep(3600) 
                     

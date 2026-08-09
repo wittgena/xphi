@@ -65,8 +65,6 @@ class EventBusDaemon(AbstractDaemon):
                 )
 
                 if not streams:
-                    # [개선] 더 이상 노드 스스로 idle_timeout을 재서 자가 소멸하지 않음.
-                    # 생명 주기의 통제권은 전적으로 외부의 Watcher(Control Plane)에게 위임됨.
                     continue
 
                 for stream_name, messages in streams:
@@ -81,8 +79,6 @@ class EventBusDaemon(AbstractDaemon):
                                 event_dict['carrier'] = PsiCarrier(**event_dict['carrier'])
                                 
                             event = PsiEvent(**event_dict)
-                            
-                            # [유지] 오직 Watcher가 발송한 명시적인 shutdown 명령(수렴)에만 반응
                             if event.carrier.kind == "system:shutdown":
                                 self.log.warn("Shutdown signal received via Event Stream. Evaporating...")
                                 asyncio.create_task(self.shutdown_hook())
@@ -99,31 +95,37 @@ class EventBusDaemon(AbstractDaemon):
                 self.log.error(f"Stream Consume Error: {e}")
                 await asyncio.sleep(1)
 
-
 class HeartbeatDaemon(AbstractDaemon):
-    """
-    [개선] 기존 LivenessDaemon에서 리더 선출 및 Watcher 기생 로직을 완전히 제거.
-    오직 자신의 생존(부하 상태)을 터널에 기록하는 순수 Data Plane 워커로 강등됨.
-    """
-    def __init__(self, tunnel: UniversalFacade, node_id: str):
+    def __init__(self, tunnel: UniversalFacade, node_id: str, supervisor: TaskSupervisor):
         super().__init__("Heartbeat")
         self.tunnel = tunnel
         self.node_id = node_id
+        self.supervisor = supervisor
 
     async def run(self):
-        self.log.info(f"HeartbeatDaemon initiated. Node [{self.node_id}] emitting vital signs...")
+        self.log.info(f"HeartbeatDaemon initiated. Node [{self.node_id}] emitting vital signs & load metrics...")
         try:
             while self.running:
                 await asyncio.gather(
                     self.tunnel.set(f"{KEY_HEARTBEAT_PREFIX}{self.node_id}", int(time.time()), ex=10),
                     self.tunnel.set(KEY_ACTIVE, int(time.time()), ex=10)
                 )
-                await asyncio.sleep(2.5)
+                
+                try:
+                    active_tasks = len(self.supervisor.get_active_tasks())
+                    payload = {
+                        "signal_id": f"node_load_{self.node_id}",
+                        "value": float(active_tasks)
+                    }
+                    await self.tunnel.publish("meta.self:signals:phase_mutation", json.dumps(payload))
+                except Exception as e:
+                    self.log.warning(f"Failed to emit load metric: {e}")
+
+                await asyncio.sleep(0.5)
         except asyncio.CancelledError:
             self.log.warn("HeartbeatDaemon received cancellation signal.")
         except Exception as e:
             self.log.error(f"HeartbeatDaemon Error: {e}")
-
 
 class DynamicsDaemon(AbstractDaemon):
     def __init__(self, bus: AsyncEventBus, sensor: Optional[SurfaceSensor] = None):
@@ -204,10 +206,10 @@ def mount_core_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
             shutdown_hook=ctx.shutdown_hook,
             group_name=GROUP_NODE_MANIFOLD
         ),
-        # [개선] LivenessDaemon을 HeartbeatDaemon으로 교체 (순수 워커 상태 방출 역할)
         HeartbeatDaemon(
             tunnel=ctx.tunnel, 
-            node_id=ctx.node_id
+            node_id=ctx.node_id,
+            supervisor=supervisor
         ),
         DynamicsDaemon(
             bus=ctx.bus,

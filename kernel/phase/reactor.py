@@ -17,20 +17,22 @@ class PhaseReactor:
         if cls._policy_applied:
             return
 
-        # 1. CPU Affinity Pinning (N-Core Lock-free Distribution)
-        if hasattr(os, 'sched_setaffinity') and hasattr(os, 'sched_getaffinity'):
-            try:
-                available_cores = list(os.sched_getaffinity(0))
-                if available_cores:
-                    # PID 기반 모듈러 연산으로 가용 코어에 프로세스를 자동 분산 할당
-                    target_core = available_cores[os.getpid() % len(available_cores)]
-                    os.sched_setaffinity(0, {target_core})
-                    cls._pinned_core = target_core
-                    log.info(f"[Reactor] ⚡ CPU Affinity Pinned to Core: {target_core}")
-            except Exception as e:
-                log.warning(f"[Reactor] ⚠️ Failed to pin CPU: {e}")
+        worker_idx = int(os.environ.get("DPHI_WORKER_IDX", os.getpid()))
+        if sys.platform == 'darwin':
+            log.info("[Reactor] ⚡ macOS detected. Native CPU Affinity pinning is bypassed (OS constraint).")
+            cls._pinned_core = f"Virtual-{worker_idx}"
+        else:
+            if hasattr(os, 'sched_setaffinity') and hasattr(os, 'sched_getaffinity'):
+                try:
+                    available_cores = list(os.sched_getaffinity(0))
+                    if available_cores:
+                        target_core = available_cores[worker_idx % len(available_cores)]
+                        os.sched_setaffinity(0, {target_core})
+                        cls._pinned_core = target_core
+                        log.info(f"[Reactor] ⚡ CPU Affinity Pinned to Core: {target_core} (Idx: {worker_idx})")
+                except Exception as e:
+                    log.warning(f"[Reactor] ⚠️ Failed to pin CPU: {e}")
 
-        # 2. UVLoop (epoll) Injection
         if sys.platform not in ('win32', 'cygwin', 'cli'):
             try:
                 import uvloop
@@ -67,22 +69,16 @@ class PhaseReactor:
         shutdown_waiter = asyncio.create_task(shutdown_event.wait(), name="Reactor-Shutdown-Waiter")
 
         try:
-            done, pending = await asyncio.wait(
-                [main_task, shutdown_waiter],
-                return_when=asyncio.FIRST_COMPLETED
-            )
-
+            done, pending = await asyncio.wait([main_task, shutdown_waiter], return_when=asyncio.FIRST_COMPLETED)
             if shutdown_waiter in done:
                 log.info("\n[Reactor] 🛑 OS Signal received. Initiating graceful shutdown...")
                 main_task.cancel()
                 try:
                     await asyncio.wait_for(main_task, timeout=shutdown_timeout)
                 except asyncio.TimeoutError:
-                    log.warning(f"[Reactor] ⚠️ Main task shutdown timed out ({shutdown_timeout}s). Forcing exit.")
+                    pass
                 except asyncio.CancelledError:
                     pass
-                except Exception as e:
-                    log.error(f"[Reactor] 💥 Main task raised exception during shutdown: {e}")
             else:
                 shutdown_waiter.cancel()
 
@@ -95,7 +91,7 @@ class PhaseReactor:
                 try:
                     await teardown_hook()
                 except Exception as e:
-                    log.error(f"[Reactor] 💥 Error during teardown hook: {e}")
+                    pass
 
             log.info("[Reactor] 🏁 Lifecycle terminated cleanly.")
 
@@ -114,7 +110,4 @@ class PhaseReactor:
         try:
             asyncio.run(cls._lifecycle_manager(main_coro_func, teardown_hook, shutdown_timeout))
         except KeyboardInterrupt:
-            log.info("\n[Reactor] 🛑 KeyboardInterrupt caught at root. Shutdown forced.")
-        except Exception as e:
-            log.critical(f"[Reactor] Kernel Panic: {e}", exc_info=True)
-            sys.exit(1)
+            pass

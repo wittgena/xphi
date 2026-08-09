@@ -43,14 +43,10 @@ class DphiBroker:
         self.timeout = timeout
         self.target_auditor = target_auditor
         
-        # [핵심 1] 브로커 고유 ID 및 단일 응답 채널 설정
         self.broker_id = uuid.uuid4().hex[:8]
         self.response_channel = BrokerChannel.broker_res(self.broker_id)
-        
-        # [핵심 2] 비동기 Future 라우팅 테이블
         self._pending_jobs: Dict[str, asyncio.Future] = {}
         
-        # 백그라운드 리스너 상태
         self._listener_task: Optional[asyncio.Task] = None
         self._listener_client = None
 
@@ -71,8 +67,6 @@ class DphiBroker:
                     try:
                         result_data = json.loads(msg["data"])
                         job_id = result_data.get(PayloadKey.JOB_ID)
-                        
-                        # [핵심 3] 수신된 응답의 job_id로 대기 중인 Future를 찾아 결과를 주입(Set)하고 깨움
                         future = self._pending_jobs.get(job_id)
                         if future and not future.done():
                             future.set_result(result_data)
@@ -91,7 +85,6 @@ class DphiBroker:
             elif hasattr(self._listener_client.state_store, 'close'):
                 await self._listener_client.state_store.close()
 
-    # [수정] timeout 파라미터를 추가하여 가변적인 타임아웃 주입 허용
     async def _dispatch_and_wait_async(
         self, 
         job_id: str, 
@@ -102,14 +95,10 @@ class DphiBroker:
         await self._ensure_listener_started()
         
         route = target_route or self.request_stream
-        tunnel = await TunnelFactory.get_default() # 송신은 공용 풀(Pool) 사용
-        
+        tunnel = await TunnelFactory.get_default()
         method_name = payload.get(PayloadKey.METHOD_FUNC, 'unknown')
         
-        # 페이로드에 브로커의 단일 수신 채널 명시
         payload[PayloadKey.RES_CHANNEL] = self.response_channel
-        
-        # [핵심 4] Future 객체를 생성하여 이벤트 루프에서 블로킹 없이 대기
         loop = asyncio.get_running_loop()
         future = loop.create_future()
         self._pending_jobs[job_id] = future

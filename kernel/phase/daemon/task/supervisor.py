@@ -1,7 +1,4 @@
 # kernel.phase.daemon.task.supervisor
-## @lineage: kernel.daemon.task.supervisor
-## @lineage: phase.runtime.daemon.task.supervisor
-## @lineage: phase.runtime.task.supervisor
 from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
@@ -29,6 +26,9 @@ class TaskSupervisor:
 
     def add_error_handler(self, handler: ErrorHandler) -> None:
         self._error_handlers.append(handler)
+
+    def get_active_tasks(self) -> list[asyncio.Task[Any]]:
+        return list(self._tasks)
 
     def create(
         self,
@@ -58,10 +58,6 @@ class TaskSupervisor:
         return self.create(coro, name=name, on_error=on_error)
 
     def mount_daemon(self, daemon: MountableDaemon, on_error: ErrorHandler | None = None) -> asyncio.Task:
-        """
-        [핵심 개선] 외부 데몬을 Supervisor 통제 하에 동적으로 장착(Mount)
-        데몬의 실제 백그라운드 루프를 래핑하여 에러가 절대 빠져나가지 못하게 묶어둡니다(Anchoring).
-        """
         if self._closed:
             raise RuntimeError(f"Cannot mount daemon {daemon.name}: Supervisor closed.")
         
@@ -70,8 +66,6 @@ class TaskSupervisor:
             await inner_task
 
         self._daemons.add(daemon)
-        
-        # 데몬의 셋업(start)이 아닌, 닻을 내린 래퍼(_daemon_anchored_runner)를 감시망에 등록합니다.
         task = self.create(
             _daemon_anchored_runner(), 
             name=f"Daemon-{daemon.name}", 

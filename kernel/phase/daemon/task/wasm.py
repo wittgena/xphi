@@ -1,4 +1,5 @@
 # kernel.phase.daemon.task.wasm
+import os
 import json
 import asyncio
 import uuid
@@ -34,7 +35,6 @@ class WasmTaskerDaemon(AbstractDaemon):
         self.poll_timeout_ms = 1000
         self.default_tier = "STANDARD"
 
-        # [핵심 1] 동시성 한계를 테스트 상수의 최댓값(SCALE_STEPS max: 71)과 동기화하여 병목 제거
         self.concurrency_limit = 71 
         self.fetch_batch_size = self.concurrency_limit 
 
@@ -65,7 +65,6 @@ class WasmTaskerDaemon(AbstractDaemon):
 
                 for stream_name, messages in streams:
                     for message_id, msg_data in messages:
-                        # [핵심 2] 동시 실행 한계에 도달하면 여기서 우아하게 대기(Backpressure)
                         await self._semaphore.acquire()
 
                         json_payload = msg_data.get("data", msg_data.get(b"data", b"{}"))
@@ -76,7 +75,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                             data = json.loads(json_payload)
                             job_id = data.get("job_id", "unknown")
                             
-                            # 작업 스케줄링 성공 시 _process_and_reply 내부 finally에서 세마포어 해제됨
                             self.supervisor.create(
                                 self._process_and_reply(data, message_id), 
                                 name=f"ExecGate-{job_id[:8]}"
@@ -84,10 +82,10 @@ class WasmTaskerDaemon(AbstractDaemon):
                         except json.JSONDecodeError:
                             self.log.error(f"Invalid JSON payload: {json_payload}")
                             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
-                            self._semaphore.release()  # 에러 시 누수 방지
+                            self._semaphore.release() 
                         except Exception as e:
                             self.log.error(f"Failed to schedule WASM task: {e}")
-                            self._semaphore.release()  # 에러 시 누수 방지
+                            self._semaphore.release()
 
         except asyncio.CancelledError:
             pass
@@ -145,24 +143,29 @@ class WasmTaskerDaemon(AbstractDaemon):
         job_id = payload.get("job_id", "unknown")
 
         try:
-            # CPU 바운드 연산을 별도 스레드로 분리 (세마포어가 OS 스레드 고갈 방어)
+            # CPU 바운드 연산을 별도 스레드로 분리
             response_data = await asyncio.to_thread(self._execute_isolated, payload)
             
-            # [핵심 3] 브로커가 어떤 요청의 응답인지 매칭할 수 있도록 job_id 에코(Echo)
             if isinstance(response_data, dict):
                 response_data["job_id"] = job_id
+                
+                # [핵심 변경]: 순수 연산 결과물(Payload/Output)을 건드리지 않고,
+                # 브로커가 파싱하는 "metrics" 메타데이터 영역에 물리적 노드 정보를 밀어넣음
+                if "metrics" not in response_data:
+                    response_data["metrics"] = {}
+                
+                response_data["metrics"]["handled_by_node"] = self.node_id
+                response_data["metrics"]["handled_by_pid"] = os.getpid()
             
             if response_channel:
                 await self.tunnel.publish(response_channel, json.dumps(response_data))
                 
         except Exception as e:
             self.log.error(f"Failed to process execution payload: {e}", exc_info=True)
-            # [핵심 4] Fast-Fail: 데몬 에러 발생 시 브로커가 무한 대기(Timeout)하지 않도록 즉시 에러 응답 전송
             if response_channel:
                 err_payload = {"success": False, "error": f"Tasker Daemon Error: {str(e)}", "job_id": job_id}
                 await self.tunnel.publish(response_channel, json.dumps(err_payload))
         finally:
-            # 성공/실패 여부에 관계없이 스트림 ACK 및 세마포어 반환 (교착상태/메모리 누수 원천 차단)
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
             self._semaphore.release()
 
@@ -184,7 +187,6 @@ class WasmTaskerDaemon(AbstractDaemon):
         exec_data = payload.get("payload", payload.get("data", ""))
         context = payload.get("context", {})
 
-        # 항상 최신 실행 로직 모듈을 가져옴
         strategies = self._get_strategy_module()
 
         with flow_scope(**context):
@@ -196,13 +198,12 @@ class WasmTaskerDaemon(AbstractDaemon):
                 self.log.warning(f"[{job_id[:8]}] {error_msg}")
                 return {"success": False, "output": "", "error": error_msg}
 
-            # ROUTE A: Guarded Execution (Requires 'validate_intent' Checkpoint)
+            # ROUTE A: Guarded Execution
             if target_func in (DphiMethod.EXECUTE_CODE, DphiMethod.EXECUTE_DVM):
                 safe_payload = strategies.validate_intent_checkpoint(
                     payload, exec_data, context, job_id, core_wasm_path, self.log
                 )
                 
-                # Checkpoint failed
                 if isinstance(safe_payload, dict) and "error" in safe_payload and not safe_payload.get("success", True):
                     return safe_payload
 
