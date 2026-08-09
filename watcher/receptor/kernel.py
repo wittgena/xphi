@@ -1,5 +1,4 @@
 # watcher.receptor.kernel
-## @lineage: phase.runtime.daemon.receptor.kernel
 """@flow: Environment(Sync) → SourceTracer(Membrane) → Ψ(PhaseSurface) → ReceptorKernel(Multi-Lens) → Rupture(emit)"""
 import asyncio
 from datetime import datetime
@@ -76,10 +75,18 @@ class ReceptorKernel:
         k_scan = self.kinematic_lens.scan(window)
         if k_scan["status"] == "valid":
             metrics = k_scan["metrics"]
-            is_ruptured = metrics.get("trend", 0) > 0.8 or metrics.get("volatility", 0) >= 0.05
             
-            if is_ruptured:
-                await self._emit_rupture("KINEMATIC", signal_id, metrics)
+            # [개선] 임계치에 따른 Scale-Out(Tension High) / Scale-In(Flatline) 상태 분리 도출
+            is_high_tension = metrics.get("trend", 0) > 0.8
+            is_flatlined = (metrics.get("mean", 1.0) == 0.0) and (metrics.get("volatility", 1.0) == 0.0)
+            is_volatile = metrics.get("volatility", 0) >= 0.05
+            
+            if is_high_tension:
+                await self._emit_rupture("KINEMATIC_TENSION_HIGH", signal_id, metrics)
+            elif is_flatlined:
+                await self._emit_rupture("KINEMATIC_FLATLINE", signal_id, metrics)
+            elif is_volatile:
+                await self._emit_rupture("KINEMATIC_VOLATILITY", signal_id, metrics)
 
         structure = self._get_structure_for(signal_id)
         if structure:
@@ -97,8 +104,8 @@ class ReceptorKernel:
                     await self._emit_rupture("CO_DIFF", signal_id, c_scan["metrics"], structure.name)
 
     async def _emit_rupture(self, rupture_type: str, signal_id: str, metrics: dict, structure_name: str = None):
-        """파열 이벤트 규격화 및 발행"""
-        print(f"\n⚠️ [ReceptorKernel] {rupture_type} Tension Rupture: '{signal_id}' is unstable!")
+        """파열/평탄화 이벤트 규격화 및 발행"""
+        print(f"\n⚠️ [ReceptorKernel] {rupture_type} Event: '{signal_id}'")
         
         trace_record = {
             "rupture_type": rupture_type,

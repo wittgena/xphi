@@ -2,7 +2,6 @@
 import asyncio
 import json
 import time
-import random
 from abc import ABC, abstractmethod
 from typing import Optional, Callable, Awaitable, List, Tuple
 from contextlib import suppress
@@ -18,7 +17,6 @@ from kernel.phase.daemon.base import AbstractDaemon
 from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.runtime.sensor import SurfaceSensor
-from watcher.receptor.bootstrap import receptor_bootstrap
 from watcher.plane.emitter import get_emitter
 from kernel.phase.runtime.flow.cont import LoopCarrier, DynamicsXe
 
@@ -31,7 +29,6 @@ GROUP_NODE_MANIFOLD     = "node_manifold_group"
 KEY_HEARTBEAT_PREFIX    = "runtime:heartbeat:"
 KEY_HEARTBEAT_PATTERN   = "runtime:heartbeat:*"
 KEY_ACTIVE              = "runtime:active"
-KEY_RECEPTOR_LEADER     = "runtime:receptor:leader"
 
 class EventBusDaemon(AbstractDaemon):
     def __init__(self, tunnel: UniversalFacade, dispatcher: Dispatcher, node_id: str, 
@@ -47,10 +44,6 @@ class EventBusDaemon(AbstractDaemon):
         self.group_name = group_name
         self.consumer_name = f"consumer-{self.node_id}"
         self.poll_timeout_ms = 1000
-        
-        self.base_timeout = float(idle_timeout)
-        self.idle_timeout = float(idle_timeout)
-        self.last_active_time = time.time()
 
     async def _init_consumer_group(self):
         try:
@@ -61,7 +54,7 @@ class EventBusDaemon(AbstractDaemon):
                 self.log.error(f"Failed to initialize Consumer Group: {e}")
 
     async def run(self):
-        self.log.info(f"EventBusDaemon started. Waiting for Sticky Events (Topic: {self.topic}, Idle: {self.idle_timeout}s)")
+        self.log.info(f"EventBusDaemon started. Waiting for Sticky Events (Topic: {self.topic})")
         await self._init_consumer_group()
         
         while self.running:
@@ -72,18 +65,8 @@ class EventBusDaemon(AbstractDaemon):
                 )
 
                 if not streams:
-                    if time.time() - self.last_active_time > self.idle_timeout:
-                        active_nodes = await self.tunnel.keys(KEY_HEARTBEAT_PATTERN)
-                        if len(active_nodes) <= 1:
-                            decayed = self.idle_timeout * 0.9
-                            jitter = random.uniform(-5.0, 5.0)
-                            self.idle_timeout = max(10.0, decayed + jitter)
-                            self.last_active_time = time.time()
-                            self.log.warn(f"Last node standing. Evaporation aborted. Timeout mutated to {self.idle_timeout:.1f}s")
-                        else:
-                            self.log.warn(f"Idle for {self.idle_timeout:.1f}s. Self-evaporating...")
-                            asyncio.create_task(self.shutdown_hook())
-                            break
+                    # [개선] 더 이상 노드 스스로 idle_timeout을 재서 자가 소멸하지 않음.
+                    # 생명 주기의 통제권은 전적으로 외부의 Watcher(Control Plane)에게 위임됨.
                     continue
 
                 for stream_name, messages in streams:
@@ -98,14 +81,14 @@ class EventBusDaemon(AbstractDaemon):
                                 event_dict['carrier'] = PsiCarrier(**event_dict['carrier'])
                                 
                             event = PsiEvent(**event_dict)
+                            
+                            # [유지] 오직 Watcher가 발송한 명시적인 shutdown 명령(수렴)에만 반응
                             if event.carrier.kind == "system:shutdown":
-                                self.log.warn("Shutdown signal received via Event Stream.")
+                                self.log.warn("Shutdown signal received via Event Stream. Evaporating...")
                                 asyncio.create_task(self.shutdown_hook())
                                 break
                                 
                             self.dispatcher.dispatch(event)
-                            self.last_active_time = time.time()
-                            self.idle_timeout = self.base_timeout
                         except Exception as e:
                             self.log.error(f"Event parsing or dispatch error: {e}")
                         
@@ -116,57 +99,31 @@ class EventBusDaemon(AbstractDaemon):
                 self.log.error(f"Stream Consume Error: {e}")
                 await asyncio.sleep(1)
 
-class LivenessDaemon(AbstractDaemon):
-    def __init__(self, tunnel: UniversalFacade, node_id: str, watch_dir: str):
-        super().__init__("Liveness")
+
+class HeartbeatDaemon(AbstractDaemon):
+    """
+    [개선] 기존 LivenessDaemon에서 리더 선출 및 Watcher 기생 로직을 완전히 제거.
+    오직 자신의 생존(부하 상태)을 터널에 기록하는 순수 Data Plane 워커로 강등됨.
+    """
+    def __init__(self, tunnel: UniversalFacade, node_id: str):
+        super().__init__("Heartbeat")
         self.tunnel = tunnel
         self.node_id = node_id
-        self.watch_dir = watch_dir
-        self.lock_key = KEY_RECEPTOR_LEADER
-        self.receptor_task: Optional[asyncio.Task] = None
 
     async def run(self):
-        self.log.info("LivenessDaemon initiated. Maintaining presence & engaging in leader election...")
+        self.log.info(f"HeartbeatDaemon initiated. Node [{self.node_id}] emitting vital signs...")
         try:
             while self.running:
                 await asyncio.gather(
                     self.tunnel.set(f"{KEY_HEARTBEAT_PREFIX}{self.node_id}", int(time.time()), ex=10),
                     self.tunnel.set(KEY_ACTIVE, int(time.time()), ex=10)
                 )
-
-                acquired = await self.tunnel.set(self.lock_key, self.node_id, nx=True, ex=6)
-                if not acquired:
-                    current_leader = await self.tunnel.get(self.lock_key)
-                    if current_leader == self.node_id:
-                        await self.tunnel.expire(self.lock_key, 6)
-                        acquired = True
-
-                if acquired:
-                    if self.receptor_task is None or self.receptor_task.done():
-                        self.log.warn(f"[{self.node_id}] Acquired Membrane Leadership. Bootstrapping Receptor...")
-                        self.receptor_task = asyncio.create_task(receptor_bootstrap(self.tunnel, self.watch_dir))
-                else:
-                    if self.receptor_task and not self.receptor_task.done():
-                        self.log.warn(f"[{self.node_id}] Lost Membrane Leadership. Shutting down local Receptor...")
-                        self.receptor_task.cancel()
-                        with suppress(asyncio.CancelledError):
-                            await self.receptor_task
-                        self.receptor_task = None
-                await asyncio.sleep(2.5)  # 통합된 최적의 Interval
+                await asyncio.sleep(2.5)
         except asyncio.CancelledError:
-            self.log.warn("LivenessDaemon received cancellation signal.")
+            self.log.warn("HeartbeatDaemon received cancellation signal.")
         except Exception as e:
-            self.log.error(f"LivenessDaemon Error: {e}")
-        finally:
-            if self.receptor_task and not self.receptor_task.done():
-                self.receptor_task.cancel()
-                with suppress(asyncio.CancelledError, Exception):
-                    await self.receptor_task 
-            try:
-                if await self.tunnel.get(self.lock_key) == self.node_id:
-                    await self.tunnel.delete(self.lock_key)
-            except Exception:
-                pass
+            self.log.error(f"HeartbeatDaemon Error: {e}")
+
 
 class DynamicsDaemon(AbstractDaemon):
     def __init__(self, bus: AsyncEventBus, sensor: Optional[SurfaceSensor] = None):
@@ -236,6 +193,7 @@ class DynamicsDaemon(AbstractDaemon):
             scope="GLOBAL", tick=0, carrier=carrier, phase_id=0, context={"domain": "kernel.bootstrap"}
         )
 
+
 def mount_core_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     core_daemons = [
         EventBusDaemon(
@@ -246,10 +204,10 @@ def mount_core_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
             shutdown_hook=ctx.shutdown_hook,
             group_name=GROUP_NODE_MANIFOLD
         ),
-        LivenessDaemon(
+        # [개선] LivenessDaemon을 HeartbeatDaemon으로 교체 (순수 워커 상태 방출 역할)
+        HeartbeatDaemon(
             tunnel=ctx.tunnel, 
-            node_id=ctx.node_id, 
-            watch_dir=ctx.watch_dir
+            node_id=ctx.node_id
         ),
         DynamicsDaemon(
             bus=ctx.bus,

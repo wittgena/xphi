@@ -8,22 +8,22 @@ from typing import Callable, Coroutine, Any, Optional
 
 log = logging.getLogger("kernel.reactor")
 
-class KernelReactor:
+class PhaseReactor:
     _policy_applied = False
     _pinned_core = None
 
     @classmethod
     def _apply_kernel_optimizations(cls) -> None:
-        """@desc: CPU Pinning 및 최적의 비동기 I/O 정책(uvloop)을 커널 레벨에서 주입"""
         if cls._policy_applied:
             return
 
-        # 1. CPU Affinity Pinning
+        # 1. CPU Affinity Pinning (N-Core Lock-free Distribution)
         if hasattr(os, 'sched_setaffinity') and hasattr(os, 'sched_getaffinity'):
             try:
-                available_cores = os.sched_getaffinity(0)
+                available_cores = list(os.sched_getaffinity(0))
                 if available_cores:
-                    target_core = list(available_cores)[0]
+                    # PID 기반 모듈러 연산으로 가용 코어에 프로세스를 자동 분산 할당
+                    target_core = available_cores[os.getpid() % len(available_cores)]
                     os.sched_setaffinity(0, {target_core})
                     cls._pinned_core = target_core
                     log.info(f"[Reactor] ⚡ CPU Affinity Pinned to Core: {target_core}")
@@ -55,10 +55,8 @@ class KernelReactor:
     ) -> None:
         loop = asyncio.get_running_loop()
         loop.set_exception_handler(cls._global_exception_handler)
-
         shutdown_event = asyncio.Event()
-
-        # OS 호환성을 고려한 안전한 시그널 바인딩
+        
         for sig in (signal.SIGINT, signal.SIGTERM):
             try:
                 loop.add_signal_handler(sig, shutdown_event.set)
@@ -69,7 +67,6 @@ class KernelReactor:
         shutdown_waiter = asyncio.create_task(shutdown_event.wait(), name="Reactor-Shutdown-Waiter")
 
         try:
-            # 메인 태스크의 자연 종료 혹은 외부 종료 시그널 중 먼저 발생하는 것을 대기
             done, pending = await asyncio.wait(
                 [main_task, shutdown_waiter],
                 return_when=asyncio.FIRST_COMPLETED
@@ -79,7 +76,6 @@ class KernelReactor:
                 log.info("\n[Reactor] 🛑 OS Signal received. Initiating graceful shutdown...")
                 main_task.cancel()
                 try:
-                    # [개선] 무한 대기 방지 (Shutdown Timeout 강제 적용)
                     await asyncio.wait_for(main_task, timeout=shutdown_timeout)
                 except asyncio.TimeoutError:
                     log.warning(f"[Reactor] ⚠️ Main task shutdown timed out ({shutdown_timeout}s). Forcing exit.")
@@ -88,7 +84,6 @@ class KernelReactor:
                 except Exception as e:
                     log.error(f"[Reactor] 💥 Main task raised exception during shutdown: {e}")
             else:
-                # 메인 로직이 자체적으로 종료되었으므로 좀비 리스너 제거
                 shutdown_waiter.cancel()
 
         except asyncio.CancelledError:

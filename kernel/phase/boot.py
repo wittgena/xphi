@@ -1,6 +1,8 @@
 # kernel.phase.boot
 import os
+import sys
 import asyncio
+import subprocess
 
 from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.bus import AsyncEventBus
@@ -12,12 +14,14 @@ from kernel.phase.runtime.executor.swarm import SwarmExecutor
 from kernel.phase.runtime.flow.executor import FlowExecutor
 from kernel.dphi.ledger.consensus import KernelLedger
 from watcher.receptor.policy.router import RoutingPolicyEngine, ClusterStateMesh, RoutingDecision
-from kernel.phase.runtime.node import NodeRuntime
 from kernel.phase.signal import PhaseSignal
-from kernel.phase.reactor import KernelReactor
+from kernel.phase.reactor import PhaseReactor
 
 from watcher.plane.regulator import default_plane
 from watcher.plane.emitter import get_emitter
+
+# [추가] Watcher(Receptor) 구동을 위한 모듈 임포트
+from watcher.receptor.bootstrap import receptor_bootstrap
 
 log = get_emitter("phase.boot")
 
@@ -34,12 +38,14 @@ class KernelGateway:
 
         asyncio.create_task(policy_engine.watch_policy_updates())
         asyncio.create_task(state_mesh.start_mesh_sync())
+        
         if topology == "EXT_PROC":
             # Note: ExtProcStreamHandler assumes it is available in the environment
             stream_handler = ExtProcStreamHandler(policy_engine, state_mesh)
             asyncio.create_task(stream_handler.serve())
         else:
             log.info(f"[Orchestrator] Running in {topology} mode. (Ingress Receptor removed)")
+
 
 class RoutingExecutor(BaseExecutor):
     def __init__(self, completion_signal: asyncio.Event):
@@ -77,43 +83,54 @@ class RoutingExecutor(BaseExecutor):
             try:
                 return await self.flow_executor.execute(psi)
             except Exception as e:
-                ## @fallback.2: Optional retry via Swarm in case of a fatal error during isolated process execution
                 log.error(f"[Router] FlowExecutor failed with {e}. Falling back to SwarmExecutor.")
                 return await self.swarm_executor.execute(psi)
         else:
             log.info(f"[Router] Routing '{command}' -> SwarmExecutor (In-memory)")
             return await self.swarm_executor.execute(psi)
 
-_node_instance = None
+
+def spawn_worker_node():
+    """
+    [추가] 독립된 서브프로세스로 워커 노드(Data Plane)를 실행합니다.
+    OS 레벨에서 할당된 유휴 코어를 점유하며 완벽한 Lock-free 상태로 동작합니다.
+    """
+    log.info("[Boot] Spawning initial Phase Runtime (Worker Node)...")
+    subprocess.Popen([sys.executable, "-m", "kernel.phase.runtime.node"])
+
 
 async def main_async():
-    """비즈니스 로직(컴포넌트 조립 및 구동)만 수행하는 메인 코루틴"""
-    global _node_instance
-    
-    log.info("[Boot] Initiating System Bootstrap Sequence...")
+    """
+    [수정] 비즈니스 로직 연산을 제거하고 Control Plane (마스터 관측자) 역할로 격상
+    """
+    log.info("[Boot] Initiating Control Plane (Master Watcher)...")
     system_bus = AsyncEventBus()
     
     bridge_watcher = PhaseSignal(event_bus=system_bus)
     default_plane.attach(bridge_watcher)
 
-    completion_signal = asyncio.Event()
-    executor = RoutingExecutor(completion_signal)
-    
-    _node_instance = NodeRuntime(executor=executor)
+    # 1. 터널 및 라우팅 상태망 동기화 (NodeRuntime 주입 불필요)
     log.info("[Boot] Attaching Gateway Topology...")
-    await KernelGateway.assemble(_node_instance)
+    await KernelGateway.assemble(None)
     
-    log.info("[Boot] Starting Node Runtime...")
-    await _node_instance.start()
-    await _node_instance.wait_until_stopped() 
+    # 2. Watcher(Receptor) 영구 가동 (Daemon에서 Boot로 이관)
+    log.info("[Boot] Igniting Physical Membrane Receptor...")
+    tunnel = await TunnelFactory.get_default()
+    asyncio.create_task(receptor_bootstrap(tunnel))
+
+    # 3. 최소 1개의 런타임 워커 노드(Data Plane) 최초 스폰
+    spawn_worker_node()
+
+    log.info("[Boot] Control Plane fully operational. Entering observation mode.")
+    # 마스터 루프는 연산에 참여하지 않고 무한 대기하며 궤적(Trajectory)을 관측함
+    await asyncio.Event().wait()
+
 
 async def teardown():
-    """Reactor가 종료 시점에 100% 실행을 보장하는 자원 정리 훅"""
+    """Reactor 종료 시점에 리소스 릴리즈"""
     log.info("[Boot] Releasing system resources...")
-    if _node_instance and getattr(_node_instance, 'running', False):
-        await _node_instance.shutdown()
-        
     await TunnelFactory.close_all()
+    
     try:
         KernelLedger().close()
     except Exception as e:
@@ -122,4 +139,4 @@ async def teardown():
     log.info("[Boot] Resource cleanup complete.")
 
 if __name__ == "__main__":
-    KernelReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)
+    PhaseReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)

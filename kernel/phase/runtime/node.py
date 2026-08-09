@@ -24,7 +24,6 @@ from kernel.dphi.broker import DphiBroker
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
 
-# [개선] 더 이상 사용하지 않는 레거시 키("queue", "signal") 제거 및 정리
 RUNTIME_KEY = {
     "node": "runtime:node:{node_id}",
     "index_requires": "runtime:index:requires:{req_key}",
@@ -32,12 +31,10 @@ RUNTIME_KEY = {
 }
 
 class RuntimeKeyResolver:
-    """런타임 시스템에서 사용하는 Redis 키 스키마 해결기"""
     def __init__(self, templates: Optional[Dict[str, str]] = None):
         self.templates = templates or RUNTIME_KEY.copy()
 
     def get(self, template_key: str, **kwargs) -> str:
-        """키 템플릿을 찾아 kwargs를 매핑하여 반환합니다."""
         template = self.templates.get(template_key)
         if not template:
             raise KeyError(f"Unrecognized runtime key template: '{template_key}'")
@@ -48,16 +45,15 @@ runtime_keys = RuntimeKeyResolver()
 
 class NodeRuntime(IPhaseAtor):
     """
-    @runtime.node: closed-loop control manifold
+    @runtime.node: closed-loop control manifold (Pure Data Plane Worker)
     @flow: ψ(EventBus/Local) → Dispatcher → Φ(Interpreter/Plugins)
     """
-    def __init__(self, executor=None, idle_timeout=353):
+    def __init__(self, executor=None):
         self._id = f"node-{next_id()}" 
         self.node_id = self._id
         
         self.tunnel: Optional[UniversalFacade] = None
         self.executor = executor
-        self.idle_timeout = idle_timeout
         
         self.running = True
         self.supervisor = TaskSupervisor(source=f"NodeRuntime-{self._id}")
@@ -66,7 +62,7 @@ class NodeRuntime(IPhaseAtor):
         self.bus: Optional[TunnelEventBus] = None
         self.log = get_emitter("node.runtime", phase="SYSTEM")
         
-        self.broker: Optional[DphiBroker] = None  # IPC 통신을 담당할 Broker 상태 공간 확보
+        self.broker: Optional[DphiBroker] = None
         self.interpreter = None
         
         self.dispatcher = None
@@ -102,24 +98,17 @@ class NodeRuntime(IPhaseAtor):
     async def react(self, event: PsiEvent, field: IPhaseField, bus: IEventBus):
         """
         @desc: 로컬 내부(혹은 Subscribed)에서 발생한 이벤트를 수신하는 리액션.
-        [개선] 레거시 큐(lpush) 병목을 완전히 제거하고 즉시 Dispatcher로 넘겨 Zero-Latency 달성.
+        큐를 타지 않고 즉시 Dispatcher로 넘겨 Zero-Latency를 달성.
         """
         if self.running and self.dispatcher:
             try:
-                # 큐를 타지 않고 엔진에 즉시 위임 (메모리 레벨 디스패치)
                 self.dispatcher.dispatch(event)
             except Exception as e:
                 self.log.error(f"Failed to directly dispatch event {event.symbol}: {e}")
 
     def _create_phase_handler(self):
-        """
-        1. executor 실행을 제거하여 Dispatcher 파이프라인과 중복 방지
-        2. WASM Broker를 통한 비동기 상태 판단에 순응하기 위해 async 핸들러로 유지
-        """
         async def handler(psi: PsiEvent):
-            ## Judgment by the reflex system (I/O-Bound Async Task via WASM Broker)
             judgment = await self.interpreter.process(psi.carrier)
-
             return {
                 "psi": judgment.psi_symbol,
                 "action": judgment.action.value,
@@ -132,13 +121,9 @@ class NodeRuntime(IPhaseAtor):
 
     async def start(self):
         self.log.info(f"Starting RuntimeNode [{self.node_id}]")
-        
-        # 1. 인프라 바인딩
         self.tunnel = await TunnelFactory.get_default()
-        
         self.bus = TunnelEventBus(self.tunnel)
-        self.bus.subscribe(self, predicate=lambda e: True) # 로컬 반응계(Ator) 등록
-        
+        self.bus.subscribe(self, predicate=lambda e: True)
         if self.executor:
             self.executor.node = self
 
@@ -155,8 +140,6 @@ class NodeRuntime(IPhaseAtor):
             all_recepts = {"system:signal", "system:ping"}
 
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
-        
-        # WasmBroker 인스턴스화 및 NodeInterpreter에 주입
         self.broker = DphiBroker()
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=anchor)
         
@@ -164,8 +147,6 @@ class NodeRuntime(IPhaseAtor):
 
         self.sensor = SurfaceSensor(tunnel=self.tunnel)
         self.actuator = SurfaceActuator(TunnelSink(tunnel=self.tunnel))
-        
-        # 2. 엔진(Dispatcher) 초기화
         self.dispatcher = Dispatcher(
             supervisor=self.supervisor,
             default_handler=self._create_phase_handler(),
@@ -173,7 +154,6 @@ class NodeRuntime(IPhaseAtor):
             actuator=self.actuator,
         )
         
-        # 3. 의존성 주입(DI) 컨텍스트 생성
         self.ctx = RuntimeContext(
             node_id=self.node_id,
             tunnel=self.tunnel,
@@ -181,12 +161,11 @@ class NodeRuntime(IPhaseAtor):
             dispatcher=self.dispatcher,
             sensor=self.sensor,
             actuator=self.actuator,
-            idle_timeout=self.idle_timeout,
+            idle_timeout=0.0,
             watch_dir=watch_dir,
-            shutdown_hook=self.shutdown # NodeRuntime의 shutdown을 데몬들이 호출할 수 있도록 위임
+            shutdown_hook=self.shutdown
         )
 
-        # 4. 계층화된 통합 데몬(3종) 장착
         mount_core_layer(self.supervisor, self.ctx)
         self.log.info("Core Infra Layer mounted successfully.")
 
@@ -203,10 +182,8 @@ class NodeRuntime(IPhaseAtor):
         await self.deregister_node()
         await self.supervisor.shutdown()
 
-        ## @release: internal core components
         if self.actuator: await self.actuator.close()
         if self.tunnel: await self.tunnel.close()
-
         self.log.info("Teardown complete.")
         self._stop_event.set()
 
@@ -221,10 +198,7 @@ class NodeRuntime(IPhaseAtor):
 
         current_boundaries = getattr(self.interpreter.anchor, 'recept_boundaries', None)
         stable_anchor = AnchorFlow.bootstrap(current_boundaries)
-        
-        # 패닉 복구 시에도 동일하게 WasmBroker 참조를 주입
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=stable_anchor)
-        
         if self.dispatcher:
             self.dispatcher.default_handler = self._create_phase_handler() 
             
@@ -282,17 +256,15 @@ async def main_async():
     global _node_instance
     completion_signal = asyncio.Event()
     executor = SwarmExecutor(completion_signal)
-    
     _node_instance = NodeRuntime(executor=executor)
-    
+
     await _node_instance.start()
     await _node_instance.wait_until_stopped()
 
 async def teardown():
-    """Reactor가 종료될 때 호출하여 런타임을 안전하게 셧다운합니다."""
     if _node_instance and getattr(_node_instance, 'running', False):
         await _node_instance.shutdown()
 
 if __name__ == "__main__":
-    from kernel.phase.reactor import KernelReactor
-    KernelReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)
+    from kernel.phase.reactor import PhaseReactor
+    PhaseReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)
