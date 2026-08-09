@@ -1,4 +1,5 @@
-# watcher.receptor.mesh.gateway
+# watcher.receptor.policy.gateway
+## @lineage: watcher.receptor.mesh.gateway
 ## @lineage: kernel.phase.mesh.gateway
 import uuid
 import time

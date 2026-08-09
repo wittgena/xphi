@@ -1,10 +1,16 @@
 # arch.topos.tunnel.factory
-import redis
-import redis.asyncio as actual_redis
-import redis.exceptions
 import logging
 import asyncio
 from typing import Optional, Any, List, Tuple
+
+import redis
+import redis.asyncio as actual_redis
+import redis.exceptions
+
+# [핵심 변경점] BlockingConnectionPool 명시적 임포트
+from redis.asyncio.connection import BlockingConnectionPool as AsyncBlockingConnectionPool
+from redis.connection import BlockingConnectionPool as SyncBlockingConnectionPool
+
 from arch.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
 log = logging.getLogger("tunnel.factory")
@@ -55,15 +61,19 @@ class UniversalFacade:
         self.mq_client = None
         self.wasm_broker = None  # Hook for background WASM telemetry
         
+        # [핵심 변경점] timeout(커넥션 대기 시간) 추가
         pool_kwargs = {
             "max_connections": 100,
-            "socket_timeout": 5.0,
+            "timeout": 10.0,             # 빈 커넥션이 없을 때 최대 10초간 우아하게 대기 (Block)
+            "socket_timeout": 5.0,       # 실제 소켓 통신(I/O) 타임아웃
             "socket_connect_timeout": 5.0,
             "retry_on_timeout": True
         }
         pool_kwargs.update(kwargs)
 
-        self.state_store = actual_redis.from_url(state_url, decode_responses=True, **pool_kwargs)
+        # [핵심 변경점] AsyncBlockingConnectionPool을 사용하도록 연결 생성 방식 변경
+        pool = AsyncBlockingConnectionPool.from_url(state_url, decode_responses=True, **pool_kwargs)
+        self.state_store = actual_redis.Redis(connection_pool=pool)
 
         if self.mq_protocol == BackendProtocol.KAFKA:
             log.info(f"[Tunnel] Initializing Kafka Producer/Consumer at {self.mq_url}")
@@ -127,14 +137,20 @@ class UniversalFacadeSync:
         self.mq_url = mq_url
         self.mq_client = None
 
+        # [핵심 변경점] timeout(커넥션 대기 시간) 추가
         pool_kwargs = {
             "max_connections": 50,
+            "timeout": 10.0,             # 빈 커넥션이 없을 때 최대 10초간 대기
             "socket_timeout": 5.0,
             "socket_connect_timeout": 5.0,
             "retry_on_timeout": True
         }
         pool_kwargs.update(kwargs)
-        self.state_store = redis.from_url(state_url, decode_responses=True, **pool_kwargs)
+        
+        # [핵심 변경점] SyncBlockingConnectionPool을 사용하도록 연결 생성 방식 변경
+        pool = SyncBlockingConnectionPool.from_url(state_url, decode_responses=True, **pool_kwargs)
+        self.state_store = redis.Redis(connection_pool=pool)
+        
         if self.mq_protocol == BackendProtocol.KAFKA:
             log.info(f"[SyncTunnel] Initializing Sync Kafka Producer/Consumer at {self.mq_url}")
             pass

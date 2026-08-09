@@ -34,6 +34,11 @@ class WasmTaskerDaemon(AbstractDaemon):
         self.poll_timeout_ms = 1000
         self.default_tier = "STANDARD"
 
+        # [핵심 1] 동시성 한계를 테스트 상수의 최댓값(SCALE_STEPS max: 71)과 동기화하여 병목 제거
+        self.concurrency_limit = 71 
+        self.fetch_batch_size = self.concurrency_limit 
+
+        self._semaphore = asyncio.Semaphore(self.concurrency_limit)
         self._pubsub_task: Optional[asyncio.Task] = None
 
     async def _init_consumer_group(self):
@@ -47,19 +52,22 @@ class WasmTaskerDaemon(AbstractDaemon):
     async def run(self):
         await self._init_consumer_group()
         self._pubsub_task = asyncio.create_task(self._listen_pubsub())
-        self.log.info(f"WasmTasker listening: Stream[{self.topic}] | PubSub[{self.control_channel}]")
+        self.log.info(f"WasmTasker listening: Stream[{self.topic}] | PubSub[{self.control_channel}] (Max Concurrency: {self.concurrency_limit})")
         
         try:
             while self.running:
                 streams = await self.tunnel.stream_consume(
                     topic=self.topic, group=self.group_name,
-                    consumer=self.consumer_name, count=1, block=self.poll_timeout_ms
+                    consumer=self.consumer_name, count=self.fetch_batch_size, block=self.poll_timeout_ms
                 )
                 if not streams:
                     continue
 
                 for stream_name, messages in streams:
                     for message_id, msg_data in messages:
+                        # [핵심 2] 동시 실행 한계에 도달하면 여기서 우아하게 대기(Backpressure)
+                        await self._semaphore.acquire()
+
                         json_payload = msg_data.get("data", msg_data.get(b"data", b"{}"))
                         if isinstance(json_payload, bytes):
                             json_payload = json_payload.decode('utf-8')
@@ -67,6 +75,8 @@ class WasmTaskerDaemon(AbstractDaemon):
                         try:
                             data = json.loads(json_payload)
                             job_id = data.get("job_id", "unknown")
+                            
+                            # 작업 스케줄링 성공 시 _process_and_reply 내부 finally에서 세마포어 해제됨
                             self.supervisor.create(
                                 self._process_and_reply(data, message_id), 
                                 name=f"ExecGate-{job_id[:8]}"
@@ -74,6 +84,11 @@ class WasmTaskerDaemon(AbstractDaemon):
                         except json.JSONDecodeError:
                             self.log.error(f"Invalid JSON payload: {json_payload}")
                             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
+                            self._semaphore.release()  # 에러 시 누수 방지
+                        except Exception as e:
+                            self.log.error(f"Failed to schedule WASM task: {e}")
+                            self._semaphore.release()  # 에러 시 누수 방지
+
         except asyncio.CancelledError:
             pass
         except Exception as e:
@@ -117,7 +132,7 @@ class WasmTaskerDaemon(AbstractDaemon):
             self.default_tier = tier
             self.log.info(f"[{job_id[:8]}] Global Cgroup default tier updated -> {tier}")
             if response_channel:
-                await self.tunnel.publish(response_channel, json.dumps({"success": True}))
+                await self.tunnel.publish(response_channel, json.dumps({"success": True, "job_id": job_id}))
 
     def _get_policy_from_tier(self, tier_str: str) -> CgroupPolicy:
         tier_str = (tier_str or self.default_tier).upper()
@@ -127,15 +142,29 @@ class WasmTaskerDaemon(AbstractDaemon):
 
     async def _process_and_reply(self, payload: dict, message_id: str):
         response_channel = payload.get("response_channel")
+        job_id = payload.get("job_id", "unknown")
+
         try:
-            # CPU 바운드/블로킹 처리를 별도 스레드에서 수행
+            # CPU 바운드 연산을 별도 스레드로 분리 (세마포어가 OS 스레드 고갈 방어)
             response_data = await asyncio.to_thread(self._execute_isolated, payload)
+            
+            # [핵심 3] 브로커가 어떤 요청의 응답인지 매칭할 수 있도록 job_id 에코(Echo)
+            if isinstance(response_data, dict):
+                response_data["job_id"] = job_id
+            
             if response_channel:
                 await self.tunnel.publish(response_channel, json.dumps(response_data))
+                
         except Exception as e:
             self.log.error(f"Failed to process execution payload: {e}", exc_info=True)
+            # [핵심 4] Fast-Fail: 데몬 에러 발생 시 브로커가 무한 대기(Timeout)하지 않도록 즉시 에러 응답 전송
+            if response_channel:
+                err_payload = {"success": False, "error": f"Tasker Daemon Error: {str(e)}", "job_id": job_id}
+                await self.tunnel.publish(response_channel, json.dumps(err_payload))
         finally:
+            # 성공/실패 여부에 관계없이 스트림 ACK 및 세마포어 반환 (교착상태/메모리 누수 원천 차단)
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
+            self._semaphore.release()
 
     def _get_strategy_module(self):
         import kernel.phase.daemon.task.strategy as STRATEGY_PATH

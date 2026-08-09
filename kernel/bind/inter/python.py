@@ -1,5 +1,4 @@
 # kernel.bind.inter.python
-"""@desc: Local interpreter for secure Python code execution using Deno/Pyodide"""
 import functools
 import inspect
 import json
@@ -9,6 +8,7 @@ import subprocess
 import threading
 import time
 import select
+import shutil
 from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Mapping
@@ -46,27 +46,32 @@ class PythonInterpreter:
         if deno_command:
             self.deno_command = list(deno_command)
         else:
-            args = ["deno", "run"]
-            allowed_read_paths = [self._get_runner_path()]
+            args = ["deno", "run", "--no-prompt"]
+            
+            allowed_read_paths = [str(Path(self._get_runner_path()).resolve())]
             deno_dir = self._get_deno_dir()
             if deno_dir:
-                allowed_read_paths.append(deno_dir)
-
+                allowed_read_paths.append(str(Path(deno_dir).resolve()))
+            
             if self.enable_read_paths:
-                allowed_read_paths.extend(str(p) for p in self.enable_read_paths)
+                allowed_read_paths.extend(str(Path(p).resolve()) for p in self.enable_read_paths)
             if self.enable_write_paths:
-                allowed_read_paths.extend(str(p) for p in self.enable_write_paths)
-            args.append(f"--allow-read={','.join(allowed_read_paths)}")
+                allowed_read_paths.extend(str(Path(p).resolve()) for p in self.enable_write_paths)
+                
+            args.append(f"--allow-read={','.join(set(allowed_read_paths))}")
+
+            if self.enable_write_paths:
+                resolved_writes = [str(Path(p).resolve()) for p in self.enable_write_paths]
+                args.append(f"--allow-write={','.join(set(resolved_writes))}")
+
+            if self.enable_network_access:
+                args.append(f"--allow-net={','.join(str(x) for x in self.enable_network_access)}")
 
             self._env_arg = ""
             if self.enable_env_vars:
                 user_vars = [str(v).strip() for v in self.enable_env_vars]
                 args.append("--allow-env=" + ",".join(user_vars))
                 self._env_arg = ",".join(user_vars)
-            if self.enable_network_access:
-                args.append(f"--allow-net={','.join(str(x) for x in self.enable_network_access)}")
-            if self.enable_write_paths:
-                args.append(f"--allow-write={','.join(str(x) for x in self.enable_write_paths)}")
 
             args.append(self._get_runner_path())
             if self._env_arg:
@@ -79,7 +84,6 @@ class PythonInterpreter:
         self._owner_thread: int | None = None
         self._pending_large_vars = {}
         
-        # Pyodide 부팅 및 무거운 연산을 위해 기본 타임아웃을 15초로 설정
         self.execution_timeout = 15.0
 
     def _check_thread_ownership(self) -> None:
@@ -106,7 +110,6 @@ class PythonInterpreter:
         return None
 
     def _get_runner_path(self) -> str:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
         return os.path.join(TIME_ROOT, "pysand.ts")
 
     def _mount_files(self):
@@ -196,7 +199,6 @@ class PythonInterpreter:
             pass 
 
     def _apply_cgroup_policy(self) -> None:
-        """샌드박스 내부의 파이썬 인터프리터에 Cgroup 정책(Fuel, Memory)을 동적으로 주입합니다."""
         use_fuel = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else None
         params = {
             "fuel": use_fuel,
@@ -208,6 +210,31 @@ class PythonInterpreter:
         if self.deno_process is None or self.deno_process.poll() is not None:
             self._mounted_files = False
             try:
+                # [핵심 방어선] PATH 의존성을 끊기 위해 Deno의 절대 경로를 먼저 탐색
+                deno_exe = self.deno_command[0]
+                if not os.path.isabs(deno_exe):
+                    resolved_exe = shutil.which(deno_exe)
+                    if not resolved_exe:
+                        raise FileNotFoundError(f"{deno_exe} executable not found in host PATH")
+                    self.deno_command[0] = resolved_exe
+
+                # [완전한 격리(Air-gap)] 
+                # 호스트의 PATH를 포함한 모든 민감한 환경 변수를 제거하여 샌드박스로의 유출 원천 차단
+                safe_env = {
+                    "TMPDIR": os.environ.get("TMPDIR", "/tmp")
+                }
+                
+                # Deno 엔진이 HOME 변수 없이도 캐시를 찾을 수 있도록 명시적 주입
+                deno_dir = self._get_deno_dir()
+                if deno_dir:
+                    safe_env["DENO_DIR"] = deno_dir
+                
+                # 사용자가 명시적으로 허용한 환경변수만 통과
+                if self.enable_env_vars:
+                    for k in self.enable_env_vars:
+                        if k in os.environ:
+                            safe_env[k] = os.environ[k]
+                            
                 self.deno_process = subprocess.Popen(
                     self.deno_command,
                     stdin=subprocess.PIPE,
@@ -215,7 +242,7 @@ class PythonInterpreter:
                     stderr=subprocess.STDOUT, 
                     text=True,
                     encoding="UTF-8",
-                    env=os.environ.copy()
+                    env=safe_env
                 )
             except FileNotFoundError as e:
                 raise ProtocolError("Deno executable not found.") from e
@@ -246,7 +273,6 @@ class PythonInterpreter:
                 raise ProtocolError(f"Deno exited unexpectedly (code {exit_code}) {context}")
 
     def _parse_response_line(self, response_line: str, context: str) -> dict | None:
-        log.debug(f"[Deno RPC Response] <- {response_line}")
         if not response_line.startswith("{"):
             log.debug(f"[Deno Output Leak] {context}: {response_line}")
             return None
@@ -272,7 +298,10 @@ class PythonInterpreter:
                 continue
 
             if response.get("id") != request_id:
-                raise ProtocolError(f"Response ID mismatch {context}: expected {request_id}, got {response.get('id')}")
+                log.debug(f"Skipping mismatched JSON response {context}: {response}")
+                skipped += 1
+                continue
+                
             if "error" in response:
                 raise ProtocolError(f"Error {context}: {response['error'].get('message', 'Unknown error')}")
             return response
@@ -369,7 +398,7 @@ class PythonInterpreter:
         code: str,
         variables: Mapping[str, Any] | None = None,
         callables: Mapping[str, Callable[..., Any]] | None = None,
-        context: dict | None = None, # [추가됨] 실행 컨텍스트 (시간, 시드 등)
+        context: dict | None = None,
     ) -> ExecutionResult:
         self._check_thread_ownership()
         variables = variables or {}
@@ -434,7 +463,9 @@ class PythonInterpreter:
 
             if "result" in msg:
                 if msg.get("id") != execute_request_id:
-                    raise ProtocolError(f"Response ID mismatch: expected {execute_request_id}, got {msg.get('id')}")
+                    log.debug(f"Skipping mismatched JSON response during execution: {msg}")
+                    skipped += 1
+                    continue
                 
                 result = msg["result"]
                 self._sync_files()
@@ -442,7 +473,9 @@ class PythonInterpreter:
 
             if "error" in msg:
                 if msg.get("id") is not None and msg.get("id") != execute_request_id:
-                    raise ProtocolError(f"Response ID mismatch: expected {execute_request_id}, got {msg.get('id')}")
+                    log.debug(f"Skipping mismatched JSON error during execution: {msg}")
+                    skipped += 1
+                    continue
                 
                 error = msg["error"]
                 error_message = error.get("message", "Unknown error")
@@ -467,9 +500,9 @@ class PythonInterpreter:
     def __call__(
         self,
         code: str,
-        variables: Mapping[str, Any] | None = None,
-        callables: Mapping[str, Callable[..., Any]] | None = None,
-        context: dict | None = None, # [추가됨] 시그니처 동기화
+        variables=None,
+        callables=None,
+        context: dict | None = None
     ) -> ExecutionResult:
         return self.execute(code, variables, callables, context)
 

@@ -13,11 +13,10 @@ except ImportError:
 
 from kernel.bind.inter.protocol import ExecutionError, ExecutionResult
 from kernel.bind.resolver import resolve_path
-from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy, Tier
-
-# [ADD] Cross-WASM 호출을 위한 WasmInterpreter 임포트
 from kernel.bind.inter.wasm import WasmInterpreter
+
+from watcher.plane.emitter import get_emitter
 
 TIME_ROOT = resolve_path("time")
 log = get_emitter("inter.dvm", phase="SYSTEM")
