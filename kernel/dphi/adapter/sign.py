@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional
 from kernel.dphi.adapter.state import StateAdapter
 from watcher.plane.emitter import get_emitter
 
-log = get_emitter("crypto.signer")
+log = get_emitter("adapter.sign")
 
 class NodeSigner:
     """Singleton identity manager responsible for hierarchical key loading and deterministic cryptographic signature generation for the node"""
