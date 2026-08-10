@@ -47,7 +47,7 @@ class EventBusDaemon(AbstractDaemon):
 
     async def _init_consumer_group(self):
         try:
-            await self.tunnel.state_store.xgroup_create(name=self.topic, groupname=self.group_name, id='0', mkstream=True)
+            await self.tunnel.state_store.xgroup_create(name=self.topic, groupname=self.group_name, id='$', mkstream=True)
             self.log.info(f"Consumer Group '{self.group_name}' initialized.")
         except Exception as e:
             if "BUSYGROUP" not in str(e):
