@@ -25,19 +25,21 @@ class WasmTaskerDaemon(AbstractDaemon):
         super().__init__("WasmTasker")
         self.tunnel = tunnel
         self.supervisor = supervisor
-        self.node_id = node_id or uuid.uuid4().hex[:8]
+        
+        ## Worker 고유 식별을 위해 PID를 명시적으로 추가하여 충돌 방지
+        self.node_id = node_id or f"tasker-{uuid.uuid4().hex[:6]}-{os.getpid()}"
         self.default_wasm_path = default_wasm_path
         
         self.control_channel = "wasm:control:req"
         self.topic = "wasm:execute:stream"
         self.group_name = "wasm_tasker_group"
-        self.consumer_name = f"tasker-{self.node_id}"
+        
+        ## Redis Consumer Name은 프로세스 단위로 고유해야 함
+        self.consumer_name = f"consumer-{self.node_id}"
         self.poll_timeout_ms = 1000
         self.default_tier = "STANDARD"
-
-        self.concurrency_limit = 71 
+        self.concurrency_limit = 4 
         self.fetch_batch_size = self.concurrency_limit 
-
         self._semaphore = asyncio.Semaphore(self.concurrency_limit)
         self._pubsub_task: Optional[asyncio.Task] = None
 
@@ -52,7 +54,7 @@ class WasmTaskerDaemon(AbstractDaemon):
     async def run(self):
         await self._init_consumer_group()
         self._pubsub_task = asyncio.create_task(self._listen_pubsub())
-        self.log.info(f"WasmTasker listening: Stream[{self.topic}] | PubSub[{self.control_channel}] (Max Concurrency: {self.concurrency_limit})")
+        self.log.info(f"WasmTasker listening: Stream[{self.topic}] | PubSub[{self.control_channel}] (Max Concurrency: {self.concurrency_limit}, PID: {os.getpid()})")
         
         try:
             while self.running:
@@ -143,14 +145,11 @@ class WasmTaskerDaemon(AbstractDaemon):
         job_id = payload.get("job_id", "unknown")
 
         try:
-            # CPU 바운드 연산을 별도 스레드로 분리
             response_data = await asyncio.to_thread(self._execute_isolated, payload)
             
             if isinstance(response_data, dict):
                 response_data["job_id"] = job_id
                 
-                # [핵심 변경]: 순수 연산 결과물(Payload/Output)을 건드리지 않고,
-                # 브로커가 파싱하는 "metrics" 메타데이터 영역에 물리적 노드 정보를 밀어넣음
                 if "metrics" not in response_data:
                     response_data["metrics"] = {}
                 
@@ -178,7 +177,6 @@ class WasmTaskerDaemon(AbstractDaemon):
         return importlib.import_module(module_name)
 
     def _execute_isolated(self, payload: dict) -> dict:
-        """라우팅을 수행하고 최신 로직을 주입받아 실행"""
         job_id = payload.get("job_id", "unknown")
         target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE)
         wasm_path = payload.get("wasm_path", self.default_wasm_path)

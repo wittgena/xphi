@@ -1,5 +1,6 @@
 # watcher.receptor.bootstrap
 import asyncio
+import json
 from pathlib import Path
 from watchdog.observers import Observer
 import time
@@ -10,6 +11,9 @@ from watchdog.events import FileSystemEventHandler
 
 from arch.contract.discovery import discover_modules
 from arch.topos.tunnel.factory import UniversalFacade
+from arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
+from arch.contract.event.next import next_id
+
 from kernel.bind.resolver import find_current_self
 from watcher.plane.sink import TunnelSink 
 from watcher.plane.emitter import get_emitter
@@ -20,11 +24,12 @@ log = get_emitter("receptor.bootstrap")
 SELF_ROOT = find_current_self()
 
 class TracerSource(FileSystemEventHandler):
-    def __init__(self, kernel: ReceptorKernel, loop: asyncio.AbstractEventLoop, watch_dir: str):
+    def __init__(self, kernel: ReceptorKernel, loop: asyncio.AbstractEventLoop, watch_dir: str, tunnel: UniversalFacade):
         self.kernel = kernel
         self.loop = loop  
         self.watch_dir = Path(watch_dir).resolve()
         self.last_trigger = 0
+        self.tunnel = tunnel
 
     def _resolve_fqn(self, file_path: str) -> str:
         path = Path(file_path).resolve()
@@ -50,8 +55,32 @@ class TracerSource(FileSystemEventHandler):
         if module_fqn and module_fqn in sys.modules:
             try:
                 log.info(f"[Plasticity] Re-aligning topology for: {module_fqn}")
+                
+                # 1. Master(Receptor) 메모리 공간 갱신
                 importlib.reload(sys.modules[module_fqn])
-                log.info(f"[Modification] {module_fqn} successfully integrated into Runtime.")
+                log.info(f"[Modification] {module_fqn} successfully integrated into Master Runtime.")
+                
+                # 2. Worker 프로세스들에게 동기화 브로드캐스트 (Distributed Hot-Reload)
+                sync_event = PsiEvent(
+                    event_id=next_id(), 
+                    parent_id=None, 
+                    source_id="receptor", 
+                    scope="GLOBAL", 
+                    tick=0, 
+                    phase_id=0, 
+                    context={},
+                    carrier=PsiCarrier(
+                        kind="system:topology", 
+                        tag="reload", 
+                        payload={"module_fqn": module_fqn}, 
+                        carrier_type=CarrierType.FIXED
+                    )
+                )
+                
+                asyncio.run_coroutine_threadsafe(
+                    self.tunnel.state_store.xadd("runtime:bus:stream", {"data": json.dumps(sync_event.__dict__)}),
+                    self.loop
+                )
                 
                 payload = {
                     "signal_id": "topology_reloaded",
@@ -72,8 +101,6 @@ class TracerSource(FileSystemEventHandler):
             log.info(f"[Genesis] New structure detected: {module_fqn or event.src_path}")
             payload = {"signal_id": "new_structure_detected", "value": 0.5, "module": module_fqn}
 
-            # [선택적 확장] 새로운 파일이 감지되었을 때 해당 파일만 AST 검증을 수행하도록 로직을 추가할 수 있습니다.
-
         asyncio.run_coroutine_threadsafe(
             self.kernel.emit_analysis_event(payload),
             self.loop
@@ -90,7 +117,9 @@ async def receptor_bootstrap(tunnel: UniversalFacade, watch_dir: str = SELF_ROOT
     )
 
     main_loop = asyncio.get_running_loop()
-    event_handler = TracerSource(kernel, main_loop, watch_dir=watch_dir)
+    
+    # [핵심 변경점] Worker로 이벤트를 전파할 수 있도록 tunnel 객체 주입
+    event_handler = TracerSource(kernel, main_loop, watch_dir=watch_dir, tunnel=tunnel)
     
     # ---------------------------------------------------------
     # [핵심 변경점] Receptor 구동 시 최초 1회 전체 시스템 스캔 수행

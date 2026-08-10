@@ -54,7 +54,7 @@ class EventBusDaemon(AbstractDaemon):
                 self.log.error(f"Failed to initialize Consumer Group: {e}")
 
     async def run(self):
-        self.log.info(f"EventBusDaemon started. Waiting for Sticky Events (Topic: {self.topic})")
+        self.log.info(f"EventBusDaemon started. Waiting for Sticky Events (Topic: {self.topic}, Consumer: {self.consumer_name})")
         await self._init_consumer_group()
         
         while self.running:
@@ -95,6 +95,7 @@ class EventBusDaemon(AbstractDaemon):
                 self.log.error(f"Stream Consume Error: {e}")
                 await asyncio.sleep(1)
 
+
 class HeartbeatDaemon(AbstractDaemon):
     def __init__(self, tunnel: UniversalFacade, node_id: str, supervisor: TaskSupervisor):
         super().__init__("Heartbeat")
@@ -126,6 +127,7 @@ class HeartbeatDaemon(AbstractDaemon):
             self.log.warn("HeartbeatDaemon received cancellation signal.")
         except Exception as e:
             self.log.error(f"HeartbeatDaemon Error: {e}")
+
 
 class DynamicsDaemon(AbstractDaemon):
     def __init__(self, bus: AsyncEventBus, sensor: Optional[SurfaceSensor] = None):
@@ -196,16 +198,16 @@ class DynamicsDaemon(AbstractDaemon):
         )
 
 
-def mount_core_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
-    core_daemons = [
-        EventBusDaemon(
-            tunnel=ctx.tunnel,
-            dispatcher=ctx.dispatcher, 
-            node_id=ctx.node_id,
-            idle_timeout=ctx.idle_timeout,
-            shutdown_hook=ctx.shutdown_hook,
-            group_name=GROUP_NODE_MANIFOLD
-        ),
+# =====================================================================
+# 1. Master Layer Mounting (Control Plane 용)
+# =====================================================================
+def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
+    """
+    Master 노드 전용 데몬입니다. 
+    상태 동기화(Heartbeat)와 센서/동적 커널(Dynamics) 구동만 전담합니다.
+    (연산 부하가 있는 EventBus 스트림 소비는 하지 않습니다.)
+    """
+    master_daemons = [
         HeartbeatDaemon(
             tunnel=ctx.tunnel, 
             node_id=ctx.node_id,
@@ -216,16 +218,41 @@ def mount_core_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
             sensor=ctx.sensor
         )
     ]
-    for daemon in core_daemons:
+    for daemon in master_daemons:
+        supervisor.mount_daemon(daemon)
+    
+    log.info("Master Infra Layer (Heartbeat, Dynamics) mounted successfully.")
+
+
+# =====================================================================
+# 2. Worker Layer Mounting (Data Plane 용)
+# =====================================================================
+def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
+    """
+    각 Worker 프로세스 전용 데몬입니다. 
+    Redis Consumer Group을 통해 이벤트를 가져오고 WASM 플러그인을 실행합니다.
+    """
+    worker_daemons = [
+        EventBusDaemon(
+            tunnel=ctx.tunnel,
+            dispatcher=ctx.dispatcher, 
+            node_id=ctx.node_id,
+            idle_timeout=ctx.idle_timeout,
+            shutdown_hook=ctx.shutdown_hook,
+            group_name=GROUP_NODE_MANIFOLD
+        )
+    ]
+    for daemon in worker_daemons:
         supervisor.mount_daemon(daemon)
 
-def mount_app_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     try:
         from kernel.phase.daemon.task.wasm import WasmTaskerDaemon
         wasm_daemon = WasmTaskerDaemon(tunnel=ctx.tunnel, supervisor=supervisor)
         supervisor.mount_daemon(wasm_daemon)
-        log.info("L2 Plugin Mounted: WasmTaskerDaemon")
+        log.info("Worker Plugin Mounted: WasmTaskerDaemon")
     except ImportError as e:
         log.warn(f"WasmTaskerDaemon bypassed (Not installed or import error): {e}")
     except Exception as e:
         log.error(f"Failed to mount WasmTaskerDaemon: {e}")
+
+    log.info("Worker Data Layer (EventBus, WasmTasker) mounted successfully.")

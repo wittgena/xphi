@@ -2,6 +2,8 @@
 import asyncio
 import time
 import json
+import multiprocessing
+import os
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
@@ -18,10 +20,13 @@ from kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from kernel.bind.inter.node import NodeInterpreter, AnchorFlow
 from kernel.phase.runtime.context import RuntimeContext
-from kernel.phase.daemon.bootstrap import mount_core_layer, mount_app_layer
+from kernel.phase.daemon.bootstrap import mount_master_layer, EventBusDaemon
 from kernel.dphi.broker import DphiBroker
+
 from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
+
+from kernel.phase.runtime.worker import worker_process_entry
 
 RUNTIME_KEY = {
     "node": "runtime:node:{node_id}",
@@ -42,10 +47,14 @@ class RuntimeKeyResolver:
 
 runtime_keys = RuntimeKeyResolver()
 
+
+# =====================================================================
+# Master NodeRuntime (Control Plane 역할)
+# =====================================================================
 class NodeRuntime(IPhaseAtor):
     """
-    @runtime.node: closed-loop control manifold (Pure Data Plane Worker)
-    @flow: ψ(EventBus/Local) → Dispatcher → Φ(Interpreter/Plugins)
+    @runtime.node: Master-Worker control manifold
+    @flow: Master가 상태/센서 관리 및 CLI 제어 -> Redis Stream -> 각 Worker의 Dispatcher -> WASM 처리
     """
     def __init__(self, executor=None):
         self._id = f"node-{next_id()}" 
@@ -53,11 +62,11 @@ class NodeRuntime(IPhaseAtor):
         self.tunnel: Optional[UniversalFacade] = None
         self.executor = executor
         self.running = True
-        self.supervisor = TaskSupervisor(source=f"NodeRuntime-{self._id}")
+        self.supervisor = TaskSupervisor(source=f"Master-{self._id}")
         self.supervisor.add_error_handler(self._global_task_error)
 
         self.bus: Optional[TunnelEventBus] = None
-        self.log = get_emitter("node.runtime", phase="SYSTEM")
+        self.log = get_emitter("node.master", phase="SYSTEM")
         
         self.broker: Optional[DphiBroker] = None
         self.interpreter = None
@@ -67,11 +76,13 @@ class NodeRuntime(IPhaseAtor):
         self.actuator = None
         self.ctx: Optional[RuntimeContext] = None
         
+        # 생성된 워커 프로세스를 관리하기 위한 배열
+        self.worker_processes: List[multiprocessing.Process] = []
+        
         self._stop_event = asyncio.Event()
 
     def _global_task_error(self, task: asyncio.Task[Any], exc: BaseException) -> None:
-        """Global handler invoked when an exception occurs in a task managed by the supervisor"""
-        self.log.crit(f"⚠️ Critical fault in Task [{task.get_name()}]: {exc}")
+        self.log.crit(f"⚠️ Critical fault in Master Task [{task.get_name()}]: {exc}")
         asyncio.create_task(self.shutdown())
 
     @property
@@ -113,7 +124,7 @@ class NodeRuntime(IPhaseAtor):
         return handler
 
     async def start(self):
-        self.log.info(f"Starting RuntimeNode [{self.node_id}]")
+        self.log.info(f"Starting Master NodeRuntime [{self.node_id}]")
         self.tunnel = await TunnelFactory.get_default()
         self.bus = TunnelEventBus(self.tunnel)
         self.bus.subscribe(self, predicate=lambda e: True)
@@ -159,12 +170,35 @@ class NodeRuntime(IPhaseAtor):
             shutdown_hook=self.shutdown
         )
 
-        mount_core_layer(self.supervisor, self.ctx)
-        self.log.info("Core Infra Layer mounted successfully.")
+        # -----------------------------------------------------------------
+        # 3. Master 마운트 및 별도 모듈 기반 Worker 프로세스 스폰
+        # -----------------------------------------------------------------
+        mount_master_layer(self.supervisor, self.ctx)
+        
+        # [핵심 변경] Master Node가 CLI 명령어(COMMAND)를 수신할 수 있도록 ControlBus 마운트
+        master_control_bus = EventBusDaemon(
+            tunnel=self.tunnel,
+            dispatcher=self.dispatcher, # CLI 및 Swarm Executor가 물려있는 Dispatcher
+            node_id=self.node_id,
+            idle_timeout=0.0,
+            shutdown_hook=self.shutdown,
+            group_name="master_control_group" # Worker들의 그룹(node_manifold_group)과 충돌하지 않도록 분리
+        )
+        self.supervisor.mount_daemon(master_control_bus)
+        
+        self.log.info("Master Infra Layer (Heartbeat, Sensor, ControlBus) mounted successfully.")
 
-        mount_app_layer(self.supervisor, self.ctx)
-        self.log.info("App Plugin Layer mounted successfully.")
-        self.log.info("All components orchestrated under TaskSupervisor.")
+        worker_count = int(os.environ.get("DPHI_FIXED_WORKERS", multiprocessing.cpu_count()))
+        self.log.info(f"Spawning {worker_count} isolated Worker Processes for pure computation...")
+        
+        for i in range(worker_count):
+            p = multiprocessing.Process(
+                target=worker_process_entry, # 분리된 모듈의 순수 함수
+                args=(self.node_id, i),
+                daemon=True 
+            )
+            p.start()
+            self.worker_processes.append(p)
 
     async def shutdown(self):
         if not self.running: return
@@ -172,6 +206,17 @@ class NodeRuntime(IPhaseAtor):
         self.log.warn("Shutdown sequence initiated...")
         self.running = False
 
+        # 1. 자식 Worker Process 정리
+        if self.worker_processes:
+            self.log.info("Terminating and reaping child worker processes...")
+            for p in self.worker_processes:
+                if p.is_alive():
+                    p.terminate()
+                    p.join(timeout=2.0)
+                    if p.is_alive():
+                        p.kill() # timeout 시 강제 종료
+
+        # 2. Master 자원 정리
         await self.deregister_node()
         await self.supervisor.shutdown()
 
@@ -224,7 +269,7 @@ class NodeRuntime(IPhaseAtor):
                 emit_idx_key = runtime_keys.get("index_emits", emit_key=emit_key)
                 await self.tunnel.sadd(emit_idx_key, self.node_id)
                 
-        self.log.signal(f"Node registered with {len(capabilities)} capabilities.")
+        self.log.signal(f"Master Node registered with {len(capabilities)} capabilities.")
 
     async def deregister_node(self):
         if not self.tunnel: return

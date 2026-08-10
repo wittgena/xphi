@@ -14,8 +14,6 @@ from dataclasses import asdict
 from watcher.plane.emitter import get_logger, flow_scope
 from arch.contract.registry.unified import registry
 from arch.contract.executor import BaseExecutor
-
-# 두 가지 Executor 모두 임포트
 from kernel.phase.runtime.executor.cli import _GenericCliExecutor
 from kernel.phase.runtime.flow.executor import FlowExecutor
 
