@@ -17,16 +17,11 @@ from kernel.dphi.method import DphiMethod
 TIME_ROOT = resolve_path("time")
 
 class WasmTaskerDaemon(AbstractDaemon):
-    """
-    @role: Secure Execution Daemon (Dynamic Late-Binding Router with Instance Pooling)
-    @flow: Stream Event -> Fetch Pre-warmed Interpreter -> Execute logic -> Return to Pool
-    """
     def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
         super().__init__("WasmTasker")
         self.tunnel = tunnel
         self.supervisor = supervisor
         
-        ## Worker 고유 식별을 위해 PID를 명시적으로 추가하여 충돌 방지
         self.node_id = node_id or f"tasker-{uuid.uuid4().hex[:6]}-{os.getpid()}"
         self.default_wasm_path = default_wasm_path
         
@@ -34,16 +29,12 @@ class WasmTaskerDaemon(AbstractDaemon):
         self.topic = "wasm:execute:stream"
         self.group_name = "wasm_tasker_group"
         
-        ## Redis Consumer Name은 프로세스 단위로 고유해야 함
         self.consumer_name = f"consumer-{self.node_id}"
         self.poll_timeout_ms = 1000
         self.default_tier = "STANDARD"
         self.concurrency_limit = 4 
         self.fetch_batch_size = self.concurrency_limit 
-        
-        # [핵심 개편] Semaphore 대신 미리 데워진(Pre-warmed) 인터프리터 큐를 사용합니다.
         self._wasm_pool = asyncio.Queue(maxsize=self.concurrency_limit)
-        
         self._pubsub_task: Optional[asyncio.Task] = None
 
     async def _init_consumer_group(self):
@@ -55,21 +46,15 @@ class WasmTaskerDaemon(AbstractDaemon):
                 self.log.error(f"Failed to init Consumer Group: {e}")
 
     async def _init_wasm_pool(self):
-        """부팅 시 동시성 제한 개수만큼 WASM 샌드박스를 미리 생성(Pre-warm)하여 큐에 적재합니다."""
         self.log.info(f"[{self.node_id}] Pre-warming {self.concurrency_limit} WASM instances...")
-        
         from kernel.bind.inter.wasm import WasmInterpreter
         
         for _ in range(self.concurrency_limit):
-            # CgroupPolicy는 기본값 사용 (요청별로 런타임에 동적 적용 불가능할 경우 시스템 최고권한 부여 후 
-            # 내부 로직에서 검증하거나, Wasmtime Store의 Limit을 런타임에 덮어쓰도록 구현 권장)
-            # 여기서는 Pooling 아키텍처 완성을 우선으로 합니다.
             interp = WasmInterpreter(
                 wasm_module_path=str(self._resolve_wasm_path(self.default_wasm_path)),
                 policy=self._get_policy_from_tier(self.default_tier)
             )
             self._wasm_pool.put_nowait(interp)
-            
         self.log.info(f"[{self.node_id}] WASM Instance Pool initialized successfully.")
 
     async def run(self):
@@ -107,7 +92,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                         except json.JSONDecodeError:
                             self.log.error(f"Invalid JSON payload: {json_payload}")
                             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
-                            # 에러 시 인스턴스를 풀에 반환
                             self._wasm_pool.put_nowait(interp_instance) 
                         except Exception as e:
                             self.log.error(f"Failed to schedule WASM task: {e}")
@@ -123,7 +107,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                 with suppress(asyncio.CancelledError):
                     await self._pubsub_task
                     
-            # 셧다운 시 큐에 남아있는 모든 인스턴스 종료
             while not self._wasm_pool.empty():
                 interp = self._wasm_pool.get_nowait()
                 interp.shutdown()
@@ -177,10 +160,8 @@ class WasmTaskerDaemon(AbstractDaemon):
             response_data = await asyncio.to_thread(self._execute_isolated, payload, interp_instance)
             if isinstance(response_data, dict):
                 response_data["job_id"] = job_id
-                
                 if "metrics" not in response_data:
                     response_data["metrics"] = {}
-                
                 response_data["metrics"]["handled_by_node"] = self.node_id
                 response_data["metrics"]["handled_by_pid"] = os.getpid()
             
@@ -206,55 +187,44 @@ class WasmTaskerDaemon(AbstractDaemon):
 
     def _execute_isolated(self, payload: dict, interp_instance) -> dict:
         job_id = payload.get("job_id", "unknown")
-        target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE)
+        target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE.value)
         wasm_path = payload.get("wasm_path", self.default_wasm_path)
         tier_str = payload.get("tier", self.default_tier)
         job_policy = self._get_policy_from_tier(tier_str)
+        
+        if hasattr(interp_instance, 'apply_policy'):
+            interp_instance.apply_policy(job_policy)
+
         exec_data = payload.get("payload", payload.get("data", ""))
         context = payload.get("context", {})
-
         strategies = self._get_strategy_module()
 
         with flow_scope(**context):
             target_path = self._resolve_wasm_path(wasm_path)
             core_wasm_path = self._resolve_wasm_path(self.default_wasm_path)
             
-            if not target_path.exists() and target_func != DphiMethod.EXECUTE_CODE:
+            if not target_path.exists() and target_func != DphiMethod.EXECUTE_CODE.value:
                 error_msg = f"WASM binary not found: {target_path}"
                 self.log.warning(f"[{job_id[:8]}] {error_msg}")
                 return {"success": False, "output": "", "error": error_msg}
 
-            # ROUTE A: Guarded Execution
-            if target_func in (DphiMethod.EXECUTE_CODE, DphiMethod.EXECUTE_DVM):
-                safe_payload = strategies.validate_intent_checkpoint(
-                    payload, exec_data, context, job_id, core_wasm_path, self.log
-                )
-                
+            # ==============================================================
+            # ROUTE A: Guarded Execution (Python Legacy Jail / DVM)
+            # ==============================================================
+            if target_func in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_DVM.value):
+                safe_payload = strategies.validate_intent_checkpoint(payload, exec_data, context, job_id, core_wasm_path, self.log)
                 if isinstance(safe_payload, dict) and "error" in safe_payload and not safe_payload.get("success", True):
                     return safe_payload
-
-                if target_func == DphiMethod.EXECUTE_DVM:
-                    # DvmInterpreter는 내부 구조가 다르므로 현재는 기존 strategy 로직(새로 띄우기)에 의존하거나 
-                    # Dvm 풀도 별도로 만들어야 합니다. 여기서는 기존 fallback 유지.
+                
+                if target_func == DphiMethod.EXECUTE_DVM.value:
+                    self.log.info(f"[{job_id[:8]}] 🔓 Entering DVM Sandbox (dvm.wasm)")
                     return strategies.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
                 else:
-                    # Python Legacy Jail 실행
-                    try:
-                        self.log.info(f"[{job_id[:8]}] 🔓 Entering Python Legacy Jail (Pooled)")
-                        res = interp_instance.execute(
-                            code=safe_payload,
-                            context=context
-                        )
-                        metrics = interp_instance.get_metrics()
-                        
-                        if res.success:
-                            return {"success": True, "output": res.output, "metrics": metrics}
-                        else:
-                            return {"success": False, "output": "", "error": str(res.error), "metrics": metrics}
-                    except Exception as e:
-                        return {"success": False, "output": "", "error": f"Jail Error: {e}", "metrics": {}}
+                    return strategies.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)
 
-            # ROUTE B: Pure WASM Core Execution
+            # ==============================================================
+            # ROUTE B: Pure WASM Core Execution (Data / Anchor / Ledger)
+            # ==============================================================
             else:
                 try:
                     exec_payload = exec_data if isinstance(exec_data, str) else json.dumps(exec_data)
@@ -264,7 +234,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                         context=context
                     )
                     metrics = interp_instance.get_metrics()
-                    
                     if res.success:
                         return {"success": True, "output": res.output, "metrics": metrics}
                     else:

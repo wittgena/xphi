@@ -51,12 +51,10 @@ class DphiBroker:
         self._listener_client = None
 
     async def _ensure_listener_started(self):
-        """백그라운드 응답 리스너를 지연 초기화(Lazy init) 방식으로 단 1번만 실행합니다."""
         if self._listener_task is None:
             self._listener_task = asyncio.create_task(self._listen_responses())
 
     async def _listen_responses(self):
-        """단 1개의 격리된 커넥션으로 수만 개의 응답을 멀티플렉싱(Multiplexing)하여 수신합니다."""
         self._listener_client = await TunnelFactory.get_isolated()
         pubsub = self._listener_client.pubsub()
         await pubsub.subscribe(self.response_channel)
@@ -102,8 +100,6 @@ class DphiBroker:
         loop = asyncio.get_running_loop()
         future = loop.create_future()
         self._pending_jobs[job_id] = future
-        
-        # 외부에서 주입된 타임아웃이 있으면 우선 적용, 없으면 브로커 기본 타임아웃 사용
         active_timeout = timeout if timeout is not None else self.timeout
         
         try:
@@ -133,11 +129,9 @@ class DphiBroker:
                 )
                 
         except asyncio.TimeoutError:
-            # 에러 메시지에도 가변 타임아웃(active_timeout)을 명시하여 원인 파악 용이
             log.error(f"[{job_id[:8]}] Remote execution timeout ({active_timeout}s) on {route}")
             return ExecutionResult(success=False, error=ExecutionError(f"Remote execution timeout ({active_timeout}s)"))
         finally:
-            # [안전장치] 성공/실패/타임아웃 여부와 관계없이 Future를 메모리에서 제거
             self._pending_jobs.pop(job_id, None)
 
     async def update_policy(self, tier: str, context: Optional[dict] = None) -> bool:
@@ -152,7 +146,6 @@ class DphiBroker:
         res = await self._dispatch_and_wait_async(job_id, payload, target_route=self.control_channel)
         return res.success
 
-    # [수정] invoke에 timeout 파라미터 노출
     async def invoke(
         self, 
         target_func: Union[str, DphiMethod], 
@@ -177,7 +170,6 @@ class DphiBroker:
             
         return await self._dispatch_and_wait_async(job_id, msg_payload, timeout=timeout)
 
-    # [수정] execute에 timeout 파라미터 노출 (선택적)
     async def execute(
         self, 
         code: Union[str, dict],  
@@ -214,7 +206,6 @@ class DphiBroker:
         return await self._dispatch_and_wait_async(job_id, msg_payload, timeout=timeout)
         
     async def close(self):
-        """브로커 파괴 시 백그라운드 리스너를 정리합니다."""
         if self._listener_task and not self._listener_task.done():
             self._listener_task.cancel()
             try:

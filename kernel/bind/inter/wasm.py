@@ -1,9 +1,6 @@
 # kernel.bind.inter.wasm
-"""@desc: Local interpreter for secure Python code execution using Wasmtime/RustPython"""
-import functools
-import inspect
+"""@desc: Local interpreter for secure Python code execution using Wasmtime"""
 import json
-import keyword
 import os
 import threading
 from os import PathLike
@@ -15,26 +12,20 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.bind.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult
-from kernel.bind.resolver import find_current_self, resolve_path
+from kernel.bind.inter.protocol import ExecutionError, ProtocolError, ExecutionResult
+from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy
 
 TIME_ROOT = resolve_path("time")
-LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
 
 log = get_emitter("inter.wasm", phase="SYSTEM")
 
-# ============================================================================
-# [핵심 개편 1] Global Engine & Module Cache
-# 파이썬 워커 프로세스가 살아있는 동안 단 한 번만 디스크 I/O와 AOT 컴파일을 수행합니다.
-# ============================================================================
 _GLOBAL_ENGINE = None
 _GLOBAL_MODULE_CACHE = {}
 _CACHE_LOCK = threading.Lock()
 
 def get_cached_module(wasm_path: str, cg_policy: WasmCgroup):
-    """프로세스 전역에서 컴파일된 WASM 모듈을 재사용합니다."""
     global _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE
     
     with _CACHE_LOCK:
@@ -51,8 +42,6 @@ def get_cached_module(wasm_path: str, cg_policy: WasmCgroup):
             log.info(f"✅ [AOT Compile] {Path(wasm_path).name} cached successfully.")
             
         return _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE[wasm_path]
-# ============================================================================
-
 
 class WasmInterpreter:
     def __init__(
@@ -73,12 +62,6 @@ class WasmInterpreter:
         self.enable_env_vars = enable_env_vars or []
         self.sync_files = sync_files
 
-        self._request_id = 0
-        
-        # [개편] 풀링(Pooling)을 위해 스레드 오너십 검사를 비활성화합니다.
-        # Queue를 통해 상호배제가 보장되므로, 굳이 특정 스레드에 묶어둘 필요가 없습니다.
-        self._owner_thread: int | None = None 
-        
         self.engine = None
         self.store = None
         self.module = None
@@ -99,18 +82,20 @@ class WasmInterpreter:
         cg_policy = policy or CgroupPolicy.standard()
         self.cg = WasmCgroup(cgroup_name=f"worker-{id(self)}", policy=cg_policy)
         
-        self._ensure_engine_started()
+        self.current_timestamp = 0.0 
+
+    def apply_policy(self, policy: CgroupPolicy) -> None:
+        self.cg.policy = policy
+        if self.store is not None:
+            if hasattr(self.cg, 'apply_to_store'):
+                self.cg.apply_to_store(self.store)
 
     def _ensure_engine_started(self) -> None:
         if self.instance is not None:
              return
              
         try:
-            # ---------------------------------------------------------
-            # [핵심 개편 2] 전역 모듈 캐시 호출 (AOT 컴파일 병목 제거)
-            # ---------------------------------------------------------
             self.engine, self.module = get_cached_module(self.wasm_module_path, self.cg)
-            
             wasi_config = wasmtime.WasiConfig()
             wasi_config.inherit_stdout()
             wasi_config.inherit_stderr()
@@ -128,7 +113,6 @@ class WasmInterpreter:
             
             self.store = wasmtime.Store(self.engine)
             self.store.set_wasi(wasi_config)
-            
             self.cg.apply_to_store(self.store)
             
             linker = wasmtime.Linker(self.engine)
@@ -144,7 +128,7 @@ class WasmInterpreter:
             self._wasm_invoke = exports.get("invoke_wasm")
             
             if not self._wasm_alloc or not self._wasm_dealloc or not self._wasm_invoke:
-                raise ProtocolError("WASM module missing legacy memory exports ('alloc', 'dealloc', 'invoke_wasm')")
+                raise ProtocolError("WASM module missing legacy memory exports")
 
             self._get_ptr = exports.get("get_shared_buffer_ptr")
             self._get_size = exports.get("get_shared_buffer_size")
@@ -153,30 +137,12 @@ class WasmInterpreter:
             if self._get_ptr and self._get_size and self._invoke_shared:
                 self.shared_ptr = self._get_ptr(self.store)
                 self.shared_size = self._get_size(self.store)
-            else:
-                log.warning("Shared Buffer APIs not found in WASM. Running in Legacy-only mode.")
-
-            registry_path = Path(TIME_ROOT) / "registry.json"
-            if registry_path.exists():
-                try:
-                    with open(registry_path, "r", encoding="utf-8") as f:
-                        reg_data = json.load(f)
-                        self.valid_methods = set(reg_data.get("methods", []))
-                except Exception as e:
-                    log.warning(f"Failed to load registry.json: {e}")
 
         except Exception as e:
             raise ProtocolError(f"Failed to initialize Wasmtime engine: {e}")
 
-    def _to_json_compatible(self, value: Any) -> Any: ...
-    def _serialize_value(self, value: Any) -> str: ...
-    def _inject_variables(self, code: str, variables: Mapping[str, Any]) -> str: ...
-
     def _run_wasm_function(self, target_func_name: str, payload: Any, context: dict | None = None) -> str:
         self._ensure_engine_started()
-        
-        if self.valid_methods and target_func_name not in self.valid_methods:
-            raise ExecutionError(f"Method '{target_func_name}' is not registered in Wasm API.")
         
         actual_payload = payload
         if isinstance(payload, str):
@@ -186,8 +152,6 @@ class WasmInterpreter:
                 pass
 
         context = context or {}
-        if "timestamp" not in context:
-            context["timestamp"] = 0
         if "seed" not in context:
             context["seed"] = "dphi_secure_fallback_seed"
 
@@ -205,16 +169,13 @@ class WasmInterpreter:
             res_len = self._invoke_shared(self.store, req_len)
             
             if res_len == 0:
-                raise ExecutionError("WASM shared buffer execution failed (buffer overflow or critical error).")
-                
+                raise ExecutionError("WASM shared buffer execution failed.")
             result_bytes = self.memory.read(self.store, self.shared_ptr, self.shared_ptr + res_len)
             return result_bytes.decode('utf-8')
-            
         else:
             code_ptr = self._wasm_alloc(self.store, req_len)
             res_ptr = None
             res_len_legacy = None
-            
             try:
                 self.memory.write(self.store, payload_bytes, code_ptr)
                 result_packed = self._wasm_invoke(self.store, code_ptr, req_len)
@@ -230,19 +191,15 @@ class WasmInterpreter:
                     self._wasm_dealloc(self.store, res_ptr, res_len_legacy)
 
     def invoke(self, target_func: str, payload: str, context: dict | None = None) -> ExecutionResult:
+        self.current_timestamp = float(context.get("timestamp", 0.0)) if context else 0.0
         try:
             result_str = self._run_wasm_function(target_func, payload, context=context)
             result_data = json.loads(result_str)
             
             if result_data.get("success", False):
-                return ExecutionResult(
-                    success=True, 
-                    output=json.dumps(result_data.get("data", {}))
-                )
+                return ExecutionResult(success=True, output=json.dumps(result_data.get("data", {})))
             else:
-                error_msg = result_data.get("error", "Unknown WASM Validation Failed")
-                return ExecutionResult(success=False, error=ExecutionError(error_msg))
-                
+                return ExecutionResult(success=False, error=ExecutionError(result_data.get("error", "Failed")))
         except Exception as e:
             return ExecutionResult(success=False, error=ExecutionError(f"WASM Invoke Failed: {e}"))
 
@@ -254,63 +211,26 @@ class WasmInterpreter:
         context: dict | None = None,
     ) -> ExecutionResult:
         variables = variables or {}
+        self.current_timestamp = float(context.get("timestamp", 0.0)) if context else 0.0
         
         try:
-            injected_code = self._inject_variables(code, variables)
-        except ExecutionError as e:
-            return ExecutionResult(success=False, error=e)
-
-        try:
-             result_str = self._run_wasm_function("execute_code", injected_code, context=context)
+             result_str = self._run_wasm_function("execute_code", {"code": code, "variables": variables}, context=context)
              result_data = json.loads(result_str)
              
              if result_data.get("success", False):
                  inner_data = result_data.get("data", {})
-                 actual_output = inner_data.get("output", "")
-                 return ExecutionResult(success=True, output=actual_output)
+                 return ExecutionResult(success=True, output=inner_data.get("output", ""))
              else:
-                 error_msg = result_data.get("error", "Unknown execution error")
-                 return ExecutionResult(success=False, error=ExecutionError(error_msg))
+                 return ExecutionResult(success=False, error=ExecutionError(result_data.get("error", "Error")))
         except Exception as e:
              return ExecutionResult(success=False, error=ExecutionError(f"WASM Execution Failed: {e}"))
 
     def get_metrics(self) -> dict:
-        if not self.store or not self.memory:
-            return {}
+        if not self.store or not self.memory: return {}
         return self.cg.inspect_metrics(self.store, self.memory)
 
-    def start(self) -> None:
-        self._ensure_engine_started()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *_):
-        self.shutdown()
-
-    def __call__(
-        self, 
-        code: str, 
-        variables=None, 
-        callables=None, 
-        context: dict | None = None
-    ) -> ExecutionResult:
-        return self.execute(code, variables, callables, context)
-
     def shutdown(self) -> None:
-        self.engine = None
-        self.store = None
-        self.module = None
-        self.instance = None
-        self.memory = None
-        
-        self._wasm_alloc = None
-        self._wasm_dealloc = None
-        self._wasm_invoke = None
-        self._invoke_shared = None
-        self._get_ptr = None
-        self._get_size = None
-        self.shared_ptr = None
-        self.shared_size = 0
-        self.valid_methods.clear()
-        self._owner_thread = None
+        self.engine = self.store = self.module = self.instance = self.memory = None
+
+    def __enter__(self): return self
+    def __exit__(self, *_): self.shutdown()

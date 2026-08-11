@@ -11,7 +11,6 @@ from kernel.dphi.cgroup import CgroupPolicy
 from kernel.dphi.method import DphiMethod
 
 def validate_intent_checkpoint(payload: dict, exec_data: Any, context: dict, job_id: str, core_wasm_path: Path, log) -> Any:
-    """Core dphi.wasm을 통한 인텐트 유효성 및 보안 검증"""
     try:
         with WasmInterpreter(str(core_wasm_path), policy=CgroupPolicy.system()) as wasm_gate:
             validation_res = wasm_gate.invoke(DphiMethod.VALIDATE_INTENT, json.dumps(payload), context=context)
@@ -35,7 +34,6 @@ def validate_intent_checkpoint(payload: dict, exec_data: Any, context: dict, job
         return {"success": False, "output": "", "error": f"Checkpoint Error: {e}"}
 
 def run_dvm_sandbox(target_path: Path, job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
-    """Multi-VM (EVM/SVM) Rust 샌드박스 실행"""
     try:
         with DvmInterpreter(wasm_module_name=target_path.name, policy=job_policy) as dvm_sandbox:
             safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
@@ -61,24 +59,20 @@ def run_dvm_sandbox(target_path: Path, job_policy: CgroupPolicy, safe_payload: A
                     
             log.info(f"[{job_id[:8]}] 📊 EVM Sandbox Metrics: {metrics}")
             return {
-                "success": result.success,
-                "output": result.output,
-                "error": str(result.error) if not result.success else "",
-                "metrics": metrics
+                "success": result.success, "output": result.output, 
+                "error": str(result.error) if not result.success else "", "metrics": metrics
             }
     except Exception as e:
         log.error(f"[{job_id[:8]}] DVM Execution crashed: {e}", exc_info=True)
         return {"success": False, "output": "", "error": f"Execution Error: {e}"}
 
 def run_python_sandbox(job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
-    """Python/Deno Legacy Jail 실행"""
     try:
-        # [핵심 방어 1] 파일 시스템(Read/Write) 및 네트워크 권한을 명시적으로 완벽히 차단(에어갭)
         with PythonInterpreter(
             enable_network_access=[], 
-            enable_read_paths=[],
-            enable_write_paths=[],
-            enable_env_vars=[],
+            enable_read_paths=[], 
+            enable_write_paths=[], 
+            enable_env_vars=[], 
             policy=job_policy
         ) as py_sandbox:
             
@@ -89,27 +83,15 @@ def run_python_sandbox(job_policy: CgroupPolicy, safe_payload: Any, context: dic
                 code_to_run = safe_payload.get("code", safe_payload.get("data", ""))
                 variables = safe_payload.get("variables", {})
 
-            # [핵심 방어 2] 샌드박스 내부에서 호스트 머신으로 역호출(RPC) 할 수 있는 구멍 차단
-            # 기존의 "system_ping"과 같은 호스트 기능 주입을 완전히 제거합니다.
-            host_capabilities = {} 
-            
             log.info(f"[{job_id[:8]}] 🔓 Entering Python Legacy Jail (Tier: {job_policy.tier.value})")
-            
-            result = py_sandbox.execute(
-                code=code_to_run, 
-                variables=variables,
-                callables=host_capabilities,
-                context=context
-            )
+            result = py_sandbox.execute(code=code_to_run, variables=variables, callables={}, context=context)
             
             metrics = py_sandbox.get_metrics()
             log.info(f"[{job_id[:8]}] 📊 Sandbox Metrics: {metrics}")
             
             return {
-                "success": result.success,
-                "output": result.output,
-                "error": str(result.error) if not result.success else "",
-                "metrics": metrics
+                "success": result.success, "output": result.output,
+                "error": str(result.error) if not result.success else "", "metrics": metrics
             }
     except Exception as e:
         log.error(f"[{job_id[:8]}] Python Execution crashed: {e}", exc_info=True)
@@ -119,16 +101,17 @@ def run_pure_wasm(target_path: Path, target_func: str, job_policy: CgroupPolicy,
     """순수 WASM Core Kernel 비즈니스 로직 실행"""
     try:
         with WasmInterpreter(str(target_path), policy=job_policy) as wasm_runner:
-            log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func} via {target_path.name} (Tier: {job_policy.tier.value})")
+            log.debug(f"[{job_id[:8]}] Bypassing Jail. Direct WASM Kernel logic: {target_func} via {target_path.name}")
             exec_data_str = json.dumps(exec_data) if isinstance(exec_data, dict) else str(exec_data)
+            
             result = wasm_runner.invoke(target_func, exec_data_str, context=context)
+            
             metrics = wasm_runner.get_metrics()
             log.info(f"[{job_id[:8]}] 📊 WASM Metrics: {metrics}")
+            
             return {
-                "success": result.success,
-                "output": result.output if result.success else "",
-                "error": str(result.error) if not result.success else "",
-                "metrics": metrics
+                "success": result.success, "output": result.output if result.success else "",
+                "error": str(result.error) if not result.success else "", "metrics": metrics
             }
     except Exception as e:
         log.error(f"[{job_id[:8]}] WASM Kernel logic crashed: {e}", exc_info=True)

@@ -112,6 +112,7 @@ class NodeRuntime(IPhaseAtor):
 
     def _create_phase_handler(self):
         async def handler(psi: PsiEvent):
+            # [정렬 확인] inter.node의 process는 carrier와 context를 인자로 받음 (code 인자 없음)
             judgment = await self.interpreter.process(psi.carrier)
             return {
                 "psi": judgment.psi_symbol,
@@ -145,6 +146,8 @@ class NodeRuntime(IPhaseAtor):
 
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
         self.broker = DphiBroker()
+        
+        # [정렬 완료] inter.node의 초기화 스펙에 맞게 정렬
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=anchor)
         
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")
@@ -175,14 +178,13 @@ class NodeRuntime(IPhaseAtor):
         # -----------------------------------------------------------------
         mount_master_layer(self.supervisor, self.ctx)
         
-        # [핵심 변경] Master Node가 CLI 명령어(COMMAND)를 수신할 수 있도록 ControlBus 마운트
         master_control_bus = EventBusDaemon(
             tunnel=self.tunnel,
-            dispatcher=self.dispatcher, # CLI 및 Swarm Executor가 물려있는 Dispatcher
+            dispatcher=self.dispatcher, 
             node_id=self.node_id,
             idle_timeout=0.0,
             shutdown_hook=self.shutdown,
-            group_name="master_control_group" # Worker들의 그룹(node_manifold_group)과 충돌하지 않도록 분리
+            group_name="master_control_group" 
         )
         self.supervisor.mount_daemon(master_control_bus)
         
@@ -193,7 +195,7 @@ class NodeRuntime(IPhaseAtor):
         
         for i in range(worker_count):
             p = multiprocessing.Process(
-                target=worker_process_entry, # 분리된 모듈의 순수 함수
+                target=worker_process_entry, 
                 args=(self.node_id, i),
                 daemon=True 
             )
@@ -236,7 +238,10 @@ class NodeRuntime(IPhaseAtor):
 
         current_boundaries = getattr(self.interpreter.anchor, 'recept_boundaries', None)
         stable_anchor = AnchorFlow.bootstrap(current_boundaries)
+        
+        # [정렬 완료] 패닉 복구 시에도 inter.node 규격으로 재초기화
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=stable_anchor)
+        
         if self.dispatcher:
             self.dispatcher.default_handler = self._create_phase_handler() 
             
