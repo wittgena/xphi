@@ -1,13 +1,14 @@
 # watcher.receptor.bootstrap
 import asyncio
 import json
-from pathlib import Path
-from watchdog.observers import Observer
 import time
 import sys
 import importlib
 import traceback
+from pathlib import Path
+from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+from dataclasses import asdict  # [추가] 안전한 JSON 직렬화를 위한 표준 라이브러리
 
 from arch.contract.discovery import discover_modules
 from arch.topos.tunnel.factory import UniversalFacade
@@ -77,8 +78,17 @@ class TracerSource(FileSystemEventHandler):
                     )
                 )
                 
+                # [핵심 수정] 중첩된 객체(PsiCarrier 등)의 안전한 직렬화를 위해 asdict 사용
+                try:
+                    event_data = asdict(sync_event)
+                except TypeError:
+                    # dataclass가 아닐 경우를 대비한 Fallback (방어 코드)
+                    event_data = sync_event.__dict__
+                    if hasattr(event_data.get('carrier'), '__dict__'):
+                        event_data['carrier'] = event_data['carrier'].__dict__
+                
                 asyncio.run_coroutine_threadsafe(
-                    self.tunnel.state_store.xadd("runtime:bus:stream", {"data": json.dumps(sync_event.__dict__)}),
+                    self.tunnel.state_store.xadd("runtime:bus:stream", {"data": json.dumps(event_data)}),
                     self.loop
                 )
                 
@@ -118,11 +128,11 @@ async def receptor_bootstrap(tunnel: UniversalFacade, watch_dir: str = SELF_ROOT
 
     main_loop = asyncio.get_running_loop()
     
-    # [핵심 변경점] Worker로 이벤트를 전파할 수 있도록 tunnel 객체 주입
+    # Worker로 이벤트를 전파할 수 있도록 tunnel 객체 주입
     event_handler = TracerSource(kernel, main_loop, watch_dir=watch_dir, tunnel=tunnel)
     
     # ---------------------------------------------------------
-    # [핵심 변경점] Receptor 구동 시 최초 1회 전체 시스템 스캔 수행
+    # Receptor 구동 시 최초 1회 전체 시스템 스캔 수행
     # ---------------------------------------------------------
     log.info(f"\n[Pre-Flight] Initiating system-wide module discovery at {watch_dir}...")
     discovery_start = time.time()

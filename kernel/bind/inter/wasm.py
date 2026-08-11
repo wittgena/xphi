@@ -25,6 +25,35 @@ LARGE_VAR_THRESHOLD = 100 * 1024 * 1024
 
 log = get_emitter("inter.wasm", phase="SYSTEM")
 
+# ============================================================================
+# [핵심 개편 1] Global Engine & Module Cache
+# 파이썬 워커 프로세스가 살아있는 동안 단 한 번만 디스크 I/O와 AOT 컴파일을 수행합니다.
+# ============================================================================
+_GLOBAL_ENGINE = None
+_GLOBAL_MODULE_CACHE = {}
+_CACHE_LOCK = threading.Lock()
+
+def get_cached_module(wasm_path: str, cg_policy: WasmCgroup):
+    """프로세스 전역에서 컴파일된 WASM 모듈을 재사용합니다."""
+    global _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE
+    
+    with _CACHE_LOCK:
+        if _GLOBAL_ENGINE is None:
+            config = wasmtime.Config()
+            cg_policy.apply_to_config(config)
+            _GLOBAL_ENGINE = wasmtime.Engine(config)
+            
+        if wasm_path not in _GLOBAL_MODULE_CACHE:
+            log.info(f"⚙️ [AOT Compile] Compiling {Path(wasm_path).name} (Only once per process)...")
+            if not os.path.exists(wasm_path):
+                raise FileNotFoundError(f"WASM Artifact not found: {wasm_path}")
+            _GLOBAL_MODULE_CACHE[wasm_path] = wasmtime.Module.from_file(_GLOBAL_ENGINE, wasm_path)
+            log.info(f"✅ [AOT Compile] {Path(wasm_path).name} cached successfully.")
+            
+        return _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE[wasm_path]
+# ============================================================================
+
+
 class WasmInterpreter:
     def __init__(
         self,
@@ -45,7 +74,10 @@ class WasmInterpreter:
         self.sync_files = sync_files
 
         self._request_id = 0
-        self._owner_thread: int | None = None
+        
+        # [개편] 풀링(Pooling)을 위해 스레드 오너십 검사를 비활성화합니다.
+        # Queue를 통해 상호배제가 보장되므로, 굳이 특정 스레드에 묶어둘 필요가 없습니다.
+        self._owner_thread: int | None = None 
         
         self.engine = None
         self.store = None
@@ -69,23 +101,15 @@ class WasmInterpreter:
         
         self._ensure_engine_started()
 
-    def _check_thread_ownership(self) -> None:
-        current_thread = threading.current_thread().ident
-        if self._owner_thread is None:
-            self._owner_thread = current_thread
-        elif self._owner_thread != current_thread:
-            raise RuntimeError("WasmInterpreter is not thread-safe. Instantiate per thread.")
-
     def _ensure_engine_started(self) -> None:
         if self.instance is not None:
              return
              
         try:
-            config = wasmtime.Config()
-            self.cg.apply_to_config(config)
-            
-            self.engine = wasmtime.Engine(config)
-            self.module = wasmtime.Module.from_file(self.engine, self.wasm_module_path)
+            # ---------------------------------------------------------
+            # [핵심 개편 2] 전역 모듈 캐시 호출 (AOT 컴파일 병목 제거)
+            # ---------------------------------------------------------
+            self.engine, self.module = get_cached_module(self.wasm_module_path, self.cg)
             
             wasi_config = wasmtime.WasiConfig()
             wasi_config.inherit_stdout()
@@ -148,7 +172,6 @@ class WasmInterpreter:
     def _serialize_value(self, value: Any) -> str: ...
     def _inject_variables(self, code: str, variables: Mapping[str, Any]) -> str: ...
 
-    # [수정됨] context 파라미터 추가
     def _run_wasm_function(self, target_func_name: str, payload: Any, context: dict | None = None) -> str:
         self._ensure_engine_started()
         
@@ -176,6 +199,7 @@ class WasmInterpreter:
         
         payload_bytes = json.dumps(routed_request).encode('utf-8')
         req_len = len(payload_bytes)
+        
         if self.shared_ptr is not None and req_len <= self.shared_size:
             self.memory.write(self.store, payload_bytes, self.shared_ptr)
             res_len = self._invoke_shared(self.store, req_len)
@@ -205,9 +229,7 @@ class WasmInterpreter:
                 if res_ptr is not None and res_len_legacy is not None:
                     self._wasm_dealloc(self.store, res_ptr, res_len_legacy)
 
-    # [수정됨] context 파라미터 연동
     def invoke(self, target_func: str, payload: str, context: dict | None = None) -> ExecutionResult:
-        self._check_thread_ownership()
         try:
             result_str = self._run_wasm_function(target_func, payload, context=context)
             result_data = json.loads(result_str)
@@ -231,7 +253,6 @@ class WasmInterpreter:
         callables: Mapping[str, Callable[..., Any]] | None = None,
         context: dict | None = None,
     ) -> ExecutionResult:
-        self._check_thread_ownership()
         variables = variables or {}
         
         try:
@@ -267,7 +288,6 @@ class WasmInterpreter:
     def __exit__(self, *_):
         self.shutdown()
 
-    # [수정됨] context 파라미터 연동
     def __call__(
         self, 
         code: str, 

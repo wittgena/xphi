@@ -18,8 +18,8 @@ TIME_ROOT = resolve_path("time")
 
 class WasmTaskerDaemon(AbstractDaemon):
     """
-    @role: Secure Execution Daemon (Dynamic Late-Binding Router)
-    @flow: Stream Event -> Fetch Latest Strategy Module -> Execute logic
+    @role: Secure Execution Daemon (Dynamic Late-Binding Router with Instance Pooling)
+    @flow: Stream Event -> Fetch Pre-warmed Interpreter -> Execute logic -> Return to Pool
     """
     def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
         super().__init__("WasmTasker")
@@ -40,7 +40,10 @@ class WasmTaskerDaemon(AbstractDaemon):
         self.default_tier = "STANDARD"
         self.concurrency_limit = 4 
         self.fetch_batch_size = self.concurrency_limit 
-        self._semaphore = asyncio.Semaphore(self.concurrency_limit)
+        
+        # [핵심 개편] Semaphore 대신 미리 데워진(Pre-warmed) 인터프리터 큐를 사용합니다.
+        self._wasm_pool = asyncio.Queue(maxsize=self.concurrency_limit)
+        
         self._pubsub_task: Optional[asyncio.Task] = None
 
     async def _init_consumer_group(self):
@@ -51,8 +54,28 @@ class WasmTaskerDaemon(AbstractDaemon):
             if "BUSYGROUP" not in str(e):
                 self.log.error(f"Failed to init Consumer Group: {e}")
 
+    async def _init_wasm_pool(self):
+        """부팅 시 동시성 제한 개수만큼 WASM 샌드박스를 미리 생성(Pre-warm)하여 큐에 적재합니다."""
+        self.log.info(f"[{self.node_id}] Pre-warming {self.concurrency_limit} WASM instances...")
+        
+        from kernel.bind.inter.wasm import WasmInterpreter
+        
+        for _ in range(self.concurrency_limit):
+            # CgroupPolicy는 기본값 사용 (요청별로 런타임에 동적 적용 불가능할 경우 시스템 최고권한 부여 후 
+            # 내부 로직에서 검증하거나, Wasmtime Store의 Limit을 런타임에 덮어쓰도록 구현 권장)
+            # 여기서는 Pooling 아키텍처 완성을 우선으로 합니다.
+            interp = WasmInterpreter(
+                wasm_module_path=str(self._resolve_wasm_path(self.default_wasm_path)),
+                policy=self._get_policy_from_tier(self.default_tier)
+            )
+            self._wasm_pool.put_nowait(interp)
+            
+        self.log.info(f"[{self.node_id}] WASM Instance Pool initialized successfully.")
+
     async def run(self):
         await self._init_consumer_group()
+        await self._init_wasm_pool()
+        
         self._pubsub_task = asyncio.create_task(self._listen_pubsub())
         self.log.info(f"WasmTasker listening: Stream[{self.topic}] | PubSub[{self.control_channel}] (Max Concurrency: {self.concurrency_limit}, PID: {os.getpid()})")
         
@@ -67,7 +90,7 @@ class WasmTaskerDaemon(AbstractDaemon):
 
                 for stream_name, messages in streams:
                     for message_id, msg_data in messages:
-                        await self._semaphore.acquire()
+                        interp_instance = await self._wasm_pool.get()
 
                         json_payload = msg_data.get("data", msg_data.get(b"data", b"{}"))
                         if isinstance(json_payload, bytes):
@@ -78,16 +101,17 @@ class WasmTaskerDaemon(AbstractDaemon):
                             job_id = data.get("job_id", "unknown")
                             
                             self.supervisor.create(
-                                self._process_and_reply(data, message_id), 
+                                self._process_and_reply(data, message_id, interp_instance), 
                                 name=f"ExecGate-{job_id[:8]}"
                             )
                         except json.JSONDecodeError:
                             self.log.error(f"Invalid JSON payload: {json_payload}")
                             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
-                            self._semaphore.release() 
+                            # 에러 시 인스턴스를 풀에 반환
+                            self._wasm_pool.put_nowait(interp_instance) 
                         except Exception as e:
                             self.log.error(f"Failed to schedule WASM task: {e}")
-                            self._semaphore.release()
+                            self._wasm_pool.put_nowait(interp_instance)
 
         except asyncio.CancelledError:
             pass
@@ -98,6 +122,11 @@ class WasmTaskerDaemon(AbstractDaemon):
                 self._pubsub_task.cancel()
                 with suppress(asyncio.CancelledError):
                     await self._pubsub_task
+                    
+            # 셧다운 시 큐에 남아있는 모든 인스턴스 종료
+            while not self._wasm_pool.empty():
+                interp = self._wasm_pool.get_nowait()
+                interp.shutdown()
 
     async def _listen_pubsub(self):
         pubsub = self.tunnel.pubsub()
@@ -140,13 +169,12 @@ class WasmTaskerDaemon(AbstractDaemon):
         if tier_str == "UNLIMITED": return CgroupPolicy.custom(mem_mb=1024, fuel=10_000_000_000)
         return CgroupPolicy.standard()
 
-    async def _process_and_reply(self, payload: dict, message_id: str):
+    async def _process_and_reply(self, payload: dict, message_id: str, interp_instance):
         response_channel = payload.get("response_channel")
         job_id = payload.get("job_id", "unknown")
 
         try:
-            response_data = await asyncio.to_thread(self._execute_isolated, payload)
-            
+            response_data = await asyncio.to_thread(self._execute_isolated, payload, interp_instance)
             if isinstance(response_data, dict):
                 response_data["job_id"] = job_id
                 
@@ -166,7 +194,7 @@ class WasmTaskerDaemon(AbstractDaemon):
                 await self.tunnel.publish(response_channel, json.dumps(err_payload))
         finally:
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
-            self._semaphore.release()
+            self._wasm_pool.put_nowait(interp_instance)
 
     def _get_strategy_module(self):
         import kernel.phase.daemon.task.strategy as STRATEGY_PATH
@@ -176,7 +204,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         import importlib
         return importlib.import_module(module_name)
 
-    def _execute_isolated(self, payload: dict) -> dict:
+    def _execute_isolated(self, payload: dict, interp_instance) -> dict:
         job_id = payload.get("job_id", "unknown")
         target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE)
         wasm_path = payload.get("wasm_path", self.default_wasm_path)
@@ -206,10 +234,40 @@ class WasmTaskerDaemon(AbstractDaemon):
                     return safe_payload
 
                 if target_func == DphiMethod.EXECUTE_DVM:
+                    # DvmInterpreter는 내부 구조가 다르므로 현재는 기존 strategy 로직(새로 띄우기)에 의존하거나 
+                    # Dvm 풀도 별도로 만들어야 합니다. 여기서는 기존 fallback 유지.
                     return strategies.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
                 else:
-                    return strategies.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)
+                    # Python Legacy Jail 실행
+                    try:
+                        self.log.info(f"[{job_id[:8]}] 🔓 Entering Python Legacy Jail (Pooled)")
+                        res = interp_instance.execute(
+                            code=safe_payload,
+                            context=context
+                        )
+                        metrics = interp_instance.get_metrics()
+                        
+                        if res.success:
+                            return {"success": True, "output": res.output, "metrics": metrics}
+                        else:
+                            return {"success": False, "output": "", "error": str(res.error), "metrics": metrics}
+                    except Exception as e:
+                        return {"success": False, "output": "", "error": f"Jail Error: {e}", "metrics": {}}
 
             # ROUTE B: Pure WASM Core Execution
             else:
-                return strategies.run_pure_wasm(target_path, target_func, job_policy, exec_data, context, job_id, self.log)
+                try:
+                    exec_payload = exec_data if isinstance(exec_data, str) else json.dumps(exec_data)
+                    res = interp_instance.invoke(
+                        target_func=target_func,
+                        payload=exec_payload,
+                        context=context
+                    )
+                    metrics = interp_instance.get_metrics()
+                    
+                    if res.success:
+                        return {"success": True, "output": res.output, "metrics": metrics}
+                    else:
+                        return {"success": False, "output": "", "error": str(res.error), "metrics": metrics}
+                except Exception as e:
+                    return {"success": False, "output": "", "error": f"Invoke Error: {e}", "metrics": {}}

@@ -21,6 +21,34 @@ from watcher.plane.emitter import get_emitter
 TIME_ROOT = resolve_path("time")
 log = get_emitter("inter.dvm", phase="SYSTEM")
 
+# ============================================================================
+# [핵심 개편 1] Global Engine & Module Cache
+# 파이썬 워커 프로세스가 살아있는 동안 단 한 번만 디스크 I/O와 AOT 컴파일을 수행합니다.
+# ============================================================================
+_GLOBAL_ENGINE = None
+_GLOBAL_MODULE_CACHE = {}
+_CACHE_LOCK = threading.Lock()
+
+def get_cached_module(wasm_path: str, cg_policy: WasmCgroup):
+    """프로세스 전역에서 컴파일된 DVM 모듈을 재사용합니다."""
+    global _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE
+    
+    with _CACHE_LOCK:
+        if _GLOBAL_ENGINE is None:
+            config = wasmtime.Config()
+            cg_policy.apply_to_config(config)
+            _GLOBAL_ENGINE = wasmtime.Engine(config)
+            
+        if wasm_path not in _GLOBAL_MODULE_CACHE:
+            log.info(f"⚙️ [AOT Compile] Compiling {Path(wasm_path).name} (Only once per process)...")
+            if not os.path.exists(wasm_path):
+                raise FileNotFoundError(f"WASM Artifact not found: {wasm_path}")
+            _GLOBAL_MODULE_CACHE[wasm_path] = wasmtime.Module.from_file(_GLOBAL_ENGINE, wasm_path)
+            log.info(f"✅ [AOT Compile] {Path(wasm_path).name} cached successfully.")
+            
+        return _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE[wasm_path]
+# ============================================================================
+
 class DvmInterpreter:
     def __init__(
         self,
@@ -32,6 +60,8 @@ class DvmInterpreter:
             
         self.wasm_module_path = str(Path(TIME_ROOT) / wasm_module_name)
         self.policy = policy or CgroupPolicy.standard()
+        
+        # [개편] 풀링(Pooling) 및 비동기 스레드 위임을 위해 오너십 검사 완화
         self._owner_thread: Optional[int] = None
         self._execution_count = 0
 
@@ -47,27 +77,18 @@ class DvmInterpreter:
         self._wasm_dealloc = None
         self._wasm_execute_router = None
         self.cg = WasmCgroup(cgroup_name=f"multi-vm-worker-{id(self)}", policy=self.policy)
+        
         self._ensure_engine_started()
-
-    def _check_thread_ownership(self) -> None:
-        current_thread = threading.current_thread().ident
-        if self._owner_thread is None:
-            self._owner_thread = current_thread
-        elif self._owner_thread != current_thread:
-            raise RuntimeError("DvmInterpreter is not thread-safe. Instantiate per thread.")
 
     def _ensure_engine_started(self) -> None:
         if self.instance is not None:
              return
              
         try:
-            config = wasmtime.Config()
-            self.cg.apply_to_config(config)
-            self.engine = wasmtime.Engine(config)
-            if not os.path.exists(self.wasm_module_path):
-                raise FileNotFoundError(f"WASM Artifact not found: {self.wasm_module_path}")
-                
-            self.module = wasmtime.Module.from_file(self.engine, self.wasm_module_path)
+            # ---------------------------------------------------------
+            # [핵심 개편 2] 전역 모듈 캐시 호출 (AOT 컴파일 병목 제거)
+            # ---------------------------------------------------------
+            self.engine, self.module = get_cached_module(self.wasm_module_path, self.cg)
             
             wasi_config = wasmtime.WasiConfig()
             wasi_config.inherit_stdout()
@@ -80,7 +101,7 @@ class DvmInterpreter:
             linker = wasmtime.Linker(self.engine)
             linker.define_wasi()
 
-            # [개선] dvm.wasm -> Python Host -> dphi.wasm 을 연결하는 Cross-VM 브릿지
+            # dvm.wasm -> Python Host -> dphi.wasm 을 연결하는 Cross-VM 브릿지
             def invoke_native_vm_callback(caller: 'wasmtime.Caller', input_ptr: int) -> int:
                 memory = caller.get("memory")
                 alloc = caller.get("alloc")
@@ -110,18 +131,16 @@ class DvmInterpreter:
                         
                         # dphi.wasm이 기대하는 PhaseDrift 포맷에 맞게 데이터 조립
                         dphi_method = payload.get("method", "evaluate_tension")
-                        # dphi.wasm은 ToposContext를 강제하므로 누락 시 디폴트 주입
                         dphi_context = payload.get("context", {"injected_anchor": 1, "injected_tick": 0})
                         dphi_payload = payload.get("payload", {})
                         
                         # 3. dphi.wasm 인스턴스화 및 역호출 (Cross-WASM Invocation)
+                        # (참고: WasmInterpreter는 이미 Global Cache가 적용되어 있어 이 과정이 매우 빠름)
                         dphi_wasm_path = str(Path(TIME_ROOT) / "dphi.wasm")
                         with WasmInterpreter(dphi_wasm_path, policy=CgroupPolicy.system()) as dphi_kernel:
-                            # 내부 엔트리포인트(invoke_wasm/apply_inversion) 호출
                             res = dphi_kernel.invoke(dphi_method, json.dumps(dphi_payload), context=dphi_context)
                             
                             if res.success:
-                                # dphi.wasm에서 반환된 PhaseResidue 파싱
                                 residue = json.loads(res.output)
                                 native_result = {
                                     "success": residue.get("success", False),
@@ -167,7 +186,6 @@ class DvmInterpreter:
         state_snapshot: Union[Dict[str, Any], str],
         context: Union[Dict[str, Any], str, None] = None
     ) -> ExecutionResult:
-        self._check_thread_ownership()
         self._execution_count += 1
         
         # 0. Type Sanitization (상태 스냅샷 및 컨텍스트 파싱)
@@ -272,7 +290,6 @@ class DvmInterpreter:
             output_hex = result_data.get("output", "0x")
             revert_reason = result_data.get("revert_reason")
             
-            # [MODIFIED] Rust REVM 모듈에서 추출된 이벤트 로그와 상태 변경분 매핑
             logs = result_data.get("logs", [])
             state_diff = result_data.get("state_diff", {})
             state_root = result_data.get("state_root", "0x0000000000000000000000000000000000000000000000000000000000000000")
