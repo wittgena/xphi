@@ -4,6 +4,7 @@ import uuid
 import asyncio
 from enum import Enum
 from typing import Optional, Any, Mapping, Union, Dict
+from contextlib import suppress
 
 from arch.topos.tunnel.factory import TunnelFactory
 from kernel.bind.inter.protocol import ExecutionResult, ExecutionError
@@ -74,14 +75,20 @@ class DphiBroker:
                     except Exception as e:
                         log.error(f"[Broker] Error processing response: {e}", exc_info=True)
         except asyncio.CancelledError:
+            # Task cancellation is expected during shutdown
             pass
         finally:
-            await pubsub.unsubscribe(self.response_channel)
-            await pubsub.close()
-            if hasattr(self._listener_client.state_store, 'aclose'):
-                await self._listener_client.state_store.aclose()
-            elif hasattr(self._listener_client.state_store, 'close'):
-                await self._listener_client.state_store.close()
+            # [안전 보장] 리스너가 종료될 때 반드시 구독을 해제하고 격리된 커넥션을 닫습니다.
+            with suppress(Exception):
+                await pubsub.unsubscribe(self.response_channel)
+                await pubsub.close()
+                
+            if self._listener_client:
+                with suppress(Exception):
+                    if hasattr(self._listener_client.state_store, 'aclose'):
+                        await self._listener_client.state_store.aclose()
+                    elif hasattr(self._listener_client.state_store, 'close'):
+                        await self._listener_client.state_store.close()
 
     async def _dispatch_and_wait_async(
         self, 
@@ -206,9 +213,18 @@ class DphiBroker:
         return await self._dispatch_and_wait_async(job_id, msg_payload, timeout=timeout)
         
     async def close(self):
+        """브로커를 명시적으로 닫을 때 호출합니다. 리스너를 취소하고 정리합니다."""
         if self._listener_task and not self._listener_task.done():
             self._listener_task.cancel()
-            try:
+            with suppress(asyncio.CancelledError):
                 await self._listener_task
-            except asyncio.CancelledError:
+
+    def __del__(self):
+        if self._listener_task and not self._listener_task.done():
+            try:
+                loop = asyncio.get_running_loop()
+                # GC 스레드와 이벤트 루프의 충돌을 막기 위해 threadsafe 방식으로 cancel 예약
+                loop.call_soon_threadsafe(self._listener_task.cancel)
+            except RuntimeError:
+                # 이벤트 루프가 이미 닫혀있다면 무시
                 pass
