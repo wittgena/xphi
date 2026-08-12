@@ -206,6 +206,16 @@ class PythonInterpreter:
         }
         self._send_request("apply_cgroup", params, "Applying Cgroup Policy")
 
+    # =========================================================================
+    # [추가된 부분] 런타임 동적 정책(Tier) 변경 인터페이스 
+    # =========================================================================
+    def apply_policy(self, policy: CgroupPolicy) -> None:
+        """런타임에 Cgroup 정책(Tier, 리소스 제한 등)을 동적으로 변경하고 Deno 샌드박스에 즉시 적용합니다."""
+        self.policy = policy
+        if self.deno_process and self.deno_process.poll() is None:
+            self._apply_cgroup_policy()
+    # =========================================================================
+
     def _ensure_deno_process(self) -> None:
         if self.deno_process is None or self.deno_process.poll() is not None:
             self._mounted_files = False
