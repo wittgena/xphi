@@ -9,8 +9,8 @@ from watcher.wasm.auditor import CanonicalProofAuditor
 
 from arch.topos.tunnel.factory import TunnelFactory
 from kernel.bind.resolver import resolve_path
-from kernel.phase.daemon.task.supervisor import TaskSupervisor
-from kernel.phase.daemon.task.wasm import WasmTaskerDaemon
+from kernel.daemon.task.supervisor import TaskSupervisor
+from kernel.daemon.task.wasm import TaskWasm
 from kernel.dphi.broker import DphiBroker
 from watcher.plane.emitter import get_emitter, flow_scope
 
@@ -68,7 +68,7 @@ class WasmTester:
             log.info("[SYSTEM] Initializing TaskSupervisor and WasmTaskerDaemon...")
             supervisor = TaskSupervisor(source="WasmTester")
             
-            tasker_daemon = WasmTaskerDaemon(
+            tasker_daemon = TaskWasm(
                 tunnel=tunnel, 
                 supervisor=supervisor, 
                 default_wasm_path=self.wasm_module_path

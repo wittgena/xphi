@@ -1,4 +1,5 @@
-# kernel.phase.daemon.bootstrap
+# kernel.daemon.bootstrap
+## @lineage: kernel.phase.daemon.bootstrap
 import asyncio
 import json
 import time
@@ -13,8 +14,8 @@ from arch.contract.event.bus import AsyncEventBus
 from arch.contract.event.next import next_id
 from arch.contract.registry.unified import registry
 
-from kernel.phase.daemon.base import AbstractDaemon
-from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
+from kernel.daemon.base import AbstractDaemon
+from kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.phase.runtime.sensor import SurfaceSensor
 from watcher.plane.emitter import get_emitter
@@ -276,8 +277,8 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
         supervisor.mount_daemon(daemon)
 
     try:
-        from kernel.phase.daemon.task.wasm import WasmTaskerDaemon
-        wasm_daemon = WasmTaskerDaemon(tunnel=ctx.tunnel, supervisor=supervisor)
+        from kernel.daemon.task.wasm import TaskWasm
+        wasm_daemon = TaskWasm(tunnel=ctx.tunnel, supervisor=supervisor)
         wasm_daemon.concurrency_limit = worker_capacity
         supervisor.mount_daemon(wasm_daemon)
         log.info("Worker Plugin Mounted: WasmTaskerDaemon")

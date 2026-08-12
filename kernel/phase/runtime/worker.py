@@ -6,9 +6,9 @@ import importlib
 
 from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.tunnelbus import TunnelEventBus
-from kernel.phase.daemon.task.supervisor import TaskSupervisor, Dispatcher
+from kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from kernel.phase.runtime.context import RuntimeContext
-from kernel.phase.daemon.bootstrap import mount_worker_layer
+from kernel.daemon.bootstrap import mount_worker_layer
 from arch.contract.event.psi import PsiEvent
 from kernel.bind.resolver import find_current_self
 from watcher.plane.emitter import get_emitter

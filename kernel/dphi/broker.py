@@ -1,4 +1,5 @@
 # kernel.dphi.broker
+import time
 import json
 import uuid
 import asyncio
@@ -75,10 +76,8 @@ class DphiBroker:
                     except Exception as e:
                         log.error(f"[Broker] Error processing response: {e}", exc_info=True)
         except asyncio.CancelledError:
-            # Task cancellation is expected during shutdown
             pass
         finally:
-            # [안전 보장] 리스너가 종료될 때 반드시 구독을 해제하고 격리된 커넥션을 닫습니다.
             with suppress(Exception):
                 await pubsub.unsubscribe(self.response_channel)
                 await pubsub.close()
@@ -110,17 +109,14 @@ class DphiBroker:
         active_timeout = timeout if timeout is not None else self.timeout
         
         try:
-            # 1. 메시지 발송
             if route == self.control_channel:
                 await tunnel.publish(route, json.dumps(payload))
             else:
                 await tunnel.state_store.xadd(route, {PayloadKey.DATA: json.dumps(payload)})
             
-            # 2. 결과 대기 (리스너가 future.set_result()를 호출할 때까지 가변 타임아웃 적용)
             async with asyncio.timeout(active_timeout):
                 result_data = await future
                 
-            # 3. 결과 후처리
             metrics = result_data.get(ResultKey.METRICS, {})
             if metrics and self.target_auditor and hasattr(self.target_auditor, "project_state"):
                 self.target_auditor.project_state(action=method_name, metrics=metrics)
@@ -141,9 +137,15 @@ class DphiBroker:
         finally:
             self._pending_jobs.pop(job_id, None)
 
+    def _build_context(self, base_context: Optional[dict], timeout: Optional[float]) -> dict:
+        ctx = dict(base_context) if base_context is not None else dict(_flow_context.get() or {})
+        ctx["timestamp"] = int(time.time() * 1000)
+        ctx["timeout"] = timeout or self.timeout
+        return ctx
+
     async def update_policy(self, tier: str, context: Optional[dict] = None) -> bool:
         job_id = str(uuid.uuid4())
-        active_context = context if context is not None else _flow_context.get()
+        active_context = self._build_context(context, self.timeout)
         payload = {
             PayloadKey.JOB_ID: job_id,
             PayloadKey.METHOD_FUNC: "update_policy",
@@ -163,7 +165,7 @@ class DphiBroker:
         timeout: Optional[float] = None
     ) -> ExecutionResult:
         job_id = str(uuid.uuid4())
-        active_context = context if context is not None else _flow_context.get()
+        active_context = self._build_context(context, timeout)
         func_name = target_func.value if isinstance(target_func, Enum) else str(target_func)
 
         msg_payload = {
@@ -186,7 +188,7 @@ class DphiBroker:
         timeout: Optional[float] = None
     ) -> ExecutionResult:
         job_id = str(uuid.uuid4())
-        active_context = context if context is not None else _flow_context.get()
+        active_context = self._build_context(context, timeout)
         
         target_wasm = None
         if isinstance(code, dict):
@@ -213,7 +215,6 @@ class DphiBroker:
         return await self._dispatch_and_wait_async(job_id, msg_payload, timeout=timeout)
         
     async def close(self):
-        """브로커를 명시적으로 닫을 때 호출합니다. 리스너를 취소하고 정리합니다."""
         if self._listener_task and not self._listener_task.done():
             self._listener_task.cancel()
             with suppress(asyncio.CancelledError):
@@ -223,8 +224,6 @@ class DphiBroker:
         if self._listener_task and not self._listener_task.done():
             try:
                 loop = asyncio.get_running_loop()
-                # GC 스레드와 이벤트 루프의 충돌을 막기 위해 threadsafe 방식으로 cancel 예약
                 loop.call_soon_threadsafe(self._listener_task.cancel)
             except RuntimeError:
-                # 이벤트 루프가 이미 닫혀있다면 무시
                 pass

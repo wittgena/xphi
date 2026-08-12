@@ -17,8 +17,8 @@ from arch.contract.executor import BaseExecutor
 
 from arch.topos.tunnel.factory import TunnelFactory
 from kernel.bind.resolver import get_invoker
-from kernel.phase.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
-from kernel.phase.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
+from kernel.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
+from kernel.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
 
 from watcher.plane.emitter import get_emitter, flow_scope
 from watcher.plane.regulator import console_surface

@@ -16,7 +16,7 @@ from arch.contract.registry.unified import registry
 from arch.contract.event.next import next_id
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 from kernel.bind.resolver import find_current_self
-from kernel.phase.daemon.bootstrap import TOPIC_BUS_STREAM
+from kernel.daemon.bootstrap import TOPIC_BUS_STREAM
 from watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("flow.executor")

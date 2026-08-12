@@ -1,25 +1,26 @@
-# kernel.phase.daemon.task.wasm
+# kernel.daemon.task.wasm
 import os
 import json
 import asyncio
 import uuid
-import sys
 import time
 from pathlib import Path
 from typing import Optional
 from contextlib import suppress
 
-from kernel.phase.daemon.base import AbstractDaemon
+from kernel.daemon.base import AbstractDaemon
 from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter, flow_scope
 from kernel.dphi.cgroup import CgroupPolicy
 from kernel.dphi.method import DphiMethod
+from kernel.daemon.task.strategy import ExecutionStrategy
 
 TIME_ROOT = resolve_path("time")
 
-class WasmTaskerDaemon(AbstractDaemon):
+
+class TaskWasm(AbstractDaemon):
     def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
-        super().__init__("WasmTasker")
+        super().__init__("TaskWasm")
         self.tunnel = tunnel
         self.supervisor = supervisor
         
@@ -33,11 +34,12 @@ class WasmTaskerDaemon(AbstractDaemon):
         self.consumer_name = f"consumer-{self.node_id}"
         self.poll_timeout_ms = 1000
         self.default_tier = "STANDARD"
-        self.concurrency_limit = 4 
-        self.fetch_batch_size = self.concurrency_limit 
         
+        self.concurrency_limit = 11
+        self.fetch_batch_size = self.concurrency_limit 
         self._wasm_pool = asyncio.Queue(maxsize=self.concurrency_limit)
         self._pubsub_task: Optional[asyncio.Task] = None
+        self.strategy = ExecutionStrategy(prewarm_pool_size=self.concurrency_limit)
 
     async def _init_consumer_group(self):
         try:
@@ -59,13 +61,14 @@ class WasmTaskerDaemon(AbstractDaemon):
             self._wasm_pool.put_nowait(interp)
         self.log.info(f"[{self.node_id}] WASM Instance Pool initialized successfully.")
 
-    def _is_expired(self, context: dict, timeout_sec: float = 15.0) -> bool:
-        """[Early Load Shedding] 가장 최전방에서 죽은 메시지를 걸러냅니다."""
+    def _is_expired(self, context: dict, default_timeout_sec: float = 15.0) -> bool:
         ts_val = float(context.get("timestamp", 0))
         if ts_val <= 0: return False
         
         req_ts = ts_val / 1000.0 if ts_val > 1e11 else ts_val
         elapsed = time.time() - req_ts
+        
+        timeout_sec = float(context.get("timeout", default_timeout_sec))
         if elapsed > 86400 * 365: return False 
         return elapsed > timeout_sec
 
@@ -74,7 +77,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         await self._init_wasm_pool()
         
         self._pubsub_task = asyncio.create_task(self._listen_pubsub())
-        self.log.info(f"WasmTasker listening: Stream[{self.topic}] | PubSub[{self.control_channel}] (Max Concurrency: {self.concurrency_limit}, PID: {os.getpid()})")
+        self.log.info(f"TaskWasm listening: Stream[{self.topic}] | PubSub[{self.control_channel}] (Max Concurrency: {self.concurrency_limit}, PID: {os.getpid()})")
         
         try:
             while self.running:
@@ -97,14 +100,14 @@ class WasmTaskerDaemon(AbstractDaemon):
                             context = data.get("context", {})
                             
                             if self._is_expired(context):
-                                self.log.warning(f"[{job_id[:8]}] 🗑️ Dropped expired zombie request at stream level.")
                                 await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
                                 continue
 
                             try:
-                                interp_instance = self._wasm_pool.get_nowait()
-                            except asyncio.QueueEmpty:
-                                self.log.warning(f"[{job_id[:8]}] 🚫 Daemon Pool Exhausted. Emitting Overload Signal.")
+                                # [핵심 개선] 즉각 거절(nowait) 대신, 앞선 작업이 끝날 때까지 0.5초의 유예(Buffer) 제공
+                                # 이를 통해 불규칙한 Micro-burst로 인한 억울한 Shedding을 방지하고 TPS를 극대화
+                                interp_instance = await asyncio.wait_for(self._wasm_pool.get(), timeout=0.5)
+                            except asyncio.TimeoutError:
                                 await self._emit_overload(data, message_id)
                                 continue
 
@@ -122,7 +125,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            self.log.error(f"WasmTasker Main Loop Error: {e}", exc_info=True)
+            self.log.error(f"TaskWasm Main Loop Error: {e}", exc_info=True)
         finally:
             if self._pubsub_task and not self._pubsub_task.done():
                 self._pubsub_task.cancel()
@@ -134,7 +137,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                 interp.shutdown()
 
     async def _emit_overload(self, payload: dict, message_id: str):
-        """워커 풀이 고갈되었을 때 큐를 비우고 클라이언트에게 즉시 실패를 알림"""
         response_channel = payload.get("response_channel")
         if response_channel:
             err_payload = {"success": False, "error": "SYSTEM_OVERLOADED (Daemon Pool Exhausted).", "job_id": payload.get("job_id", "unknown")}
@@ -154,7 +156,7 @@ class WasmTaskerDaemon(AbstractDaemon):
         except asyncio.CancelledError:
             pass
         except Exception as e:
-            self.log.error(f"WasmTasker PubSub Error: {e}")
+            self.log.error(f"TaskWasm PubSub Error: {e}")
         finally:
             if hasattr(pubsub, 'unsubscribe'):
                 await pubsub.unsubscribe(self.control_channel)
@@ -207,14 +209,6 @@ class WasmTaskerDaemon(AbstractDaemon):
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
             self._wasm_pool.put_nowait(interp_instance)
 
-    def _get_strategy_module(self):
-        import kernel.phase.daemon.task.strategy as STRATEGY_PATH
-        module_name = STRATEGY_PATH.__name__
-        if module_name in sys.modules:
-            return sys.modules[module_name]
-        import importlib
-        return importlib.import_module(module_name)
-
     def _execute_isolated(self, payload: dict, interp_instance) -> dict:
         job_id = payload.get("job_id", "unknown")
         target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE.value)
@@ -227,28 +221,26 @@ class WasmTaskerDaemon(AbstractDaemon):
 
         exec_data = payload.get("payload", payload.get("data", ""))
         context = payload.get("context", {})
-        strategies = self._get_strategy_module()
 
         with flow_scope(**context):
             target_path = self._resolve_wasm_path(wasm_path)
-            core_wasm_path = self._resolve_wasm_path(self.default_wasm_path)
             
             if not target_path.exists() and target_func != DphiMethod.EXECUTE_CODE.value:
                 error_msg = f"WASM binary not found: {target_path}"
                 self.log.warning(f"[{job_id[:8]}] {error_msg}")
                 return {"success": False, "output": "", "error": error_msg}
 
-            # ROUTE A: Guarded Execution (Python Legacy Jail / DVM)
+            # ROUTE A: Guarded Execution
             if target_func in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_DVM.value):
-                safe_payload = strategies.validate_intent_checkpoint(payload, exec_data, context, job_id, core_wasm_path, self.log)
+                # [WASM 캐싱 최적화] 디스크 오픈 없이 이미 캐싱된 interp_instance 재사용 전달
+                safe_payload = self.strategy.validate_intent_checkpoint(payload, exec_data, context, job_id, interp_instance, self.log)
                 if isinstance(safe_payload, dict) and "error" in safe_payload and not safe_payload.get("success", True):
                     return safe_payload
                 
                 if target_func == DphiMethod.EXECUTE_DVM.value:
-                    self.log.info(f"[{job_id[:8]}] 🔓 Entering DVM Sandbox (dvm.wasm)")
-                    return strategies.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
+                    return self.strategy.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
                 else:
-                    return strategies.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)
+                    return self.strategy.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)
 
             # ROUTE B: Pure WASM Core Execution
             else:
