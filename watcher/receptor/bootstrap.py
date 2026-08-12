@@ -8,7 +8,7 @@ import traceback
 from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
-from dataclasses import asdict  # [추가] 안전한 JSON 직렬화를 위한 표준 라이브러리
+from dataclasses import asdict
 
 from arch.contract.discovery import discover_modules
 from arch.topos.tunnel.factory import UniversalFacade

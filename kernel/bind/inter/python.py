@@ -12,6 +12,7 @@ import shutil
 from os import PathLike
 from pathlib import Path
 from typing import Any, Callable, Mapping
+from contextlib import suppress
 
 from kernel.bind.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
 from kernel.bind.resolver import find_current_self, resolve_path
@@ -193,9 +194,10 @@ class PythonInterpreter:
             response = JsonRpcMessage.error(error_code, str(e), request_id, {"type": error_type})
 
         try:
-            self.deno_process.stdin.write(response + "\n")
-            self.deno_process.stdin.flush()
-        except BrokenPipeError:
+            if self.deno_process and self.deno_process.stdin:
+                self.deno_process.stdin.write(response + "\n")
+                self.deno_process.stdin.flush()
+        except (BrokenPipeError, AttributeError):
             pass 
 
     def _apply_cgroup_policy(self) -> None:
@@ -206,59 +208,56 @@ class PythonInterpreter:
         }
         self._send_request("apply_cgroup", params, "Applying Cgroup Policy")
 
-    # =========================================================================
-    # [추가된 부분] 런타임 동적 정책(Tier) 변경 인터페이스 
-    # =========================================================================
     def apply_policy(self, policy: CgroupPolicy) -> None:
         """런타임에 Cgroup 정책(Tier, 리소스 제한 등)을 동적으로 변경하고 Deno 샌드박스에 즉시 적용합니다."""
         self.policy = policy
         if self.deno_process and self.deno_process.poll() is None:
             self._apply_cgroup_policy()
-    # =========================================================================
 
     def _ensure_deno_process(self) -> None:
-        if self.deno_process is None or self.deno_process.poll() is not None:
-            self._mounted_files = False
-            try:
-                # [핵심 방어선] PATH 의존성을 끊기 위해 Deno의 절대 경로를 먼저 탐색
-                deno_exe = self.deno_command[0]
-                if not os.path.isabs(deno_exe):
-                    resolved_exe = shutil.which(deno_exe)
-                    if not resolved_exe:
-                        raise FileNotFoundError(f"{deno_exe} executable not found in host PATH")
-                    self.deno_command[0] = resolved_exe
+        # 기존 프로세스가 깨졌거나 죽어있다면 완벽하게 수거(Cleanup) 후 재생성
+        if self.deno_process is not None:
+            if self.deno_process.poll() is not None:
+                self.shutdown()
+            else:
+                return # 정상 동작 중
 
-                # [완전한 격리(Air-gap)] 
-                # 호스트의 PATH를 포함한 모든 민감한 환경 변수를 제거하여 샌드박스로의 유출 원천 차단
-                safe_env = {
-                    "TMPDIR": os.environ.get("TMPDIR", "/tmp")
-                }
-                
-                # Deno 엔진이 HOME 변수 없이도 캐시를 찾을 수 있도록 명시적 주입
-                deno_dir = self._get_deno_dir()
-                if deno_dir:
-                    safe_env["DENO_DIR"] = deno_dir
-                
-                # 사용자가 명시적으로 허용한 환경변수만 통과
-                if self.enable_env_vars:
-                    for k in self.enable_env_vars:
-                        if k in os.environ:
-                            safe_env[k] = os.environ[k]
-                            
-                self.deno_process = subprocess.Popen(
-                    self.deno_command,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT, 
-                    text=True,
-                    encoding="UTF-8",
-                    env=safe_env
-                )
-            except FileNotFoundError as e:
-                raise ProtocolError("Deno executable not found.") from e
+        self._mounted_files = False
+        try:
+            deno_exe = self.deno_command[0]
+            if not os.path.isabs(deno_exe):
+                resolved_exe = shutil.which(deno_exe)
+                if not resolved_exe:
+                    raise FileNotFoundError(f"{deno_exe} executable not found in host PATH")
+                self.deno_command[0] = resolved_exe
+
+            safe_env = {
+                "TMPDIR": os.environ.get("TMPDIR", "/tmp")
+            }
             
-            self._health_check()
-            self._apply_cgroup_policy()
+            deno_dir = self._get_deno_dir()
+            if deno_dir:
+                safe_env["DENO_DIR"] = deno_dir
+            
+            if self.enable_env_vars:
+                for k in self.enable_env_vars:
+                    if k in os.environ:
+                        safe_env[k] = os.environ[k]
+                        
+            self.deno_process = subprocess.Popen(
+                self.deno_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT, 
+                text=True,
+                encoding="UTF-8",
+                env=safe_env
+            )
+        except FileNotFoundError as e:
+            raise ProtocolError("Deno executable not found.") from e
+        
+        self._health_check()
+        self._apply_cgroup_policy()
 
     _MAX_SKIP_LINES = 100
 
@@ -266,6 +265,10 @@ class PythonInterpreter:
         start_time = time.time()
         
         while True:
+            # 파이프가 닫혔을 경우를 대비한 검증
+            if not self.deno_process or not self.deno_process.stdout:
+                raise ProtocolError(f"Deno process or stdout is closed during {context}")
+
             ready, _, _ = select.select([self.deno_process.stdout], [], [], 0.1)
             
             if ready:
@@ -280,6 +283,7 @@ class PythonInterpreter:
 
             exit_code = self.deno_process.poll()
             if exit_code is not None:
+                self.shutdown() # 즉시 자원 회수
                 raise ProtocolError(f"Deno exited unexpectedly (code {exit_code}) {context}")
 
     def _parse_response_line(self, response_line: str, context: str) -> dict | None:
@@ -446,6 +450,8 @@ class PythonInterpreter:
             self.deno_process.stdin.write(input_data + "\n")
             self.deno_process.stdin.flush()
         except BrokenPipeError:
+            log.warning("Broken pipe during execute. Restarting Deno process.")
+            self.shutdown() # 기존 핸들 명시적 삭제 (핵심 누수 차단)
             self._ensure_deno_process()
             self._mount_files()
             self._register_callables(callables)
@@ -517,13 +523,34 @@ class PythonInterpreter:
         return self.execute(code, variables, callables, context)
 
     def shutdown(self) -> None:
-        if self.deno_process and self.deno_process.poll() is None:
-            try:
-                self.deno_process.stdin.write(JsonRpcMessage.notification("shutdown") + "\n")
-                self.deno_process.stdin.flush()
-                self.deno_process.stdin.close()
-                self.deno_process.wait(timeout=2)
-            except (BrokenPipeError, subprocess.TimeoutExpired, OSError):
-                self.deno_process.kill()
+        """가장 강력한 방어선. 프로세스와 모든 파이프를 명시적으로 파기합니다."""
+        if self.deno_process:
+            if self.deno_process.poll() is None:
+                try:
+                    # 1. 우아한 종료 시도
+                    if self.deno_process.stdin:
+                        self.deno_process.stdin.write(JsonRpcMessage.notification("shutdown") + "\n")
+                        self.deno_process.stdin.flush()
+                        self.deno_process.stdin.close()
+                    # 타임아웃을 1초로 짧게 주어 장애 상황에 빠르게 반응
+                    self.deno_process.wait(timeout=1.0) 
+                except (BrokenPipeError, subprocess.TimeoutExpired, OSError, AttributeError):
+                    # 2. 실패 시 하드 킬(Hard Kill) 및 좀비 수거(Reap)
+                    try:
+                        self.deno_process.kill()
+                        self.deno_process.wait(timeout=1.0)
+                    except Exception as e:
+                        log.error(f"Failed to force kill Deno process: {e}")
+            
+            # 3. 파이프 명시적 차단 (File Descriptor 누수 방지)
+            if self.deno_process.stdout:
+                with suppress(Exception):
+                    self.deno_process.stdout.close()
+                    
         self.deno_process = None
         self._owner_thread = None
+
+    def __del__(self):
+        """객체가 GC될 때, 닫히지 않은 Deno 프로세스가 있다면 동반 자살(Kill)시킵니다."""
+        with suppress(Exception):
+            self.shutdown()

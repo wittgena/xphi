@@ -97,21 +97,38 @@ class EventBusDaemon(AbstractDaemon):
 
 
 class HeartbeatDaemon(AbstractDaemon):
-    def __init__(self, tunnel: UniversalFacade, node_id: str, supervisor: TaskSupervisor):
+    """
+    [핵심 개선]
+    노드의 식별 정보(Role, Capacity)를 포함한 메타데이터(JSON)를 Heartbeat로 쏘아,
+    attach.entry와 같은 컨트롤 플레인이 노드의 역할을 정확히 인지하도록 돕습니다.
+    """
+    def __init__(self, tunnel: UniversalFacade, node_id: str, supervisor: TaskSupervisor, role: str = "master", capacity: int = 0):
         super().__init__("Heartbeat")
         self.tunnel = tunnel
         self.node_id = node_id
         self.supervisor = supervisor
+        self.role = role
+        self.capacity = capacity
 
     async def run(self):
-        self.log.info(f"HeartbeatDaemon initiated. Node [{self.node_id}] emitting vital signs & load metrics...")
+        self.log.info(f"HeartbeatDaemon initiated. Node [{self.node_id}] emitting vital signs (Role: {self.role}, Capacity: {self.capacity})...")
         try:
             while self.running:
+                # 1. 상태 메타데이터 구성
+                meta_payload = {
+                    "ts": int(time.time()),
+                    "role": self.role,
+                    "capacity": self.capacity
+                }
+                meta_json = json.dumps(meta_payload)
+                
+                # 2. Redis에 TTL 10초로 기록
                 await asyncio.gather(
-                    self.tunnel.set(f"{KEY_HEARTBEAT_PREFIX}{self.node_id}", int(time.time()), ex=10),
-                    self.tunnel.set(KEY_ACTIVE, int(time.time()), ex=10)
+                    self.tunnel.set(f"{KEY_HEARTBEAT_PREFIX}{self.node_id}", meta_json, ex=10),
+                    self.tunnel.set(KEY_ACTIVE, int(time.time()), ex=10) # 전역 활성화 플래그는 기존 호환성 유지
                 )
                 
+                # 3. 로드 파동(Tension) 전파
                 try:
                     active_tasks = len(self.supervisor.get_active_tasks())
                     payload = {
@@ -122,7 +139,7 @@ class HeartbeatDaemon(AbstractDaemon):
                 except Exception as e:
                     self.log.warning(f"Failed to emit load metric: {e}")
 
-                await asyncio.sleep(0.5)
+                await asyncio.sleep(1.0) # 부하를 줄이기 위해 0.5초에서 1.0초로 완화
         except asyncio.CancelledError:
             self.log.warn("HeartbeatDaemon received cancellation signal.")
         except Exception as e:
@@ -211,7 +228,9 @@ def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
         HeartbeatDaemon(
             tunnel=ctx.tunnel, 
             node_id=ctx.node_id,
-            supervisor=supervisor
+            supervisor=supervisor,
+            role="master",     # 명시적 마스터 롤
+            capacity=0         # 마스터는 WASM 처리를 안 하므로 0
         ),
         DynamicsDaemon(
             bus=ctx.bus,
@@ -232,7 +251,18 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     각 Worker 프로세스 전용 데몬입니다. 
     Redis Consumer Group을 통해 이벤트를 가져오고 WASM 플러그인을 실행합니다.
     """
+    # 기본 Worker Capacity 설정 (WASM 동시성 처리 슬롯 개수)
+    worker_capacity = 4
+    
     worker_daemons = [
+        # 워커 노드도 자신이 살아있고, 처리 능력이 몇인지 Heartbeat로 알려야 합니다.
+        HeartbeatDaemon(
+            tunnel=ctx.tunnel, 
+            node_id=ctx.node_id,
+            supervisor=supervisor,
+            role="worker",        # 명시적 워커 롤
+            capacity=worker_capacity
+        ),
         EventBusDaemon(
             tunnel=ctx.tunnel,
             dispatcher=ctx.dispatcher, 
@@ -248,6 +278,7 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     try:
         from kernel.phase.daemon.task.wasm import WasmTaskerDaemon
         wasm_daemon = WasmTaskerDaemon(tunnel=ctx.tunnel, supervisor=supervisor)
+        wasm_daemon.concurrency_limit = worker_capacity
         supervisor.mount_daemon(wasm_daemon)
         log.info("Worker Plugin Mounted: WasmTaskerDaemon")
     except ImportError as e:
@@ -255,4 +286,4 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     except Exception as e:
         log.error(f"Failed to mount WasmTaskerDaemon: {e}")
 
-    log.info("Worker Data Layer (EventBus, WasmTasker) mounted successfully.")
+    log.info("Worker Data Layer (EventBus, WasmTasker, Heartbeat) mounted successfully.")
