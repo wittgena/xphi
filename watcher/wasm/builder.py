@@ -1,5 +1,4 @@
 # watcher.wasm.builder
-## @lineage: dphi.wasm.builder
 import os
 import shutil
 import json
@@ -8,6 +7,9 @@ from pathlib import Path
 
 from kernel.bind.resolver import resolve_path
 from watcher.tracer.bound import BaseTracer
+from watcher.plane.emitter import get_emitter
+
+log = get_emitter("wasm.builder")
 
 THEORIA_ROOT = resolve_path("theoria")
 TIME_ROOT = resolve_path("time")
@@ -163,12 +165,12 @@ if __name__ == "__main__":
     
     async def main():
         builder = WasmBuilder()
-        print("Starting WasmBuilder...")
+        log.info("Starting WasmBuilder...")
         await builder.execute()
         
         if getattr(builder, 'rupture_confirmed', False):
-            print("[Main] Build failed. Check the logs for details.")
+            log.info("[Main] Build failed. Check the logs for details.")
         else:
-            print("[Main] Build and deployment completed successfully!")
+            log.info("[Main] Build and deployment completed successfully!")
 
     asyncio.run(main())

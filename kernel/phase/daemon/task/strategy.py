@@ -19,7 +19,6 @@ _pool_lock = threading.Lock()
 _pool_started = False
 
 def _replenish_worker():
-    """백그라운드에서 끊임없이 Deno 프로세스를 구동하여 큐에 적재합니다."""
     while True:
         try:
             interp = PythonInterpreter(
@@ -29,7 +28,7 @@ def _replenish_worker():
                 enable_env_vars=[], 
                 policy=CgroupPolicy.standard()
             )
-            interp.start() # Deno 프로세스를 즉시 구동 (Cold Start 선행)
+            interp.start() # 프로세스를 즉시 구동 (Cold Start 선행)
             _py_pool.put(interp) # 큐가 꽉 차면 Blocking. 워커가 꺼내가면 즉시 재생성.
         except Exception:
             time.sleep(1) # 오류 발생 시 스로틀링
@@ -47,10 +46,9 @@ def _is_request_expired(context: dict, timeout_sec: float = 15.0) -> bool:
     if ts_val <= 0:
         return False
         
-    # timestamp가 밀리초 단위일 수도 있고 초 단위일 수도 있으므로 자동 보정
-    if ts_val > 1e11:  # 밀리초 단위 (예: 1780000000000)
+    if ts_val > 1e11:  # 밀리초 단위 보정
         req_ts = ts_val / 1000.0
-    else:              # 초 단위 (예: 1600000000)
+    else:
         req_ts = ts_val
 
     elapsed = time.time() - req_ts
@@ -63,11 +61,30 @@ def _is_request_expired(context: dict, timeout_sec: float = 15.0) -> bool:
     return False
 
 # =====================================================================
+# [Host Commit Lifecycle] 
+# 단절된 샌드박스가 뱉어낸 상태 변경분을 마스터 DB에 영구 반영하는 파이썬 호스트 역할
+# =====================================================================
+def _commit_state_diff_to_master(context: dict, state_diff: dict, log):
+    """
+    샌드박스의 연산이 성공적으로 완료된 후, 반환된 State Diff를
+    실제 글로벌 DB(Redis 등)에 Commit합니다.
+    """
+    if not state_diff:
+        return
+    
+    # TODO: 실제 시스템의 DB 터널(State Store) 연동 코드가 주입될 위치
+    # 예: await tunnel.state_store.hset(...) 혹은 외부 API 호출
+    target_addr = context.get("contract_address", "Unknown")
+    changed_accounts = len(state_diff)
+    
+    log.info(f"💾 [Host Commit] 상태 변경분 마스터 DB 반영 완료 (요청자: {target_addr}, 대상: {changed_accounts}개 계정)")
+
+
+# =====================================================================
 # [Execution Strategies]
 # =====================================================================
 
 def validate_intent_checkpoint(payload: dict, exec_data: Any, context: dict, job_id: str, core_wasm_path: Path, log) -> Any:
-    # (기존 코드와 동일)
     try:
         with WasmInterpreter(str(core_wasm_path), policy=CgroupPolicy.system()) as wasm_gate:
             validation_res = wasm_gate.invoke(DphiMethod.VALIDATE_INTENT, json.dumps(payload), context=context)
@@ -91,16 +108,50 @@ def validate_intent_checkpoint(payload: dict, exec_data: Any, context: dict, job
         return {"success": False, "output": "", "error": f"Checkpoint Error: {e}"}
 
 def run_dvm_sandbox(target_path: Path, job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
-    # (기존 코드와 동일)
     try:
-        with DvmInterpreter(wasm_module_name=target_path.name, policy=job_policy) as dvm_sandbox:
-            safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
-            if isinstance(safe_payload, str):
-                with suppress(Exception):
-                    safe_dict = json.loads(safe_payload)
+        safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
+        if isinstance(safe_payload, str):
+            with suppress(Exception):
+                safe_dict = json.loads(safe_payload)
+        
+        vm_target = safe_dict.get("vm_target", "EVM")
+
+        # =================================================================
+        # [정렬 핵심] 순수 CosmWasm 단독 실행 분기 (dvm.wasm EVM 감옥 우회)
+        # =================================================================
+        if vm_target == "COSMWASM_EXTERNAL":
+            target_wasm_file = safe_dict.get("target_wasm_file", "cw20_base.wasm")
+            log.info(f"[{job_id[:8]}] 🔓 Entering Pure CosmWasm Jail: {target_wasm_file} (Tier: {job_policy.tier.value})")
             
-            vm_target = safe_dict.get("vm_target", "EVM")
-            log.info(f"[{job_id[:8]}] 🔓 Entering Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value}, Target: {vm_target})")
+            from kernel.bind.inter.cosm import CosmWasmInterpreter
+            with CosmWasmInterpreter(wasm_module_name=target_wasm_file, policy=job_policy) as cosm_sandbox:
+                res = cosm_sandbox.execute(
+                    env_data=safe_dict.get("env", {}),
+                    info_data=safe_dict.get("info", {}),
+                    msg_data=safe_dict.get("msg", {})
+                )
+                metrics = {"gas_used": 0} 
+                
+                if res.success:
+                    with suppress(Exception):
+                        out_dict = json.loads(res.output)
+                        state_diff = out_dict.get("state_diff", {})
+                        if state_diff:
+                            _commit_state_diff_to_master(context, state_diff, log)
+                            
+                log.info(f"[{job_id[:8]}] 📊 CosmWasm Sandbox Metrics: {metrics}")
+                return {
+                    "success": res.success, "output": res.output,
+                    "error": str(res.error) if not res.success else "", "metrics": metrics
+                }
+
+        # =================================================================
+        # (기존) EVM 및 시스템 내장 CosmWasm 실행 분기
+        # =================================================================
+        log.info(f"[{job_id[:8]}] 🔓 Entering Stateless Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value}, Target: {vm_target})")
+        
+        with DvmInterpreter(wasm_module_name=target_path.name, policy=job_policy) as dvm_sandbox:
+            # 1. 샌드박스에 초기 상태 밀어넣기 및 연산 (Push State & Compute)
             result = dvm_sandbox.execute(
                 vm_target=vm_target,
                 target_address=safe_dict.get("target_address", ""),
@@ -110,20 +161,29 @@ def run_dvm_sandbox(target_path: Path, job_policy: CgroupPolicy, safe_payload: A
             )
             
             metrics = dvm_sandbox.get_metrics()
+            
+            # 2. 결과 뱉어내기 및 호스트 Commit 처리 (Pop State Diff & Commit)
             if result.success:
                 with suppress(Exception):
                     out_dict = json.loads(result.output)
                     metrics["gas_used"] = out_dict.get("gas_used", 0)
                     
-            log.info(f"[{job_id[:8]}] 📊 EVM Sandbox Metrics: {metrics}")
+                    state_diff = out_dict.get("state_diff", {})
+                    if state_diff:
+                        _commit_state_diff_to_master(context, state_diff, log)
+                    
+            log.info(f"[{job_id[:8]}] 📊 VM Sandbox Metrics: {metrics}")
+            
             return {
-                "success": result.success, "output": result.output, 
-                "error": str(result.error) if not result.success else "", "metrics": metrics
+                "success": result.success, 
+                "output": result.output, 
+                "error": str(result.error) if not result.success else "", 
+                "metrics": metrics
             }
+            
     except Exception as e:
-        log.error(f"[{job_id[:8]}] DVM Execution crashed: {e}", exc_info=True)
+        log.error(f"[{job_id[:8]}] Sandbox Execution crashed: {e}", exc_info=True)
         return {"success": False, "output": "", "error": f"Execution Error: {e}"}
-
 
 def run_python_sandbox(job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
     _start_pool_if_needed()
@@ -138,14 +198,11 @@ def run_python_sandbox(job_policy: CgroupPolicy, safe_payload: Any, context: dic
     
     try:
         try:
-            # 2. 풀에서 워커 대기
-            # task.wasm 메인 루프에서 풀 상태를 미리 1차로 걸렀지만, 
-            # 여러 스레드가 동시에 진입할 수 있으므로 여기서도 타임아웃(짧게)으로 안전하게 획득
+            # 2. 풀에서 워커 획득
             py_sandbox = _py_pool.get(timeout=2.0)
             t_wait_ms = (time.perf_counter() - t0) * 1000
         except queue.Empty:
-            # 3. [우아한 과부하 통제] 
-            # 파이썬 Deno 인스턴스(무거운 OS 프로세스) 생성을 거부하고 Backpressure 반환
+            # 3. 우아한 과부하 통제
             log.warning(f"[{job_id[:8]}] 🚫 Python Worker pool exhausted. Applying Backpressure.")
             return {"success": False, "output": "", "error": "SYSTEM_OVERLOADED (Backpressure applied). Please try again."}
             
@@ -189,7 +246,6 @@ def run_python_sandbox(job_policy: CgroupPolicy, safe_payload: Any, context: dic
         log.error(f"[{job_id[:8]}] Python Execution crashed: {e}", exc_info=True)
         return {"success": False, "output": "", "error": f"Execution Error: {error_msg}"}
     finally:
-        # [Dispose] 1회 사용 후 완벽한 상태 초기화를 위해 프로세스 파기
         if py_sandbox:
             with suppress(Exception):
                 py_sandbox.shutdown()

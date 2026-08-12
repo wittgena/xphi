@@ -34,7 +34,6 @@ class WasmTaskerDaemon(AbstractDaemon):
         self.poll_timeout_ms = 1000
         self.default_tier = "STANDARD"
         self.concurrency_limit = 4 
-        # 풀 한도를 초과하는 메시지를 가져오는 것을 방지하기 위해 batch_size를 보수적으로 유지
         self.fetch_batch_size = self.concurrency_limit 
         
         self._wasm_pool = asyncio.Queue(maxsize=self.concurrency_limit)
@@ -67,8 +66,6 @@ class WasmTaskerDaemon(AbstractDaemon):
         
         req_ts = ts_val / 1000.0 if ts_val > 1e11 else ts_val
         elapsed = time.time() - req_ts
-        
-        # 1년 넘은 가짜 시간(Mock)은 결정론 테스트용이므로 통과
         if elapsed > 86400 * 365: return False 
         return elapsed > timeout_sec
 
@@ -99,28 +96,18 @@ class WasmTaskerDaemon(AbstractDaemon):
                             job_id = data.get("job_id", "unknown")
                             context = data.get("context", {})
                             
-                            # ========================================================
-                            # [핵심 1] Early Load Shedding (입구 컷)
-                            # ========================================================
                             if self._is_expired(context):
                                 self.log.warning(f"[{job_id[:8]}] 🗑️ Dropped expired zombie request at stream level.")
                                 await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
-                                continue # 워커 풀을 전혀 건드리지 않고 스킵
+                                continue
 
-                            # ========================================================
-                            # [핵심 2] 메인 루프 블로킹 방지
-                            # 큐가 비어있어도 데몬이 멈추지 않고 에러를 반환하도록 즉시 풀 확인
-                            # ========================================================
                             try:
                                 interp_instance = self._wasm_pool.get_nowait()
                             except asyncio.QueueEmpty:
-                                # 워커 풀이 완전히 고갈되었다면, 이 메시지를 버리지 않고 
-                                # Backpressure 에러를 던져 클라이언트에게 상황을 알림
                                 self.log.warning(f"[{job_id[:8]}] 🚫 Daemon Pool Exhausted. Emitting Overload Signal.")
                                 await self._emit_overload(data, message_id)
                                 continue
 
-                            # 워커를 얻었다면 백그라운드 태스크로 처리를 위임
                             self.supervisor.create(
                                 self._process_and_reply(data, message_id, interp_instance), 
                                 name=f"ExecGate-{job_id[:8]}"
@@ -155,7 +142,6 @@ class WasmTaskerDaemon(AbstractDaemon):
         await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
 
     async def _listen_pubsub(self):
-        # (기존 코드와 동일)
         pubsub = self.tunnel.pubsub()
         await pubsub.subscribe(self.control_channel)
         try:
@@ -219,7 +205,6 @@ class WasmTaskerDaemon(AbstractDaemon):
                 await self.tunnel.publish(response_channel, json.dumps(err_payload))
         finally:
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
-            # 사용이 끝난 WASM 코어 인스턴스를 풀에 반납
             self._wasm_pool.put_nowait(interp_instance)
 
     def _get_strategy_module(self):
