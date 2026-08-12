@@ -1,6 +1,4 @@
 # kernel.phase.runtime.executor.dynamics
-## @lineage: phase.executor.dynamics
-## @lineage: phase.reflect.dynamics.executor
 from __future__ import annotations
 import json
 import asyncio

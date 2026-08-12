@@ -17,9 +17,17 @@ from kernel.daemon.task.strategy import ExecutionStrategy
 
 TIME_ROOT = resolve_path("time")
 
+REDIS_CONTROL_CHANNEL = "wasm:control:req"
+REDIS_STREAM_TOPIC    = "wasm:execute:stream"
+REDIS_GROUP_NAME      = "wasm_tasker_group"
+
+DEFAULT_WASM_PATH     = "dphi.wasm"
+DEFAULT_TIER          = "STANDARD"
+DEFAULT_CONCURRENCY   = 11
+POLL_TIMEOUT_MS       = 1000
 
 class TaskWasm(AbstractDaemon):
-    def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = "dphi.wasm"):
+    def __init__(self, tunnel, supervisor, node_id: str = None, default_wasm_path: str = DEFAULT_WASM_PATH):
         super().__init__("TaskWasm")
         self.tunnel = tunnel
         self.supervisor = supervisor
@@ -27,16 +35,21 @@ class TaskWasm(AbstractDaemon):
         self.node_id = node_id or f"tasker-{uuid.uuid4().hex[:6]}-{os.getpid()}"
         self.default_wasm_path = default_wasm_path
         
-        self.control_channel = "wasm:control:req"
-        self.topic = "wasm:execute:stream"
-        self.group_name = "wasm_tasker_group"
-        
+        # Redis Keys 적용
+        self.control_channel = REDIS_CONTROL_CHANNEL
+        self.topic = REDIS_STREAM_TOPIC
+        self.group_name = REDIS_GROUP_NAME
         self.consumer_name = f"consumer-{self.node_id}"
-        self.poll_timeout_ms = 1000
-        self.default_tier = "STANDARD"
         
-        self.concurrency_limit = 11
-        self.fetch_batch_size = self.concurrency_limit 
+        # Config 설정 적용
+        self.poll_timeout_ms = POLL_TIMEOUT_MS
+        self.default_tier = DEFAULT_TIER
+        self.concurrency_limit = DEFAULT_CONCURRENCY
+        
+        # [수정] 오버패칭 제거: Worker 슬롯(Pool)이 꽉 찼을 때 
+        # 불필요하게 메세지를 메모리에 쥐고 있는 현상(볼모)을 막기 위해 1개씩 소비
+        self.fetch_batch_size = 1 
+        
         self._wasm_pool = asyncio.Queue(maxsize=self.concurrency_limit)
         self._pubsub_task: Optional[asyncio.Task] = None
         self.strategy = ExecutionStrategy(prewarm_pool_size=self.concurrency_limit)
@@ -103,13 +116,9 @@ class TaskWasm(AbstractDaemon):
                                 await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
                                 continue
 
-                            try:
-                                # [핵심 개선] 즉각 거절(nowait) 대신, 앞선 작업이 끝날 때까지 0.5초의 유예(Buffer) 제공
-                                # 이를 통해 불규칙한 Micro-burst로 인한 억울한 Shedding을 방지하고 TPS를 극대화
-                                interp_instance = await asyncio.wait_for(self._wasm_pool.get(), timeout=0.5)
-                            except asyncio.TimeoutError:
-                                await self._emit_overload(data, message_id)
-                                continue
+                            # [수정] 인위적 타임아웃 및 버리기 로직 제거
+                            # 풀이 비어있으면 강제로 버리지 않고 슬롯이 날 때까지 자연스럽게 대기(Backpressure)
+                            interp_instance = await self._wasm_pool.get()
 
                             self.supervisor.create(
                                 self._process_and_reply(data, message_id, interp_instance), 
@@ -135,13 +144,6 @@ class TaskWasm(AbstractDaemon):
             while not self._wasm_pool.empty():
                 interp = self._wasm_pool.get_nowait()
                 interp.shutdown()
-
-    async def _emit_overload(self, payload: dict, message_id: str):
-        response_channel = payload.get("response_channel")
-        if response_channel:
-            err_payload = {"success": False, "error": "SYSTEM_OVERLOADED (Daemon Pool Exhausted).", "job_id": payload.get("job_id", "unknown")}
-            await self.tunnel.publish(response_channel, json.dumps(err_payload))
-        await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
 
     async def _listen_pubsub(self):
         pubsub = self.tunnel.pubsub()
@@ -169,7 +171,7 @@ class TaskWasm(AbstractDaemon):
     async def _handle_control(self, payload: dict):
         job_id = payload.get("job_id", "unknown")
         response_channel = payload.get("response_channel")
-        tier = payload.get("tier", "STANDARD").upper()
+        tier = payload.get("tier", self.default_tier).upper()
         context = payload.get("context", {})
         
         with flow_scope(**context):
@@ -187,9 +189,14 @@ class TaskWasm(AbstractDaemon):
     async def _process_and_reply(self, payload: dict, message_id: str, interp_instance):
         response_channel = payload.get("response_channel")
         job_id = payload.get("job_id", "unknown")
+        target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE.value)
 
         try:
-            response_data = await asyncio.to_thread(self._execute_isolated, payload, interp_instance)
+            if target_func in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_DVM.value):
+                response_data = await asyncio.to_thread(self._execute_heavy_sandbox, payload, interp_instance)
+            else:
+                response_data = self._execute_fast_wasm(payload, interp_instance)
+
             if isinstance(response_data, dict):
                 response_data["job_id"] = job_id
                 if "metrics" not in response_data:
@@ -209,7 +216,28 @@ class TaskWasm(AbstractDaemon):
             await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
             self._wasm_pool.put_nowait(interp_instance)
 
-    def _execute_isolated(self, payload: dict, interp_instance) -> dict:
+    def _execute_fast_wasm(self, payload: dict, interp_instance) -> dict:
+        job_id = payload.get("job_id", "unknown")
+        target_func = payload.get("target_func")
+        exec_data = payload.get("payload", payload.get("data", ""))
+        context = payload.get("context", {})
+        
+        try:
+            exec_payload = exec_data if isinstance(exec_data, str) else json.dumps(exec_data)
+            res = interp_instance.invoke(
+                target_func=target_func,
+                payload=exec_payload,
+                context=context
+            )
+            metrics = interp_instance.get_metrics()
+            if res.success:
+                return {"success": True, "output": res.output, "metrics": metrics}
+            else:
+                return {"success": False, "output": "", "error": str(res.error), "metrics": metrics}
+        except Exception as e:
+            return {"success": False, "output": "", "error": f"Invoke Error: {e}", "metrics": {}}
+
+    def _execute_heavy_sandbox(self, payload: dict, interp_instance) -> dict:
         job_id = payload.get("job_id", "unknown")
         target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE.value)
         wasm_path = payload.get("wasm_path", self.default_wasm_path)
@@ -225,36 +253,16 @@ class TaskWasm(AbstractDaemon):
         with flow_scope(**context):
             target_path = self._resolve_wasm_path(wasm_path)
             
-            if not target_path.exists() and target_func != DphiMethod.EXECUTE_CODE.value:
+            if not target_path.exists():
                 error_msg = f"WASM binary not found: {target_path}"
                 self.log.warning(f"[{job_id[:8]}] {error_msg}")
                 return {"success": False, "output": "", "error": error_msg}
 
-            # ROUTE A: Guarded Execution
-            if target_func in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_DVM.value):
-                # [WASM 캐싱 최적화] 디스크 오픈 없이 이미 캐싱된 interp_instance 재사용 전달
-                safe_payload = self.strategy.validate_intent_checkpoint(payload, exec_data, context, job_id, interp_instance, self.log)
-                if isinstance(safe_payload, dict) and "error" in safe_payload and not safe_payload.get("success", True):
-                    return safe_payload
-                
-                if target_func == DphiMethod.EXECUTE_DVM.value:
-                    return self.strategy.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
-                else:
-                    return self.strategy.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)
-
-            # ROUTE B: Pure WASM Core Execution
+            safe_payload = self.strategy.validate_intent_checkpoint(payload, exec_data, context, job_id, interp_instance, self.log)
+            if isinstance(safe_payload, dict) and "error" in safe_payload and not safe_payload.get("success", True):
+                return safe_payload
+            
+            if target_func == DphiMethod.EXECUTE_DVM.value:
+                return self.strategy.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
             else:
-                try:
-                    exec_payload = exec_data if isinstance(exec_data, str) else json.dumps(exec_data)
-                    res = interp_instance.invoke(
-                        target_func=target_func,
-                        payload=exec_payload,
-                        context=context
-                    )
-                    metrics = interp_instance.get_metrics()
-                    if res.success:
-                        return {"success": True, "output": res.output, "metrics": metrics}
-                    else:
-                        return {"success": False, "output": "", "error": str(res.error), "metrics": metrics}
-                except Exception as e:
-                    return {"success": False, "output": "", "error": f"Invoke Error: {e}", "metrics": {}}
+                return self.strategy.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)

@@ -1,6 +1,4 @@
 # kernel.phase.runtime.flow.cont
-## @lineage: watcher.ator.flow.cont
-## @lineage: arch.topos.flow.cont
 from __future__ import annotations
 import asyncio
 import json
