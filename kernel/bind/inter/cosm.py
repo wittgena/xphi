@@ -140,9 +140,6 @@ class CosmWasmInterpreter:
         except Exception as e:
             raise ExecutionError(f"Failed to initialize CosmWasm engine: {e}")
 
-    # =================================================================
-    # [수정 완료] bytearray를 명시적으로 bytes로 변환하여 Hashable 보장
-    # =================================================================
     def _read_region(self, caller: Union['wasmtime.Caller', 'wasmtime.Store'], ptr: int) -> bytes:
         memory = self.memory if isinstance(caller, wasmtime.Store) else caller.get("memory")
         region_header = bytes(memory.read(caller, ptr, ptr + 12))

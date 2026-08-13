@@ -94,7 +94,6 @@ class DvmInterpreter:
 
             # ==================================================================
             # [Host Escape Hatch: Cross-VM Bridge]
-            # [정렬 완료] Wasmtime 링커 규격에 맞게 caller 인자 제거
             # ==================================================================
             def invoke_native_vm_callback(input_ptr: int) -> int:
                 # 1. dvm.wasm이 전달한 C-String Read (Null 바이트까지)
@@ -150,19 +149,18 @@ class DvmInterpreter:
                         info_data = payload.get("info", {})
                         msg_data = payload.get("msg", {})
                         
+                        # 🌟 정렬 포인트: DVM이 전달한 상태(DB 스냅샷) 수신
+                        state_snapshot = payload.get("state_snapshot") or {}
+                        
                         try:
-                            # inter.cosm 샌드박스를 새로 띄워 연산을 처리하고 결과 수신
                             from kernel.bind.inter.cosm import CosmWasmInterpreter
-                            with CosmWasmInterpreter(wasm_module_name=wasm_file, policy=self.policy) as cosm_sandbox:
+                            # 🌟 정렬 포인트: inter.cosm 샌드박스 초기화 시 스냅샷(DB) 주입
+                            with CosmWasmInterpreter(wasm_module_name=wasm_file, policy=self.policy, initial_state=state_snapshot) as cosm_sandbox:
                                 res = cosm_sandbox.execute(env_data, info_data, msg_data)
                                 
                                 if res.success:
-                                    native_result = {
-                                        "success": True,
-                                        "gas_used": 20000, # 가상 가스
-                                        "output": json.loads(res.output),
-                                        "revert_reason": None
-                                    }
+                                    # 🌟 정렬 포인트: Mock 껍데기를 버리고, inter.cosm이 관측한 불변의 state_diff를 포함한 전체 JSON을 그대로 흡수
+                                    native_result = json.loads(res.output)
                                 else:
                                     native_result = {"success": False, "revert_reason": str(res.error)}
                         except Exception as e:
@@ -181,7 +179,7 @@ class DvmInterpreter:
                 self.memory.write(self.store, res_bytes, res_ptr)
                 return res_ptr
 
-            # [정렬 완료] Wasmtime 1개 인자 규격 매칭
+            # Wasmtime 1개 인자 규격 매칭
             func_type = wasmtime.FuncType([wasmtime.ValType.i32()], [wasmtime.ValType.i32()])
             linker.define_func("env", "invoke_native_vm", func_type, invoke_native_vm_callback)
 
@@ -246,10 +244,16 @@ class DvmInterpreter:
             if block_context: inner_payload["block_context"] = block_context
 
         elif vm_target.upper() == "COSMWASM_INTERNAL":
-            inner_payload = calldata
+            # 🌟 정렬 포인트: 단순 calldata 문자열 투척을 폐기하고 Rust의 CosmWasmInput 규격에 맞춰 조립
+            inner_payload = {
+                "contract_address": target_address,
+                "sender": context.get("caller") or context.get("caller_address"),
+                "msg": calldata,
+                "state_snapshot": state_snapshot
+            }
             with suppress(Exception):
-                if isinstance(inner_payload, str):
-                    inner_payload = json.loads(inner_payload)
+                if isinstance(inner_payload["msg"], str):
+                    inner_payload["msg"] = json.loads(inner_payload["msg"])
         else:
             return ExecutionResult(success=False, error=ExecutionError(f"Unsupported VM Target: {vm_target}"))
 
