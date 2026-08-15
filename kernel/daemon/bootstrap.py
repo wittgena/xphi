@@ -1,5 +1,4 @@
 # kernel.daemon.bootstrap
-## @lineage: kernel.phase.daemon.bootstrap
 import asyncio
 import json
 import time
@@ -98,11 +97,6 @@ class EventBusDaemon(AbstractDaemon):
 
 
 class HeartbeatDaemon(AbstractDaemon):
-    """
-    [핵심 개선]
-    노드의 식별 정보(Role, Capacity)를 포함한 메타데이터(JSON)를 Heartbeat로 쏘아,
-    attach.entry와 같은 컨트롤 플레인이 노드의 역할을 정확히 인지하도록 돕습니다.
-    """
     def __init__(self, tunnel: UniversalFacade, node_id: str, supervisor: TaskSupervisor, role: str = "master", capacity: int = 0):
         super().__init__("Heartbeat")
         self.tunnel = tunnel
@@ -145,7 +139,6 @@ class HeartbeatDaemon(AbstractDaemon):
             self.log.warn("HeartbeatDaemon received cancellation signal.")
         except Exception as e:
             self.log.error(f"HeartbeatDaemon Error: {e}")
-
 
 class DynamicsDaemon(AbstractDaemon):
     def __init__(self, bus: AsyncEventBus, sensor: Optional[SurfaceSensor] = None):
@@ -215,16 +208,7 @@ class DynamicsDaemon(AbstractDaemon):
             scope="GLOBAL", tick=0, carrier=carrier, phase_id=0, context={"domain": "kernel.bootstrap"}
         )
 
-
-# =====================================================================
-# 1. Master Layer Mounting (Control Plane 용)
-# =====================================================================
 def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
-    """
-    Master 노드 전용 데몬입니다. 
-    상태 동기화(Heartbeat)와 센서/동적 커널(Dynamics) 구동만 전담합니다.
-    (연산 부하가 있는 EventBus 스트림 소비는 하지 않습니다.)
-    """
     master_daemons = [
         HeartbeatDaemon(
             tunnel=ctx.tunnel, 
@@ -243,20 +227,9 @@ def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     
     log.info("Master Infra Layer (Heartbeat, Dynamics) mounted successfully.")
 
-
-# =====================================================================
-# 2. Worker Layer Mounting (Data Plane 용)
-# =====================================================================
 def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
-    """
-    각 Worker 프로세스 전용 데몬입니다. 
-    Redis Consumer Group을 통해 이벤트를 가져오고 WASM 플러그인을 실행합니다.
-    """
-    # 기본 Worker Capacity 설정 (WASM 동시성 처리 슬롯 개수)
     worker_capacity = 4
-    
     worker_daemons = [
-        # 워커 노드도 자신이 살아있고, 처리 능력이 몇인지 Heartbeat로 알려야 합니다.
         HeartbeatDaemon(
             tunnel=ctx.tunnel, 
             node_id=ctx.node_id,
@@ -288,3 +261,13 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
         log.error(f"Failed to mount WasmTaskerDaemon: {e}")
 
     log.info("Worker Data Layer (EventBus, WasmTasker, Heartbeat) mounted successfully.")
+
+    discovered_daemons = getattr(registry, "_daemons", {})
+    for daemon_name, DaemonClass in discovered_daemons.items():
+        try:
+            daemon_instance = DaemonClass(ctx=ctx)
+            supervisor.mount_daemon(daemon_instance)
+            log.info(f"App Layer Daemon Mounted: {daemon_name} -> {DaemonClass.__name__}")
+        except Exception as e:
+            log.error(f"Failed to mount dynamic daemon '{daemon_name}': {e}", exc_info=True)
+    log.info("Worker Data Layer & App Layer mounted successfully.")

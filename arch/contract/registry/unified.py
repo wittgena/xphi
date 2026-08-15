@@ -1,6 +1,4 @@
 # arch.contract.registry.unified
-## @lineage: topos.contract.registry.unified
-## @lineage: phase.runtime.contract.registry.unified
 import sys
 import importlib
 from types import SimpleNamespace
@@ -161,6 +159,10 @@ def ator_contract(name: str):
     def decorator(cls: Type): registry.register_component("ator", name, cls); return cls
     return decorator
 
+def daemon_contract(name: str):
+    def decorator(cls: Type): registry.register_component("daemon", name, cls); return cls
+    return decorator
+
 contract = SimpleNamespace(
     cli=cli_contract,
     flow=flow_contract,
@@ -169,5 +171,6 @@ contract = SimpleNamespace(
     watcher=watcher_contract,
     regime=regime_contract,
     ator=ator_contract,
-    node=manifold_node
+    node=manifold_node,
+    daemon=daemon_contract
 )
