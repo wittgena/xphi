@@ -1,10 +1,14 @@
 # watcher.receptor.kernel
-"""@flow: Environment(Sync) → SourceTracer(Membrane) → ReceptorKernel(Multi-Lens) → Rupture(emit)"""
+"""
+@flow: Environment(Sync) → SourceTracer(Membrane) → ReceptorKernel(Multi-Lens) → Rupture(emit)
+Acts as the central observation brain, dynamically adjusting topological structures 
+and synchronizing the L0 physical membrane (Immune Anchor).
+"""
 import asyncio
 import json
 import time
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Set
 from contextlib import suppress
 
 from watcher.plane.sink import EmitterSink
@@ -17,6 +21,9 @@ from watcher.plane.metric.trajectory import (
 )
 from watcher.plane.emitter import get_emitter
 
+# L0 Membrane Integration
+from watcher.receptor.mem.filter import SurvivalAnchor
+
 log = get_emitter("receptor.kernel")
 
 STATE_KEY_PHASE = "meta.self:state:current_phase"
@@ -25,7 +32,7 @@ CHANNEL_PSI_FEEDBACK = "meta.self:signals:psi"
 CHANNEL_AUTOSCALER = "system:autoscaler:events"
 
 def build_system_topos() -> List[TopologicalStructure]:
-    """ReceptorTopos에서 이관: 시스템의 초기 위상 구조체 생성"""
+    """Constructs the initial topological structures of the system."""
     structures = []
     
     arch = []
@@ -50,15 +57,46 @@ def build_system_topos() -> List[TopologicalStructure]:
 
 
 class ReceptorKernel:
-    def __init__(self, sink: EmitterSink, window_steps: int = 14, structures: List[TopologicalStructure] = None):
+    def __init__(
+        self, 
+        sink: EmitterSink, 
+        window_steps: int = 14, 
+        structures: Optional[List[TopologicalStructure]] = None,
+        immune_anchor: Optional[SurvivalAnchor] = None
+    ):
         self.sink = sink
         self.window_steps = window_steps
         self.structures = structures or []
+        self.immune_anchor = immune_anchor
         
         self.kinematic_lens = DefaultBoundLensStrategy(preset_name="tail_risk")
         self.codiff_lens = CoDiffBoundLensStrategy(diff_threshold=0.1)
         self.trajectory_buffer: Dict[str, List[Point]] = {}
         self.last_known_values: Dict[str, float] = {}
+
+        # Synchronize initial topologies to the L0 Membrane
+        self._sync_immune_memory()
+
+    def _sync_immune_memory(self):
+        """Synchronizes mounted topological structures to the L0 Membrane."""
+        if not self.immune_anchor:
+            return
+            
+        # Base intents required for internal communication and hot-reloads
+        valid_intents: Set[str] = {"system_health_probe", "reload", "core_genesis"}
+        
+        # Dynamically inject known spatial topologies
+        for struct in self.structures:
+            valid_intents.add(struct.name)
+            
+        self.immune_anchor.update_topologies(valid_intents)
+        log.debug(f"[ImmuneSync] Membrane synchronized with {len(valid_intents)} topological identities.")
+
+    async def reload_system_structures(self, new_structures: List[TopologicalStructure]):
+        """Dynamically updates structures and realigns the physical barrier."""
+        self.structures = new_structures
+        self._sync_immune_memory()
+        log.info("[Topology] Immune memory synchronized with physical structure mutation.")
 
     def _get_structure_for(self, signal_id: str) -> Optional[TopologicalStructure]:
         for struct in self.structures:
@@ -76,21 +114,18 @@ class ReceptorKernel:
         return sum(active_vals) / len(active_vals)
 
     async def get_current_phase(self) -> str:
-        """ReceptorTopos에서 이관"""
         val = await self.sink.get_control_flag(STATE_KEY_PHASE)
         return val or "Φ0"
 
     async def watch_mutations(self):
-        """SourceTracer 또는 Worker로부터 유입되는 환경 변이/부하를 구독"""
+        """Subscribe to environmental mutations and loads from SourceTracer/Workers."""
         async for msg in self.sink.subscribe(CHANNEL_SIGNAL_MUTATION):
             if isinstance(msg, bytes):
                 msg = msg.decode('utf-8')
                 
             if isinstance(msg, str):
-                try:
+                with suppress(json.JSONDecodeError):
                     msg = json.loads(msg)
-                except json.JSONDecodeError:
-                    continue
             
             if isinstance(msg, dict):
                 signal_id = msg.get("signal_id")
@@ -99,6 +134,7 @@ class ReceptorKernel:
                     await self._ingest_and_evaluate(signal_id, float(value))
 
     async def _ingest_and_evaluate(self, signal_id: str, current_value: float):
+        """Evaluate raw signals through Kinematic and CoDiff lenses."""
         now = datetime.now()
         
         self.last_known_values[signal_id] = current_value
@@ -152,7 +188,7 @@ class ReceptorKernel:
                     await self._emit_rupture("CO_DIFF", signal_id, c_scan["metrics"], structure.name)
 
     async def _emit_rupture(self, rupture_type: str, signal_id: str, metrics: dict, structure_name: str = None):
-        """파열 이벤트 규격화 및 발행"""
+        """Standardize and emit spatial rupture events."""
         trace_record = {
             "event": "xphi_structure_event",
             "rupture_type": rupture_type,
@@ -164,7 +200,7 @@ class ReceptorKernel:
         await self.sink.tunnel.publish(CHANNEL_AUTOSCALER, json.dumps(trace_record))
 
     async def emit_analysis_event(self, payload: dict):
-        """ReceptorTopos에서 이관: 소스 코드 변이 등의 메타 이벤트 발송"""
+        """Emit meta-events like source code mutations to the feedback loop."""
         merged_payload = payload.copy() if payload else {}
         merged_payload.update({
             "event": "xphi_analysis_event",
@@ -175,11 +211,11 @@ class ReceptorKernel:
         await self.sink.publish(CHANNEL_PSI_FEEDBACK, json.dumps(merged_payload))
 
     async def watch_psi_feedback(self):
-        """시스템 재진입(Re-entry) 궤적 감시"""
+        """Monitor system re-entry trajectories."""
         async for msg in self.sink.subscribe(CHANNEL_PSI_FEEDBACK):
             log.debug(f"🌀 [ReceptorKernel] Re-entry Ψ′ feedback → {msg}")
 
     async def start_daemons(self):
-        """데몬 부트스트랩"""
+        """Bootstrap internal observation daemons."""
         asyncio.create_task(self.watch_mutations())
         asyncio.create_task(self.watch_psi_feedback())

@@ -1,7 +1,4 @@
 # kernel.bind.transcript.spec
-## @lineage: watcher.ator.transcript.spec
-## @lineage: arch.topos.ator.transcript.spec
-## @lineage: phase.ator.transcript.spec
 import re
 import yaml
 import os

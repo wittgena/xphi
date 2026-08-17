@@ -1,7 +1,8 @@
 # kernel.bind.transcript.phi
-## @lineage: watcher.ator.transcript.phi
-## @lineage: arch.topos.ator.transcript.phi
-## @lineage: phase.ator.transcript.phi
+"""
+@module: kernel.bind.transcript.phi
+@desc: Ψ → Φ transformer (transcription + translation boundary)
+"""
 import asyncio
 import json
 import inspect
@@ -44,13 +45,10 @@ class TranscriptBase(Transduction):
         runtime_nodes = {}
         
         ## 위상 구조 호환성 계층 (Compatibility Layer)
-        # 캡슐화된 구조({"entry": ..., "nodes": {...}})라면 nodes만 추출하고, 
-        # 레거시 구조라면 그대로 사용합니다.
         nodes_topology = topology.get("nodes", topology) if isinstance(topology, dict) else topology
 
         ## 추출된 노드 맵을 순회
         for node_id, config in nodes_topology.items():
-            # (안전장치) 혹시 모를 메타데이터 키가 섞여 있다면 패스
             if not isinstance(config, dict) or "type" not in config:
                 continue
                 
@@ -60,12 +58,18 @@ class TranscriptBase(Transduction):
             if node_type not in self.manifold:
                 raise ValueError(f"Unknown node type '{node_type}'")
             
-            NodeClass = self.manifold[node_type].node_class
+            # [개선됨] self.manifold는 이제 NodeMeta가 아닌 Class 자체(Type)를 반환합니다.
+            # (혹시 모를 레거시 NodeMeta 잔재가 들어올 경우를 대비한 하위 호환성 방어 로직 추가)
+            NodeClass = self.manifold[node_type]
+            if hasattr(NodeClass, "node_class"):
+                NodeClass = NodeClass.node_class
+                
             node_instance = NodeClass(spec)
             
             target_operator = spec.get("operator")
             if target_operator:
-                operator_instance = registry.create_component("ator", {"type": target_operator})
+                # [개선됨] 레거시 카테고리 인자("ator") 삭제. 오직 고유 식별자(type)만으로 팩토리 호출
+                operator_instance = registry.create_component({"type": target_operator})
                 node_instance.bound_operator = operator_instance
 
             runtime_nodes[node_id] = node_instance
@@ -77,7 +81,7 @@ class TranscriptBase(Transduction):
         """소스를 해석하여 Dict(Topology)를 반환하는 메서드 (Subclass must implement)"""
         pass
 
-@contract.ator("transcript.phi")
+@contract.ator("transcript.phi", role="phase_node")
 class TranscriptPhi(TranscriptBase):
     """@flow: Ψ → Φ transformer (transcription + translation boundary)"""
     def __init__(self, base_node: Any):

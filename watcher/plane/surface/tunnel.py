@@ -10,10 +10,6 @@ from arch.contract.event.next import LogEvent
 from watcher.plane.observer.event import EventObserver
 
 class TunnelSurface(EventObserver):
-    """
-    @desc: Thread-based background streaming with Time & Count buffering.
-           메인 루프의 CPU 점유율과 무관하게 독립적으로 로그를 방출하여 끊김 없는 실시간 UI를 제공합니다.
-    """
     def __init__(self, max_batch_size: int = 50, flush_interval: float = 0.2):
         self.max_batch_size = max_batch_size
         self.flush_interval = flush_interval

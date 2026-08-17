@@ -1,5 +1,4 @@
 # watcher.tracer.edge
-## @lineage: dphi.node.tracer.receptor
 import uuid
 from dataclasses import dataclass, field
 from typing import Callable, Dict

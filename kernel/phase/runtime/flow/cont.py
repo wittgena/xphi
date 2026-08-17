@@ -13,7 +13,7 @@ from arch.contract.event.bus import AsyncEventBus
 from arch.topos.tunnel.factory import TunnelFactory
 from arch.contract.event.psi import PsiEvent, PsiCarrier
 
-log = logging.getLogger("xe.cont")
+log = logging.getLogger("flow.cont")
 
 def _get_bound_metric(bound: Any, attr_name: str, default: int = 0) -> int:
     """@desc: bound 객체에서 메트릭(Topology, Pressure 등)을 안전하게 추출하는 유틸리티"""

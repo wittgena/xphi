@@ -20,11 +20,18 @@ from watcher.plane.sink import TunnelSink
 from watcher.plane.emitter import get_emitter
 from watcher.receptor.kernel import ReceptorKernel, build_system_topos
 
+from watcher.receptor.mem.filter import (
+    SurvivalAnchor, 
+    CognitiveMembrane, 
+    TunnelL0Interceptor
+)
+
 log = get_emitter("receptor.bootstrap")
 
 SELF_ROOT = find_current_self()
 
 class TracerSource(FileSystemEventHandler):
+    """Detects physical file mutations and triggers topological realignment."""
     def __init__(self, kernel: ReceptorKernel, loop: asyncio.AbstractEventLoop, watch_dir: str, tunnel: UniversalFacade):
         self.kernel = kernel
         self.loop = loop  
@@ -33,6 +40,7 @@ class TracerSource(FileSystemEventHandler):
         self.tunnel = tunnel
 
     def _resolve_fqn(self, file_path: str) -> str:
+        """Resolve absolute file path to a fully qualified module name."""
         path = Path(file_path).resolve()
         try:
             relative = path.relative_to(self.watch_dir)
@@ -41,6 +49,7 @@ class TracerSource(FileSystemEventHandler):
             return ""
 
     def on_modified(self, event):
+        """Handle physical file modification events with debounce."""
         if time.time() - self.last_trigger < 1.0:
             return
 
@@ -57,11 +66,11 @@ class TracerSource(FileSystemEventHandler):
             try:
                 log.info(f"[Plasticity] Re-aligning topology for: {module_fqn}")
                 
-                # 1. Master(Receptor) 메모리 공간 갱신
+                # 1. Refresh Master (Receptor) memory space
                 importlib.reload(sys.modules[module_fqn])
                 log.info(f"[Modification] {module_fqn} successfully integrated into Master Runtime.")
                 
-                # 2. Worker 프로세스들에게 동기화 브로드캐스트 (Distributed Hot-Reload)
+                # 2. Broadcast hot-reload event to all Worker processes
                 sync_event = PsiEvent(
                     event_id=next_id(), 
                     parent_id=None, 
@@ -78,11 +87,11 @@ class TracerSource(FileSystemEventHandler):
                     )
                 )
                 
-                # [핵심 수정] 중첩된 객체(PsiCarrier 등)의 안전한 직렬화를 위해 asdict 사용
+                # Ensure safe serialization of nested dataclasses
                 try:
                     event_data = asdict(sync_event)
                 except TypeError:
-                    # dataclass가 아닐 경우를 대비한 Fallback (방어 코드)
+                    # Fallback for non-dataclass edge cases
                     event_data = sync_event.__dict__
                     if hasattr(event_data.get('carrier'), '__dict__'):
                         event_data['carrier'] = event_data['carrier'].__dict__
@@ -94,23 +103,24 @@ class TracerSource(FileSystemEventHandler):
                 
                 payload = {
                     "signal_id": "topology_reloaded",
-                    "value": 1.0,  # 긍정적 결합 파동
+                    "value": 1.0,  # Positive binding wave
                     "module": module_fqn
                 }
             except Exception as e:
                 log.info(f"[Cleavage] Critical syntax/logic error in {module_fqn}.")
                 log.info(f"  ↳ System protected. Malformed phase rejected.")
-                log.info(traceback.format_exc()) # 파지의 시체를 로그로만 출력하고 런타임은 보존
+                log.info(traceback.format_exc()) 
                 
                 payload = {
                     "signal_id": "mutation_rejected",
-                    "value": -1.0, # 부정적 거부 파동 (Tension 상승)
+                    "value": -1.0, # Negative rejection wave (Tension spike)
                     "error": str(e)
                 }
         else:
             log.info(f"[Genesis] New structure detected: {module_fqn or event.src_path}")
             payload = {"signal_id": "new_structure_detected", "value": 0.5, "module": module_fqn}
 
+        # Emit the analysis result to the Kernel
         asyncio.run_coroutine_threadsafe(
             self.kernel.emit_analysis_event(payload),
             self.loop
@@ -118,53 +128,58 @@ class TracerSource(FileSystemEventHandler):
 
 
 async def receptor_bootstrap(tunnel: UniversalFacade, watch_dir: str = SELF_ROOT):
+    immune_anchor = SurvivalAnchor()
+    membrane = CognitiveMembrane(immune_anchor)
+    tunnel_filter = TunnelL0Interceptor(membrane)
+    
+    if hasattr(tunnel, "register_ingress_filter"):
+        tunnel.register_ingress_filter(tunnel_filter.intercept)
+        log.info("[Boot] L0 Tunnel Membrane physically attached to UniversalFacade.")
+
     sink = TunnelSink(tunnel=tunnel) 
     system_topos = build_system_topos()
     kernel = ReceptorKernel(
         sink=sink, 
         window_steps=4, 
-        structures=system_topos
+        structures=system_topos,
+        immune_anchor=immune_anchor  
     )
 
     main_loop = asyncio.get_running_loop()
-    
-    # Worker로 이벤트를 전파할 수 있도록 tunnel 객체 주입
     event_handler = TracerSource(kernel, main_loop, watch_dir=watch_dir, tunnel=tunnel)
     
-    # ---------------------------------------------------------
-    # Receptor 구동 시 최초 1회 전체 시스템 스캔 수행
-    # ---------------------------------------------------------
     log.info(f"\n[Pre-Flight] Initiating system-wide module discovery at {watch_dir}...")
     discovery_start = time.time()
     
-    # Block 방식으로 실행 (부트스트랩 단계이므로 비동기 루프 시작 전 안전하게 수행)
+    # Blocking call to guarantee safe discovery before the async loop takes over
     discover_modules(Path(watch_dir))
     
     elapsed = time.time() - discovery_start
     log.info(f"[Pre-Flight] Discovery complete in {elapsed:.2f}s. Topology manifest ready.")
-    # ---------------------------------------------------------
 
     observer = Observer()
     observer.schedule(event_handler, path=watch_dir, recursive=True)
     observer.start()
     
-    log.info(f"\n[Singularity] Physical Membrane Ignited -> observing {watch_dir}")
+    log.info(f"\n[Singularity] Receptor Ignited -> Observing {watch_dir}")
 
     try:
         while True:
             try:
+                # Start internal phase and feedback daemons
                 await kernel.start_daemons()
                 
                 current_phase = await kernel.get_current_phase()
                 log.info(f"[Topology] Mounted structures: {[s.name for s in system_topos]} (Φ={current_phase})")
                 
+                # Keep the main coroutine alive
                 while True:
                     await asyncio.sleep(3600) 
                     
             except asyncio.CancelledError:
                 raise
             except Exception as e:
-                log.error(f"[Rupture] Internal anomaly detected: {e}. Membrane remains as a zombie. Renewing in 5s...")
+                log.error(f"[Rupture] Internal anomaly detected: {e}. Membrane remains active. Renewing in 5s...")
                 await asyncio.sleep(5.0) 
                 
     except asyncio.CancelledError:

@@ -139,10 +139,7 @@ def _assemble_collector_network():
     text_surface = TextFileSurface(base_dir=log_base_dir, min_level=text_min_level)
     default_plane.attach(text_surface)
 
-    ## 기계(AI/ES)를 위한 구조화 파일 저장소 (io 디렉토리)
     ailog_base_dir = resolve_path("ailog")
-
-    ## AI가 요약하기 좋도록 unified=True 옵션을 주어 하나의 jsonl 파일로 모으는 것도 좋은 전략입니다.
     json_surface = JsonFileSurface(base_dir=ailog_base_dir, min_level="INFO", unified=True)
     default_plane.attach(json_surface)
 
