@@ -1,9 +1,8 @@
 # watcher.wasm.tester
-## @lineage: dphi.node.tracer.tester.wasm
 import sys
 import json
 import asyncio
-from typing import Tuple, Dict, Type
+from typing import Tuple, Dict, Type, Any
 
 from watcher.wasm.auditor import CanonicalProofAuditor
 
@@ -14,7 +13,7 @@ from kernel.daemon.task.wasm import TaskWasm
 from kernel.dphi.broker import DphiBroker
 from watcher.plane.emitter import get_emitter, flow_scope
 
-log = get_emitter("tester.wasm")
+log = get_emitter("wasm.tester")
 
 class WasmTester:
     def __init__(self, wasm_module_path: str, sandbox_root: str, suites: Dict[str, Type] = None):
@@ -25,6 +24,7 @@ class WasmTester:
         self.auditors = [] 
         self.suites = suites or {}
         self.test_execution_hash = None
+        self.suite_runners: Dict[str, Any] = {}
 
     async def _await_rupture(self) -> None:
         """@desc: Polls for a Collapse signal in the background while tests are actively running"""
@@ -47,6 +47,8 @@ class WasmTester:
             log.info(f"\n>>> [PHASE] Starting Test Suite: {suite_name.upper()} <<<")
             try:
                 suite_instance = suite_cls(broker)
+                self.suite_runners[suite_name] = suite_instance
+                
                 await suite_instance.run_all()
                 total_fails += suite_instance.fail_count
             except Exception as e:
@@ -101,7 +103,6 @@ class WasmTester:
                     return_when=asyncio.FIRST_COMPLETED
                 )
                 
-                # 보류 중인 태스크 정리
                 for task in pending:
                     task.cancel()
                 if pending:

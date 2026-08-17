@@ -13,7 +13,6 @@ from kernel.bind.inter.dvm import DvmInterpreter
 from kernel.dphi.cgroup import CgroupPolicy
 from kernel.dphi.method import DphiMethod
 
-
 class ExecutionStrategy:
     """Class-based Execution Strategy for isolated sandboxing and checkpoint validation"""
     
@@ -115,7 +114,6 @@ class ExecutionStrategy:
             
             vm_target = safe_dict.get("vm_target", "EVM")
 
-            # [WASM 모듈 캐싱 활용] 엔진 내부 캐시를 신뢰하여 가벼운 인스턴스만 동적 할당
             if vm_target == "COSMWASM_EXTERNAL":
                 target_wasm_file = safe_dict.get("target_wasm_file", "cw20_base.wasm")
                 log.info(f"[{job_id[:8]}] 🔓 Entering Pure CosmWasm Jail: {target_wasm_file} (Tier: {job_policy.tier.value})")

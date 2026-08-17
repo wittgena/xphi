@@ -17,8 +17,11 @@ log = get_emitter("dphi.broker")
 class BrokerChannel:
     EXECUTE_STREAM = "wasm:execute:stream"
     CONTROL_REQ = "wasm:control:req"
+    
     @staticmethod
-    def broker_res(broker_id: str) -> str: return f"wasm:res:broker:{broker_id}"
+    def broker_res(broker_id: str) -> str: 
+        return f"wasm:res:broker:{broker_id}"
+
 
 class PayloadKey:
     JOB_ID = "job_id"
@@ -132,14 +135,21 @@ class DphiBroker:
                 )
                 
         except asyncio.TimeoutError:
-            log.error(f"[{job_id[:8]}] Remote execution timeout ({active_timeout}s) on {route}")
-            return ExecutionResult(success=False, error=ExecutionError(f"Remote execution timeout ({active_timeout}s)"))
+            timeout_msg = f"Remote execution timeout ({active_timeout}s)"
+            log.warning(f"[{job_id[:8]}] {timeout_msg} on {route}. (Infinite loop or payload blocked)")
+            return ExecutionResult(
+                success=False,
+                output=timeout_msg,
+                error=ExecutionError(timeout_msg)
+            )
         finally:
             self._pending_jobs.pop(job_id, None)
 
     def _build_context(self, base_context: Optional[dict], timeout: Optional[float]) -> dict:
         ctx = dict(base_context) if base_context is not None else dict(_flow_context.get() or {})
-        ctx["timestamp"] = int(time.time() * 1000)
+        if "timestamp" not in ctx:
+            ctx["timestamp"] = int(time.time() * 1000)
+            
         ctx["timeout"] = timeout or self.timeout
         return ctx
 

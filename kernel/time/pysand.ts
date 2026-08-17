@@ -43,17 +43,27 @@ old_stdout, old_stderr = sys.stdout, sys.stderr
 buf_stdout, buf_stderr = io.StringIO(), io.StringIO()
 _virtual_context = {
     "time": 0.0,
+    "perf_time": 0.0,  # [추가됨] 경과 시간을 위한 별도 카운터
     "seed_counter": 0,
     "base_seed": b"dphi_default_seed"
 }
 
-# time.time 모킹
+# 1. 절대 시간(Epoch) 모킹
 _original_time = time.time
 def _mock_time():
     return _virtual_context["time"]
 time.time = _mock_time
 
-# os.urandom 모킹 (시드 기반 결정론적 바이트 생성)
+# 1-1. 경과 시간(Elapsed) 모킹 분리
+def _mock_perf():
+    _virtual_context["perf_time"] += 0.001  # 호출마다 소폭 증가하는 가상의 경과 시간
+    return _virtual_context["perf_time"]
+
+time.perf_counter = _mock_perf
+time.monotonic = _mock_perf
+time.process_time = _mock_perf
+
+# 2. os.urandom 모킹 (시드 기반 결정론적 바이트 생성)
 _original_urandom = os.urandom
 def _mock_urandom(size):
     _virtual_context["seed_counter"] += 1
@@ -67,13 +77,17 @@ def _mock_urandom(size):
 os.urandom = _mock_urandom
 
 def _apply_execution_context(ts, seed_string):
-    """Host(Broker)로부터 주입받은 시간과 시드로 상태를 동기화합니다."""
+    """Host(Broker)로부터 주입받은 시간과 시드로 상태를 완벽하게 동기화합니다."""
     if ts is not None:
         _virtual_context["time"] = float(ts)
+        _virtual_context["perf_time"] = 0.0  # 실행 시마다 경과 시간 초기화
     if seed_string is not None:
         _virtual_context["base_seed"] = seed_string.encode('utf-8')
         _virtual_context["seed_counter"] = 0
-        random.seed(_virtual_context["base_seed"]) # 내장 random 모듈도 시드 고정
+        
+        # [핵심] PYTHONHASHSEED 영향을 피하기 위해 SHA-256 해시를 절대 정수(int)로 변환하여 시드로 설정
+        det_hash = hashlib.sha256(_virtual_context["base_seed"]).hexdigest()
+        random.seed(int(det_hash, 16))
 
 _cgroup_state = {
     "fuel_quota": None,
@@ -390,7 +404,7 @@ while (true) {
 
   if (method === "execute") {
     const code = params.code || "";
-    // [추가됨] 컨텍스트 파라미터 수신 (Host에서 time, seed 등을 전달)
+    // 컨텍스트 파라미터 수신 (Host에서 time, seed 등을 전달)
     const context = params.context || {}; 
     
     let setupCompleted = false;
@@ -401,7 +415,7 @@ while (true) {
         await pyodide.loadPackagesFromImports(code);
       }
       
-      // [추가됨] 실행 직전 샌드박스 내부에 가상 컨텍스트 동기화
+      // 실행 직전 샌드박스 내부에 가상 컨텍스트 동기화
       const ts = context.timestamp !== undefined ? context.timestamp : 'None';
       const seed = context.seed !== undefined ? toPythonLiteral(context.seed) : 'None';
       pyodide.runPython(`_apply_execution_context(${ts}, ${seed})`);

@@ -35,19 +35,15 @@ class TaskWasm(AbstractDaemon):
         self.node_id = node_id or f"tasker-{uuid.uuid4().hex[:6]}-{os.getpid()}"
         self.default_wasm_path = default_wasm_path
         
-        # Redis Keys 적용
         self.control_channel = REDIS_CONTROL_CHANNEL
         self.topic = REDIS_STREAM_TOPIC
         self.group_name = REDIS_GROUP_NAME
         self.consumer_name = f"consumer-{self.node_id}"
         
-        # Config 설정 적용
         self.poll_timeout_ms = POLL_TIMEOUT_MS
         self.default_tier = DEFAULT_TIER
         self.concurrency_limit = DEFAULT_CONCURRENCY
         
-        # [수정] 오버패칭 제거: Worker 슬롯(Pool)이 꽉 찼을 때 
-        # 불필요하게 메세지를 메모리에 쥐고 있는 현상(볼모)을 막기 위해 1개씩 소비
         self.fetch_batch_size = 1 
         
         self._wasm_pool = asyncio.Queue(maxsize=self.concurrency_limit)
@@ -116,8 +112,6 @@ class TaskWasm(AbstractDaemon):
                                 await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
                                 continue
 
-                            # [수정] 인위적 타임아웃 및 버리기 로직 제거
-                            # 풀이 비어있으면 강제로 버리지 않고 슬롯이 날 때까지 자연스럽게 대기(Backpressure)
                             interp_instance = await self._wasm_pool.get()
 
                             self.supervisor.create(
@@ -222,6 +216,13 @@ class TaskWasm(AbstractDaemon):
         exec_data = payload.get("payload", payload.get("data", ""))
         context = payload.get("context", {})
         
+        # [핵심 수리] 네이티브 WASM 호출 시에도 반드시 현재 티어(Tier) 정책을 적용해야 합니다.
+        # 이 부분이 누락되어 생성 시점의 기본값(STANDARD, 10M Fuel)이 고정되는 오염(State Pollution)이 발생했었습니다.
+        tier_str = payload.get("tier", self.default_tier)
+        job_policy = self._get_policy_from_tier(tier_str)
+        if hasattr(interp_instance, 'apply_policy'):
+            interp_instance.apply_policy(job_policy)
+            
         try:
             exec_payload = exec_data if isinstance(exec_data, str) else json.dumps(exec_data)
             res = interp_instance.invoke(

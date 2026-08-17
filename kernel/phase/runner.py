@@ -28,6 +28,7 @@ class BaseRunner:
         self.success_count = 0
         self.fail_count = 0
         self.last_failed_context: List[str] = []
+        self.failed_cases: List[Dict[str, str]] = []
 
     def report(self):
         log.info(f"\n=== [DONE] Scenarios Completed: {self.success_count} Passed, {self.fail_count} Failed ===")
@@ -41,11 +42,14 @@ class BaseRunner:
         safe_msg = str(msg).replace('\n', ' ')[:150]
         log.info(f"  [PASS] Time: {elapsed_ms:.2f}ms | Output: {safe_msg}")
 
-    def _record_fail(self, elapsed_ms: float, error_msg: str, context: str):
+    def _record_fail(self, elapsed_ms: float, error_msg: str, context: str, title: str = "Unknown Test Case"):
         self.fail_count += 1
         log.error(f"  [FAIL] Time: {elapsed_ms:.2f}ms | Details: {error_msg}")
         self.last_failed_context.append(context)
-
+        self.failed_cases.append({
+            "title": title,
+            "error": f"[{context}] {error_msg}"
+        })
 
 class SchemeRunner(BaseRunner):
     def __init__(self, broker: Any):
@@ -53,6 +57,7 @@ class SchemeRunner(BaseRunner):
         self.broker = broker
 
     async def _set_worker_policy(self, tier_name: str):
+        # [삭제 권장] 호환성을 위해 남겨두나, Stateful한 브로드캐스트는 동시성 환경에서 권장하지 않습니다.
         log.info(f"\n[Control Plane] Shifting WasmCgroup Policy Tier -> {tier_name}")
         if hasattr(self.broker, "update_policy"):
             await self.broker.update_policy(tier=tier_name)
@@ -67,12 +72,15 @@ class SchemeRunner(BaseRunner):
         payload: Any, 
         expected_success: bool, 
         expected_match: Optional[str] = None,
-        custom_validator: Optional[Callable[[str], bool]] = None
+        custom_validator: Optional[Callable[[str], bool]] = None,
+        tier: Optional[str] = None  # [핵심] 이제 1회성으로 명시적 티어를 주입합니다 (Stateless 방어)
     ):
         func_name = target_func.value if isinstance(target_func, Enum) else target_func
         log.info(f"\n[TEST] {title} (Func: {func_name})")
         start_time = time.time()
-        result = await self.broker.invoke(target_func=func_name, payload=payload)
+        
+        # 1회성 Tier 주입 실행
+        result = await self.broker.invoke(target_func=func_name, payload=payload, tier=tier)
         elapsed_ms = (time.time() - start_time) * 1000
         
         output_str = str(result.output) if result.success else str(result.error)
@@ -82,7 +90,8 @@ class SchemeRunner(BaseRunner):
             self._record_fail(
                 elapsed_ms, 
                 f"Expected success={expected_success}, Got success={result.success}. Output: {output_str}",
-                f"Function: {func_name} | Input: {safe_payload_str}..."
+                f"Function: {func_name} | Input: {safe_payload_str}...",
+                title=title
             )
             return
 
@@ -90,7 +99,8 @@ class SchemeRunner(BaseRunner):
             self._record_fail(
                 elapsed_ms, 
                 f"Expected string '{expected_match}' not found in output. Output: {output_str}",
-                f"Function: {func_name} | Input: {safe_payload_str}..."
+                f"Function: {func_name} | Input: {safe_payload_str}...",
+                title=title
             )
             return
 
@@ -98,12 +108,12 @@ class SchemeRunner(BaseRunner):
             self._record_fail(
                 elapsed_ms, 
                 f"Custom validation failed for output: {output_str}",
-                f"Function: {func_name} | Input: {safe_payload_str}..."
+                f"Function: {func_name} | Input: {safe_payload_str}...",
+                title=title
             )
             return
 
         self._record_success(elapsed_ms, output_str)
-
 
 class WebRunner(BaseRunner):
     def __init__(self, base_url: str, client: Optional[httpx.AsyncClient] = None):
@@ -137,19 +147,20 @@ class WebRunner(BaseRunner):
                 self._record_fail(
                     elapsed_ms,
                     f"Expected: {expected_status}, Got: {res.status_code}. Response: {res.text[:100]}",
-                    f"Endpoint: {endpoint} | Error: {res.text[:200]}"
+                    f"Endpoint: {endpoint} | Error: {res.text[:200]}",
+                    title=title
                 )
                 return res
         except Exception as e:
             self.fail_count += 1
             log.error(f"  [CRITICAL FAIL] Network/Execution Error: {str(e)}")
+            self.failed_cases.append({"title": title, "error": f"[CRITICAL] {str(e)}"})
             return None
 
     def _sign_payload(self, signers: List[ed25519.Ed25519PrivateKey], payload_dict: Dict[str, Any]) -> List[str]:
         raw_json_bytes = StateAdapter.to_canonical_bytes(payload_dict)
         commit_hash = hashlib.sha256(raw_json_bytes).digest()
         return [k.sign(commit_hash).hex() for k in signers]
-
 
 class RuntimeRunner(ABC):
     def __init__(self, broker: DphiBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
