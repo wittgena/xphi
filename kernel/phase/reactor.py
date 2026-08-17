@@ -1,10 +1,10 @@
-# kernel.phase.reactor
 import asyncio
 import sys
 import os
 import signal
 import logging
 from typing import Callable, Coroutine, Any, Optional
+import traceback
 
 log = logging.getLogger("kernel.reactor")
 
@@ -45,8 +45,55 @@ class PhaseReactor:
 
     @classmethod
     def _global_exception_handler(cls, loop: asyncio.AbstractEventLoop, context: dict) -> None:
-        msg = context.get("exception", context["message"])
-        log.critical(f"[Reactor] 💥 Unhandled exception in event loop: {msg}")
+        # 1. 기본 메시지 추출
+        msg = context.get("message", "Unhandled exception in event loop")
+        exc = context.get("exception")
+
+        # 2. 메타데이터 안전 추출 (가독성을 위한 포맷팅)
+        meta = {}
+        for k, v in context.items():
+            if k in ("message", "exception"):
+                continue
+            
+            # Task 식별자 추출
+            if k == "task":
+                if hasattr(v, "get_name"):
+                    meta[k] = f"Task({v.get_name()})"
+                elif hasattr(v, "get_coro"):
+                    meta[k] = f"Coroutine({v.get_coro().__qualname__})"
+                else:
+                    meta[k] = str(v)
+            
+            # Future, Handle, Protocol 등 기타 객체의 타입과 메모리 주소를 포함한 문자열화
+            elif k in ("future", "handle", "protocol", "transport"):
+                meta[k] = repr(v)
+                
+            # source_traceback: 'Task was destroyed' 에러 시 태스크가 생성된 위치 추적
+            elif k == "source_traceback":
+                meta[k] = "\n" + "".join(traceback.format_list(v))
+            else:
+                meta[k] = str(v)
+
+        # 3. 로깅 메시지 조합
+        log_msg = f"💥 {msg}"
+        if meta:
+            # 딕셔너리를 예쁘게 줄바꿈하여 출력 (가독성 극대화)
+            meta_str = " | ".join(f"{k}: {v}" for k, v in meta.items())
+            log_msg += f"\n    [Context] {meta_str}"
+
+        # 4. 레벨 결정 및 출력
+        # Unclosed 관련 경고는 ERROR 레벨로 낮춤 (애플리케이션 크래시가 아니므로)
+        if "Unclosed" in msg or "Task was destroyed" in msg:
+            if exc:
+                log.error(f"[Reactor] {log_msg}", exc_info=exc)
+            else:
+                log.error(f"[Reactor] {log_msg}")
+        else:
+            if exc:
+                log.critical(f"[Reactor] {log_msg}", exc_info=exc)
+            else:
+                log.critical(f"[Reactor] {log_msg}")
+
 
     @classmethod
     async def _lifecycle_manager(
@@ -56,6 +103,11 @@ class PhaseReactor:
         shutdown_timeout: float = 10.0
     ) -> None:
         loop = asyncio.get_running_loop()
+        
+        # [중요] 디버그 모드를 켜야 source_traceback이 context에 포함됩니다.
+        if os.environ.get("DPHI_DEBUG") == "1":
+            loop.set_debug(True)
+            
         loop.set_exception_handler(cls._global_exception_handler)
         shutdown_event = asyncio.Event()
         
