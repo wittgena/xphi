@@ -259,10 +259,7 @@ class TaskWasm(AbstractDaemon):
                 self.log.warning(f"[{job_id[:8]}] {error_msg}")
                 return {"success": False, "output": "", "error": error_msg}
 
-            safe_payload = self.strategy.validate_intent_checkpoint(payload, exec_data, context, job_id, interp_instance, self.log)
-            if isinstance(safe_payload, dict) and "error" in safe_payload and not safe_payload.get("success", True):
-                return safe_payload
-            
+            safe_payload = exec_data
             if target_func == DphiMethod.EXECUTE_DVM.value:
                 return self.strategy.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
             else:

@@ -96,7 +96,6 @@ class DvmInterpreter:
             # [Host Escape Hatch: Cross-VM Bridge]
             # ==================================================================
             def invoke_native_vm_callback(input_ptr: int) -> int:
-                # 1. dvm.wasm이 전달한 C-String Read (Null 바이트까지)
                 chunk_size = 256
                 result_bytes = bytearray()
                 curr_ptr = input_ptr
@@ -115,9 +114,6 @@ class DvmInterpreter:
                     payload = json.loads(json_str)
                     vm_target = payload.get("vm_target", "UNKNOWN").upper()
                     
-                    # --------------------------------------------------
-                    # [타깃 A] DPHI_KERNEL 역호출
-                    # --------------------------------------------------
                     if vm_target == "DPHI_KERNEL":
                         log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> dphi.wasm")
                         dphi_method = payload.get("method", "evaluate_tension")
@@ -139,9 +135,6 @@ class DvmInterpreter:
                             else:
                                 native_result = {"success": False, "revert_reason": f"DPHI Kernel Panic: {res.error}"}
 
-                    # --------------------------------------------------
-                    # [타깃 B] 외부 CosmWasm 샌드박스 동적 호출
-                    # --------------------------------------------------
                     elif vm_target == "COSMWASM_EXTERNAL":
                         log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> External CosmWasm")
                         wasm_file = payload.get("wasm_file", "unknown.wasm")
@@ -149,17 +142,14 @@ class DvmInterpreter:
                         info_data = payload.get("info", {})
                         msg_data = payload.get("msg", {})
                         
-                        # 🌟 정렬 포인트: DVM이 전달한 상태(DB 스냅샷) 수신
                         state_snapshot = payload.get("state_snapshot") or {}
                         
                         try:
                             from kernel.bind.inter.cosm import CosmWasmInterpreter
-                            # 🌟 정렬 포인트: inter.cosm 샌드박스 초기화 시 스냅샷(DB) 주입
                             with CosmWasmInterpreter(wasm_module_name=wasm_file, policy=self.policy, initial_state=state_snapshot) as cosm_sandbox:
                                 res = cosm_sandbox.execute(env_data, info_data, msg_data)
                                 
                                 if res.success:
-                                    # 🌟 정렬 포인트: Mock 껍데기를 버리고, inter.cosm이 관측한 불변의 state_diff를 포함한 전체 JSON을 그대로 흡수
                                     native_result = json.loads(res.output)
                                 else:
                                     native_result = {"success": False, "revert_reason": str(res.error)}
@@ -173,13 +163,11 @@ class DvmInterpreter:
                     log.error(f"Cross-VM Execution Failed: {e}", exc_info=True)
                     native_result = {"success": False, "revert_reason": f"Host Bridge Error: {str(e)}"}
                     
-                # 2. 최종 결과를 직렬화하여 다시 dvm.wasm 메모리에 할당 후 포인터 반환
                 res_bytes = json.dumps(native_result).encode('utf-8') + b'\x00'
                 res_ptr = self._wasm_alloc(self.store, len(res_bytes))
                 self.memory.write(self.store, res_bytes, res_ptr)
                 return res_ptr
 
-            # Wasmtime 1개 인자 규격 매칭
             func_type = wasmtime.FuncType([wasmtime.ValType.i32()], [wasmtime.ValType.i32()])
             linker.define_func("env", "invoke_native_vm", func_type, invoke_native_vm_callback)
 
@@ -244,7 +232,6 @@ class DvmInterpreter:
             if block_context: inner_payload["block_context"] = block_context
 
         elif vm_target.upper() == "COSMWASM_INTERNAL":
-            # 🌟 정렬 포인트: 단순 calldata 문자열 투척을 폐기하고 Rust의 CosmWasmInput 규격에 맞춰 조립
             inner_payload = {
                 "contract_address": target_address,
                 "sender": context.get("caller") or context.get("caller_address"),
@@ -264,6 +251,10 @@ class DvmInterpreter:
         }
         
         log.info(f"[dvm.wasm] Routing TX to {vm_target.upper()} on {target_address} (Gas Limit: {gas_limit})")
+        
+        # 🌟🌟🌟 [핵심 디버그 로그 추가] 🌟🌟🌟
+        # Rust(WASM)로 넘어가기 직전의 JSON 구조 전체를 화면에 덤프합니다.
+        log.info(f"🔥 [DEBUG FFI PAYLOAD] Unified Input to Rust:\n{json.dumps(unified_input, indent=2)}")
         
         try:
             self._ensure_engine_started()

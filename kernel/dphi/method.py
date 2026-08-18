@@ -4,10 +4,8 @@ from enum import Enum
 class DphiMethod(str, Enum):
     EXECUTE_CODE = "execute_code"
     EXECUTE_DVM = "execute_dvm"
-    VERIFY_PACKET = "verify_packet"
     COMPUTE_ROOT_FINGERPRINT = "compute_root_fingerprint"
     EVALUATE_TENSION = "evaluate_tension"
-    VALIDATE_INTENT = "validate_intent"
     GENERATE_PROOF = "generate_proof"
     GENERATE_TOPOS_ID = "generate_topos_id"
     GENERATE_PHASE_ID = "generate_phase_id"

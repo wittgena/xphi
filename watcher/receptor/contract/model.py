@@ -2,9 +2,6 @@
 from typing import Any, ClassVar, List, Optional, Dict
 from pydantic import BaseModel, ConfigDict, Field
 
-# =====================================================================
-# 1. M2M Billing & Capability Models (X402 지연 정산)
-# =====================================================================
 class AgentMandateRequest(BaseModel):
     """에이전트가 DPHI에 제출하는 오프체인 과금 허용 서명 (EIP-712/AP2)"""
     agent_id: str = Field(..., description="Agent DID or Wallet Address")
@@ -13,26 +10,20 @@ class AgentMandateRequest(BaseModel):
     signature: str = Field(..., description="Agent의 프라이빗 키로 서명된 무결성 증명")
 
 class CapabilityReceiptResponse(BaseModel):
-    """DPHI가 발급하는 세션 토큰 (X-X402-Receipt 헤더용)"""
     receipt_id: str = Field(..., description="발급된 X402 영수증 해시 (Capability Token)")
     status: str = Field(..., description="ACTIVE 또는 REJECTED")
     budget_usdc: str = Field(..., description="승인된 롤업 내부 예산")
     issued_at: str = Field(..., description="발급 시간 (ISO-8601)")
 
-
-# =====================================================================
-# 2. Intent & Execution Models (섀도우 연산)
-# =====================================================================
 class CodebotIntent(BaseModel):
-    """Agent가 실행을 요청하는 인텐트 페이로드"""
     agent_id: str
+    responder_id: Optional[str] = Field(default=None, description="타겟 실행 노드 ID (없을 시 Gateway가 할당)")
     action: str
     source_code: str
     max_fuel: int = Field(..., description="최대 허용 CPU 사이클 (가스 리밋)")
     signature: str
 
 class AuditReceipt(BaseModel):
-    """실행 완료 후 반환되는 최종 암호학적 영수증"""
     receipt_id: str
     receipt_type: str
     status: str
@@ -41,10 +32,6 @@ class AuditReceipt(BaseModel):
     state_root: str
     audit_trail: List[str]
 
-
-# =====================================================================
-# 3. Audit & ZK Proof Models (무결성 감사 로그)
-# =====================================================================
 class AuditEvent(BaseModel):
     message: str
     actor: str | None = None
@@ -54,7 +41,6 @@ class AuditEvent(BaseModel):
     status: str | None = None
 
 class AuditLogRequest(BaseModel):
-    """[Integrity 보증] 보안/규제 준수 감사 로그 요청 - 수신 직후 데이터 정규화(Canonicalization) 및 위상 기반 해싱을 거침"""
     event: AuditEvent
     verbose: bool = False
     sign_local: bool = False
@@ -70,24 +56,47 @@ class AuditResult(BaseModel):
     consistency_proof: list[str] | None = None
 
 class AuditLogResponse(BaseModel):
-    """결정론적 해시 연산 및 위변조 방지 머클 증명을 포함한 응답"""
     request_id: str
     request_time: str | None = None
     response_time: str | None = None
     status: str
     result: AuditResult
 
+class BilledExecutionRequest(BaseModel):
+    agent_schema: Dict[str, Any]
+    context_depth: int = 2
+    target_entry: str
 
-# =====================================================================
-# 4. Log Streaming & Context Models (비정형 스트리밍)
-# =====================================================================
+class BilledExecutionResponse(BaseModel):
+    status: str
+    tier_applied: str
+    fuel_billed: int
+    billed_cost_usd: float
+    reason: Optional[str] = None
+
+class KernelExecutionRecord(BaseModel):
+    action: str = "record_agent_execution"
+    receipt_id: str
+    repos: Dict[str, str]
+    signatures: List[str]
+    timestamp: float
+
+class KernelOtlpRecord(BaseModel):
+    action: str = "seal_otlp_transaction"
+    content_hash: str
+    metrics_summary: Dict[str, Any]
+    receipt_ref: Optional[str] = None
+
+class KernelLedgerAppendRecord(BaseModel):
+    stream_name: str
+    timestamp: int
+    events: List[Dict[str, Any]]
+
 class LogstEvent(BaseModel):
-    """비정형 로그 스트리밍을 위한 단일 이벤트 모델"""
     timestamp: str = Field(description="ISO 8601 format timestamp")
     level: str | None = Field(default=None, description="Log severity level")
     message: str | None = Field(default=None, description="Log message content")
     trace_id: str | None = Field(default=None, description="Trace identifier")
-    
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
 class LogstUsage(BaseModel):
@@ -114,17 +123,12 @@ class LogstResponse(BaseModel):
     body: LogstResponseBody | None = None
 
 class LogstEventPayload(BaseModel):
-    """LLM 과금 및 API 트랜잭션 수집 래퍼 - 테넌트 컨텍스트 동기화 및 실시간 과금 정책 평가(Quota/Rate Limit)"""
     request: LogstRequest
     response: LogstResponse
     user_id: str | None = None
     company_id: str | None = None
     metadata: dict[str, Any] | None = None
 
-
-# =====================================================================
-# 5. OTLP Standard Telemetry Models (OpenTelemetry Ingress)
-# =====================================================================
 class KeyValue(BaseModel):
     key: str
     value: dict[str, Any]

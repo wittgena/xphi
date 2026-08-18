@@ -11,10 +11,10 @@ from kernel.bind.inter.wasm import WasmInterpreter
 from kernel.bind.inter.python import PythonInterpreter
 from kernel.bind.inter.dvm import DvmInterpreter
 from kernel.dphi.cgroup import CgroupPolicy
-from kernel.dphi.method import DphiMethod
+# ❌ DphiMethod 임포트 제거됨 (더 이상 이 데몬에서 WASM을 직접 호출하지 않음)
 
 class ExecutionStrategy:
-    """Class-based Execution Strategy for isolated sandboxing and checkpoint validation"""
+    """Class-based Execution Strategy for isolated sandboxing and execution"""
     
     def __init__(self, prewarm_pool_size: int = 11):
         self.prewarm_pool_size = prewarm_pool_size
@@ -74,36 +74,8 @@ class ExecutionStrategy:
         changed_accounts = len(state_diff)
         log.info(f"💾 [Host Commit] 상태 변경분 마스터 DB 반영 완료 (요청자: {target_addr}, 대상: {changed_accounts}개 계정)")
 
-    def validate_intent_checkpoint(self, payload: dict, exec_data: Any, context: dict, job_id: str, wasm_gate: WasmInterpreter, log) -> Any:
-        try:
-            safe_context = dict(context)
-            if "timestamp" in safe_context:
-                safe_context["timestamp"] = int(float(safe_context["timestamp"]))
-                
-            safe_payload = dict(payload)
-            if "context" in safe_payload and isinstance(safe_payload["context"], dict):
-                if "timestamp" in safe_payload["context"]:
-                    safe_payload["context"]["timestamp"] = int(float(safe_payload["context"]["timestamp"]))
-
-            validation_res = wasm_gate.invoke(DphiMethod.VALIDATE_INTENT, json.dumps(safe_payload), context=safe_context)
-            if not validation_res.success:
-                if "not registered" in str(validation_res.error) or "not found" in str(validation_res.error):
-                    log.debug(f"[{job_id[:8]}] '{DphiMethod.VALIDATE_INTENT}' missing in Core WASM. Bypassing checkpoint.")
-                    return exec_data
-                else:
-                    log.error(f"[{job_id[:8]}] WASM Gateway crashed: {validation_res.error}")
-                    return {"success": False, "output": "", "error": f"Gateway Fault: {validation_res.error}"}
-            
-            val_data = json.loads(validation_res.output)
-            if not val_data.get("is_valid", True):
-                error_code = val_data.get('error_code', 'UNAUTHORIZED_INTENT')
-                log.warning(f"[{job_id[:8]}] 🔒 Checkpoint Denied: {error_code}")
-                return {"success": False, "output": "", "error": f"Security Policy Violation: {error_code}"}
-            
-            return val_data.get("safe_payload", exec_data)
-        except Exception as e:
-            log.error(f"[{job_id[:8]}] Validation checkpoint error: {e}")
-            return {"success": False, "output": "", "error": f"Checkpoint Error: {e}"}
+    # ❌ validate_intent_checkpoint 메서드 완전히 제거됨
+    # 사전 검열은 이미 API 게이트웨이(receptor.edge) 단계에서 완료되었습니다.
 
     def run_dvm_sandbox(self, target_path: Path, job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
         try:

@@ -1,5 +1,4 @@
 # watcher.receptor.wasm
-## @lineage: watcher.wasm.receptor
 import json
 import time
 import hashlib
