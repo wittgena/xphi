@@ -1,5 +1,4 @@
 # kernel.dphi.sandbox.executor
-## @lineage: watcher.wasm.executor
 import json
 import time
 from dataclasses import dataclass, field
@@ -12,7 +11,7 @@ from kernel.dphi.broker import DphiBroker, DphiMethod
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import Tier
 
-log = get_emitter("wasm.executor")
+log = get_emitter("sandbox.executor")
 
 class SandboxEnv(str, Enum):
     LOCAL = "local"     # 프로세스 내 순수 논리 시뮬레이션 (DAG Dry-run 등)
