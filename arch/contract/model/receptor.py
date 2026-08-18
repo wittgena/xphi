@@ -1,7 +1,7 @@
 # arch.contract.model.receptor
 from enum import Enum
 from pydantic import BaseModel, Field
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 class EdgeState(str, Enum):
     INTENT_VALIDATED = "INTENT_VALIDATED"
@@ -24,6 +24,8 @@ class IntentValidationRequest(BaseModel):
     responder_id: str = Field(..., description="응답(수행) 에이전트 식별자")
     action: str = Field(..., description="수행할 작업 명칭")
     max_fuel_budget: int = Field(..., ge=0, le=4294967295, description="연산에 허용된 최대 Fuel (u32)")
+    signature: Optional[str] = None 
+    sig_algo: str = "ECDSA_SECP256K1"
 
 class ExecuteComputeRequest(BaseModel):
     code: str = Field(..., description="WASM 샌드박스에서 실행할 Python 스크립트")
