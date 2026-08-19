@@ -216,8 +216,6 @@ class TaskWasm(AbstractDaemon):
         exec_data = payload.get("payload", payload.get("data", ""))
         context = payload.get("context", {})
         
-        # [핵심 수리] 네이티브 WASM 호출 시에도 반드시 현재 티어(Tier) 정책을 적용해야 합니다.
-        # 이 부분이 누락되어 생성 시점의 기본값(STANDARD, 10M Fuel)이 고정되는 오염(State Pollution)이 발생했었습니다.
         tier_str = payload.get("tier", self.default_tier)
         job_policy = self._get_policy_from_tier(tier_str)
         if hasattr(interp_instance, 'apply_policy'):

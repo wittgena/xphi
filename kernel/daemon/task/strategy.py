@@ -11,7 +11,6 @@ from kernel.bind.inter.wasm import WasmInterpreter
 from kernel.bind.inter.python import PythonInterpreter
 from kernel.bind.inter.dvm import DvmInterpreter
 from kernel.dphi.cgroup import CgroupPolicy
-# ❌ DphiMethod 임포트 제거됨 (더 이상 이 데몬에서 WASM을 직접 호출하지 않음)
 
 class ExecutionStrategy:
     """Class-based Execution Strategy for isolated sandboxing and execution"""
@@ -74,9 +73,6 @@ class ExecutionStrategy:
         changed_accounts = len(state_diff)
         log.info(f"💾 [Host Commit] 상태 변경분 마스터 DB 반영 완료 (요청자: {target_addr}, 대상: {changed_accounts}개 계정)")
 
-    # ❌ validate_intent_checkpoint 메서드 완전히 제거됨
-    # 사전 검열은 이미 API 게이트웨이(receptor.edge) 단계에서 완료되었습니다.
-
     def run_dvm_sandbox(self, target_path: Path, job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
         try:
             safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
@@ -91,7 +87,7 @@ class ExecutionStrategy:
                 log.info(f"[{job_id[:8]}] 🔓 Entering Pure CosmWasm Jail: {target_wasm_file} (Tier: {job_policy.tier.value})")
                 
                 from kernel.bind.inter.cosm import CosmWasmInterpreter
-                with CosmWasmInterpreter(wasm_module_name=target_wasm_file, policy=job_policy) as cosm_sandbox:
+                with CosmWasmInterpreter(wasm_module_name=target_wasm_file, policy=job_policy, initial_state=safe_dict.get("state_snapshot", {})) as cosm_sandbox:
                     res = cosm_sandbox.execute(
                         env_data=safe_dict.get("env", {}),
                         info_data=safe_dict.get("info", {}),
