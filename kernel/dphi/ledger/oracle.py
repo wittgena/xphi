@@ -36,14 +36,7 @@ class LedgerOracle:
             return json.loads(self.db[key].decode('utf-8'))
         return None
 
-    # =====================================================================
-    # [1] WASM 기반의 결정론적 관측 및 붕괴 (Observer-driven Collapse)
-    # =====================================================================
     async def observe_nexus(self, epoch_hash: str) -> Dict[str, Any]:
-        """
-        특정 Epoch를 관측합니다. StateAdapter를 이용해 엄격하게 포맷팅된 
-        Payload를 WASM 샌드박스로 넘겨 붕괴(Collapse)를 실행합니다.
-        """
         snapshot = self._get_raw_object("commit", epoch_hash)
         if not snapshot:
             raise ValueError(f"Epoch not found in Ledger: {epoch_hash}")
@@ -52,7 +45,6 @@ class LedgerOracle:
         if not entangled_state.get("has_contention", False):
             return {"epoch_hash": epoch_hash, "resolved_state": snapshot, "is_collapsed": False}
 
-        # 1. State Node (Phase Root) 안전한 빌드
         raw_phase_root = snapshot.get("phase_root")
         if raw_phase_root:
             phase_root = StateAdapter.build_core_node(
