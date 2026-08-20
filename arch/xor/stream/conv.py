@@ -6,7 +6,7 @@ import operator
 from collections.abc import Iterator, Sequence
 from typing import SupportsIndex, overload
 
-from arch.model.event import Event, EventID
+from agent.loop.conv.event import Event, EventID
 from arch.xor.stream.store.file import FileStore
 from watcher.plane.emitter import get_logger
 
