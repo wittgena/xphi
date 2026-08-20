@@ -1,12 +1,11 @@
 # arch.xor.stream.conv
-## @lineage: bound.xor.store.log
 import re
 from abc import ABC, abstractmethod
 import operator
 from collections.abc import Iterator, Sequence
 from typing import SupportsIndex, overload
 
-from agent.loop.conv.event import Event, EventID
+from arch.model.conv.event import Event, EventID
 from arch.xor.stream.store.file import FileStore
 from watcher.plane.emitter import get_logger
 
@@ -20,7 +19,6 @@ LOCK_FILE_NAME = ".eventlog.lock"
 LOCK_TIMEOUT_SECONDS = 30
 
 class VirtualEventLogProxy(Sequence[Event]):
-    """LogStore의 물리적 이벤트와 ConversationState의 가상 이벤트를 하나로 묶어(Merge) 하위 시스템에 투명하게 제공하는 Proxy 클래스"""
     def __init__(self, physical_store: "LogStore", virtual_events: list[Event]):
         self._physical = physical_store
         self._virtual = virtual_events
