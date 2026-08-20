@@ -1,4 +1,5 @@
-# arch.xor.store.file
+# arch.xor.stream.store.file
+## @lineage: arch.xor.store.file
 ## @lineage: arch.xor.bridge.store.file
 ## @lineage: arch.gov.bridge.store.file
 from abc import ABC, abstractmethod

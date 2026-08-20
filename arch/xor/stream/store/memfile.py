@@ -1,4 +1,5 @@
-# arch.xor.store.memfile
+# arch.xor.stream.store.memfile
+## @lineage: arch.xor.store.memfile
 ## @lineage: arch.xor.bridge.store.memfile
 import os
 import threading
@@ -7,7 +8,7 @@ import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from arch.xor.store.file import FileStore
+from arch.xor.stream.store.file import FileStore
 from watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)

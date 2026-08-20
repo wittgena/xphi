@@ -1,4 +1,5 @@
-# bound.xor.store.stream
+# arch.xor.stream.edge
+## @lineage: bound.xor.store.stream
 import asyncio
 import uuid
 import httpx

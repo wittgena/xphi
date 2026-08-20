@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidSignature
-from arch.xor.surge.model import DynamicSurgeModel
+from arch.model.surge.model import DynamicSurgeModel
 
 class Ap2MandateConstraints(DynamicSurgeModel):
     max_spend_usdc: str

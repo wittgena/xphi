@@ -1,3 +1,4 @@
+# arch.model.event
 import __future__
 import uuid
 from abc import ABC, abstractmethod
@@ -7,7 +8,7 @@ from pydantic import ConfigDict, Field
 from rich.text import Text
 
 from arch.model.message import ImageContent, Message, TextContent
-from arch.xor.surge.disc import DiscMixin
+from arch.model.surge.disc import DiscMixin
 from arch.contract.event.next import ToposId, next_id
 
 N_CHAR_PREVIEW = 500

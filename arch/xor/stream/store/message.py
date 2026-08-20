@@ -1,4 +1,5 @@
-# arch.xor.store.message
+# arch.xor.stream.store.message
+## @lineage: arch.xor.store.message
 ## @lineage: arch.xor.bridge.store.message
 ## @lineage: arch.gov.bridge.store.message
 from __future__ import annotations

@@ -1,4 +1,5 @@
-# bound.xor.store.log
+# arch.xor.stream.conv
+## @lineage: bound.xor.store.log
 import re
 from abc import ABC, abstractmethod
 import operator
@@ -6,7 +7,7 @@ from collections.abc import Iterator, Sequence
 from typing import SupportsIndex, overload
 
 from arch.model.event import Event, EventID
-from arch.xor.store.file import FileStore
+from arch.xor.stream.store.file import FileStore
 from watcher.plane.emitter import get_logger
 
 logger = get_logger(__name__)

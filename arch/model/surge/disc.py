@@ -1,5 +1,5 @@
-# arch.xor.surge.disc
-## @lineage: arch.model.surge.disc
+# arch.model.surge.disc
+## @lineage: arch.xor.surge.disc
 import inspect
 import logging
 import threading
@@ -20,7 +20,7 @@ from pydantic import (
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
-from arch.xor.surge.model import SurgeBaseModel
+from arch.model.surge.model import SurgeBaseModel
 from watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)

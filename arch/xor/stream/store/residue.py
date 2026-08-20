@@ -1,4 +1,5 @@
-# arch.xor.store.residue
+# arch.xor.stream.store.residue
+## @lineage: arch.xor.store.residue
 ## @lineage: arch.xor.bridge.store.residue
 """@flow: ψ → ResidueExecutor(Buffer → Minimal Tension Eval) → ResidueStore(rocks.db)"""
 import asyncio
