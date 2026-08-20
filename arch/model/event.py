@@ -87,7 +87,7 @@ class LLMConvertibleEvent(Event, ABC):
 
     @staticmethod
     def events_to_messages(events: list["LLMConvertibleEvent"]) -> list[Message]:
-        from ator.driver.llm.event import ActionEvent
+        from ator.driver.llm.event.action import ActionEvent
         messages = []
         i = 0
 
