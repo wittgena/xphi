@@ -1,4 +1,5 @@
-# bound.xor.bridge.mark.depre
+# arch.xor.mark.depre
+## @lineage: bound.xor.bridge.mark.depre
 ## @lineage: bound.eco.xor.bridge.mark.depre
 ## @lineage: eco.bound.xor.bridge.mark.depre
 ## @lineage: engine.xor.bridge.mark.depre

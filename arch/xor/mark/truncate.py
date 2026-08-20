@@ -1,4 +1,5 @@
-# bound.xor.bridge.mark.truncate
+# arch.xor.mark.truncate
+## @lineage: bound.xor.bridge.mark.truncate
 ## @lineage: bound.eco.xor.bridge.mark.truncate
 ## @lineage: eco.bound.xor.bridge.mark.truncate
 ## @lineage: engine.xor.bridge.mark.truncate
