@@ -1,11 +1,10 @@
 # arch.contract.interface
 """
-@phase
+@phase:
 - ψ: event signal resonance around
 - Φ: shared field state where tension accumulates
 - ∂Φ: observers aligning drift and detecting rupture
 - Σ: dispersion / aggregation of macro-micro flows
-
 @flow: ψ → ator interaction → Φ drift → ∂Φ detection → rupture → new Φ regime
 """
 from __future__ import annotations
@@ -104,6 +103,9 @@ class IBoundExecutor(ABC):
 
 class ContractRouter(APIRouter):
     def __init__(self, namespace: str, *args: Any, **kwargs: Any):
+        self.description = kwargs.pop("description", None)
+        self.summary = kwargs.pop("summary", None)
+        
         super().__init__(*args, **kwargs)
         self.namespace = namespace
 
