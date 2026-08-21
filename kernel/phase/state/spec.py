@@ -1,4 +1,5 @@
-# kernel.bind.state.spec
+# kernel.phase.state.spec
+## @lineage: kernel.bind.state.spec
 ## @lineage: kernel.topos.state.spec
 import enum 
 from abc import ABC, abstractmethod

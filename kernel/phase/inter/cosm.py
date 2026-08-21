@@ -1,4 +1,5 @@
-# kernel.bind.inter.cosm
+# kernel.phase.inter.cosm
+## @lineage: kernel.bind.inter.cosm
 """@desc: Local interpreter for secure CosmWasm smart contract execution using Wasmtime"""
 import json
 import threading
@@ -13,7 +14,7 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.bind.inter.protocol import ExecutionError, ExecutionResult
+from kernel.phase.inter.protocol import ExecutionError, ExecutionResult
 from kernel.bind.resolver import resolve_path
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy
 from watcher.plane.emitter import get_emitter

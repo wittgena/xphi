@@ -1,4 +1,5 @@
-# kernel.bind.inter.dvm
+# kernel.phase.inter.dvm
+## @lineage: kernel.bind.inter.dvm
 """@desc: Local interpreter for secure Multi VM execution using Wasmtime and dvm.wasm"""
 import json
 import threading
@@ -12,10 +13,10 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.bind.inter.protocol import ExecutionError, ExecutionResult
+from kernel.phase.inter.protocol import ExecutionError, ExecutionResult
 from kernel.bind.resolver import resolve_path
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy, Tier
-from kernel.bind.inter.wasm import WasmInterpreter
+from kernel.phase.inter.wasm import WasmInterpreter
 
 from watcher.plane.emitter import get_emitter
 
@@ -145,7 +146,7 @@ class DvmInterpreter:
                         state_snapshot = payload.get("state_snapshot") or {}
                         
                         try:
-                            from kernel.bind.inter.cosm import CosmWasmInterpreter
+                            from kernel.phase.inter.cosm import CosmWasmInterpreter
                             with CosmWasmInterpreter(wasm_module_name=wasm_file, policy=self.policy, initial_state=state_snapshot) as cosm_sandbox:
                                 res = cosm_sandbox.execute(env_data, info_data, msg_data)
                                 

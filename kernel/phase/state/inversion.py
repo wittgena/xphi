@@ -1,4 +1,5 @@
-# kernel.bind.state.inversion
+# kernel.phase.state.inversion
+## @lineage: kernel.bind.state.inversion
 """@desc: Critical Detectors (Singularity, Inversion) and Superposition Kernel (Resonance)"""
 from __future__ import annotations
 from typing import List, Dict, Optional, Any

@@ -1,4 +1,5 @@
-# kernel.bind.state.node0
+# kernel.phase.state.node0
+## @lineage: kernel.bind.state.node0
 ## @lineage: kernel.topos.state.node0
 import uuid
 import json
@@ -9,7 +10,7 @@ from dataclasses import dataclass, field
 from arch.contract.event.psi import PsiCarrier
 from arch.topos.tunnel.factory import UniversalFacade
 
-from kernel.bind.inter.node import NodeInterpreter, AnchoredIR, AnchorFlow
+from kernel.phase.inter.node import NodeInterpreter, AnchoredIR, AnchorFlow
 from kernel.dphi.broker import DphiMethod
 from kernel.dphi.adapter.state import StateAdapter
 

@@ -1,4 +1,5 @@
-# kernel.bind.inter.protocol
+# kernel.phase.inter.protocol
+## @lineage: kernel.bind.inter.protocol
 import json
 from dataclasses import dataclass
 from typing import Any, Callable, Mapping, Protocol, runtime_checkable, Optional

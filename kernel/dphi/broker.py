@@ -8,7 +8,7 @@ from typing import Optional, Any, Mapping, Union, Dict
 from contextlib import suppress
 
 from arch.topos.tunnel.factory import TunnelFactory
-from kernel.bind.inter.protocol import ExecutionResult, ExecutionError
+from kernel.phase.inter.protocol import ExecutionResult, ExecutionError
 from kernel.dphi.method import DphiMethod
 from watcher.plane.emitter import get_emitter, _flow_context
 

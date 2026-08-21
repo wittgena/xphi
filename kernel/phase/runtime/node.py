@@ -18,7 +18,7 @@ from kernel.bind.resolver import find_current_self
 from kernel.phase.runtime.executor.swarm import SwarmExecutor
 from kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from kernel.bind.inter.node import NodeInterpreter, AnchorFlow
+from kernel.phase.inter.node import NodeInterpreter, AnchorFlow
 from kernel.phase.runtime.context import RuntimeContext
 from kernel.daemon.bootstrap import mount_master_layer, EventBusDaemon
 from kernel.dphi.broker import DphiBroker

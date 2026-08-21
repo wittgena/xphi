@@ -1,4 +1,5 @@
-# kernel.bind.inter.wasm
+# kernel.phase.inter.wasm
+## @lineage: kernel.bind.inter.wasm
 """@desc: Local interpreter for secure Python code execution using Wasmtime"""
 import json
 import os
@@ -12,7 +13,7 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.bind.inter.protocol import ExecutionError, ProtocolError, ExecutionResult
+from kernel.phase.inter.protocol import ExecutionError, ProtocolError, ExecutionResult
 from kernel.bind.resolver import resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy

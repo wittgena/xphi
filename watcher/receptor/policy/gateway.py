@@ -8,7 +8,7 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Optional
 
-from kernel.phase.stream.schema import LogicStream as IngressLogicStream
+from arch.xor.stream.schema import LogicStream as IngressLogicStream
 from kernel.dphi.ledger.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from watcher.plane.emitter import get_emitter
 

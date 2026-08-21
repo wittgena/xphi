@@ -1,4 +1,5 @@
-# kernel.bind.inter.python
+# kernel.phase.inter.python
+## @lineage: kernel.bind.inter.python
 import functools
 import inspect
 import json
@@ -14,7 +15,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 from contextlib import suppress
 
-from kernel.bind.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
+from kernel.phase.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
 from kernel.bind.resolver import find_current_self, resolve_path
 from watcher.plane.emitter import get_emitter
 from kernel.dphi.cgroup import CgroupPolicy, Tier

@@ -60,7 +60,7 @@ class TaskWasm(AbstractDaemon):
 
     async def _init_wasm_pool(self):
         self.log.info(f"[{self.node_id}] Pre-warming {self.concurrency_limit} WASM instances...")
-        from kernel.bind.inter.wasm import WasmInterpreter
+        from kernel.phase.inter.wasm import WasmInterpreter
         
         for _ in range(self.concurrency_limit):
             interp = WasmInterpreter(

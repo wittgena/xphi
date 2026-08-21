@@ -8,9 +8,9 @@ import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 
-from kernel.bind.state.spec import TransRule, NodeType
+from kernel.phase.state.spec import TransRule, NodeType
 from kernel.dphi.ledger.consensus import KernelLedger
-from kernel.phase.stream.schema import (
+from arch.xor.stream.schema import (
     LogicStream, 
     StreamMetadata, 
     StreamIdentity, 
