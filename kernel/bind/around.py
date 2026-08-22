@@ -15,7 +15,7 @@ log = logging.getLogger("around")
 CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
 PTH_FILENAME = "xphi.pth"
-CORES = ["nexus", "fiber", "theoria", "xphi"]
+CORES = ["fiber", "theoria", "xphi"]
 
 ## Default minimum skeleton to prevent resolver crashes if bound.json doesn't exist
 DEFAULT_BOUND_SKELETON = {
@@ -34,7 +34,7 @@ DEFAULT_BOUND_SKELETON = {
         "phase": "xphi/phase"
     },
     "paths": {
-        "theoria": ":anchor:/theoria",
+        "theoria": "theoria",
         "fiber": "fiber",
         "io": ":io:",
         "ext": ":anchor:/ext",
