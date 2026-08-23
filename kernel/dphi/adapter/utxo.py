@@ -1,5 +1,4 @@
 # kernel.dphi.adapter.utxo
-
 import json
 import time
 import uuid
@@ -18,18 +17,11 @@ from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.utxo", phase="KERNEL")
 
-
-# =========================================================================
-# Cryptographic Identity (Real CPU Load Generator)
-# =========================================================================
-
 class AgentWallet:
     """Ed25519 기반의 실제 암호학적 지갑 (서명 및 검증용)"""
     def __init__(self):
         self.private_key = ed25519.Ed25519PrivateKey.generate()
         self.public_key = self.private_key.public_key()
-        
-        # Public Key를 Base64 포맷 주소로 변환 (예: cosm_abc123...)
         raw_pub = self.public_key.public_bytes(
             encoding=serialization.Encoding.Raw,
             format=serialization.PublicFormat.Raw
@@ -37,15 +29,15 @@ class AgentWallet:
         self.address = f"cosm_{base64.urlsafe_b64encode(raw_pub).decode().rstrip('=')}"
 
     def sign_payload(self, payload: str) -> str:
-        """주어진 페이로드를 Private Key로 서명 (실제 암호학 연산)"""
+        """주어진 페이로드를 Private Key로 서명"""
         signature = self.private_key.sign(payload.encode('utf-8'))
         return base64.urlsafe_b64encode(signature).decode()
 
 
 def compute_merkle_root(tx_hashes: List[str]) -> str:
     """
-    수십 개의 영수증(Tx Hash)을 이진 트리로 해싱하여 최종 Root를 뽑는 연산.
-    Phase 4 Netting 시 L1 제출을 위한 실제 Rollup 압축 로드를 발생시킵니다.
+    @desc: 수십 개의 영수증(Tx Hash)을 이진 트리로 해싱하여 최종 Root를 뽑는 연산
+    - Phase 4 Netting 시 L1 제출을 위한 실제 Rollup 압축 로드를 발생
     """
     if not tx_hashes:
         return ""
@@ -62,11 +54,7 @@ def compute_merkle_root(tx_hashes: List[str]) -> str:
         
     return current_level[0]
 
-
-# =========================================================================
-# UTXO Core Data Models
-# =========================================================================
-
+"""UTXO Core Data Models"""
 @dataclass
 class UtxoPointer:
     """이전 트랜잭션의 특정 Output을 가리키는 포인터 (OutPoint)"""
@@ -75,7 +63,6 @@ class UtxoPointer:
 
     def to_key(self) -> str:
         return f"{self.tx_hash}:{self.output_index}"
-
 
 @dataclass
 class UtxoInput:
@@ -124,20 +111,15 @@ class UtxoTransaction:
             "timestamp_ms": self.timestamp_ms
         }
 
-
-# =========================================================================
-# UTXO Adapter
-# =========================================================================
-
 class UtxoAdapter:
-    """
-    UTXO 모델 기반의 오프체인 마이크로 빌링 및 상태 병합 어댑터
-    실제 Ed25519 서명 검증을 수행하여 분산 원장 수준의 워크로드를 발생시킵니다.
-    """
+    """UTXO 모델 기반의 오프체인 마이크로 빌링 및 상태 병합 어댑터"""
     def __init__(self, broker: DphiBroker):
         self.broker = broker
         self.ledger = KernelLedger()
         self.oracle = LedgerOracle(broker=broker)
+        
+        # Hot State)를 유지하는 인메모리 UTXO 풀 - Key: UtxoPointer.to_key() ("tx_hash:index"), Value: UtxoOutput 객체
+        self._unspent_pool: Dict[str, UtxoOutput] = {}
 
     def _verify_ed25519_signature(self, payload: str, signature_b64: str, owner_address: str) -> bool:
         """어댑터 레벨에서 발생하는 실제 연산 로드 (타원곡선 암호학 검증)"""
@@ -145,17 +127,15 @@ class UtxoAdapter:
             return True # Mock 테스트 호환성 유지용 (EVM 주소나 테스트용 더미 서명 패스)
             
         try:
-            # Base64 패딩 복구 및 퍼블릭 키 추출
+            ## Base64 패딩 복구 및 퍼블릭 키 추출
             b64_pub = owner_address.replace("cosm_", "")
             b64_pub += "=" * ((4 - len(b64_pub) % 4) % 4)
             raw_pub = base64.urlsafe_b64decode(b64_pub)
             pub_key = ed25519.Ed25519PublicKey.from_public_bytes(raw_pub)
             
-            # 서명 바이트 추출
+            ## 서명 바이트 추출
             sig_b64 = signature_b64 + "=" * ((4 - len(signature_b64) % 4) % 4)
             sig_bytes = base64.urlsafe_b64decode(sig_b64)
-            
-            # 🚀 수학적 서명 검증 (CPU 병목 발생 지점)
             pub_key.verify(sig_bytes, payload.encode('utf-8'))
             return True
         except Exception as e:
@@ -163,38 +143,57 @@ class UtxoAdapter:
             return False
 
     async def execute_transaction(self, tx: UtxoTransaction) -> str:
-        """
-        UTXO 상태 전이(Tx)를 검증하고 Ledger에 제안 및 밀봉(Seal)
-        """
-        # [실무 연산 도입] 모든 Input에 대해 이중 지불 방지를 위한 소유권 검증
+        """UTXO 상태 전이(Tx)를 검증하고 Ledger에 제안 및 밀봉(Seal)"""
+        ## 모든 Input에 대해 이중 지불 방지를 위한 소유권 검증
         for idx, current_input in enumerate(tx.inputs):
             if current_input.owner_address:
-                # 🛠️ 버그 픽스: 서명 검증 대상을 새로 만들어질 트랜잭션 해시가 아니라, 소모하려는 대상 포인터로 변경
                 payload_to_verify = current_input.pointer.to_key()
                 is_valid = self._verify_ed25519_signature(payload_to_verify, current_input.signature, current_input.owner_address)
                 if not is_valid:
                     raise PermissionError(f"Cryptographic Auth Failed for input index {idx}")
 
         stream_id = f"utxo_tx_{tx.tx_hash[:8]}"
-        
         stream = LogicStream(
             id=stream_id,
             action="UTXO_STATE_TRANSITION",
             payload=tx.to_dict(),
             metadata=tx.metadata
         )
-
         log.debug(f"[UtxoAdapter] Proposing UTXO Tx: {tx.tx_hash[:8]}... (Inputs: {len(tx.inputs)}, Outputs: {len(tx.outputs)})")
-        
         sealed_kernel = await self.ledger.propose_and_seal(stream)
         
         if sealed_kernel:
             receipt_signature = sealed_kernel.signature
             log.info(f"[UtxoAdapter] Tx Sealed. Receipt: {receipt_signature[:8]}... | Hash: {tx.tx_hash[:8]}")
+            
+            ## 인메모리 UTXO 상태 동기화 (State Sync) - 트랜잭션이 원장에 무결하게 기록되었으므로, 메모리 풀을 업데이트하여 다음 초고빈도 연산을 준비
+            ## 소모된 Input 제거 (Burn)
+            for current_input in tx.inputs:
+                pointer_key = current_input.pointer.to_key()
+                self._unspent_pool.pop(pointer_key, None)
+            
+            ## 새롭게 생성된 Output 등록 (Mint)
+            for idx, output in enumerate(tx.outputs):
+                new_pointer_key = f"{tx.tx_hash}:{idx}"
+                self._unspent_pool[new_pointer_key] = output
+                
             return tx.tx_hash
         else:
             log.debug(f"[UtxoAdapter] Tx Queued in Mempool. Stream: {stream_id}")
             return tx.tx_hash
+
+    async def get_balance(self, owner_address: str, asset_type: str = "fuel") -> int:
+        """
+        @desc: 외부 Edge 레이어(API)에서 호출할 잔고 조회 접점
+        - 원장(Ledger)을 조회하지 않고 인메모리 풀(Hot State)을 순회하여 O(N)으로 즉시 반환
+        """
+        total_balance = 0
+        for output in self._unspent_pool.values():
+            if output.owner == owner_address and output.asset_type == asset_type:
+                total_balance += output.amount
+                
+        log.debug(f"[UtxoAdapter] Balance read for {owner_address[:12]}... -> {total_balance} {asset_type}")
+        return total_balance
 
     async def verify_and_collapse_receipt(self, tx_hash: str) -> Dict[str, Any]:
         try:
