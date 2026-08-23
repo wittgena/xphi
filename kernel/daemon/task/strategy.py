@@ -7,10 +7,10 @@ from pathlib import Path
 from typing import Any, Dict
 from contextlib import suppress
 
-from kernel.phase.inter.wasm import WasmInterpreter
-from kernel.phase.inter.python import PythonInterpreter
-from kernel.phase.inter.dvm import DvmInterpreter
-from kernel.dphi.cgroup import CgroupPolicy
+from xphi.kernel.phase.inter.wasm import WasmInterpreter
+from xphi.kernel.phase.inter.python import PythonInterpreter
+from xphi.kernel.phase.inter.dvm import DvmInterpreter
+from xphi.kernel.dphi.cgroup import CgroupPolicy
 
 class ExecutionStrategy:
     """Class-based Execution Strategy for isolated sandboxing and execution"""
@@ -86,7 +86,7 @@ class ExecutionStrategy:
                 target_wasm_file = safe_dict.get("target_wasm_file", "cw20_base.wasm")
                 log.info(f"[{job_id[:8]}] 🔓 Entering Pure CosmWasm Jail: {target_wasm_file} (Tier: {job_policy.tier.value})")
                 
-                from kernel.phase.inter.cosm import CosmWasmInterpreter
+                from xphi.kernel.phase.inter.cosm import CosmWasmInterpreter
                 with CosmWasmInterpreter(wasm_module_name=target_wasm_file, policy=job_policy, initial_state=safe_dict.get("state_snapshot", {})) as cosm_sandbox:
                     res = cosm_sandbox.execute(
                         env_data=safe_dict.get("env", {}),

@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
+from xphi.arch.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 
 ## Markdown → AST
 class MdAstParser:

@@ -10,11 +10,11 @@ import sys
 from typing import List, Set, Any, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
-from arch.contract.event.psi import PsiType
-from watcher.plane.emitter import get_logger
-from kernel.bind.resolver import find_current_self, resolve_path
-from kernel.phase.runtime.node import NodeRuntime
-from arch.contract.executor import BaseExecutor
+from xphi.arch.contract.event.psi import PsiType
+from xphi.watcher.plane.emitter import get_logger
+from xphi.kernel.bind.resolver import find_current_self, resolve_path
+from xphi.kernel.phase.runtime.node import NodeRuntime
+from xphi.arch.contract.executor import BaseExecutor
 
 log = get_logger("xor.store")
 

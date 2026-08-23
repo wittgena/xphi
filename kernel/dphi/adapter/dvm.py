@@ -2,7 +2,7 @@
 ## @lineage: phase.dphi.adapter.dvm
 import os
 from typing import Dict, Any, Optional
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.dvm")
 

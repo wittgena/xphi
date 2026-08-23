@@ -6,10 +6,10 @@ import logging
 import os
 from pathlib import Path
 
-from arch.xor.bridge.git.schema import GitChange, GitChangeStatus
-from arch.xor.bridge.git.exceptions import GitCommandError
-from arch.xor.bridge.git.utils import get_valid_ref, run_git_command, validate_git_repository
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.bridge.git.schema import GitChange, GitChangeStatus
+from xphi.arch.xor.bridge.git.exceptions import GitCommandError
+from xphi.arch.xor.bridge.git.utils import get_valid_ref, run_git_command, validate_git_repository
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
 

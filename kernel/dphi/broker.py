@@ -7,10 +7,10 @@ from enum import Enum
 from typing import Optional, Any, Mapping, Union, Dict
 from contextlib import suppress
 
-from arch.topos.tunnel.factory import TunnelFactory
-from kernel.phase.inter.protocol import ExecutionResult, ExecutionError
-from kernel.dphi.method import DphiMethod
-from watcher.plane.emitter import get_emitter, _flow_context
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.phase.inter.protocol import ExecutionResult, ExecutionError
+from xphi.kernel.dphi.method import DphiMethod
+from xphi.watcher.plane.emitter import get_emitter, _flow_context
 
 log = get_emitter("dphi.broker")
 

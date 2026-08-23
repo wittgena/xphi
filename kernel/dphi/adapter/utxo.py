@@ -11,10 +11,10 @@ from dataclasses import dataclass, field
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from kernel.dphi.ledger.consensus import KernelLedger, LogicStream
-from kernel.dphi.ledger.oracle import LedgerOracle
-from kernel.dphi.broker import DphiBroker
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.ledger.consensus import KernelLedger, LogicStream
+from xphi.kernel.dphi.ledger.oracle import LedgerOracle
+from xphi.kernel.dphi.broker import DphiBroker
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.utxo", phase="KERNEL")
 

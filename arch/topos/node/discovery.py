@@ -6,7 +6,7 @@
 """
 from pathlib import Path
 from typing import List, Callable
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("node.discovery", mode="SLIM")
 

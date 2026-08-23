@@ -3,7 +3,7 @@ import hashlib
 from base64 import b64encode
 from cryptography.fernet import Fernet, InvalidToken
 from pydantic import SecretStr
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
 

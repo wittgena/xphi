@@ -8,16 +8,16 @@ from pathlib import Path
 from typing import Tuple, Optional
 from dataclasses import asdict
 
-from kernel.bind.resolver import resolve_path
-from kernel.phase.inter.wasm import WasmInterpreter
-from kernel.dphi.adapter.sign import LedgerAuthAdapter
-from kernel.dphi.cgroup import CgroupPolicy
-from kernel.dphi.ledger.consensus import KernelLedger, KernelCommit, LedgerRole
+from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.phase.inter.wasm import WasmInterpreter
+from xphi.kernel.dphi.adapter.sign import LedgerAuthAdapter
+from xphi.kernel.dphi.cgroup import CgroupPolicy
+from xphi.kernel.dphi.ledger.consensus import KernelLedger, KernelCommit, LedgerRole
 
-from watcher.plane.emitter import get_emitter
-from watcher.tracer.bound import BaseTracer
-from watcher.wasm.builder import WasmBuilder
-from watcher.wasm.tester import WasmTester
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.watcher.tracer.bound import BaseTracer
+from xphi.watcher.wasm.builder import WasmBuilder
+from xphi.watcher.wasm.tester import WasmTester
 
 log = get_emitter("tracer.dphi")
 

@@ -14,10 +14,10 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.phase.inter.protocol import ExecutionError, ExecutionResult
-from kernel.bind.resolver import resolve_path
-from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.phase.inter.protocol import ExecutionError, ExecutionResult
+from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.dphi.cgroup import WasmCgroup, CgroupPolicy
+from xphi.watcher.plane.emitter import get_emitter
 
 TIME_ROOT = resolve_path("time")
 log = get_emitter("inter.cosm", phase="SYSTEM")

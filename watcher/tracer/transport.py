@@ -7,7 +7,7 @@ from typing import Callable, Dict, Optional, Any
 
 import httpx
 
-from watcher.plane.emitter import flow_scope, get_emitter
+from xphi.watcher.plane.emitter import flow_scope, get_emitter
 
 log = get_emitter("tracer.transport")
 

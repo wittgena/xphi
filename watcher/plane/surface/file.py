@@ -6,9 +6,9 @@ import sys
 from pathlib import Path
 from dataclasses import asdict
 from datetime import datetime, timezone
-from arch.contract.event.next import LogEvent
-from watcher.plane.observer.event import EventObserver
-from watcher.plane.surface.console import ConsoleSurface
+from xphi.arch.contract.event.next import LogEvent
+from xphi.watcher.plane.observer.event import EventObserver
+from xphi.watcher.plane.surface.console import ConsoleSurface
 
 def _safe_json_serializer(obj):
     if isinstance(obj, datetime):

@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Optional, Dict, Any
 from typing_extensions import Annotated
 from pydantic import Field
-from arch.model.surge.model import DynamicSurgeModel 
+from xphi.arch.model.surge.model import DynamicSurgeModel 
 
 class CoherenceState(str, Enum):
     STREAMING = "STREAMING"

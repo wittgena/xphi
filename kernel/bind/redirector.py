@@ -6,8 +6,8 @@ import types
 import importlib.util
 from pathlib import Path
 from typing import Optional, Union
-from kernel.bind.resolver import find_current_self
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.bind.resolver import find_current_self
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("bind.redirector")
 

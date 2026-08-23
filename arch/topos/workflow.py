@@ -9,8 +9,8 @@ import typing
 import types
 from functools import wraps
 
-from watcher.plane.emitter import get_emitter
-from arch.topos.node.gan import GanNode, Message
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.arch.topos.node.gan import GanNode, Message
 
 log = get_emitter("topos.workflow")
 

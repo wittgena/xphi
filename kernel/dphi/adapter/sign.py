@@ -8,8 +8,8 @@ import nacl.exceptions
 from cryptography.hazmat.primitives import serialization
 from typing import Dict, Any, Optional
 
-from kernel.dphi.adapter.state import StateAdapter
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.adapter.state import StateAdapter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.sign")
 

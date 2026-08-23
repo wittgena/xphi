@@ -8,9 +8,9 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Optional
 
-from arch.xor.stream.schema import LogicStream as IngressLogicStream
-from kernel.dphi.ledger.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.stream.schema import LogicStream as IngressLogicStream
+from xphi.kernel.dphi.ledger.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("mesh.gateway", phase="KERNEL")
 

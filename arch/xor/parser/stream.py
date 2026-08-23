@@ -3,8 +3,8 @@ import json
 from typing import List, Tuple, Dict, Any, Optional, Callable
 from elasticsearch.dsl import Q
 
-from arch.xor.parser.ruleset import AbstractRulesetParser, CompiledEngine
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.parser.ruleset import AbstractRulesetParser, CompiledEngine
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("parser.stream")
 

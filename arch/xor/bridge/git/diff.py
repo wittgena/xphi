@@ -6,13 +6,13 @@ import os
 import sys
 from pathlib import Path
 
-from arch.xor.bridge.git.exceptions import (
+from xphi.arch.xor.bridge.git.exceptions import (
     GitCommandError,
     GitPathError,
     GitRepositoryError,
 )
-from arch.xor.bridge.git.schema import GitDiff
-from arch.xor.bridge.git.utils import (
+from xphi.arch.xor.bridge.git.schema import GitDiff
+from xphi.arch.xor.bridge.git.utils import (
     get_valid_ref,
     run_git_command,
     validate_git_repository,

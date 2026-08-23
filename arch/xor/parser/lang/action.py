@@ -6,7 +6,7 @@ import json
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Type
 from pydantic import Field
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("parser.action")
 

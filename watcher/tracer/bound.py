@@ -5,7 +5,7 @@ import inspect
 from abc import ABC, abstractmethod
 from functools import wraps
 from typing import List, Tuple, Type, Union, Callable, Awaitable, Optional, Any
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 class BaseBoundary(ABC):
     @abstractmethod

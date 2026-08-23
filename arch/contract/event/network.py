@@ -1,7 +1,7 @@
 # arch.contract.event.network
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Dict, Any, Optional
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("event.network")
 

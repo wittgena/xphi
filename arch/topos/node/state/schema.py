@@ -3,7 +3,7 @@
 ## @lineage: ops.tester.state.schema
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
-from arch.topos.node.state.vocab import NodeType, EdgeMode
+from xphi.arch.topos.node.state.vocab import NodeType, EdgeMode
 
 @dataclass
 class AgentAttributes:

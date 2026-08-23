@@ -8,14 +8,14 @@ import asyncio
 import subprocess
 import importlib
 from typing import Callable, Any
-from arch.contract.event.psi import PsiEvent, PsiCarrier
-from arch.contract.event.next import next_id, LogEvent
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.contract.event.next import next_id, LogEvent
 from dataclasses import asdict
-from watcher.plane.emitter import get_logger, flow_scope
-from arch.contract.registry.unified import registry
-from arch.contract.executor import BaseExecutor
-from kernel.phase.runtime.executor.cli import _GenericCliExecutor
-from kernel.phase.runtime.flow.executor import FlowExecutor
+from xphi.watcher.plane.emitter import get_logger, flow_scope
+from xphi.arch.contract.registry.unified import registry
+from xphi.arch.contract.executor import BaseExecutor
+from xphi.kernel.phase.runtime.executor.cli import _GenericCliExecutor
+from xphi.kernel.phase.runtime.flow.executor import FlowExecutor
 
 log = get_logger("swarm.executor")
 

@@ -7,14 +7,14 @@ import uuid
 import asyncio
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from watcher.plane.emitter import get_logger
-from arch.model.phase.flow import (
+from xphi.watcher.plane.emitter import get_logger
+from xphi.arch.model.phase.flow import (
     PhaseFlow, FlowState, Dispersion, Judgment, 
     Transduction, Align, Resonance, Gather
 )
-from arch.contract.protocol import Proto, proto
+from xphi.arch.contract.protocol import Proto, proto
 # [개선됨] manifold_node 제거 및 통합 contract 임포트
-from arch.contract.registry.unified import contract, registry
+from xphi.arch.contract.registry.unified import contract, registry
 
 log = get_logger('phase.ator')
 

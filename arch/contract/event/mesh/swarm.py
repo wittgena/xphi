@@ -3,11 +3,11 @@ import asyncio
 import json
 from typing import List, Optional, Callable, Tuple
 
-from arch.contract.event.psi import PsiEvent
-from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from watcher.receptor.contract.promise import future, Promise
-from arch.contract.event.mesh.transport import MeshP2PTransport
-from watcher.plane.emitter import get_emitter
+from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
+from xphi.watcher.receptor.contract.promise import future, Promise
+from xphi.arch.contract.event.mesh.transport import MeshP2PTransport
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("mesh.swarm", phase="ROUTING")
 

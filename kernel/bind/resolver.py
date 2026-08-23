@@ -47,7 +47,7 @@ def _get_around_context() -> tuple[str, dict]:
         import bind.around as around_mod
     except ImportError:
         try:
-            import kernel.bind.around as around_mod
+            import xphi.kernel.bind.around as around_mod
         except ImportError as e:
             raise RuntimeError(f"Critical dependency missing: 'around' module not found. ({e})")
     
@@ -113,7 +113,7 @@ def _clean_subpath(root_name: str, sub_path_str: str) -> str:
 def _track_io_usage(name: str, target_path: Path):
     """@hook: Telemetry for IO boundary access."""
     try:
-        from arch.contract.registry.path import path_registry
+        from xphi.arch.contract.registry.path import path_registry
         path_registry.log_access(name, target_path)
     except ImportError:
         pass

@@ -10,10 +10,10 @@ from typing import Any, Dict
 
 from pydantic import SecretStr
 
-from arch.xor.secret.cipher import Cipher
-from watcher.receptor.policy.gateway import ToposGateway
-from watcher.receptor.audit.warden import AuditWarden
-from watcher.receptor.contract.model import AuditLogResponse
+from xphi.arch.xor.secret.cipher import Cipher
+from xphi.watcher.receptor.policy.gateway import ToposGateway
+from xphi.watcher.receptor.audit.warden import AuditWarden
+from xphi.watcher.receptor.contract.model import AuditLogResponse
 
 logger = logging.getLogger("audit.ledger")
 

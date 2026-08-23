@@ -2,8 +2,8 @@
 import uuid
 import asyncio
 from typing import Any
-from arch.topos.network.channel.pipeline import DuplexChannel, ChannelContext
-from watcher.plane.emitter import flow_scope, get_emitter
+from xphi.arch.topos.network.channel.pipeline import DuplexChannel, ChannelContext
+from xphi.watcher.plane.emitter import flow_scope, get_emitter
 
 log = get_emitter("rpc.bridge")
 

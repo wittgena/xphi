@@ -7,14 +7,14 @@ from typing import Dict, Optional
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-from arch.xor.parser.block.contract import CoherenceState, Contract
-from kernel.dphi.adapter.state import StateAdapter
-from kernel.dphi.ledger.consensus import KernelCommit, KernelLedger
-from kernel.dphi.sandbox.executor import EffectResolver, TaskContext
-from kernel.dphi.method import DphiMethod
+from xphi.arch.xor.parser.block.contract import CoherenceState, Contract
+from xphi.kernel.dphi.adapter.state import StateAdapter
+from xphi.kernel.dphi.ledger.consensus import KernelCommit, KernelLedger
+from xphi.kernel.dphi.sandbox.executor import EffectResolver, TaskContext
+from xphi.kernel.dphi.method import DphiMethod
 
-from kernel.dphi.runner.phase import RuntimeRunner, RecoveryMethod
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.runner.phase import RuntimeRunner, RecoveryMethod
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("recovery.runner")
 

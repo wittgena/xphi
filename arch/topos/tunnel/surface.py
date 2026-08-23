@@ -6,8 +6,8 @@ import urllib.parse
 from typing import Optional, AsyncGenerator
 import httpx
 
-from arch.topos.tunnel.factory import TunnelFactory
-from watcher.plane.emitter import get_emitter
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("bound.surface")
 

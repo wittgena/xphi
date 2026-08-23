@@ -2,7 +2,7 @@
 import os
 import logging
 from typing import Any
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("model.config")
 

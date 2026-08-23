@@ -11,18 +11,18 @@ from datetime import datetime
 from typing import Dict, List, Optional, Set
 from contextlib import suppress
 
-from watcher.plane.sink import EmitterSink
-from watcher.plane.metric.trajectory import (
+from xphi.watcher.plane.sink import EmitterSink
+from xphi.watcher.plane.metric.trajectory import (
     Point, 
     WindowedTrajectory, 
     DefaultBoundLensStrategy, 
     CoDiffBoundLensStrategy, 
     TopologicalStructure
 )
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 # L0 Membrane Integration
-from watcher.receptor.mem.filter import SurvivalAnchor
+from xphi.watcher.receptor.mem.filter import SurvivalAnchor
 
 log = get_emitter("receptor.kernel")
 
@@ -36,21 +36,21 @@ def build_system_topos() -> List[TopologicalStructure]:
     structures = []
     
     arch = []
-    with suppress(ImportError): import arch.model.sensor as m; arch.append(m.__name__)
-    with suppress(ImportError): import arch.topos.tunnel.surface as m; arch.append(m.__name__)
-    with suppress(ImportError): import arch.topos.tunnel.factory as m; arch.append(m.__name__)
+    with suppress(ImportError): import xphi.arch.model.sensor as m; arch.append(m.__name__)
+    with suppress(ImportError): import xphi.arch.topos.tunnel.surface as m; arch.append(m.__name__)
+    with suppress(ImportError): import xphi.arch.topos.tunnel.factory as m; arch.append(m.__name__)
     if arch: structures.append(TopologicalStructure(name="arch.topos", members=arch))
 
     phase = []
-    with suppress(ImportError): import kernel.bind.resolver as m; phase.append(m.__name__)
-    with suppress(ImportError): import watcher.receptor.bootstrap as m; phase.append(m.__name__)
-    with suppress(ImportError): import watcher.receptor.kernel as m; phase.append(m.__name__)
+    with suppress(ImportError): import xphi.kernel.bind.resolver as m; phase.append(m.__name__)
+    with suppress(ImportError): import xphi.watcher.receptor.bootstrap as m; phase.append(m.__name__)
+    with suppress(ImportError): import xphi.watcher.receptor.kernel as m; phase.append(m.__name__)
     if phase: structures.append(TopologicalStructure(name="phase.runtime", members=phase))
 
     watcher = []
-    with suppress(ImportError): import kernel.resonance as m; watcher.append(m.__name__)
-    with suppress(ImportError): import kernel.dphi.ledger.consensus as m; watcher.append(m.__name__)
-    with suppress(ImportError): import kernel.singularity as m; watcher.append(m.__name__)
+    with suppress(ImportError): import xphi.kernel.resonance as m; watcher.append(m.__name__)
+    with suppress(ImportError): import xphi.kernel.dphi.ledger.consensus as m; watcher.append(m.__name__)
+    with suppress(ImportError): import xphi.kernel.singularity as m; watcher.append(m.__name__)
     if watcher: structures.append(TopologicalStructure(name="watcher.kernel", members=watcher))
 
     return structures

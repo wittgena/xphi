@@ -3,10 +3,10 @@ import json
 from typing import Any, Dict, Optional, List
 from rocksdict import Rdict, Options, AccessType
 
-from kernel.bind.resolver import resolve_path
-from watcher.plane.emitter import get_emitter
-from kernel.dphi.broker import DphiBroker, DphiMethod
-from kernel.dphi.adapter.state import StateAdapter
+from xphi.kernel.bind.resolver import resolve_path
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.broker import DphiBroker, DphiMethod
+from xphi.kernel.dphi.adapter.state import StateAdapter
 
 log = get_emitter("ledger.oracle", phase="KERNEL")
 LEDGER_DB_PATH = resolve_path("ledger")

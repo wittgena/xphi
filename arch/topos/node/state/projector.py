@@ -2,10 +2,10 @@
 ## @lineage: arch.gov.state.projector
 ## @lineage: ops.tester.state.projector
 from typing import Dict, Any, Optional
-from arch.topos.node.state.vocab import NodeType, SigType, EdgeMode, SpecKey, DEFAULT_TYPE_MAP
-from arch.topos.node.state.schema import Fragment, FragmentSig, AgentAttributes
+from xphi.arch.topos.node.state.vocab import NodeType, SigType, EdgeMode, SpecKey, DEFAULT_TYPE_MAP
+from xphi.arch.topos.node.state.schema import Fragment, FragmentSig, AgentAttributes
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("state.projector")
 

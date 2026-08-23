@@ -4,9 +4,9 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 from filelock import FileLock, Timeout
-from arch.xor.bridge.git.exceptions import GitCommandError
-from arch.xor.bridge.git.utils import run_git_command
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.bridge.git.exceptions import GitCommandError
+from xphi.arch.xor.bridge.git.utils import run_git_command
+from xphi.watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)
 DEFAULT_LOCK_TIMEOUT = 30

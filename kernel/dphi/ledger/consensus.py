@@ -9,14 +9,14 @@ from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
 from rocksdict import Rdict, Options, AccessType
 
-from arch.topos.tunnel.factory import TunnelFactory
-from kernel.bind.resolver import resolve_path
-from watcher.receptor.audit.warden import AuditWarden
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.bind.resolver import resolve_path
+from xphi.watcher.receptor.audit.warden import AuditWarden
 
-from kernel.dphi.broker import DphiBroker  
-from kernel.dphi.adapter.sign import NodeSigner
-from kernel.dphi.adapter.state import StateAdapter
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.broker import DphiBroker  
+from xphi.kernel.dphi.adapter.sign import NodeSigner
+from xphi.kernel.dphi.adapter.state import StateAdapter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("kernel.ledger", phase="KERNEL")
 

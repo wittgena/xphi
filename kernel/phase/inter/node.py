@@ -7,10 +7,10 @@ from dataclasses import dataclass, field
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from enum import Enum
 
-from arch.contract.event.next import LogEvent
-from arch.contract.event.psi import PsiCarrier, PhaseField
-from watcher.plane.emitter import get_emitter
-from kernel.dphi.broker import DphiBroker, DphiMethod
+from xphi.arch.contract.event.next import LogEvent
+from xphi.arch.contract.event.psi import PsiCarrier, PhaseField
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.broker import DphiBroker, DphiMethod
 
 log = get_emitter("inter.node")
 

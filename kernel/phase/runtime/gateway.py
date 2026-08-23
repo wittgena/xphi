@@ -5,9 +5,9 @@ import sys
 import asyncio
 import subprocess
 
-from arch.topos.tunnel.factory import TunnelFactory
-from watcher.receptor.policy.router import RoutingPolicyEngine, ClusterStateMesh
-from watcher.plane.emitter import get_emitter
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.watcher.receptor.policy.router import RoutingPolicyEngine, ClusterStateMesh
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("runtime.gateway")
 

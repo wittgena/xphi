@@ -10,18 +10,18 @@ from dataclasses import asdict
 from typing import Callable, Any
 from pathlib import Path
 
-from arch.contract.event.psi import PsiEvent, PsiCarrier
-from arch.contract.event.next import next_id, LogEvent
-from arch.contract.registry.unified import registry
-from arch.contract.executor import BaseExecutor
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.contract.event.next import next_id, LogEvent
+from xphi.arch.contract.registry.unified import registry
+from xphi.arch.contract.executor import BaseExecutor
 
-from arch.topos.tunnel.factory import TunnelFactory
-from kernel.bind.resolver import get_invoker
-from kernel.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
-from kernel.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.bind.resolver import get_invoker
+from xphi.kernel.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
+from xphi.kernel.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
 
-from watcher.plane.emitter import get_emitter, flow_scope
-from watcher.plane.regulator import console_surface
+from xphi.watcher.plane.emitter import get_emitter, flow_scope
+from xphi.watcher.plane.regulator import console_surface
 
 log = get_emitter("cli.executor")
 

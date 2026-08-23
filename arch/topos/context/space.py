@@ -5,12 +5,12 @@ from pathlib import Path
 from typing import Annotated, Any
 from pydantic import BeforeValidator, Field
 
-from arch.xor.bridge.command.workspace import CommandResult, FileOperationResult
-from arch.xor.bridge.git.schema import GitChange, GitDiff
-from arch.model.surge.disc import DiscMixin
-from arch.model.surge.model import DynamicSurgeModel
+from xphi.arch.xor.bridge.command.workspace import CommandResult, FileOperationResult
+from xphi.arch.xor.bridge.git.schema import GitChange, GitDiff
+from xphi.arch.model.surge.disc import DiscMixin
+from xphi.arch.model.surge.model import DynamicSurgeModel
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)
 

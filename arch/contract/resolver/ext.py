@@ -5,7 +5,7 @@
 import json
 from pathlib import Path
 from typing import Dict, Any, Optional, Union
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("resolver.ext")
 

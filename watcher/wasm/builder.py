@@ -5,9 +5,9 @@ import json
 import time
 from pathlib import Path
 
-from kernel.bind.resolver import resolve_path
-from watcher.tracer.bound import BaseTracer
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.bind.resolver import resolve_path
+from xphi.watcher.tracer.bound import BaseTracer
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.builder")
 

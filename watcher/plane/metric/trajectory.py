@@ -4,7 +4,7 @@ import datetime
 from typing import List, Dict, Any, Callable, Optional
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from watcher.plane.metric.base import (
+from xphi.watcher.plane.metric.base import (
     trend_slope,
     acceleration,
     range_amplitude,

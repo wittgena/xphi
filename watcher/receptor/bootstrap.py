@@ -10,17 +10,17 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 from dataclasses import asdict
 
-from arch.contract.discovery import discover_modules
-from arch.topos.tunnel.factory import UniversalFacade
-from arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
-from arch.contract.event.next import next_id
+from xphi.arch.contract.discovery import discover_modules
+from xphi.arch.topos.tunnel.factory import UniversalFacade
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.contract.event.next import next_id
 
-from kernel.bind.resolver import find_current_self
-from watcher.plane.sink import TunnelSink 
-from watcher.plane.emitter import get_emitter
-from watcher.receptor.kernel import ReceptorKernel, build_system_topos
+from xphi.kernel.bind.resolver import find_current_self
+from xphi.watcher.plane.sink import TunnelSink 
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.watcher.receptor.kernel import ReceptorKernel, build_system_topos
 
-from watcher.receptor.mem.filter import (
+from xphi.watcher.receptor.mem.filter import (
     SurvivalAnchor, 
     CognitiveMembrane, 
     TunnelL0Interceptor

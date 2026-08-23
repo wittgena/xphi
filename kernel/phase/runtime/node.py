@@ -7,26 +7,26 @@ import os
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
-from arch.topos.tunnel.factory import UniversalFacade, TunnelFactory
-from arch.contract.event.psi import PsiEvent, PsiCarrier
-from arch.contract.event.tunnelbus import TunnelEventBus
-from arch.contract.event.next import next_id
-from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from arch.contract.registry.unified import registry
+from xphi.arch.topos.tunnel.factory import UniversalFacade, TunnelFactory
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.contract.event.tunnelbus import TunnelEventBus
+from xphi.arch.contract.event.next import next_id
+from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
+from xphi.arch.contract.registry.unified import registry
 
-from kernel.bind.resolver import find_current_self
-from kernel.phase.runtime.executor.swarm import SwarmExecutor
-from kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
-from kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from kernel.phase.inter.node import NodeInterpreter, AnchorFlow
-from kernel.phase.runtime.context import RuntimeContext
-from kernel.daemon.bootstrap import mount_master_layer, EventBusDaemon
-from kernel.dphi.broker import DphiBroker
+from xphi.kernel.bind.resolver import find_current_self
+from xphi.kernel.phase.runtime.executor.swarm import SwarmExecutor
+from xphi.kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
+from xphi.kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
+from xphi.kernel.phase.inter.node import NodeInterpreter, AnchorFlow
+from xphi.kernel.phase.runtime.context import RuntimeContext
+from xphi.kernel.daemon.bootstrap import mount_master_layer, EventBusDaemon
+from xphi.kernel.dphi.broker import DphiBroker
 
-from watcher.plane.sink import TunnelSink
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.sink import TunnelSink
+from xphi.watcher.plane.emitter import get_emitter
 
-from kernel.phase.runtime.worker import worker_process_entry
+from xphi.kernel.phase.runtime.worker import worker_process_entry
 
 RUNTIME_KEY = {
     "node": "runtime:node:{node_id}",

@@ -11,7 +11,7 @@ import redis.exceptions
 from redis.asyncio.connection import BlockingConnectionPool as AsyncBlockingConnectionPool
 from redis.connection import BlockingConnectionPool as SyncBlockingConnectionPool
 
-from arch.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
+from xphi.arch.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
 log = logging.getLogger("tunnel.factory")
 

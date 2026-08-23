@@ -6,7 +6,7 @@
 ## @lineage: arch.proto.projector
 from abc import ABC, abstractmethod
 from typing import Generic, TypeVar, List, Any, Optional
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("proto.projector")
 

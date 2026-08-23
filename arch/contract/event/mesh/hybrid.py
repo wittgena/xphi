@@ -4,12 +4,12 @@ import asyncio
 import json
 from typing import Callable, List, Tuple, Optional
 
-from arch.contract.event.psi import PsiEvent
-from arch.contract.event.mesh.transport import MeshP2PTransport
-from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from arch.topos.tunnel.factory import UniversalFacade
+from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.contract.event.mesh.transport import MeshP2PTransport
+from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
+from xphi.arch.topos.tunnel.factory import UniversalFacade
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("mesh.hybrid", phase="ROUTING")
 

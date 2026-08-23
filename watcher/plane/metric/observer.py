@@ -6,14 +6,14 @@ import time
 import uuid
 from typing import Dict, Any
 
-from arch.contract.event.bus import AsyncEventBus
-from arch.contract.event.psi import PsiEvent
-from arch.contract.interface import IPhaseAtor, IPhaseField
-from watcher.plane.metric.trajectory import (
+from xphi.arch.contract.event.bus import AsyncEventBus
+from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.contract.interface import IPhaseAtor, IPhaseField
+from xphi.watcher.plane.metric.trajectory import (
     Point, ContinuousTrajectory, DefaultBoundLensStrategy,
     SlidingWindowStrategy, WindowProjector
 )
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 class ToposField(IPhaseField):
     """@desc: Event-driven state evolution (Source of Truth)"""

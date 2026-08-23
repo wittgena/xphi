@@ -8,10 +8,10 @@ import re
 from pathlib import Path
 from typing import Set, List, Optional
 
-from arch.topos.tunnel.factory import UniversalFacade
-from arch.contract.event.psi import PsiType
-from kernel.bind.resolver import find_current_self, resolve_path, resolve_pattern
-from watcher.plane.emitter import get_emitter
+from xphi.arch.topos.tunnel.factory import UniversalFacade
+from xphi.arch.contract.event.psi import PsiType
+from xphi.kernel.bind.resolver import find_current_self, resolve_path, resolve_pattern
+from xphi.watcher.plane.emitter import get_emitter
 
 class SurfaceSensor:
     """

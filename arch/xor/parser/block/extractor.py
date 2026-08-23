@@ -6,12 +6,12 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from watcher.plane.emitter import get_logger
-from kernel.bind.resolver import find_current_self, resolve_path
-from arch.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
-from arch.xor.parser.lang.md import MdAstParser
-from arch.xor.parser.lang.py import PyAstParser
-from arch.xor.parser.lang.kt import KtAstParser 
+from xphi.watcher.plane.emitter import get_logger
+from xphi.kernel.bind.resolver import find_current_self, resolve_path
+from xphi.arch.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
+from xphi.arch.xor.parser.lang.md import MdAstParser
+from xphi.arch.xor.parser.lang.py import PyAstParser
+from xphi.arch.xor.parser.lang.kt import KtAstParser 
 
 log = get_logger("block.extractor")
 

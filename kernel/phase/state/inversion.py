@@ -4,9 +4,9 @@
 from __future__ import annotations
 from typing import List, Dict, Optional, Any
 
-from arch.contract.event.psi import PsiCarrier, PsiEvent
-from arch.contract.interface import ICriticalDetector, IPhaseField, IDynamicsKernel
-from arch.contract.registry.unified import registry, contract
+from xphi.arch.contract.event.psi import PsiCarrier, PsiEvent
+from xphi.arch.contract.interface import ICriticalDetector, IPhaseField, IDynamicsKernel
+from xphi.arch.contract.registry.unified import registry, contract
 
 @contract.ator("kernel.inversion", role="watcher")
 class KernelInversion(ICriticalDetector):

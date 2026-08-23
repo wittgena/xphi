@@ -6,10 +6,10 @@
 import asyncio
 from typing import Dict, Any, List, Optional, Callable, Tuple
 
-from arch.contract.event.psi import PsiEvent
-from arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from arch.topos.tunnel.factory import UniversalFacade
-from watcher.plane.emitter import get_emitter
+from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
+from xphi.arch.topos.tunnel.factory import UniversalFacade
+from xphi.watcher.plane.emitter import get_emitter
 
 class TunnelEventBus(IEventBus):
     """

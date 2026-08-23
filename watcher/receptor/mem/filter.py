@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, Callable, Set
 from dataclasses import dataclass
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("mem.filter")
 

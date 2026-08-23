@@ -7,7 +7,7 @@ import httpx
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("secret.client")
 

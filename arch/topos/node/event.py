@@ -4,7 +4,7 @@
 ## @lineage: watcher.xe.scope.event
 ## @lineage: topos.scope.flow.event
 from typing import Any, Optional
-from arch.topos.node.gan import Message
+from xphi.arch.topos.node.gan import Message
 
 class AgentConfigured(Message):
     def __init__(self, settings=None, is_proxy: bool = False):

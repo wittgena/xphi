@@ -5,10 +5,10 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
-from kernel.dphi.adapter.sign import NodeSigner
-from kernel.dphi.broker import DphiBroker
-from kernel.dphi.adapter.state import StateAdapter
-from watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.adapter.sign import NodeSigner
+from xphi.kernel.dphi.broker import DphiBroker
+from xphi.kernel.dphi.adapter.state import StateAdapter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("receptor.wasm")
 

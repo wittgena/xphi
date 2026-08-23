@@ -6,14 +6,14 @@ from dataclasses import replace
 from typing import Dict, List, Optional
 from pathlib import Path
 
-from arch.contract.event.next import LogEvent, next_phase_id
-from kernel.bind.resolver import resolve_path
+from xphi.arch.contract.event.next import LogEvent, next_phase_id
+from xphi.kernel.bind.resolver import resolve_path
 
-from kernel.phase.runtime.flow.meter import default_telemetry
-from watcher.plane.observer.event import EventObserver
-from watcher.plane.surface.tunnel import TunnelSurface
-from watcher.plane.surface.console import ConsoleSurface
-from watcher.plane.surface.file import TextFileSurface, JsonFileSurface
+from xphi.kernel.phase.runtime.flow.meter import default_telemetry
+from xphi.watcher.plane.observer.event import EventObserver
+from xphi.watcher.plane.surface.tunnel import TunnelSurface
+from xphi.watcher.plane.surface.console import ConsoleSurface
+from xphi.watcher.plane.surface.file import TextFileSurface, JsonFileSurface
 
 class PlaneRegulator:
     """@desc: Event backpressure regulator and telemetry/phase orchestrator."""

@@ -2,8 +2,8 @@
 ## @lineage: watcher.tracer.resolver.log
 import json
 from typing import List, Tuple, Dict, Any, Optional, Generic, TypeVar
-from arch.xor.parser.stream import ElasticDSLRulesetParser
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.parser.stream import ElasticDSLRulesetParser
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("resolver.log")
 

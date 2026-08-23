@@ -10,14 +10,14 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
-from arch.topos.tunnel.factory import TunnelFactory
-from arch.contract.executor import BaseExecutor
-from arch.contract.registry.unified import registry
-from arch.contract.event.next import next_id
-from arch.contract.event.psi import PsiEvent, PsiCarrier
-from kernel.bind.resolver import find_current_self
-from kernel.daemon.bootstrap import TOPIC_BUS_STREAM
-from watcher.plane.emitter import get_emitter, flow_scope
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.arch.contract.executor import BaseExecutor
+from xphi.arch.contract.registry.unified import registry
+from xphi.arch.contract.event.next import next_id
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.kernel.bind.resolver import find_current_self
+from xphi.kernel.daemon.bootstrap import TOPIC_BUS_STREAM
+from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("flow.executor")
 
@@ -161,7 +161,7 @@ def dispatch_flow_cli(command_name: str, entry_func: Callable, file_path: str):
 
     bound_args, remain = parse_local(sys.argv[1:])
     
-    from kernel.bind.resolver import get_invoker
+    from xphi.kernel.bind.resolver import get_invoker
     invoker, command = get_invoker(Path(file_path))
     
     payload = { 

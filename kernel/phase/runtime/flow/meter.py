@@ -6,7 +6,7 @@ import logging
 from collections import defaultdict, deque
 from typing import Dict, Any, List
 
-from watcher.plane.metric.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
+from xphi.watcher.plane.metric.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 log = logging.getLogger("flow.meter")
 

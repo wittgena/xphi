@@ -12,7 +12,7 @@ import ast
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
-from arch.xor.parser.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
+from xphi.arch.xor.parser.block.schema import MdDocument, MdSection, MdNode, CodeBlock, Paragraph
 
 ## Python → AST (using Python builtin ast module)
 class PyAstParser:

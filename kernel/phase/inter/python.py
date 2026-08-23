@@ -15,10 +15,10 @@ from pathlib import Path
 from typing import Any, Callable, Mapping
 from contextlib import suppress
 
-from kernel.phase.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
-from kernel.bind.resolver import find_current_self, resolve_path
-from watcher.plane.emitter import get_emitter
-from kernel.dphi.cgroup import CgroupPolicy, Tier
+from xphi.kernel.phase.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
+from xphi.kernel.bind.resolver import find_current_self, resolve_path
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.cgroup import CgroupPolicy, Tier
 
 log = get_emitter("inter.python", phase="SYSTEM")
 TIME_ROOT = resolve_path("time")

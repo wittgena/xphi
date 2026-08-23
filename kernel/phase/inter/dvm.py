@@ -13,12 +13,12 @@ try:
 except ImportError:
     wasmtime = None
 
-from kernel.phase.inter.protocol import ExecutionError, ExecutionResult
-from kernel.bind.resolver import resolve_path
-from kernel.dphi.cgroup import WasmCgroup, CgroupPolicy, Tier
-from kernel.phase.inter.wasm import WasmInterpreter
+from xphi.kernel.phase.inter.protocol import ExecutionError, ExecutionResult
+from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.dphi.cgroup import WasmCgroup, CgroupPolicy, Tier
+from xphi.kernel.phase.inter.wasm import WasmInterpreter
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 TIME_ROOT = resolve_path("time")
 log = get_emitter("inter.dvm", phase="SYSTEM")
@@ -146,7 +146,7 @@ class DvmInterpreter:
                         state_snapshot = payload.get("state_snapshot") or {}
                         
                         try:
-                            from kernel.phase.inter.cosm import CosmWasmInterpreter
+                            from xphi.kernel.phase.inter.cosm import CosmWasmInterpreter
                             with CosmWasmInterpreter(wasm_module_name=wasm_file, policy=self.policy, initial_state=state_snapshot) as cosm_sandbox:
                                 res = cosm_sandbox.execute(env_data, info_data, msg_data)
                                 

@@ -8,9 +8,9 @@ import json
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 
-from kernel.phase.state.spec import TransRule, NodeType
-from kernel.dphi.ledger.consensus import KernelLedger
-from arch.xor.stream.schema import (
+from xphi.kernel.phase.state.spec import TransRule, NodeType
+from xphi.kernel.dphi.ledger.consensus import KernelLedger
+from xphi.arch.xor.stream.schema import (
     LogicStream, 
     StreamMetadata, 
     StreamIdentity, 
@@ -18,10 +18,10 @@ from arch.xor.stream.schema import (
     ActionIntent, 
     ProtocolSource
 )
-from watcher.receptor.audit.warden import AuditWarden
-from watcher.receptor.policy.gateway import ToposGateway
-from watcher.receptor.contract.model import LogstEvent
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.receptor.audit.warden import AuditWarden
+from xphi.watcher.receptor.policy.gateway import ToposGateway
+from xphi.watcher.receptor.contract.model import LogstEvent
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("log.store", phase="INGRESS")
 _gateway_instance = ToposGateway()

@@ -4,14 +4,14 @@ import json
 import asyncio
 from typing import Tuple, Dict, Type, Any
 
-from watcher.wasm.auditor import CanonicalProofAuditor
+from xphi.watcher.wasm.auditor import CanonicalProofAuditor
 
-from arch.topos.tunnel.factory import TunnelFactory
-from kernel.bind.resolver import resolve_path
-from kernel.daemon.task.supervisor import TaskSupervisor
-from kernel.daemon.task.wasm import TaskWasm
-from kernel.dphi.broker import DphiBroker
-from watcher.plane.emitter import get_emitter, flow_scope
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.daemon.task.supervisor import TaskSupervisor
+from xphi.kernel.daemon.task.wasm import TaskWasm
+from xphi.kernel.dphi.broker import DphiBroker
+from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("wasm.tester")
 

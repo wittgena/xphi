@@ -5,11 +5,11 @@ import json
 import asyncio
 from typing import List, Dict, Optional, Any
 
-from arch.contract.event.psi import PsiEvent
-from arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
-from arch.contract.executor import BaseExecutor
-from arch.contract.registry.unified import registry
-from kernel.phase.runtime.flow.cont import XeCont
+from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id 
+from xphi.arch.contract.executor import BaseExecutor
+from xphi.arch.contract.registry.unified import registry
+from xphi.kernel.phase.runtime.flow.cont import XeCont
 
 class SystemBuilder:
     """

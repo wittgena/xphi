@@ -4,10 +4,10 @@
 import json
 from typing import List, Dict, Any
 
-from arch.topos.node.state.vocab import NodeType, EdgeMode, SigType 
-from arch.topos.node.state.schema import Fragment, FragmentSig, AgentAttributes, EdgeRelation
+from xphi.arch.topos.node.state.vocab import NodeType, EdgeMode, SigType 
+from xphi.arch.topos.node.state.schema import Fragment, FragmentSig, AgentAttributes, EdgeRelation
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("state.compiler")
 

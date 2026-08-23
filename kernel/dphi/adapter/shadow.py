@@ -8,8 +8,8 @@ from typing import Any, Dict, List, Optional
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from arch.model.surge.model import DynamicSurgeModel
-from watcher.plane.emitter import get_emitter
+from xphi.arch.model.surge.model import DynamicSurgeModel
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.shadow")
 

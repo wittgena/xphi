@@ -20,8 +20,8 @@ from pydantic import (
 )
 from pydantic.json_schema import JsonSchemaValue
 from pydantic_core import CoreSchema
-from arch.model.surge.model import SurgeBaseModel
-from watcher.plane.emitter import get_emitter
+from xphi.arch.model.surge.model import SurgeBaseModel
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
 _thread_local = threading.local()

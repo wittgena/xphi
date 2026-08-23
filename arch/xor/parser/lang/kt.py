@@ -10,7 +10,7 @@
 import re
 from pathlib import Path
 from typing import List, Tuple
-from arch.xor.parser.block.schema import MdDocument, MdSection, CodeBlock, Paragraph, Contract
+from xphi.arch.xor.parser.block.schema import MdDocument, MdSection, CodeBlock, Paragraph, Contract
 
 class KtAstParser:
     def __init__(self, path: Path, contracts: List[Contract] = None):

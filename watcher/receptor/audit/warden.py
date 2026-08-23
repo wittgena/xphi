@@ -7,7 +7,7 @@ import threading
 import traceback
 from typing import Set, Tuple, Any, Dict, Callable, Optional
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("audit.warden", phase="KERNEL")
 

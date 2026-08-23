@@ -16,7 +16,7 @@ import uuid
 import enum
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple
-from watcher.plane.emitter import get_logger
+from xphi.watcher.plane.emitter import get_logger
 
 log = get_logger("phase.flow")
 

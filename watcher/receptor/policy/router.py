@@ -8,8 +8,8 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional, Dict, AsyncGenerator
 
-from arch.topos.tunnel.factory import UniversalFacade
-from watcher.plane.emitter import get_emitter
+from xphi.arch.topos.tunnel.factory import UniversalFacade
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("surface.mesh")
 

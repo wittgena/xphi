@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, Callable, Awaitable, List, Tuple
 from contextlib import suppress
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("daemon.base")
 

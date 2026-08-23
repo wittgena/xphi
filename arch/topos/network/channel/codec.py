@@ -1,8 +1,8 @@
 # arch.topos.network.channel.codec
 import json
 from typing import Any
-from arch.topos.network.channel.pipeline import DuplexChannel, ChannelContext
-from watcher.plane.emitter import get_emitter
+from xphi.arch.topos.network.channel.pipeline import DuplexChannel, ChannelContext
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("channel.codec")
 

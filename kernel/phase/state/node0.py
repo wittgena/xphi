@@ -7,14 +7,14 @@ from typing import List, AsyncIterator, Dict, Any, Tuple
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 
-from arch.contract.event.psi import PsiCarrier
-from arch.topos.tunnel.factory import UniversalFacade
+from xphi.arch.contract.event.psi import PsiCarrier
+from xphi.arch.topos.tunnel.factory import UniversalFacade
 
-from kernel.phase.inter.node import NodeInterpreter, AnchoredIR, AnchorFlow
-from kernel.dphi.broker import DphiMethod
-from kernel.dphi.adapter.state import StateAdapter
+from xphi.kernel.phase.inter.node import NodeInterpreter, AnchoredIR, AnchorFlow
+from xphi.kernel.dphi.broker import DphiMethod
+from xphi.kernel.dphi.adapter.state import StateAdapter
 
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("state.node0")
 

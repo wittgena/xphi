@@ -5,11 +5,11 @@ import asyncio
 from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
 
-from kernel.dphi.broker import DphiBroker
-from kernel.dphi.adapter.sign import LedgerAuthAdapter
-from kernel.dphi.adapter.state import StateAdapter
-from watcher.plane.emitter import get_emitter
-from kernel.dphi.ledger.consensus import KernelLedger, ToposBlob
+from xphi.kernel.dphi.broker import DphiBroker
+from xphi.kernel.dphi.adapter.sign import LedgerAuthAdapter
+from xphi.kernel.dphi.adapter.state import StateAdapter
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.ledger.consensus import KernelLedger, ToposBlob
 
 log = get_emitter("kernel.protocol", phase="KERNEL")
 
@@ -187,7 +187,7 @@ async def anchor_commit(
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")
         
-        from kernel.dphi.ledger.consensus import KernelCommit, LedgerRole
+        from xphi.kernel.dphi.ledger.consensus import KernelCommit, LedgerRole
         from dataclasses import asdict
         
         commit_obj = KernelCommit(**kernel_commit_data)

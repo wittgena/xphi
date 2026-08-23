@@ -13,8 +13,8 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from filelock import FileLock, Timeout
 
-from watcher.plane.emitter import get_logger
-from watcher.plane.observer.span import observe
+from xphi.watcher.plane.emitter import get_logger
+from xphi.watcher.plane.observer.span import observe
 
 logger = get_logger(__name__)
 

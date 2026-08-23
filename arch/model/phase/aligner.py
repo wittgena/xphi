@@ -7,7 +7,7 @@ import abc
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Callable
 from collections import defaultdict
-from watcher.plane.emitter import get_emitter, flow_scope
+from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 AlignRecord = Dict[str, Any]
 

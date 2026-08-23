@@ -6,9 +6,9 @@ import subprocess
 import requests
 import json
 
-from arch.contract.model.resonance import BridgeEvent
-from arch.model.phase.gate import uuid4
-from watcher.plane.emitter import get_emitter
+from xphi.arch.contract.model.resonance import BridgeEvent
+from xphi.arch.model.phase.gate import uuid4
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter('local.engine')
 MODEL_HF = os.getenv("LLAMA_MODEL_HF", "ggml-org/gemma-3-1b-it-GGUF")

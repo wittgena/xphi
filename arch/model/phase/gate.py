@@ -2,7 +2,7 @@
 ## @lineage: arch.contract.gov.gate
 import uuid as _std_uuid
 import random
-from arch.contract.event.next import generator
+from xphi.arch.contract.event.next import generator
 
 uuid = _std_uuid
 

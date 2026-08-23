@@ -8,9 +8,9 @@ from typing import TypeVar, Optional, Any, List
 from pydantic import ConfigDict, BaseModel
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
-from arch.contract.event.next import next_id
-from arch.topos.tunnel.factory import UniversalFacade 
-from watcher.plane.emitter import get_emitter
+from xphi.arch.contract.event.next import next_id
+from xphi.arch.topos.tunnel.factory import UniversalFacade 
+from xphi.watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)
 

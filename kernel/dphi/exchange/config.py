@@ -2,7 +2,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Dict
-from kernel.dphi.cgroup import Tier
+from xphi.kernel.dphi.cgroup import Tier
 
 class TierPolicySettings(BaseSettings):
     """[Layer 1: Infrastructure] 실행 환경 논리 자원 통제 설정 (기존과 동일)"""

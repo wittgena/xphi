@@ -4,8 +4,8 @@ import re
 import orjson
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional, Generic, TypeVar
-from arch.xor.secret.redact import redact_string, sanitize_payload
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.secret.redact import redact_string, sanitize_payload
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("parser.ruleset")
 
@@ -102,7 +102,7 @@ class AuditRulesetParser(AbstractRulesetParser[CompiledEngine[bytes, bytes]]):
 
 import re
 from typing import List, Dict, Any, Tuple
-from arch.xor.parser.ruleset import CompiledEngine, AbstractRulesetParser
+from xphi.arch.xor.parser.ruleset import CompiledEngine, AbstractRulesetParser
 
 class FastLifecycleEngine(CompiledEngine[str, List[str]]):
     """@desc: C 레벨 정규식으로 컴파일된 패턴을 활용해 O(1)에 가까운 속도로 스트림을 분류합니다."""

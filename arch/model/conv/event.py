@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING, ClassVar, Literal
 from pydantic import ConfigDict, Field
 from rich.text import Text
 
-from arch.model.message import ImageContent, Message, TextContent
-from arch.model.surge.disc import DiscMixin
-from arch.contract.event.next import ToposId, next_id
+from xphi.arch.model.message import ImageContent, Message, TextContent
+from xphi.arch.model.surge.disc import DiscMixin
+from xphi.arch.contract.event.next import ToposId, next_id
 
 N_CHAR_PREVIEW = 500
 

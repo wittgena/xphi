@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Callable
 import typer
 from typer.main import get_command
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("parser.snippet")
 

@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from typing import Callable, List, Optional
-from arch.topos.network.channel.pipeline import ChannelPipeline, ChannelContext, DuplexChannel
+from xphi.arch.topos.network.channel.pipeline import ChannelPipeline, ChannelContext, DuplexChannel
 
 log = logging.getLogger("protocol.factory")
 

@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol, Callable, Tuple
 from fastapi import APIRouter
 
-from arch.contract.event.psi import PsiEvent
+from xphi.arch.contract.event.psi import PsiEvent
 
 class IPhaseField(ABC):
     """Φ-field: shared phase space where system tension accumulates"""

@@ -5,9 +5,9 @@ import operator
 from collections.abc import Iterator, Sequence
 from typing import SupportsIndex, overload
 
-from arch.model.conv.event import Event, EventID
-from arch.xor.stream.store.file import FileStore
-from watcher.plane.emitter import get_logger
+from xphi.arch.model.conv.event import Event, EventID
+from xphi.arch.xor.stream.store.file import FileStore
+from xphi.watcher.plane.emitter import get_logger
 
 logger = get_logger(__name__)
 

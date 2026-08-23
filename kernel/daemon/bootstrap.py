@@ -7,18 +7,18 @@ from typing import Optional, Callable, Awaitable, List, Tuple
 from contextlib import suppress
 from types import SimpleNamespace
 
-from arch.topos.tunnel.factory import UniversalFacade
-from arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
-from arch.contract.event.bus import AsyncEventBus
-from arch.contract.event.next import next_id
-from arch.contract.registry.unified import registry
+from xphi.arch.topos.tunnel.factory import UniversalFacade
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.contract.event.bus import AsyncEventBus
+from xphi.arch.contract.event.next import next_id
+from xphi.arch.contract.registry.unified import registry
 
-from kernel.daemon.base import AbstractDaemon
-from kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from kernel.phase.runtime.context import RuntimeContext
-from kernel.phase.runtime.sensor import SurfaceSensor
-from watcher.plane.emitter import get_emitter
-from kernel.phase.runtime.flow.cont import LoopCarrier, DynamicsXe
+from xphi.kernel.daemon.base import AbstractDaemon
+from xphi.kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
+from xphi.kernel.phase.runtime.context import RuntimeContext
+from xphi.kernel.phase.runtime.sensor import SurfaceSensor
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.kernel.phase.runtime.flow.cont import LoopCarrier, DynamicsXe
 
 log = get_emitter("daemon.bootstrap")
 SENSOR_INTERVAL = 1.0
@@ -250,7 +250,7 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
         supervisor.mount_daemon(daemon)
 
     try:
-        from kernel.daemon.task.wasm import TaskWasm
+        from xphi.kernel.daemon.task.wasm import TaskWasm
         wasm_daemon = TaskWasm(tunnel=ctx.tunnel, supervisor=supervisor)
         wasm_daemon.concurrency_limit = worker_capacity
         supervisor.mount_daemon(wasm_daemon)

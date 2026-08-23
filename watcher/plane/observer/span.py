@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from typing import Any
 from dotenv import dotenv_values
 
-from watcher.plane.emitter import get_emitter, flow_scope
+from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 logger = get_emitter(__name__, phase="SYSTEM")
 

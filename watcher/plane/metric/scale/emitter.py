@@ -5,11 +5,11 @@ import math
 import uuid
 from typing import Dict, Any, List, Optional
 
-from arch.contract.event.psi import PsiEvent, PsiCarrier
-from arch.contract.interface import IPhaseAtor, IPhaseField
-from arch.contract.event.bus import AsyncEventBus
-from arch.contract.registry.unified import contract
-from watcher.plane.emitter import get_emitter
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.contract.interface import IPhaseAtor, IPhaseField
+from xphi.arch.contract.event.bus import AsyncEventBus
+from xphi.arch.contract.registry.unified import contract
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("scale.emitter")
 

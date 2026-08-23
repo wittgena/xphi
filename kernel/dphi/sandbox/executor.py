@@ -5,11 +5,11 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol
 from enum import Enum
 
-from arch.xor.parser.block.contract import Contract, CoherenceState
-from arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
-from kernel.dphi.broker import DphiBroker, DphiMethod
-from watcher.plane.emitter import get_emitter
-from kernel.dphi.cgroup import Tier
+from xphi.arch.xor.parser.block.contract import Contract, CoherenceState
+from xphi.arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
+from xphi.kernel.dphi.broker import DphiBroker, DphiMethod
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.kernel.dphi.cgroup import Tier
 
 log = get_emitter("sandbox.executor")
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from typing import Dict, Set, Optional, Callable, Awaitable
 import zenoh
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("mesh.transport")
 

@@ -2,7 +2,7 @@
 import asyncio
 import logging
 from typing import Any, List, Optional, Dict
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("channel.pipeline")
 

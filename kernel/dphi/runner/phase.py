@@ -11,13 +11,13 @@ import httpx
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from arch.xor.parser.block.contract import Contract, CoherenceState
-from kernel.dphi.sandbox.executor import SandboxExecutor, TaskContext, EffectResolver
-from kernel.dphi.broker import DphiBroker
-from kernel.dphi.adapter.state import StateAdapter
-from kernel.dphi.ledger.consensus import KernelLedger, KernelCommit
-from kernel.dphi.method import DphiMethod
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.parser.block.contract import Contract, CoherenceState
+from xphi.kernel.dphi.sandbox.executor import SandboxExecutor, TaskContext, EffectResolver
+from xphi.kernel.dphi.broker import DphiBroker
+from xphi.kernel.dphi.adapter.state import StateAdapter
+from xphi.kernel.dphi.ledger.consensus import KernelLedger, KernelCommit
+from xphi.kernel.dphi.method import DphiMethod
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("phase.runner")
 

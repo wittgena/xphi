@@ -12,7 +12,7 @@
 ## @lineage: atoa.mesh.residue.truncate
 import hashlib
 from pathlib import Path
-from watcher.plane.emitter import get_logger
+from xphi.watcher.plane.emitter import get_logger
 
 logger = get_logger(__name__)
 

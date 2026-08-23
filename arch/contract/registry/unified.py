@@ -10,7 +10,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 try:
-    from arch.contract.protocol import Proto
+    from xphi.arch.contract.protocol import Proto
 except ImportError:
     Proto = Any
 

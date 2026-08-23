@@ -4,16 +4,16 @@ import sys
 import os
 import importlib
 
-from arch.topos.tunnel.factory import TunnelFactory
-from arch.contract.event.tunnelbus import TunnelEventBus
-from kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from kernel.phase.runtime.context import RuntimeContext
-from kernel.daemon.bootstrap import mount_worker_layer
-from arch.contract.event.psi import PsiEvent
-from kernel.bind.resolver import find_current_self
-from watcher.plane.emitter import get_emitter
-from watcher.plane.sink import TunnelSink
-from kernel.phase.runtime.sensor import SurfaceActuator
+from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.arch.contract.event.tunnelbus import TunnelEventBus
+from xphi.kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
+from xphi.kernel.phase.runtime.context import RuntimeContext
+from xphi.kernel.daemon.bootstrap import mount_worker_layer
+from xphi.arch.contract.event.psi import PsiEvent
+from xphi.kernel.bind.resolver import find_current_self
+from xphi.watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.sink import TunnelSink
+from xphi.kernel.phase.runtime.sensor import SurfaceActuator
 
 def worker_process_entry(master_id: str, worker_idx: int):
     asyncio.run(_run_worker_loop(master_id, worker_idx))

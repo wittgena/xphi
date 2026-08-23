@@ -5,9 +5,9 @@ import struct
 import json
 from typing import Union, Any, Dict, List
 
-from arch.contract.event.next import next_id
-from watcher.tracer.bound import BaseStreamAuditor, BaseBoundary
-from watcher.plane.emitter import get_emitter
+from xphi.arch.contract.event.next import next_id
+from xphi.watcher.tracer.bound import BaseStreamAuditor, BaseBoundary
+from xphi.watcher.plane.emitter import get_emitter
 
 class WasmTelemetryAuditor(BaseStreamAuditor):
     def __init__(self, interpreter, boundary: Union[BaseBoundary, Any]):

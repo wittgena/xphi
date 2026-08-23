@@ -7,9 +7,9 @@ import traceback
 import httpx
 from typing import Optional, Union, Dict, Tuple
 
-from arch.xor.secret.client import get_secret_from_vendor
-from arch.model.config import config
-from watcher.plane.emitter import get_emitter
+from xphi.arch.xor.secret.client import get_secret_from_vendor
+from xphi.arch.model.config import config
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("secret.manager")
 

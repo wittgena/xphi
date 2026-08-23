@@ -4,7 +4,7 @@
 """
 import asyncio
 from typing import Optional, Set
-from watcher.plane.emitter import get_emitter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("node.gan")
 

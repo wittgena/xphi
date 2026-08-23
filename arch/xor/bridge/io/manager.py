@@ -4,11 +4,11 @@ import asyncio
 import logging
 from typing import Dict, Optional
 
-from arch.xor.stream.conv import LogStore, BASE_STATE, EVENTS_DIR
-from arch.xor.secret.validator import Cipher
-from arch.xor.stream.store.file import LocalFileStore
-from arch.xor.stream.store.memfile import InMemoryFileStore
-from arch.xor.stream.store.file import FileStore
+from xphi.arch.xor.stream.conv import LogStore, BASE_STATE, EVENTS_DIR
+from xphi.arch.xor.secret.validator import Cipher
+from xphi.arch.xor.stream.store.file import LocalFileStore
+from xphi.arch.xor.stream.store.memfile import InMemoryFileStore
+from xphi.arch.xor.stream.store.file import FileStore
 
 log = logging.getLogger(__name__)
 
