@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.scripts]
-anchor-bind = "brane.anchor.bind.around:run_around"
+anchor-bind = "kernel.bind.around:run_around"
 
 [tool.hatch.build.targets.wheel]
 packages = ["xphi"]
