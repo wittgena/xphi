@@ -1,6 +1,4 @@
 # watcher.ingress.middleware
-## @lineage: dphi.receptor.ingress.server.middleware
-## @lineage: receptor.ingress.server.middleware
 import hashlib
 import os
 import time

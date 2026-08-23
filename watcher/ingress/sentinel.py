@@ -1,6 +1,4 @@
 # watcher.ingress.sentinel
-## @lineage: dphi.receptor.ingress.sentinel
-## @lineage: receptor.ingress.sentinel
 import asyncio
 import json
 import random

@@ -1,6 +1,4 @@
 # watcher.ingress.pypi
-## @lineage: dphi.receptor.ingress.server.pypi
-## @lineage: receptor.ingress.server.pypi
 import asyncio
 import datetime
 import hashlib

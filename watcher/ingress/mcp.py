@@ -1,6 +1,4 @@
 # watcher.ingress.mcp
-## @lineage: dphi.receptor.ingress.server.mcp
-## @lineage: receptor.ingress.server.mcp
 import inspect
 import json
 from typing import Any, Optional, List
@@ -32,9 +30,6 @@ class SentinelFirewallMiddleware:
             return await self.app(scope, receive, send)
 
         headers = dict(scope.get("headers", []))
-        
-        # [FIX 1] Chunked Encoding 차단 (Middleware Bypass 방어)
-        # Transfer-Encoding: chunked를 악용한 OOM 우회 공격을 원천 차단합니다.
         if b"chunked" in headers.get(b"transfer-encoding", b""):
             response = JSONResponse({"detail": "Chunked encoding not permitted by Membrane"}, status_code=411)
             return await response(scope, receive, send)
@@ -60,10 +55,7 @@ class FastAPIMCPAdapter:
         self.app = fastapi_app
 
     def register_routes(self, allowed_tags: List[str]):
-        # [FIX 2] Over-projection 방어: Blacklist -> Whitelist 구조로 변경
-        # 개발자가 명시적으로 'mcp-exposed' 태그를 부여한 안전한 라우트만 도구로 변환합니다.
         registered_count = 0
-
         for route in self.app.routes:
             if not isinstance(route, APIRoute):
                 continue
