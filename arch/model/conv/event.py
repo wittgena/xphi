@@ -1,5 +1,4 @@
 # arch.model.conv.event
-## @lineage: agent.loop.conv.event
 import __future__
 import uuid
 from abc import ABC, abstractmethod
@@ -53,7 +52,6 @@ class Event(DiscMixin, ABC):
             f"source='{self.source}', timestamp='{self.timestamp}')"
         )
 
-
 class LLMConvertibleEvent(Event, ABC):
     @abstractmethod
     def to_llm_message(self) -> Message:
@@ -81,48 +79,3 @@ class LLMConvertibleEvent(Event, ABC):
                 return f"{base_str}\n  {llm_message.role}: [no text content]"
         except Exception:
             return base_str
-
-    @staticmethod
-    def events_to_messages(events: list["LLMConvertibleEvent"]) -> list[Message]:
-        from agent.llm.driver.event.action import ActionEvent
-        messages = []
-        i = 0
-
-        while i < len(events):
-            event = events[i]
-            if isinstance(event, ActionEvent):
-                batch_events: list[ActionEvent] = [event]
-                response_id = event.llm_response_id
-
-                j = i + 1
-                while j < len(events) and isinstance(events[j], ActionEvent):
-                    event = events[j]
-                    assert isinstance(event, ActionEvent)  # for type checker
-                    if event.llm_response_id != response_id:
-                        break
-                    batch_events.append(event)
-                    j += 1
-
-                messages.append(_combine_action_events(batch_events))
-                i = j
-            else:
-                messages.append(event.to_llm_message())
-                i += 1
-        return messages
-
-
-def _combine_action_events(events: list["ActionEvent"]) -> Message:
-    if len(events) == 1:
-        return events[0].to_llm_message()
-    for e in events[1:]:
-        assert len(e.thought) == 0, (
-            "Expected empty thought for multi-action events after the first one"
-        )
-
-    return Message(
-        role="assistant",
-        content=events[0].thought,  # Shared thought content only in the first event
-        tool_calls=[event.tool_call for event in events],
-        reasoning_content=events[0].reasoning_content,  # Shared reasoning content
-        thinking_blocks=events[0].thinking_blocks,  # Shared thinking blocks
-    )
