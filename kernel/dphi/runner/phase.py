@@ -1,5 +1,4 @@
 # kernel.dphi.runner.phase
-## @lineage: kernel.phase.runner
 import asyncio
 import time
 import hashlib
