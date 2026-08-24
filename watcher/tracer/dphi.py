@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Tuple, Optional
 from dataclasses import asdict
 
-from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.kernel.phase.inter.wasm import WasmInterpreter
 from xphi.kernel.dphi.adapter.sign import LedgerAuthAdapter
 from xphi.kernel.dphi.cgroup import CgroupPolicy

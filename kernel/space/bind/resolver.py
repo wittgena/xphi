@@ -1,4 +1,5 @@
-# kernel.bind.resolver
+# kernel.space.bind.resolver
+## @lineage: kernel.bind.resolver
 ## @lineage: kernel.phase.bind.resolver
 ## @lineage: phase.bind.resolver
 import os
@@ -47,7 +48,7 @@ def _get_around_context() -> tuple[str, dict]:
         import bind.around as around_mod
     except ImportError:
         try:
-            import xphi.kernel.bind.around as around_mod
+            import xphi.kernel.space.bind.around as around_mod
         except ImportError as e:
             raise RuntimeError(f"Critical dependency missing: 'around' module not found. ({e})")
     

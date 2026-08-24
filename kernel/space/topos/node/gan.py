@@ -1,4 +1,5 @@
-# arch.topos.node.gan
+# kernel.space.topos.node.gan
+## @lineage: arch.topos.node.gan
 """
 @desc: Foundational Actor model defining structural topology, message bubbling, and deterministic lifecycle management
 """

@@ -1,8 +1,9 @@
-# arch.topos.network.bridge
+# kernel.space.topos.network.bridge
+## @lineage: arch.topos.network.bridge
 import uuid
 import asyncio
 from typing import Any
-from xphi.arch.topos.network.channel.pipeline import DuplexChannel, ChannelContext
+from xphi.kernel.space.topos.network.channel.pipeline import DuplexChannel, ChannelContext
 from xphi.watcher.plane.emitter import flow_scope, get_emitter
 
 log = get_emitter("rpc.bridge")

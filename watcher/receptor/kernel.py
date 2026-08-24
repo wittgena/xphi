@@ -37,12 +37,12 @@ def build_system_topos() -> List[TopologicalStructure]:
     
     arch = []
     with suppress(ImportError): import xphi.arch.model.sensor as m; arch.append(m.__name__)
-    with suppress(ImportError): import xphi.arch.topos.tunnel.surface as m; arch.append(m.__name__)
-    with suppress(ImportError): import xphi.arch.topos.tunnel.factory as m; arch.append(m.__name__)
+    with suppress(ImportError): import xphi.kernel.space.topos.tunnel.surface as m; arch.append(m.__name__)
+    with suppress(ImportError): import xphi.kernel.space.topos.tunnel.factory as m; arch.append(m.__name__)
     if arch: structures.append(TopologicalStructure(name="arch.topos", members=arch))
 
     phase = []
-    with suppress(ImportError): import xphi.kernel.bind.resolver as m; phase.append(m.__name__)
+    with suppress(ImportError): import xphi.kernel.space.bind.resolver as m; phase.append(m.__name__)
     with suppress(ImportError): import xphi.watcher.receptor.bootstrap as m; phase.append(m.__name__)
     with suppress(ImportError): import xphi.watcher.receptor.kernel as m; phase.append(m.__name__)
     if phase: structures.append(TopologicalStructure(name="phase.runtime", members=phase))

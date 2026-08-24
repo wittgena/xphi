@@ -6,7 +6,7 @@ import os
 import traceback
 from pathlib import Path
 from typing import Optional, Set
-from xphi.kernel.bind.resolver import load_bound, find_current_self
+from xphi.kernel.space.bind.resolver import load_bound, find_current_self
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("contract.discovery")

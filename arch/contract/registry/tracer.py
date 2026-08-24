@@ -1,6 +1,6 @@
 # arch.contract.registry.tracer
 ## @lineage: watcher.tracer.registry
-from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.space.bind.resolver import resolve_path
 
 class TracerRegistry:
     _RULESET_RUSTC_OOM = {

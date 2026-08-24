@@ -5,7 +5,7 @@ import json
 import time
 from pathlib import Path
 
-from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.tracer.bound import BaseTracer
 from xphi.watcher.plane.emitter import get_emitter
 

@@ -1,4 +1,5 @@
-# arch.topos.tunnel.factory
+# kernel.space.topos.tunnel.factory
+## @lineage: arch.topos.tunnel.factory
 import logging
 import asyncio
 from typing import Optional, Any, List, Tuple
@@ -9,7 +10,7 @@ import redis.exceptions
 from redis.asyncio.connection import BlockingConnectionPool as AsyncBlockingConnectionPool
 from redis.connection import BlockingConnectionPool as SyncBlockingConnectionPool
 
-from xphi.arch.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
+from xphi.kernel.space.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
 log = logging.getLogger("tunnel.factory")
 

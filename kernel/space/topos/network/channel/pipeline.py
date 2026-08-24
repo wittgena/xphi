@@ -1,4 +1,5 @@
-# arch.topos.network.channel.pipeline
+# kernel.space.topos.network.channel.pipeline
+## @lineage: arch.topos.network.channel.pipeline
 import asyncio
 import logging
 from typing import Any, List, Optional, Dict

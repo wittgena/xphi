@@ -5,7 +5,7 @@ import sys
 import asyncio
 import subprocess
 
-from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.watcher.receptor.policy.router import RoutingPolicyEngine, ClusterStateMesh
 from xphi.watcher.plane.emitter import get_emitter
 

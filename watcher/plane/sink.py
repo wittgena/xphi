@@ -5,7 +5,7 @@ import json
 import aiohttp
 from abc import ABC, abstractmethod
 from typing import AsyncGenerator, Optional
-from xphi.arch.topos.tunnel.factory import UniversalFacade, from_url as tunnel_from_url
+from xphi.kernel.space.topos.tunnel.factory import UniversalFacade, from_url as tunnel_from_url
 
 class EmitterSink(ABC):
     @abstractmethod

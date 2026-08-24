@@ -16,7 +16,7 @@ from typing import Any, Callable, Mapping
 from contextlib import suppress
 
 from xphi.kernel.phase.inter.protocol import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
-from xphi.kernel.bind.resolver import find_current_self, resolve_path
+from xphi.kernel.space.bind.resolver import find_current_self, resolve_path
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.kernel.dphi.cgroup import CgroupPolicy, Tier
 

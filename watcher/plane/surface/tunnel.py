@@ -30,7 +30,7 @@ class TunnelSurface(EventObserver):
 
     def _publish_worker(self):
         """백그라운드에서 동작하며, 설정된 버퍼 규칙에 따라 Redis Pipeline으로 로그를 묶어 전송합니다."""
-        from xphi.arch.topos.tunnel.factory import TunnelFactory
+        from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
         tunnel = None
         
         while True:

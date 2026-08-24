@@ -1,4 +1,5 @@
-# kernel.bind.around
+# kernel.space.bind.around
+## @lineage: kernel.bind.around
 import os
 import sys
 import shutil
@@ -44,7 +45,7 @@ DEFAULT_BOUND_SKELETON = {
         "log": ":io:/log",
         "ailog": ":io:/ailog",
         "sandbox": ":workspace:",
-        "time": ":watcher:/dphi/time",
+        "time": ":kernel:/space/time",
         "surface": ":io:/surface",
         "contract": ":contract:",
         "spec": ":contract:/spec",

@@ -1,4 +1,5 @@
-# arch.topos.node.state.vocab
+# kernel.space.topos.node.state.vocab
+## @lineage: arch.topos.node.state.vocab
 ## @lineage: arch.gov.state.vocab
 ## @lineage: ops.tester.state.vocab
 from enum import Enum

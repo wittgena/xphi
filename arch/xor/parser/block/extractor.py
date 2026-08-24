@@ -7,7 +7,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Union, Dict
 from xphi.watcher.plane.emitter import get_logger
-from xphi.kernel.bind.resolver import find_current_self, resolve_path
+from xphi.kernel.space.bind.resolver import find_current_self, resolve_path
 from xphi.arch.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
 from xphi.arch.xor.parser.lang.md import MdAstParser
 from xphi.arch.xor.parser.lang.py import PyAstParser

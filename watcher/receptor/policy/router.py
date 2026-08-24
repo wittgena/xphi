@@ -8,7 +8,7 @@ from enum import Enum
 from dataclasses import dataclass, field
 from typing import Optional, Dict, AsyncGenerator
 
-from xphi.arch.topos.tunnel.factory import UniversalFacade
+from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("surface.mesh")

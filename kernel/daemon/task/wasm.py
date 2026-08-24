@@ -9,7 +9,7 @@ from typing import Optional
 from contextlib import suppress
 
 from xphi.kernel.daemon.base import AbstractDaemon
-from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.kernel.dphi.cgroup import CgroupPolicy
 from xphi.kernel.dphi.method import DphiMethod

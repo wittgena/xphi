@@ -7,14 +7,14 @@ import os
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
-from xphi.arch.topos.tunnel.factory import UniversalFacade, TunnelFactory
+from xphi.kernel.space.topos.tunnel.factory import UniversalFacade, TunnelFactory
 from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
 from xphi.arch.contract.event.tunnelbus import TunnelEventBus
 from xphi.arch.contract.event.next import next_id
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.arch.contract.registry.unified import registry
 
-from xphi.kernel.bind.resolver import find_current_self
+from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.kernel.phase.runtime.executor.swarm import SwarmExecutor
 from xphi.kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from xphi.kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher

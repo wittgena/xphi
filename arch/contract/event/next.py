@@ -5,7 +5,7 @@ import threading
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, Annotated, Tuple
-from xphi.kernel.bind.resolver import resolve_identity
+from xphi.kernel.space.bind.resolver import resolve_identity
 from datetime import UTC, datetime
 from pydantic import Field
 

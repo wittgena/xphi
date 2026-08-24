@@ -1,12 +1,11 @@
-# kernel.bind.redirector
-## @lineage: kernel.phase.bind.redirector
-## @lineage: phase.bind.redirector
+# kernel.space.bind.redirector
+## @lineage: kernel.bind.redirector
 import sys
 import types
 import importlib.util
 from pathlib import Path
 from typing import Optional, Union
-from xphi.kernel.bind.resolver import find_current_self
+from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("bind.redirector")

@@ -15,8 +15,8 @@ from xphi.arch.contract.event.next import next_id, LogEvent
 from xphi.arch.contract.registry.unified import registry
 from xphi.arch.contract.executor import BaseExecutor
 
-from xphi.arch.topos.tunnel.factory import TunnelFactory
-from xphi.kernel.bind.resolver import get_invoker
+from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.bind.resolver import get_invoker
 from xphi.kernel.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
 from xphi.kernel.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
 

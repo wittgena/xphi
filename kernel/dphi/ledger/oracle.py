@@ -3,7 +3,7 @@ import json
 from typing import Any, Dict, Optional, List
 from rocksdict import Rdict, Options, AccessType
 
-from xphi.kernel.bind.resolver import resolve_path
+from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.kernel.dphi.broker import DphiBroker, DphiMethod
 from xphi.kernel.dphi.adapter.state import StateAdapter

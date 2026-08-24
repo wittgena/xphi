@@ -10,7 +10,7 @@ from xphi.arch.contract.event.next import next_id, next_phase_id, parse_id, pars
 from xphi.arch.contract.executor import BaseExecutor
 from xphi.arch.contract.registry.unified import registry
 from xphi.arch.contract.event.bus import AsyncEventBus
-from xphi.arch.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
 
 log = logging.getLogger("flow.cont")
