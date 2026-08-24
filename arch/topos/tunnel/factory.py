@@ -6,8 +6,6 @@ from typing import Optional, Any, List, Tuple
 import redis
 import redis.asyncio as actual_redis
 import redis.exceptions
-
-# [핵심 변경점] BlockingConnectionPool 명시적 임포트
 from redis.asyncio.connection import BlockingConnectionPool as AsyncBlockingConnectionPool
 from redis.connection import BlockingConnectionPool as SyncBlockingConnectionPool
 

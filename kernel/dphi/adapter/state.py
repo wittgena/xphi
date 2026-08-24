@@ -1,5 +1,4 @@
 # kernel.dphi.adapter.state
-## @lineage: watcher.dphi.adapter.state
 import canonicaljson
 
 class StateAdapter:
@@ -42,6 +41,18 @@ class StateAdapter:
         StateAdapter._assert_uint32(nexus_id, "nexus_id")
         return {
             "topos_id": topos_id,
+            "phase_id": phase_id,
+            "nexus_id": nexus_id
+        }
+
+    @staticmethod
+    def build_parity_request(topos_id_low32: int = None, phase_id: int = None, nexus_id: int = None) -> dict:
+        """@target: Rust `ParityRequest` struct"""
+        if topos_id_low32 is not None: StateAdapter._assert_uint32(topos_id_low32, "topos_id_low32")
+        if phase_id is not None: StateAdapter._assert_uint32(phase_id, "phase_id")
+        if nexus_id is not None: StateAdapter._assert_uint32(nexus_id, "nexus_id")
+        return {
+            "topos_id_low32": topos_id_low32,
             "phase_id": phase_id,
             "nexus_id": nexus_id
         }
@@ -151,7 +162,19 @@ class StateAdapter:
 
     @staticmethod
     def build_evolution_context(phase_root: dict, external_rules: list = None) -> dict:
-        """@target: Rust `EvolutionContext` struct"""
+        """
+        @target: Rust `EvolutionContext` struct
+        @note: Rust의 StateNode는 `name`과 `kind`를 필수로 요구하므로, 
+               빈 딕셔너리({})나 불완전한 형태가 들어올 경우 기본 ROOT 노드로 안전하게 래핑(Wrapping)합니다.
+        """
+        if not phase_root or "name" not in phase_root or "kind" not in phase_root:
+            # 안전한 FFI 통신을 위해 유효한 StateNode 규격으로 자동 포장
+            phase_root = StateAdapter.build_core_node(
+                name="root", 
+                content="default_empty_state",
+                children=phase_root if isinstance(phase_root, dict) and phase_root else {}
+            )
+
         return {
             "phase_root": phase_root,
             "external_rules": external_rules or []
