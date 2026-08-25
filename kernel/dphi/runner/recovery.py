@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from xphi.arch.xor.parser.block.contract import CoherenceState, Contract
 from xphi.kernel.dphi.adapter.state import StateAdapter
 from xphi.kernel.dphi.ledger.consensus import KernelCommit, KernelLedger
-from xphi.kernel.dphi.sandbox.executor import EffectResolver, TaskContext
+from xphi.kernel.space.sandbox.executor import EffectResolver, TaskContext
 from xphi.kernel.dphi.method import DphiMethod
 
 from xphi.kernel.dphi.runner.phase import RuntimeRunner, RecoveryMethod
