@@ -1,7 +1,4 @@
 # kernel.space.bind.resolver
-## @lineage: kernel.bind.resolver
-## @lineage: kernel.phase.bind.resolver
-## @lineage: phase.bind.resolver
 import os
 import json
 import re
@@ -26,6 +23,7 @@ def get_anchor_dir(root: Path) -> Path:
         return root / "anchor"
     return root / determine_anchor_name()
 
+@lru_cache(maxsize=1)
 def find_current_self(start: Path | None = None) -> Path:
     """
     @flow: Cascade upward to identify the topological root (self).
@@ -79,6 +77,7 @@ def get_invoker(path: Path):
         return "", ""
     return invoker, command
 
+@lru_cache(maxsize=1)
 def load_bound(self_root: Path) -> dict:
     """
     @flow: Load topology state (bound.json).

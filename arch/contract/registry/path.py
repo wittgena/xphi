@@ -1,6 +1,4 @@
 # arch.contract.registry.path
-## @lineage: topos.contract.registry.path
-## @lineage: phase.runtime.contract.registry.path
 import os
 import logging
 from pathlib import Path
