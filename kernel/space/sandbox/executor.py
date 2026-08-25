@@ -8,11 +8,9 @@ from enum import Enum
 from xphi.arch.xor.parser.block.contract import Contract, CoherenceState
 from xphi.arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
 from xphi.kernel.dphi.broker import DphiBroker, DphiMethod
-from xphi.watcher.plane.emitter import get_emitter
 from xphi.kernel.dphi.cgroup import Tier
-
-# 🌟 Rust FFI 규격에 맞게 페이로드를 조립하기 위한 StateAdapter 임포트
 from xphi.kernel.dphi.adapter.state import StateAdapter
+from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("sandbox.executor")
 
@@ -65,19 +63,13 @@ class SandboxExecutor:
                 "timestamp": int(time.time() * 1000)
             }
 
-            # 🌟 1. topos_context를 단순 딕셔너리가 아닌 Rust StateNode 규격으로 래핑
             phase_root_node = StateAdapter.build_core_node(
                 name="sandbox_topos_context",
                 content=json.dumps(topos_context),
                 children={}
             )
 
-            # 🌟 2. 안전하게 래핑된 Node를 phase_root에 삽입하여 EvolutionContext 완성
-            evo_ctx = StateAdapter.build_evolution_context(
-                phase_root=phase_root_node
-            )
-
-            # 🌟 3. 최종 Transition Payload 조립 (Rust FFI 규격 완벽 대응)
+            evo_ctx = StateAdapter.build_evolution_context(phase_root=phase_root_node)
             intent_payload = {
                 "tier": context.tier,
                 "env": context.sandbox_env.value,
@@ -90,7 +82,6 @@ class SandboxExecutor:
                 evolution_ctx=evo_ctx
             )
 
-            # 🌟 4. Canonical JSON으로 인코딩 후 디코딩하여 Rust 커널로 전송
             exec_result = await self.broker.invoke(
                 target_func=DphiMethod.EXECUTE_TRANSITION, 
                 payload=StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8'),
@@ -155,7 +146,7 @@ class SandboxExecutor:
                 
                 resolver = self.resolvers.get(target_key)
                 if resolver:
-                    # 런타임 환경(env)과 권한(tier)을 어댑터에 전달하여 올바른 샌드박스로 라우팅 유도
+                    ## 런타임 환경(env)과 권한(tier)을 어댑터에 전달하여 올바른 샌드박스로 라우팅 유도
                     current_payload = await resolver.resolve(
                         current_payload, 
                         instruction=req_msg, 
