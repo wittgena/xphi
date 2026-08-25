@@ -1,5 +1,4 @@
 # kernel.space.topos.tunnel.factory
-## @lineage: arch.topos.tunnel.factory
 import logging
 import asyncio
 from typing import Optional, Any, List, Tuple
@@ -51,7 +50,6 @@ class UniversalPubSub:
             return getattr(self.actual_pubsub, name)
         raise AttributeError(f"'UniversalPubSub' object has no attribute '{name}'")
 
-
 class UniversalFacade:
     """@role: Asynchronous facade unifying routing for State, Queue, Stream, and PubSub signals"""
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
@@ -59,8 +57,6 @@ class UniversalFacade:
         self.mq_url = mq_url
         self.mq_client = None
         self.wasm_broker = None  # Hook for background WASM telemetry
-        
-        # [핵심 변경점] timeout(커넥션 대기 시간) 추가
         pool_kwargs = {
             "max_connections": 100,
             "timeout": 10.0,             # 빈 커넥션이 없을 때 최대 10초간 우아하게 대기 (Block)
@@ -69,8 +65,6 @@ class UniversalFacade:
             "retry_on_timeout": True
         }
         pool_kwargs.update(kwargs)
-
-        # [핵심 변경점] AsyncBlockingConnectionPool을 사용하도록 연결 생성 방식 변경
         pool = AsyncBlockingConnectionPool.from_url(state_url, decode_responses=True, **pool_kwargs)
         self.state_store = actual_redis.Redis(connection_pool=pool)
 
@@ -128,15 +122,12 @@ class UniversalFacade:
         """Automatically delegates unmapped async methods (e.g., llen, keys, lpush) to the underlying Redis Async client."""
         return getattr(self.state_store, name)
 
-
 class UniversalFacadeSync:
     """@role: Synchronous (Blocking) routing facade"""
     def __init__(self, state_url: str, mq_url: str, mq_protocol: BackendProtocol, **kwargs):
         self.mq_protocol = mq_protocol
         self.mq_url = mq_url
         self.mq_client = None
-
-        # [핵심 변경점] timeout(커넥션 대기 시간) 추가
         pool_kwargs = {
             "max_connections": 50,
             "timeout": 10.0,             # 빈 커넥션이 없을 때 최대 10초간 대기
@@ -145,8 +136,6 @@ class UniversalFacadeSync:
             "retry_on_timeout": True
         }
         pool_kwargs.update(kwargs)
-        
-        # [핵심 변경점] SyncBlockingConnectionPool을 사용하도록 연결 생성 방식 변경
         pool = SyncBlockingConnectionPool.from_url(state_url, decode_responses=True, **pool_kwargs)
         self.state_store = redis.Redis(connection_pool=pool)
         
@@ -197,8 +186,14 @@ class TunnelFactory:
         if cls._async_instance is None:
             config = resolve_default_config()
             scheme, state_url, mq_url = parse_connection_urls(config.default_url)
+            
+            # [FIX] 안전한 추출 로직
+            mq_url = kwargs.pop("mq_url", mq_url)
+            state_url = kwargs.pop("state_url", state_url)
+            scheme = kwargs.pop("mq_protocol", scheme)
+            
             cls._async_instance = UniversalFacade(state_url, mq_url, scheme, **kwargs)
-            log.info(f"[TunnelFactory] Provisioned Async Tunnel: {config.default_url}")
+            log.info(f"[TunnelFactory] Provisioned Async Tunnel: {mq_url}")
         return cls._async_instance
 
     @classmethod
@@ -206,6 +201,11 @@ class TunnelFactory:
         """Isolated asynchronous connection"""
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
+        
+        mq_url = kwargs.pop("mq_url", mq_url)
+        state_url = kwargs.pop("state_url", state_url)
+        scheme = kwargs.pop("mq_protocol", scheme)
+        
         return UniversalFacade(state_url, mq_url, scheme, **kwargs)
         
     @classmethod
@@ -220,8 +220,13 @@ class TunnelFactory:
         if cls._sync_instance is None:
             config = resolve_default_config()
             scheme, state_url, mq_url = parse_connection_urls(config.default_url)
+            
+            mq_url = kwargs.pop("mq_url", mq_url)
+            state_url = kwargs.pop("state_url", state_url)
+            scheme = kwargs.pop("mq_protocol", scheme)
+            
             cls._sync_instance = UniversalFacadeSync(state_url, mq_url, scheme, **kwargs)
-            log.info(f"[TunnelFactory] Provisioned Sync Tunnel: {config.default_url}")
+            log.info(f"[TunnelFactory] Provisioned Sync Tunnel: {mq_url}")
         return cls._sync_instance
 
     @classmethod
@@ -229,6 +234,11 @@ class TunnelFactory:
         """Isolated synchronous connection"""
         config = resolve_default_config()
         scheme, state_url, mq_url = parse_connection_urls(config.default_url)
+        
+        mq_url = kwargs.pop("mq_url", mq_url)
+        state_url = kwargs.pop("state_url", state_url)
+        scheme = kwargs.pop("mq_protocol", scheme)
+        
         return UniversalFacadeSync(state_url, mq_url, scheme, **kwargs)
 
     @classmethod

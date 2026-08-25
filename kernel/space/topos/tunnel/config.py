@@ -1,7 +1,4 @@
 # kernel.space.topos.tunnel.config
-## @lineage: arch.topos.tunnel.config
-## @lineage: arch.topos.bound.adapter.config
-"""@desc: Universal Infrastructure Adapter Base"""
 import os
 import urllib.parse
 import logging
@@ -43,10 +40,6 @@ def resolve_default_config() -> MqConfig:
     return MqConfig(engine=engine, host=host, port=port)
 
 def parse_connection_urls(target_url: str) -> Tuple[BackendProtocol, str, str]:
-    """
-    @flow: 입력된 URL을 분석하여 (프로토콜, 상태 저장소 URL, MQ URL) 세 쌍을 반환합니다.
-    Kafka 등 상태 저장이 불가능한 MQ일 경우, 상태 저장소는 Redis로 자동 분리(Routing)됩니다.
-    """
     parsed = urllib.parse.urlparse(target_url)
     try:
         scheme = BackendProtocol(parsed.scheme)

@@ -22,7 +22,6 @@ class BrokerChannel:
     def broker_res(broker_id: str) -> str: 
         return f"wasm:res:broker:{broker_id}"
 
-
 class PayloadKey:
     JOB_ID = "job_id"
     METHOD_FUNC = "target_func" 
@@ -42,11 +41,21 @@ class ResultKey:
     METRICS = "metrics"
 
 class DphiBroker:
-    def __init__(self, request_stream: str = BrokerChannel.EXECUTE_STREAM, timeout: float = 10.0, target_auditor=None):
+    def __init__(
+        self, 
+        request_stream: str = BrokerChannel.EXECUTE_STREAM, 
+        timeout: float = 10.0, 
+        target_auditor=None,
+        tunnel_factory=None, # [FIX] 의존성 주입(DI) 지원을 위한 팩토리 파라미터 추가
+        **kwargs # [FIX] 예기치 않은 키워드 방어를 위한 kwargs 추가
+    ):
         self.request_stream = request_stream
         self.control_channel = BrokerChannel.CONTROL_REQ
         self.timeout = timeout
         self.target_auditor = target_auditor
+        
+        # [FIX] 주입된 팩토리가 없으면 기본 TunnelFactory(Redis) 사용 (100% 하위 호환)
+        self.tunnel_factory = tunnel_factory or TunnelFactory
         
         self.broker_id = uuid.uuid4().hex[:8]
         self.response_channel = BrokerChannel.broker_res(self.broker_id)
@@ -56,11 +65,12 @@ class DphiBroker:
         self._listener_client = None
 
     async def _ensure_listener_started(self):
-        if self._listener_task is None:
+        if getattr(self, '_listener_task', None) is None:
             self._listener_task = asyncio.create_task(self._listen_responses())
 
     async def _listen_responses(self):
-        self._listener_client = await TunnelFactory.get_isolated()
+        # [FIX] 동적 팩토리 참조 적용
+        self._listener_client = await self.tunnel_factory.get_isolated()
         pubsub = self._listener_client.pubsub()
         await pubsub.subscribe(self.response_channel)
         
@@ -102,7 +112,8 @@ class DphiBroker:
         await self._ensure_listener_started()
         
         route = target_route or self.request_stream
-        tunnel = await TunnelFactory.get_default()
+        # [FIX] 동적 팩토리 참조 적용
+        tunnel = await self.tunnel_factory.get_default()
         method_name = payload.get(PayloadKey.METHOD_FUNC, 'unknown')
         
         payload[PayloadKey.RES_CHANNEL] = self.response_channel
@@ -225,15 +236,17 @@ class DphiBroker:
         return await self._dispatch_and_wait_async(job_id, msg_payload, timeout=timeout)
         
     async def close(self):
-        if self._listener_task and not self._listener_task.done():
-            self._listener_task.cancel()
+        task = getattr(self, '_listener_task', None)
+        if task and not task.done():
+            task.cancel()
             with suppress(asyncio.CancelledError):
-                await self._listener_task
+                await task
 
     def __del__(self):
-        if self._listener_task and not self._listener_task.done():
+        task = getattr(self, '_listener_task', None)
+        if task and not task.done():
             try:
                 loop = asyncio.get_running_loop()
-                loop.call_soon_threadsafe(self._listener_task.cancel)
+                loop.call_soon_threadsafe(task.cancel)
             except RuntimeError:
                 pass

@@ -116,18 +116,31 @@ class SensorOp:
             return func
         return decorator
 
-def log_streamer(cmd_list: list):
+# === [IMPROVED] log_streamer 데코레이터 ===
+def log_streamer(cmd_list: list, cwd: str = None):
     def decorator(func):
         @wraps(func)
         async def wrapper(self, *args, **kwargs):
+            # 명령어 렌더링
             cmd = [arg.format(**self.__dict__) if isinstance(arg, str) else arg for arg in cmd_list]
+            
+            # cwd 동적 경로 렌더링 (Optional)
+            actual_cwd = None
+            if cwd:
+                actual_cwd = cwd.format(**self.__dict__)
+                if hasattr(actual_cwd, '__fspath__'):
+                    actual_cwd = str(actual_cwd)
+                    
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
+                cwd=actual_cwd,  # 적용된 cwd 전달
                 stdout=asyncio.subprocess.PIPE, 
                 stderr=asyncio.subprocess.STDOUT
             )
+            
             if hasattr(self, 'boundary') and hasattr(self.boundary, 'process_pool'):
                 self.boundary.process_pool.append(proc)
+                
             try:
                 while True:
                     line = await proc.stdout.readline()

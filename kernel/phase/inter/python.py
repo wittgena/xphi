@@ -1,5 +1,4 @@
 # kernel.phase.inter.python
-## @lineage: kernel.bind.inter.python
 import functools
 import inspect
 import json

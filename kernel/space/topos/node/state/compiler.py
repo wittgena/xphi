@@ -1,7 +1,4 @@
 # kernel.space.topos.node.state.compiler
-## @lineage: arch.topos.node.state.compiler
-## @lineage: arch.gov.state.compiler
-## @lineage: ops.tester.state.compiler
 import json
 from typing import List, Dict, Any
 
