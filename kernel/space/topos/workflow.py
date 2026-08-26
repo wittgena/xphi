@@ -1,5 +1,4 @@
 # kernel.space.topos.workflow
-## @lineage: arch.topos.workflow
 """
 @desc: Metaclass-driven state machine that dynamically routes strongly-typed messages through defined topological steps
 """

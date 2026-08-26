@@ -1,6 +1,4 @@
 # kernel.dphi.exchange.transaction
-## @lineage: phase.dphi.adapter.exchange
-## @lineage: kernel.dphi.adapter.exchange
 import os
 import time
 import json

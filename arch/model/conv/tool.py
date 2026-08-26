@@ -1,4 +1,5 @@
-# conv.schema.tool
+# arch.model.conv.tool
+## @lineage: conv.schema.tool
 from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
