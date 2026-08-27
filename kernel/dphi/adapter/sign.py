@@ -1,5 +1,4 @@
 # xphi.kernel.dphi.adapter.sign
-## @lineage: kernel.dphi.adapter.sign
 import os
 from pathlib import Path
 import hashlib

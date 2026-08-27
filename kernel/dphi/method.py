@@ -1,5 +1,4 @@
 # xphi.kernel.dphi.method
-## @lineage: kernel.dphi.method
 from enum import Enum
 
 class DphiMethod(str, Enum):
@@ -19,3 +18,4 @@ class DphiMethod(str, Enum):
     VERIFY_PARITY = "verify_parity"
     EXECUTE_TRANSITION = "execute_transition"
     CONFIGURE_TOPOLOGY = "configure_topology"
+    PROCESS_FIELD_DYNAMICS = "process_field_dynamics"

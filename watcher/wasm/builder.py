@@ -1,5 +1,4 @@
 # xphi.watcher.wasm.builder
-## @lineage: watcher.wasm.builder
 import os
 import shutil
 import json
@@ -15,15 +14,19 @@ log = get_emitter("wasm.builder")
 THEORIA_ROOT = resolve_path("theoria")
 TIME_ROOT = resolve_path("time")
 REGISTRY_FILE = TIME_ROOT / "registry.json"
-
 WASM_PROJECTS = [
-    {"name": "dphi"},
-    {"name": "dvm"},
+    {
+        "name": "dphi",
+        "env": {"RUSTFLAGS": "-C target-feature=+simd128 -C opt-level=3"}
+    },
+    {
+        "name": "dvm"
+    },
 ]
 
 
 class WasmBuilder(BaseTracer):
-    """WASM 컴파일 (Dphi, DVM, RPY) 및 Rust-Driven JSON 스키마 자동 추출 페이즈"""
+    """WASM 컴파일 (Dphi, DVM) 및 Rust-Driven JSON 스키마 자동 추출 페이즈"""
     def __init__(self, timeout: int = 120):
         super().__init__(tracer_name="wasm.builder", timeout=timeout)
         self.build_error = ""
@@ -107,6 +110,22 @@ class WasmBuilder(BaseTracer):
             if code != 0:
                 self.build_error = err
                 self.log.error(f"[Builder] {name} Compilation Failed:\n{err.strip() if err else 'No error message'}")
+                
+                # [REFACTOR] SIMD 환경에서 실패할 경우 Fallback (일반 컴파일 재시도)
+                if custom_env and "simd128" in custom_env.get("RUSTFLAGS", ""):
+                    self.log.warning(f"[Builder] SIMD Compilation failed. Retrying without SIMD optimization...")
+                    os.environ.clear()
+                    os.environ.update(original_env) # 커스텀 환경변수 초기화
+                    code, out, err = await self.boundary.run_command(
+                        ["cargo", "build", "--target", "wasm32-unknown-unknown", "--release"], 
+                        cwd=str(project_dir), capture=True
+                    )
+                    if code == 0:
+                        self.log.info(f"[Builder] Fallback compilation successful (without SIMD).")
+                        return True
+                    else:
+                        self.log.error(f"[Builder] Fallback Compilation Failed too:\n{err.strip()}")
+
                 return False
                 
             return True

@@ -1,6 +1,4 @@
 # xphi.kernel.phase.inter.wasm
-## @lineage: kernel.phase.inter.wasm
-"""@desc: Local interpreter for secure Python code execution using Wasmtime"""
 import json
 import os
 import threading

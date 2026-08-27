@@ -1,6 +1,4 @@
 # xphi.kernel.dphi.adapter.dvm
-## @lineage: kernel.dphi.adapter.dvm
-## @lineage: phase.dphi.adapter.dvm
 import os
 from typing import Dict, Any, Optional
 from xphi.watcher.plane.emitter import get_emitter
