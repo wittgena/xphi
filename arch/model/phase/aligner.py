@@ -1,8 +1,4 @@
 # arch.model.phase.aligner
-## @lineage: arch.contract.gov.aligner
-## @lineage: arch.gov.aligner
-## @lineage: phase.gov.proto.aligner
-## @lineage: arch.proto.phase.aligner
 import abc
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Callable
