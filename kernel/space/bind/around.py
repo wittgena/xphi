@@ -46,6 +46,7 @@ DEFAULT_BOUND_SKELETON = {
         "ailog": ":io:/ailog",
         "sandbox": ":workspace:",
         "time": ":kernel:/space/time",
+        "flaretime": ":kernel:/space/flare/time",
         "surface": ":io:/surface",
         "contract": ":contract:",
         "spec": ":contract:/spec",

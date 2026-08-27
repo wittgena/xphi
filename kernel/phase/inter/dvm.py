@@ -1,6 +1,4 @@
 # kernel.phase.inter.dvm
-## @lineage: kernel.bind.inter.dvm
-"""@desc: Local interpreter for secure Multi VM execution using Wasmtime and dvm.wasm"""
 import json
 import threading
 import os
