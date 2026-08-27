@@ -1,4 +1,5 @@
-# kernel.phase.inter.cosm
+# xphi.kernel.phase.inter.cosm
+## @lineage: kernel.phase.inter.cosm
 ## @lineage: kernel.bind.inter.cosm
 """@desc: Local interpreter for secure CosmWasm smart contract execution using Wasmtime"""
 import json

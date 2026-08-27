@@ -1,4 +1,5 @@
-# arch.xor.parser.block.extractor
+# xphi.arch.xor.parser.block.extractor
+## @lineage: arch.xor.parser.block.extractor
 ## @lineage: arch.xor.block.extractor
 import re
 import sys

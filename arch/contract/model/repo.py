@@ -1,4 +1,5 @@
-# arch.contract.model.repo
+# xphi.arch.contract.model.repo
+## @lineage: arch.contract.model.repo
 ## @lineage: arch.model.contract.repo
 ## @lineage: arch.contract.schema.repo
 from dataclasses import dataclass, asdict, field

@@ -1,4 +1,5 @@
-# arch.contract.resolver.secret
+# xphi.arch.contract.resolver.secret
+## @lineage: arch.contract.resolver.secret
 ## @lineage: arch.topos.resolver.secret
 ## @lineage: topos.resolver.secret
 ## @lineage: bound.resolver.secret

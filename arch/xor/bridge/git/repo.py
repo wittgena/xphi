@@ -1,4 +1,5 @@
-# arch.xor.bridge.git.repo
+# xphi.arch.xor.bridge.git.repo
+## @lineage: arch.xor.bridge.git.repo
 ## @lineage: agent.space.tool.git.repo
 from __future__ import annotations
 import shutil

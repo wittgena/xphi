@@ -1,4 +1,5 @@
-# arch.xor.parser.lang.py
+# xphi.arch.xor.parser.lang.py
+## @lineage: arch.xor.parser.lang.py
 ## @lineage: arch.xor.block.parser.py
 ## @lineage: hub.xor.block.parser.py
 ## @lineage: arch.code.block.parser.py

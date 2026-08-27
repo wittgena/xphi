@@ -1,4 +1,5 @@
-# arch.model.sealer
+# xphi.arch.model.sealer
+## @lineage: arch.model.sealer
 ## @lineage: arch.bound.sealer
 ## @lineage: arch.topos.bound.sealer
 import time

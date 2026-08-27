@@ -1,4 +1,5 @@
-# arch.xor.secret.validator
+# xphi.arch.xor.secret.validator
+## @lineage: arch.xor.secret.validator
 ## @lineage: mesh.bound.secure.secret.validator
 from pydantic import SecretStr
 from typing import List

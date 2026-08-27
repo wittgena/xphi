@@ -1,4 +1,5 @@
-# arch.contract.registry.unified
+# xphi.arch.contract.registry.unified
+## @lineage: arch.contract.registry.unified
 """
 @module: arch.contract.registry.unified
 @desc: Single Source of Truth (SSOT) Registry supporting Runtime Plasticity.

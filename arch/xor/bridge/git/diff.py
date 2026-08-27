@@ -1,4 +1,5 @@
-# arch.xor.bridge.git.diff
+# xphi.arch.xor.bridge.git.diff
+## @lineage: arch.xor.bridge.git.diff
 ## @lineage: agent.space.tool.git.diff
 import json
 import logging

@@ -1,4 +1,5 @@
-# kernel.daemon.bootstrap
+# xphi.kernel.daemon.bootstrap
+## @lineage: kernel.daemon.bootstrap
 import asyncio
 import json
 import time

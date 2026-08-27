@@ -1,4 +1,5 @@
-# arch.contract.model.receptor
+# xphi.arch.contract.model.receptor
+## @lineage: arch.contract.model.receptor
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional

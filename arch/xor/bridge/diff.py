@@ -1,4 +1,5 @@
-# arch.xor.bridge.diff
+# xphi.arch.xor.bridge.diff
+## @lineage: arch.xor.bridge.diff
 ## @lineage: agent.bridge.tool.diff
 from difflib import SequenceMatcher
 from pydantic import BaseModel

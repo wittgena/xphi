@@ -1,4 +1,5 @@
-# arch.contract.registry.tracer
+# xphi.arch.contract.registry.tracer
+## @lineage: arch.contract.registry.tracer
 ## @lineage: watcher.tracer.registry
 from xphi.kernel.space.bind.resolver import resolve_path
 

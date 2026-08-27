@@ -1,4 +1,5 @@
-# arch.xor.stream.store.residue
+# xphi.arch.xor.stream.store.residue
+## @lineage: arch.xor.stream.store.residue
 ## @lineage: arch.xor.store.residue
 ## @lineage: arch.xor.bridge.store.residue
 """@flow: ψ → ResidueExecutor(Buffer → Minimal Tension Eval) → ResidueStore(rocks.db)"""

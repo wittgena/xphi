@@ -1,4 +1,5 @@
-# arch.contract.protocol
+# xphi.arch.contract.protocol
+## @lineage: arch.contract.protocol
 """@desc: Proto decorator (non-executing structural record)"""
 from typing import Tuple, Any, Callable, Union, Type, TypeVar
 from dataclasses import dataclass

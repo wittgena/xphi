@@ -1,4 +1,5 @@
-# arch.xor.bridge.io.manager
+# xphi.arch.xor.bridge.io.manager
+## @lineage: arch.xor.bridge.io.manager
 ## @lineage: agent.space.io
 import asyncio
 import logging

@@ -1,4 +1,5 @@
-# arch.xor.parser.lang.md
+# xphi.arch.xor.parser.lang.md
+## @lineage: arch.xor.parser.lang.md
 ## @lineage: arch.xor.block.parser.md
 ## @lineage: hub.xor.block.parser.md
 ## @lineage: arch.code.block.parser.md

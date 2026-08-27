@@ -1,4 +1,5 @@
-# arch.xor.stream.store.message
+# xphi.arch.xor.stream.store.message
+## @lineage: arch.xor.stream.store.message
 ## @lineage: arch.xor.store.message
 ## @lineage: arch.xor.bridge.store.message
 ## @lineage: arch.gov.bridge.store.message

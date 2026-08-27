@@ -1,4 +1,5 @@
-# arch.xor.stream.schema
+# xphi.arch.xor.stream.schema
+## @lineage: arch.xor.stream.schema
 ## @lineage: kernel.phase.stream.schema
 from pydantic import BaseModel, Field
 from typing import Any, Dict

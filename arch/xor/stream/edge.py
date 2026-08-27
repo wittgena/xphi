@@ -1,4 +1,5 @@
-# arch.xor.stream.edge
+# xphi.arch.xor.stream.edge
+## @lineage: arch.xor.stream.edge
 ## @lineage: bound.xor.store.stream
 import asyncio
 import uuid

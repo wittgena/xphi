@@ -1,4 +1,5 @@
-# arch.contract.event.bus
+# xphi.arch.contract.event.bus
+## @lineage: arch.contract.event.bus
 import asyncio
 from typing import Dict, Any, List, Optional
 from xphi.arch.contract.event.psi import PsiEvent

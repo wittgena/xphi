@@ -1,4 +1,5 @@
-# kernel.phase.state.spec
+# xphi.kernel.phase.state.spec
+## @lineage: kernel.phase.state.spec
 ## @lineage: kernel.bind.state.spec
 ## @lineage: kernel.topos.state.spec
 import enum 

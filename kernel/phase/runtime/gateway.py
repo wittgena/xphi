@@ -1,4 +1,5 @@
-# kernel.phase.runtime.gateway
+# xphi.kernel.phase.runtime.gateway
+## @lineage: kernel.phase.runtime.gateway
 ## @lineage: kernel.phase.boot
 import os
 import sys

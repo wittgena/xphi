@@ -1,4 +1,5 @@
-# arch.model.surge.blueprint
+# xphi.arch.model.surge.blueprint
+## @lineage: arch.model.surge.blueprint
 ## @lineage: arch.xor.surge.blueprint
 ## @lineage: arch.bound.surge.blueprint
 ## @lineage: arch.topos.bound.surge.blueprint

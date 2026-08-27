@@ -1,4 +1,5 @@
-# arch.xor.parser.stream
+# xphi.arch.xor.parser.stream
+## @lineage: arch.xor.parser.stream
 import json
 from typing import List, Tuple, Dict, Any, Optional, Callable
 from elasticsearch.dsl import Q

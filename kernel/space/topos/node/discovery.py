@@ -1,4 +1,5 @@
-# kernel.space.topos.node.discovery
+# xphi.kernel.space.topos.node.discovery
+## @lineage: kernel.space.topos.node.discovery
 ## @lineage: arch.topos.node.discovery
 """
 @topos.role: Φ constructor (global topology discovery)

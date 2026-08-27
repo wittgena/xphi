@@ -1,4 +1,5 @@
-# arch.xor.secret.manager
+# xphi.arch.xor.secret.manager
+## @lineage: arch.xor.secret.manager
 ## @lineage: mesh.bound.secure.secret.manager
 import ast
 import os

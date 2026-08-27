@@ -1,4 +1,5 @@
-# arch.contract.event.tunnelbus
+# xphi.arch.contract.event.tunnelbus
+## @lineage: arch.contract.event.tunnelbus
 """
 @desc: Distributed Event Bus leveraging UniversalFacade (Redis Streams).
        Bridges the local Ator manifold with the global system Tunnel.

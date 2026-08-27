@@ -1,4 +1,5 @@
-# arch.xor.bridge.tosync
+# xphi.arch.xor.bridge.tosync
+## @lineage: arch.xor.bridge.tosync
 ## @lineage: agent.bridge.tosync
 import asyncio
 import functools

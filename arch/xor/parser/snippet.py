@@ -1,4 +1,5 @@
-# arch.xor.parser.snippet
+# xphi.arch.xor.parser.snippet
+## @lineage: arch.xor.parser.snippet
 ## @lineage: fiber.xor.parser.snippet
 """
 @desc: Automatically injects dynamic CLI documentation and source code snippets into Markdown files to keep documentation synchronized with the codebase.

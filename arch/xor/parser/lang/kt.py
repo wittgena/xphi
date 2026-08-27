@@ -1,4 +1,5 @@
-# arch.xor.parser.lang.kt
+# xphi.arch.xor.parser.lang.kt
+## @lineage: arch.xor.parser.lang.kt
 ## @lineage: arch.xor.block.parser.kt
 ## @lineage: hub.xor.block.parser.kt
 ## @lineage: arch.code.block.parser.kt

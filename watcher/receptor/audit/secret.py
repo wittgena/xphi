@@ -1,4 +1,5 @@
-# watcher.receptor.audit.secret
+# xphi.watcher.receptor.audit.secret
+## @lineage: watcher.receptor.audit.secret
 ## @lineage: kernel.phase.audit.secret
 ## @lineage: dphi.epoch.audit.secret
 import os

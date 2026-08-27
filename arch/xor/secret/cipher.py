@@ -1,4 +1,5 @@
-# arch.xor.secret.cipher
+# xphi.arch.xor.secret.cipher
+## @lineage: arch.xor.secret.cipher
 import hashlib
 from base64 import b64encode
 from cryptography.fernet import Fernet, InvalidToken

@@ -1,4 +1,5 @@
-# arch.contract.discovery
+# xphi.arch.contract.discovery
+## @lineage: arch.contract.discovery
 import sys
 import importlib
 import ast

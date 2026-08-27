@@ -1,4 +1,5 @@
-# arch.xor.parser.mark.truncate
+# xphi.arch.xor.parser.mark.truncate
+## @lineage: arch.xor.parser.mark.truncate
 ## @lineage: arch.xor.mark.truncate
 ## @lineage: bound.xor.bridge.mark.truncate
 ## @lineage: bound.eco.xor.bridge.mark.truncate

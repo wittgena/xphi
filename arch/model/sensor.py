@@ -1,4 +1,5 @@
-# arch.model.sensor
+# xphi.arch.model.sensor
+## @lineage: arch.model.sensor
 ## @lineage: arch.bound.sensor
 ## @lineage: arch.topos.bound.sensor
 ## @lineage: arch.bound.pos.sensor

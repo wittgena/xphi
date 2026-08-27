@@ -1,4 +1,5 @@
-# arch.contract.registry.static
+# xphi.arch.contract.registry.static
+## @lineage: arch.contract.registry.static
 import ast
 import shutil
 import time

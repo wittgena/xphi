@@ -1,4 +1,5 @@
-# kernel.phase.runtime.executor.dynamics
+# xphi.kernel.phase.runtime.executor.dynamics
+## @lineage: kernel.phase.runtime.executor.dynamics
 """@desc: System Boundary Facade and Declarative Assembly Engine"""
 from __future__ import annotations
 import json

@@ -1,4 +1,5 @@
-# kernel.space.topos.node.gan
+# xphi.kernel.space.topos.node.gan
+## @lineage: kernel.space.topos.node.gan
 """
 @desc: Foundational Actor model defining structural topology, message bubbling, and deterministic lifecycle management
 """

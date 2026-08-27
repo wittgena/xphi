@@ -1,4 +1,5 @@
-# arch.model.phase.gate
+# xphi.arch.model.phase.gate
+## @lineage: arch.model.phase.gate
 ## @lineage: arch.contract.gov.gate
 import uuid as _std_uuid
 import random

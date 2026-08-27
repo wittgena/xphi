@@ -1,4 +1,5 @@
-# kernel.space.topos.node.state.vocab
+# xphi.kernel.space.topos.node.state.vocab
+## @lineage: kernel.space.topos.node.state.vocab
 ## @lineage: arch.topos.node.state.vocab
 ## @lineage: arch.gov.state.vocab
 ## @lineage: ops.tester.state.vocab

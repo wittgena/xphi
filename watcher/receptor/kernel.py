@@ -1,4 +1,5 @@
-# watcher.receptor.kernel
+# xphi.watcher.receptor.kernel
+## @lineage: watcher.receptor.kernel
 """
 @flow: Environment(Sync) → SourceTracer(Membrane) → ReceptorKernel(Multi-Lens) → Rupture(emit)
 Acts as the central observation brain, dynamically adjusting topological structures 

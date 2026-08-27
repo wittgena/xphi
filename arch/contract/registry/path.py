@@ -1,4 +1,5 @@
-# arch.contract.registry.path
+# xphi.arch.contract.registry.path
+## @lineage: arch.contract.registry.path
 import os
 import logging
 from pathlib import Path

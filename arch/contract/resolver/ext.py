@@ -1,4 +1,5 @@
-# arch.contract.resolver.ext
+# xphi.arch.contract.resolver.ext
+## @lineage: arch.contract.resolver.ext
 ## @lineage: arch.topos.resolver.ext
 ## @lineage: topos.resolver.ext
 ## @lineage: bound.resolver.ext.inter

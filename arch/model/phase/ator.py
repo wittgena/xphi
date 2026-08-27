@@ -1,4 +1,5 @@
-# arch.model.phase.ator
+# xphi.arch.model.phase.ator
+## @lineage: arch.model.phase.ator
 """
 @module: arch.model.phase.ator
 @desc: Phase Flow Ators aligned with the Unified Registry Architecture

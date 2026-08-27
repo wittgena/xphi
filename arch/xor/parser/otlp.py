@@ -1,4 +1,5 @@
-# arch.xor.parser.otlp
+# xphi.arch.xor.parser.otlp
+## @lineage: arch.xor.parser.otlp
 import orjson
 from typing import List, Dict, Any
 from xphi.arch.xor.parser.ruleset import AbstractRulesetParser, CompiledEngine
