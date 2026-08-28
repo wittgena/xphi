@@ -1,5 +1,5 @@
-# xphi.watcher.ingress.mcp
-## @lineage: watcher.ingress.mcp
+# xphi.watcher.mcp.server
+## @lineage: xphi.watcher.ingress.mcp
 import inspect
 import json
 from typing import Any, Optional, List

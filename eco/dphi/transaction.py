@@ -1,4 +1,5 @@
-# xphi.kernel.dphi.exchange.transaction
+# xphi.eco.dphi.transaction
+## @lineage: xphi.kernel.dphi.exchange.transaction
 ## @lineage: kernel.dphi.exchange.transaction
 import os
 import time
@@ -11,7 +12,7 @@ from cryptography.hazmat.primitives import serialization
 
 from xphi.arch.model.surge.model import DynamicSurgeModel
 from xphi.arch.xor.secret.manager import get_secret_str
-from xphi.kernel.dphi.exchange.config import billing_config
+from xphi.eco.dphi.config import billing_config
 from xphi.kernel.dphi.cgroup import Tier
 from xphi.watcher.plane.emitter import get_emitter
 

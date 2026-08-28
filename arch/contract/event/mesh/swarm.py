@@ -1,12 +1,11 @@
 # xphi.arch.contract.event.mesh.swarm
-## @lineage: arch.contract.event.mesh.swarm
 import asyncio
 import json
 from typing import List, Optional, Callable, Tuple
 
 from xphi.arch.contract.event.psi import PsiEvent
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from xphi.watcher.receptor.contract.promise import future, Promise
+from xphi.arch.contract.promise import future, Promise
 from xphi.arch.contract.event.mesh.transport import MeshP2PTransport
 from xphi.watcher.plane.emitter import get_emitter
 

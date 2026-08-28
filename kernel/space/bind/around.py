@@ -1,6 +1,4 @@
 # xphi.kernel.space.bind.around
-## @lineage: kernel.space.bind.around
-## @lineage: kernel.bind.around
 import os
 import sys
 import shutil
@@ -47,7 +45,7 @@ DEFAULT_BOUND_SKELETON = {
         "ailog": ":io:/ailog",
         "sandbox": ":workspace:",
         "time": ":kernel:/space/time",
-        "flaretime": ":kernel:/space/flare/time",
+        "flaretime": ":kernel:/space/time/flare",
         "surface": ":io:/surface",
         "contract": ":contract:",
         "spec": ":contract:/spec",

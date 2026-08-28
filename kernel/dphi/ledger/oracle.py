@@ -1,5 +1,4 @@
 # xphi.kernel.dphi.ledger.oracle
-## @lineage: kernel.dphi.ledger.oracle
 import json
 from typing import Any, Dict, Optional, List
 from rocksdict import Rdict, Options, AccessType

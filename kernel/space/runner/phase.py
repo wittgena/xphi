@@ -1,4 +1,5 @@
-# xphi.kernel.dphi.runner.phase
+# xphi.kernel.space.runner.phase
+## @lineage: xphi.kernel.dphi.runner.phase
 ## @lineage: kernel.dphi.runner.phase
 import asyncio
 import time
@@ -58,7 +59,6 @@ class SchemeRunner(BaseRunner):
         self.broker = broker
 
     async def _set_worker_policy(self, tier_name: str):
-        # [삭제 권장] 호환성을 위해 남겨두나, Stateful한 브로드캐스트는 동시성 환경에서 권장하지 않습니다.
         log.info(f"\n[Control Plane] Shifting WasmCgroup Policy Tier -> {tier_name}")
         if hasattr(self.broker, "update_policy"):
             await self.broker.update_policy(tier=tier_name)
@@ -74,7 +74,7 @@ class SchemeRunner(BaseRunner):
         expected_success: bool, 
         expected_match: Optional[str] = None,
         custom_validator: Optional[Callable[[str], bool]] = None,
-        tier: Optional[str] = None  # [핵심] 이제 1회성으로 명시적 티어를 주입합니다 (Stateless 방어)
+        tier: Optional[str] = None
     ):
         func_name = target_func.value if isinstance(target_func, Enum) else target_func
         log.info(f"\n[TEST] {title} (Func: {func_name})")

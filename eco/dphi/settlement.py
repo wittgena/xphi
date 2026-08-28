@@ -1,6 +1,5 @@
-# xphi.kernel.dphi.eco.settlement
-## @lineage: kernel.dphi.eco.settlement
-## @lineage: bound.eco.settlement
+# xphi.eco.dphi.settlement
+## @lineage: xphi.kernel.dphi.eco.settlement
 import time
 import json
 import hashlib

@@ -1,4 +1,4 @@
-// kernel.space.flare.time.router.ts
+// kernel.space.time.flare.router.ts
 import dvmModule from "./dvm.wasm";
 import dphiModule from "./dphi.wasm";
 import cw20Module from "./cw20_base.wasm";

@@ -1,12 +1,11 @@
-# xphi.kernel.dphi.exchange.config
-## @lineage: kernel.dphi.exchange.config
+# xphi.eco.dphi.config
+## @lineage: xphi.kernel.dphi.exchange.config
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Dict
 from xphi.kernel.dphi.cgroup import Tier
 
 class TierPolicySettings(BaseSettings):
-    """[Layer 1: Infrastructure] 실행 환경 논리 자원 통제 설정 (기존과 동일)"""
     fuel_to_seconds_ratio: int = 100_000_000
     
     ## Premium (System)
@@ -47,8 +46,6 @@ class BillingSettings(BaseSettings):
 
 
 class TreasurySettings(BaseSettings):
-    """[Layer 3: Economy] 발생한 수익의 분배(Revenue Split) 비율 설정 (tracker.billing 전용)"""
-    ## 합계가 1.0(100%)이 되도록 유지
     operator_share: float = 0.70      # 인프라 제공자
     gov_agent_share: float = 0.15     # 거버넌스 에이전트 풀
     sec_agent_share: float = 0.15     # 보안 검증 에이전트 풀

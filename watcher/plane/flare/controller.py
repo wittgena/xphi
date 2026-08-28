@@ -1,4 +1,5 @@
-# xphi.watcher.flare.controller
+# xphi.watcher.plane.flare.controller
+## @lineage: xphi.watcher.flare.controller
 ## @lineage: watcher.flare.controller
 import json
 import asyncio
@@ -9,7 +10,7 @@ from typing import Dict, Any, Optional, Type, Tuple, List
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.watcher.tracer.bound import BaseStreamAuditor, SystemBound, log_streamer
-from xphi.watcher.wasm.auditor import CanonicalProofAuditor
+from xphi.kernel.wasm.auditor import CanonicalProofAuditor
 
 TIME_ROOT = resolve_path("time")
 FLARETIME_ROOT = resolve_path("flaretime")

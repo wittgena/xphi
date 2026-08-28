@@ -1,4 +1,5 @@
-# xphi.kernel.dphi.runner.recovery
+# xphi.kernel.space.runner.recovery
+## @lineage: xphi.kernel.dphi.runner.recovery
 ## @lineage: kernel.dphi.runner.recovery
 ## @lineage: phase.node.runner.recovery
 import time
@@ -14,7 +15,7 @@ from xphi.kernel.dphi.ledger.consensus import KernelCommit, KernelLedger
 from xphi.kernel.space.sandbox.executor import EffectResolver, TaskContext
 from xphi.kernel.dphi.method import DphiMethod
 
-from xphi.kernel.dphi.runner.phase import RuntimeRunner, RecoveryMethod
+from xphi.kernel.space.runner.phase import RuntimeRunner, RecoveryMethod
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("recovery.runner")

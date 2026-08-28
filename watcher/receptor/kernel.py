@@ -23,7 +23,7 @@ from xphi.watcher.plane.metric.trajectory import (
 from xphi.watcher.plane.emitter import get_emitter
 
 # L0 Membrane Integration
-from xphi.watcher.receptor.mem.filter import SurvivalAnchor
+from xphi.watcher.receptor.audit.filter import SurvivalAnchor
 
 log = get_emitter("receptor.kernel")
 

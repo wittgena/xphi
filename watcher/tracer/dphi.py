@@ -17,8 +17,8 @@ from xphi.kernel.dphi.ledger.consensus import KernelLedger, KernelCommit, Ledger
 
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.tracer.bound import BaseTracer
-from xphi.watcher.wasm.builder import WasmBuilder
-from xphi.watcher.wasm.tester import WasmTester
+from xphi.kernel.wasm.builder import WasmBuilder
+from xphi.kernel.wasm.tester import WasmTester
 
 log = get_emitter("tracer.dphi")
 

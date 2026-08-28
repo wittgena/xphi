@@ -8,7 +8,7 @@ from typing import Optional, Any, Mapping, Union, Dict
 from contextlib import suppress
 
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
-from xphi.kernel.phase.inter.protocol import ExecutionResult, ExecutionError
+from arch.contract.interpreter import ExecutionResult, ExecutionError
 from xphi.kernel.dphi.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter, _flow_context
 
@@ -110,9 +110,7 @@ class DphiBroker:
         timeout: Optional[float] = None
     ) -> ExecutionResult:
         await self._ensure_listener_started()
-        
         route = target_route or self.request_stream
-        # [FIX] 동적 팩토리 참조 적용
         tunnel = await self.tunnel_factory.get_default()
         method_name = payload.get(PayloadKey.METHOD_FUNC, 'unknown')
         

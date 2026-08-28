@@ -14,7 +14,7 @@ from pydantic import SecretStr
 from xphi.arch.xor.secret.cipher import Cipher
 from xphi.watcher.receptor.policy.gateway import ToposGateway
 from xphi.watcher.receptor.audit.warden import AuditWarden
-from xphi.watcher.receptor.contract.model import AuditLogResponse
+from xphi.watcher.receptor.edge.receipt import AuditLogResponse
 
 logger = logging.getLogger("audit.ledger")
 

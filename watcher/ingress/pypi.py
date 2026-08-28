@@ -12,7 +12,7 @@ from aiohttp import web, ClientSession
 from mcp.server.streamable_http import EventStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from xphi.watcher.ingress.mcp import SecureMCPServer
+from xphi.watcher.mcp.server import SecureMCPServer
 from xphi.watcher.ingress.sentinel import get_projector, SecurityContext, MetaRuleDef
 from xphi.watcher.receptor.audit.warden import AuditWarden
 from xphi.watcher.plane.emitter import get_emitter
