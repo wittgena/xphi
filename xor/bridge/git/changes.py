@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.git.changes
+# xphi.xor.bridge.git.changes
+## @lineage: xphi.arch.xor.bridge.git.changes
 ## @lineage: arch.xor.bridge.git.changes
 ## @lineage: agent.space.tool.git.changes
 import glob

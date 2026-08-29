@@ -1,8 +1,9 @@
-# xphi.arch.contract.event.bus
+# xphi.arch.event.bus
+## @lineage: xphi.arch.contract.event.bus
 ## @lineage: arch.contract.event.bus
 import asyncio
 from typing import Dict, Any, List, Optional
-from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.event.psi import PsiEvent
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.watcher.plane.emitter import get_emitter
 

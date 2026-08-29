@@ -7,8 +7,8 @@ import time
 import uuid
 from typing import Dict, Any
 
-from xphi.arch.contract.event.bus import AsyncEventBus
-from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.event.bus import AsyncEventBus
+from xphi.arch.event.psi import PsiEvent
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField
 from xphi.watcher.plane.metric.trajectory import (
     Point, ContinuousTrajectory, DefaultBoundLensStrategy,

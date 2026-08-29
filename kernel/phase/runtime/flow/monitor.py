@@ -1,11 +1,4 @@
 # xphi.kernel.phase.runtime.flow.monitor
-## @lineage: kernel.phase.runtime.flow.monitor
-## @lineage: watcher.plane.flow.monitor
-## @lineage: phase.dynamics.flow.monitor
-"""
-@flow: Ψ(Runtime Context) → Inspect → Φ(Adaptive Wrapper) → Direct/Intercept
-@intent: Ator 비동기 큐 엔진과 동기식 테스트 환경(unittest) 모두에서 주석 명세(@phase, @flow, @invariant)를 인지하고 위상 상태를 동기화하는 범용 어댑티브 모니터
-"""
 import sys
 import asyncio
 import re
@@ -13,20 +6,14 @@ import inspect
 import functools
 from pathlib import Path
 from typing import Any, Callable
+
+from xphi.arch.contract.phase.flow import PhaseFlow, FlowState
 from xphi.watcher.plane.emitter import get_logger, get_emitter
-from xphi.arch.model.phase.flow import PhaseFlow, FlowState
 
 log = get_logger("flow.monitor")
 monitor_emitter = get_emitter("flow.monitor", phase="observe", boundary="telemetry")
 
 def flow_monitor(func: Callable) -> Callable:
-    """
-    @role: Adaptive Phase-Field Observer
-    대상 메서드의 docstring 및 인자를 동적으로 분석하여 환경에 맞게 런타임 흐름을 감시
-    - AtorRuntime 내부: ctx.state["boundary"] 제어를 통한 우아한 위상 전이 유도
-    - Unittest / 일반 환경: 글로벌 에미터를 통한 위상 텔레메트리 방출 및 네이티브 예외 전파
-    """
-    ## 대상 함수의 메타데이터 및 실행 환경 판별
     is_coroutine = inspect.iscoroutinefunction(func)
     
     @functools.wraps(func)
@@ -51,7 +38,6 @@ def flow_monitor(func: Callable) -> Callable:
 
 
 def _monitor_enter(func: Callable, instance: Any):
-    """함수 진입 시점에 주석 구조(@phase, @flow, @invariant)를 추출하여 관측 로그를 남깁니다."""
     docstring = func.__doc__ or ""
     
     ## 클래스명.메서드명 형태로 오퍼레이터 식별자 추출

@@ -1,14 +1,18 @@
-# xphi.arch.contract.event.next
-## @lineage: arch.contract.event.next
+# xphi.arch.event.next
 import os
 import time
 import threading
+import random
+import uuid as _std_uuid
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional, Annotated, Tuple
-from xphi.kernel.space.bind.resolver import resolve_identity
 from datetime import UTC, datetime
+
 from pydantic import Field
+from xphi.kernel.space.bind.resolver import resolve_identity
+
+uuid = _std_uuid
 
 """Topos ID Generator (64-bit Snowflake)"""
 class ToposGenerator:
@@ -72,6 +76,25 @@ def parse_id(snowflake_id: str):
         "seq": sequence
     }
 
+def uuid4() -> _std_uuid.UUID:
+    """
+    - ToposId(64bit)를 상위 비트에, 랜덤 값(64bit)을 하위 비트에 결합하여 128비트 UUID 객체(8-4-4-4-12 포맷)로 변환하여 반환
+    - ToposGenerator 실패 시 표준 UUIDv4로 안전하게 폴백(Fallback)
+    """
+    try:
+        # 기존 체계의 ToposId (64비트 정수) 추출
+        topos_int = generator.generate()
+        
+        # 상위 64비트에 ToposId를, 하위 64비트에 난수를 패킹 - 고유성을 보장, 시간순 정렬(Sortable) 특성을 유지
+        uuid_int = (topos_int << 64) | random.getrandbits(64)
+        
+        # 표준 UUID 객체로 변환하여 반환 (호출부에서 str() 처리 호환)
+        return _std_uuid.UUID(int=uuid_int)
+        
+    except Exception:
+        # Clock backwards 등 ToposGenerator 예외 발생 시 표준 UUIDv4로 폴백
+        return _std_uuid.uuid4()
+
 
 """Phase ID Generator (32-bit 차분 신호)"""
 class PhaseIdGenerator:
@@ -120,6 +143,26 @@ phase_generator = PhaseIdGenerator()
 
 def next_phase_id(topo: int, press: int, rupture: bool = False, tick: Optional[int] = None) -> int:
     return phase_generator.generate(topo, press, rupture, tick)
+
+def parse_phase_id(phase_id: int) -> Dict[str, Any]:
+    """@desc: 32-bit Phase ID 디코딩 (Epoch, Tick, Topo 변위, Press 변위)"""
+    epoch = (phase_id >> 31) & 0x1
+    tick = (phase_id >> 24) & 0x7F
+    
+    topo_sign = (phase_id >> 23) & 0x1
+    topo_mag = (phase_id >> 12) & 0x7FF
+    d_topo = topo_mag if topo_sign else -topo_mag
+    
+    press_sign = (phase_id >> 11) & 0x1
+    press_mag = phase_id & 0x7FF
+    d_press = press_mag if press_sign else -press_mag
+    
+    return {
+        "epoch": epoch,
+        "tick": tick,
+        "d_topo": d_topo,
+        "d_press": d_press
+    }
 
 
 """Nexus & Parity Management (Ternary XOR Logic)"""
@@ -176,6 +219,11 @@ def generate_parity_triplet(topo: int, press: int, rupture: bool = False) -> Dic
 
 
 """Event Schema & Utilities"""
+ToposId = Annotated[str, Field(description="Topological Snowflake ID (Replaces legacy UUID)")]
+
+def utc_now():
+    return datetime.now(UTC)
+
 @dataclass
 class LogEvent:
     """
@@ -200,28 +248,3 @@ class LogEvent:
     density: float = 0.0
     gain: float = 1.0
     fold_count: int = 1
-
-def utc_now():
-    return datetime.now(UTC)
-
-ToposId = Annotated[str, Field(description="Topological Snowflake ID (Replaces legacy UUID)")]
-
-def parse_phase_id(phase_id: int) -> Dict[str, Any]:
-    """@desc: 32-bit Phase ID 디코딩 (Epoch, Tick, Topo 변위, Press 변위)"""
-    epoch = (phase_id >> 31) & 0x1
-    tick = (phase_id >> 24) & 0x7F
-    
-    topo_sign = (phase_id >> 23) & 0x1
-    topo_mag = (phase_id >> 12) & 0x7FF
-    d_topo = topo_mag if topo_sign else -topo_mag
-    
-    press_sign = (phase_id >> 11) & 0x1
-    press_mag = phase_id & 0x7FF
-    d_press = press_mag if press_sign else -press_mag
-    
-    return {
-        "epoch": epoch,
-        "tick": tick,
-        "d_topo": d_topo,
-        "d_press": d_press
-    }

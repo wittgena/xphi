@@ -1,4 +1,5 @@
-# xphi.arch.xor.stream.conv
+# xphi.xor.stream.conv
+## @lineage: xphi.arch.xor.stream.conv
 ## @lineage: arch.xor.stream.conv
 import re
 from abc import ABC, abstractmethod

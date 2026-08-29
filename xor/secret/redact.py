@@ -1,4 +1,5 @@
-# xphi.arch.xor.secret.redact
+# xphi.xor.secret.redact
+## @lineage: xphi.arch.xor.secret.redact
 ## @lineage: arch.xor.secret.redact
 import copy
 import re

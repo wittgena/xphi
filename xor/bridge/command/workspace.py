@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.command.workspace
+# xphi.xor.bridge.command.workspace
+## @lineage: xphi.arch.xor.bridge.command.workspace
 ## @lineage: arch.xor.bridge.command.workspace
 ## @lineage: agent.bridge.tool.command.workspace
 from typing import Literal

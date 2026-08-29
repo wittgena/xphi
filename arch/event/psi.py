@@ -1,4 +1,5 @@
-# xphi.arch.contract.event.psi
+# xphi.arch.event.psi
+## @lineage: xphi.arch.contract.event.psi
 ## @lineage: arch.contract.event.psi
 """
 @flow:
@@ -15,7 +16,7 @@ import json
 from enum import Enum
 from typing import Dict, Tuple, FrozenSet, Optional, Any, Union
 from dataclasses import dataclass, field, asdict
-from xphi.arch.contract.event.next import LogEvent
+from xphi.arch.event.next import LogEvent
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("bridge.psi")

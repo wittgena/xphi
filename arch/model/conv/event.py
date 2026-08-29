@@ -10,7 +10,7 @@ from rich.text import Text
 
 from xphi.arch.model.message import ImageContent, Message, TextContent
 from xphi.arch.model.surge.disc import DiscMixin
-from xphi.arch.contract.event.next import ToposId, next_id
+from xphi.arch.event.next import ToposId, next_id
 
 N_CHAR_PREVIEW = 500
 

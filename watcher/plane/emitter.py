@@ -9,7 +9,7 @@ from typing import Any, Dict, Optional, Callable, List
 from contextvars import ContextVar
 from contextlib import contextmanager
 
-from xphi.arch.contract.event.next import LogEvent, next_id
+from xphi.arch.event.next import LogEvent, next_id
 from xphi.watcher.plane.regulator import default_plane
 
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})

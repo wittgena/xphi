@@ -12,10 +12,10 @@ from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
-from xphi.arch.contract.executor import BaseExecutor
+from xphi.kernel.phase.runtime.executor.base import BaseExecutor
 from xphi.arch.contract.registry.unified import registry
-from xphi.arch.contract.event.next import next_id
-from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.event.next import next_id
+from xphi.arch.event.psi import PsiEvent, PsiCarrier
 from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.kernel.daemon.bootstrap import TOPIC_BUS_STREAM
 from xphi.watcher.plane.emitter import get_emitter, flow_scope

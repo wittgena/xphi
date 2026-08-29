@@ -1,4 +1,5 @@
-# xphi.arch.xor.secret.cipher
+# xphi.xor.secret.cipher
+## @lineage: xphi.arch.xor.secret.cipher
 ## @lineage: arch.xor.secret.cipher
 import hashlib
 from base64 import b64encode

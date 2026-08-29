@@ -7,7 +7,7 @@ import struct
 import json
 from typing import Union, Any, Dict, List
 
-from xphi.arch.contract.event.next import next_id
+from xphi.arch.event.next import next_id
 from xphi.watcher.tracer.bound import BaseStreamAuditor, BaseBoundary
 from xphi.watcher.plane.emitter import get_emitter
 

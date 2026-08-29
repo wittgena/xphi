@@ -1,6 +1,4 @@
 # xphi.kernel.phase.runtime.executor.swarm
-## @lineage: kernel.phase.runtime.executor.swarm
-## @lineage: phase.executor.swarm
 import os
 import sys
 import uuid
@@ -9,12 +7,12 @@ import asyncio
 import subprocess
 import importlib
 from typing import Callable, Any
-from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
-from xphi.arch.contract.event.next import next_id, LogEvent
+from xphi.arch.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.event.next import next_id, LogEvent
 from dataclasses import asdict
 from xphi.watcher.plane.emitter import get_logger, flow_scope
 from xphi.arch.contract.registry.unified import registry
-from xphi.arch.contract.executor import BaseExecutor
+from xphi.kernel.phase.runtime.executor.base import BaseExecutor
 from xphi.kernel.phase.runtime.executor.cli import _GenericCliExecutor
 from xphi.kernel.phase.runtime.flow.executor import FlowExecutor
 

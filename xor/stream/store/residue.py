@@ -1,4 +1,5 @@
-# xphi.arch.xor.stream.store.residue
+# xphi.xor.stream.store.residue
+## @lineage: xphi.arch.xor.stream.store.residue
 ## @lineage: arch.xor.stream.store.residue
 ## @lineage: arch.xor.store.residue
 ## @lineage: arch.xor.bridge.store.residue
@@ -11,11 +12,11 @@ import sys
 from typing import List, Set, Any, Dict, Optional
 from dataclasses import dataclass, field, asdict
 from rocksdict import Rdict, Options
-from xphi.arch.contract.event.psi import PsiType
+from xphi.arch.event.psi import PsiType
 from xphi.watcher.plane.emitter import get_logger
 from xphi.kernel.space.bind.resolver import find_current_self, resolve_path
 from xphi.kernel.phase.runtime.node import NodeRuntime
-from xphi.arch.contract.executor import BaseExecutor
+from xphi.kernel.phase.runtime.executor.base import BaseExecutor
 
 log = get_logger("xor.store")
 

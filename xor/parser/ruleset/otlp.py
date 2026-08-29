@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.otlp
+# xphi.xor.parser.ruleset.otlp
+## @lineage: xphi.arch.xor.parser.otlp
 ## @lineage: arch.xor.parser.otlp
 import orjson
 from typing import List, Dict, Any

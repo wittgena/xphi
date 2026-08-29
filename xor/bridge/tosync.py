@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.tosync
+# xphi.xor.bridge.tosync
+## @lineage: xphi.arch.xor.bridge.tosync
 ## @lineage: arch.xor.bridge.tosync
 ## @lineage: agent.bridge.tosync
 import asyncio

@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.mark.convset
+# xphi.xor.parser.mark.convset
+## @lineage: xphi.arch.xor.parser.mark.convset
 ## @lineage: arch.xor.parser.mark.convset
 ## @lineage: arch.xor.mark.convset
 ## @lineage: bound.xor.bridge.mark.convset

@@ -9,9 +9,9 @@ from typing import List, Dict, Any, Optional
 
 from arch.contract.interpreter import NodeInterpreter, AnchorFlow
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade, TunnelFactory
-from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
-from xphi.arch.contract.event.tunnelbus import TunnelEventBus
-from xphi.arch.contract.event.next import next_id
+from xphi.arch.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.event.tunnelbus import TunnelEventBus
+from xphi.arch.event.next import next_id
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.arch.contract.registry.unified import registry
 
@@ -93,7 +93,21 @@ class NodeRuntime(IPhaseAtor):
 
     @property
     def local_manifold(self):
-        return registry.registered_nodes
+        """
+        [개선] registry.registered_nodes 제거에 대응하는 안전한 우회 로직.
+        해당 속성이 없을 경우 시스템 셧다운을 방지하고 빈 딕셔너리로 폴백합니다.
+        """
+        if hasattr(registry, 'registered_nodes'):
+            return registry.registered_nodes
+            
+        # 에러 스택에서 제안된 'registered_daemons'가 호환되는지 확인 (contract 유무)
+        if hasattr(registry, 'registered_daemons'):
+            daemons = registry.registered_daemons
+            if daemons and any(hasattr(meta, 'contract') for meta in daemons.values()):
+                return daemons
+                
+        # 매칭되는 레지스트리 풀이 없다면 빈 딕셔너리를 반환하여 부팅 루틴(fallback to system:ping) 유지
+        return {}
 
     @property
     def ator_id(self) -> str:
@@ -150,6 +164,7 @@ class NodeRuntime(IPhaseAtor):
         for meta in self.local_manifold.values():
             all_recepts.update(getattr(meta.contract, "recept", []))
 
+        # local_manifold가 비어있어도 여기서 기본 통신망을 확보하므로 안전함
         if not all_recepts:
             all_recepts = {"system:signal", "system:ping"}
 

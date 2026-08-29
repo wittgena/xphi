@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.terminal
+# xphi.xor.bridge.terminal
+## @lineage: xphi.arch.xor.bridge.terminal
 ## @lineage: arch.xor.bridge.terminal
 ## @lineage: agent.bridge.tool.terminal
 import json

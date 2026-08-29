@@ -1,4 +1,5 @@
-# xphi.arch.xor.secret.client
+# xphi.xor.secret.client
+## @lineage: xphi.arch.xor.secret.client
 ## @lineage: arch.xor.secret.client
 ## @lineage: mesh.bound.secure.secret.client
 import base64

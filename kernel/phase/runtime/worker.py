@@ -6,11 +6,11 @@ import os
 import importlib
 
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
-from xphi.arch.contract.event.tunnelbus import TunnelEventBus
+from xphi.arch.event.tunnelbus import TunnelEventBus
 from xphi.kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
 from xphi.kernel.phase.runtime.context import RuntimeContext
 from xphi.kernel.daemon.bootstrap import mount_worker_layer
-from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.event.psi import PsiEvent
 from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.plane.sink import TunnelSink

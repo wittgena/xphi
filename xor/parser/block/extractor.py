@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.block.extractor
+# xphi.xor.parser.block.extractor
+## @lineage: xphi.arch.xor.parser.block.extractor
 import re
 import sys
 import json

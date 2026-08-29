@@ -11,10 +11,10 @@ from dataclasses import asdict
 from typing import Callable, Any
 from pathlib import Path
 
-from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
-from xphi.arch.contract.event.next import next_id, LogEvent
+from xphi.arch.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.event.next import next_id, LogEvent
 from xphi.arch.contract.registry.unified import registry
-from xphi.arch.contract.executor import BaseExecutor
+from xphi.kernel.phase.runtime.executor.base import BaseExecutor
 
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.kernel.space.bind.resolver import get_invoker

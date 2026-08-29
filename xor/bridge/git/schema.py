@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.git.schema
+# xphi.xor.bridge.git.schema
+## @lineage: xphi.arch.xor.bridge.git.schema
 ## @lineage: arch.xor.bridge.git.schema
 ## @lineage: agent.bridge.tool.git
 from enum import Enum

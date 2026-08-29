@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.ast 
+# xphi.xor.parser.ast
+## @lineage: xphi.arch.xor.parser.ast
 import re
 import ast
 from pathlib import Path

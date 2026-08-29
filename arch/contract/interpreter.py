@@ -8,7 +8,7 @@ from typing import (
     Optional, FrozenSet, Union
 )
 
-from xphi.arch.contract.event.psi import PsiCarrier, PhaseField
+from xphi.arch.event.psi import PsiCarrier, PhaseField
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.kernel.dphi.method import DphiMethod
 

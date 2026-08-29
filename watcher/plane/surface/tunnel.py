@@ -7,7 +7,7 @@ import threading
 import queue
 from dataclasses import asdict
 from typing import Optional
-from xphi.arch.contract.event.next import LogEvent
+from xphi.arch.event.next import LogEvent
 from xphi.watcher.plane.observer.event import EventObserver
 
 class TunnelSurface(EventObserver):

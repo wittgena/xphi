@@ -7,7 +7,7 @@ from dataclasses import replace
 from typing import Dict, List, Optional
 from pathlib import Path
 
-from xphi.arch.contract.event.next import LogEvent, next_phase_id
+from xphi.arch.event.next import LogEvent, next_phase_id
 from xphi.kernel.space.bind.resolver import resolve_path
 
 from xphi.kernel.phase.runtime.flow.meter import default_telemetry

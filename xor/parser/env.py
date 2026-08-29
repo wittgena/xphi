@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.env
+# xphi.xor.parser.env
+## @lineage: xphi.arch.xor.parser.env
 import importlib
 import inspect
 import json
@@ -13,7 +14,7 @@ from types import UnionType
 from typing import IO, Annotated, Any, Literal, Union, cast, get_args, get_origin
 from pydantic import BaseModel, SecretStr, TypeAdapter
 from xphi.arch.model.surge.disc import DiscMixin, get_known_concrete_subclasses
-from xphi.arch.contract.event.next import ToposId
+from xphi.arch.event.next import ToposId
 
 class MissingType:
     pass

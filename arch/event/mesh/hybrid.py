@@ -1,12 +1,10 @@
-# xphi.arch.contract.event.mesh.hybrid
-## @lineage: arch.contract.event.mesh.hybrid
-## arch.contract.event.swarm.adapter
+# xphi.arch.event.mesh.hybrid
 import asyncio
 import json
 from typing import Callable, List, Tuple, Optional
 
-from xphi.arch.contract.event.psi import PsiEvent
-from xphi.arch.contract.event.mesh.transport import MeshP2PTransport
+from xphi.arch.event.psi import PsiEvent
+from xphi.arch.event.mesh.transport import MeshP2PTransport
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
 

@@ -5,7 +5,7 @@
 from __future__ import annotations
 from typing import List, Dict, Optional, Any
 
-from xphi.arch.contract.event.psi import PsiCarrier, PsiEvent
+from xphi.arch.event.psi import PsiCarrier, PsiEvent
 from xphi.arch.contract.interface import ICriticalDetector, IPhaseField, IDynamicsKernel
 from xphi.arch.contract.registry.unified import registry, contract
 

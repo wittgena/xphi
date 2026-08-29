@@ -1,4 +1,5 @@
-# xphi.arch.xor.stream.edge
+# xphi.xor.stream.edge
+## @lineage: xphi.arch.xor.stream.edge
 ## @lineage: arch.xor.stream.edge
 ## @lineage: bound.xor.store.stream
 import asyncio

@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 from dataclasses import asdict
 from datetime import datetime, timezone
-from xphi.arch.contract.event.next import LogEvent
+from xphi.arch.event.next import LogEvent
 from xphi.watcher.plane.observer.event import EventObserver
 from xphi.watcher.plane.surface.console import ConsoleSurface
 

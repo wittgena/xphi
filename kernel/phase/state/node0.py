@@ -8,7 +8,7 @@ from typing import List, AsyncIterator, Dict, Any, Tuple
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 
-from xphi.arch.contract.event.psi import PsiCarrier
+from xphi.arch.event.psi import PsiCarrier
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
 
 from arch.contract.interpreter import NodeInterpreter, AnchoredIR, AnchorFlow

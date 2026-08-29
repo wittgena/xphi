@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.lang.action
+# xphi.xor.parser.action
+## @lineage: xphi.arch.xor.parser.lang.action
 ## @lineage: arch.xor.parser.lang.action
 ## @lineage: arch.xor.block.parser.action
 ## @lineage: arch.xor.parser.action

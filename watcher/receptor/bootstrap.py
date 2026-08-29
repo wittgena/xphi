@@ -13,8 +13,8 @@ from dataclasses import asdict
 
 from xphi.arch.contract.discovery import discover_modules
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
-from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
-from xphi.arch.contract.event.next import next_id
+from xphi.arch.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.event.next import next_id
 
 from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.watcher.plane.sink import TunnelSink 

@@ -9,7 +9,7 @@ import atexit
 from dataclasses import replace, asdict
 from typing import Dict, List, Protocol, Optional
 from pathlib import Path
-from xphi.arch.contract.event.next import LogEvent
+from xphi.arch.event.next import LogEvent
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.observer.event import EventObserver
 

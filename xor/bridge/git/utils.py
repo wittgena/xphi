@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.git.utils
+# xphi.xor.bridge.git.utils
+## @lineage: xphi.arch.xor.bridge.git.utils
 ## @lineage: arch.xor.bridge.git.utils
 ## @lineage: agent.space.tool.git.utils
 import re

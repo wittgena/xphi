@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.command.terminal
+# xphi.xor.bridge.command.terminal
+## @lineage: xphi.arch.xor.bridge.command.terminal
 ## @lineage: arch.xor.bridge.command.terminal
 ## @lineage: agent.bridge.tool.command.terminal
 from enum import Enum

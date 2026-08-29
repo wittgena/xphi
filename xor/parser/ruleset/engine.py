@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.ruleset
+# xphi.xor.parser.ruleset.engine
+## @lineage: xphi.arch.xor.parser.ruleset
 ## @lineage: arch.xor.parser.ruleset
 import json
 import re

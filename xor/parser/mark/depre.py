@@ -1,4 +1,5 @@
-# xphi.arch.xor.parser.mark.depre
+# xphi.xor.parser.mark.depre
+## @lineage: xphi.arch.xor.parser.mark.depre
 ## @lineage: arch.xor.parser.mark.depre
 ## @lineage: arch.xor.mark.depre
 ## @lineage: bound.xor.bridge.mark.depre

@@ -1,4 +1,5 @@
-# xphi.arch.xor.stream.store.memfile
+# xphi.xor.stream.store.memfile
+## @lineage: xphi.arch.xor.stream.store.memfile
 ## @lineage: arch.xor.stream.store.memfile
 ## @lineage: arch.xor.store.memfile
 ## @lineage: arch.xor.bridge.store.memfile

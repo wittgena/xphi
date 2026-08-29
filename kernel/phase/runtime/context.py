@@ -5,7 +5,7 @@ from typing import Any
 from dataclasses import dataclass
 
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
-from xphi.arch.contract.event.tunnelbus import TunnelEventBus
+from xphi.arch.event.tunnelbus import TunnelEventBus
 from xphi.kernel.daemon.task.supervisor import Dispatcher
 
 @dataclass

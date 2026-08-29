@@ -1,4 +1,5 @@
-# xphi.arch.xor.bridge.git.exceptions
+# xphi.xor.bridge.git.exceptions
+## @lineage: xphi.arch.xor.bridge.git.exceptions
 ## @lineage: arch.xor.bridge.git.exceptions
 ## @lineage: agent.space.tool.git.exceptions
 class GitError(Exception):

@@ -1,24 +1,14 @@
-# xphi.arch.contract.event.tunnelbus
-## @lineage: arch.contract.event.tunnelbus
-"""
-@desc: Distributed Event Bus leveraging UniversalFacade (Redis Streams).
-       Bridges the local Ator manifold with the global system Tunnel.
-"""
+# xphi.arch.event.tunnelbus
+## @lineage: xphi.arch.contract.event.tunnelbus
 import asyncio
 from typing import Dict, Any, List, Optional, Callable, Tuple
 
-from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.event.psi import PsiEvent
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
 from xphi.watcher.plane.emitter import get_emitter
 
 class TunnelEventBus(IEventBus):
-    """
-    @role: Distributed ψ-router.
-    @flow: 
-      - Outbound (publish): Local Ator -> TunnelEventBus -> Redis Stream
-      - Inbound (dispatch): EventBusDaemon -> TunnelEventBus -> Local Ator (Fan-out)
-    """
     def __init__(self, tunnel: UniversalFacade, topic: str = "runtime:bus:stream"):
         self.tunnel = tunnel
         self.topic = topic

@@ -1,5 +1,4 @@
 # xphi.kernel.ops.reaper
-## @lineage: fiber.kernel.reaper
 import asyncio
 import json
 import urllib.parse
@@ -16,6 +15,7 @@ from xphi.watcher.plane.emitter import get_emitter
 
 DEFAULT_TARGET_TAGS = [
     "xphi.kernel",
+    "kernel.ops",
     "dphi",
     "deno",
     "workerd",

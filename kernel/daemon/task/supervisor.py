@@ -7,7 +7,7 @@ from collections.abc import Awaitable, Callable
 from contextlib import suppress
 from typing import Callable, List, Tuple, Any, Optional, Set, Protocol
 
-from xphi.arch.contract.event.psi import PsiEvent
+from xphi.arch.event.psi import PsiEvent
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
