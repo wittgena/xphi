@@ -1,5 +1,4 @@
 # xphi.eco.adapter.shadow
-## @lineage: xphi.kernel.dphi.adapter.shadow
 import time
 import json
 import hashlib

@@ -1,5 +1,4 @@
 # xphi.watcher.ingress.pypi
-## @lineage: watcher.ingress.pypi
 import asyncio
 import datetime
 import hashlib
@@ -29,7 +28,7 @@ class PyPIProxySettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PYPI_")
     host: str = "127.0.0.1"
     proxy_port: int = 8083  # Data Plane (PyPI 트래픽)
-    mcp_port: int = 8084    # Control Plane (보안 룰 제어)
+    mcp_port: int = 8085    # Control Plane (보안 룰 제어)
     upstream_url: str = "https://pypi.org"
     transport_mode: Literal["stdio", "sse"] = "sse"
 

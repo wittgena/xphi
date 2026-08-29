@@ -63,6 +63,8 @@ class NodeRuntime(IPhaseAtor):
         self.executor = executor
         self.running = True
         self.supervisor = TaskSupervisor(source=f"Master-{self._id}")
+        
+        # 데몬 등 하위 태스크의 에러를 잡는 글로벌 핸들러 등록
         self.supervisor.add_error_handler(self._global_task_error)
 
         self.bus: Optional[TunnelEventBus] = None
@@ -82,8 +84,12 @@ class NodeRuntime(IPhaseAtor):
         self._stop_event = asyncio.Event()
 
     def _global_task_error(self, task: asyncio.Task[Any], exc: BaseException) -> None:
+        """
+        [개선] 과잉 방어(Panic) 정책 제거
+        하위 데몬/태스크에서 발생한 에러가 커널 전체 셧다운으로 이어지지 않도록 격리(Isolation) 처리합니다.
+        """
         self.log.crit(f"⚠️ Critical fault in Master Task [{task.get_name()}]: {exc}")
-        asyncio.create_task(self.shutdown())
+        self.log.warn(f"[{task.get_name()}] has been isolated. NodeRuntime continues operating.")
 
     @property
     def local_manifold(self):
@@ -112,7 +118,6 @@ class NodeRuntime(IPhaseAtor):
 
     def _create_phase_handler(self):
         async def handler(psi: PsiEvent):
-            # [정렬 확인] inter.node의 process는 carrier와 context를 인자로 받음 (code 인자 없음)
             judgment = await self.interpreter.process(psi.carrier)
             return {
                 "psi": judgment.psi_symbol,
@@ -126,7 +131,11 @@ class NodeRuntime(IPhaseAtor):
 
     async def start(self):
         self.log.info(f"Starting Master NodeRuntime [{self.node_id}]")
-        self.tunnel = await TunnelFactory.get_default()
+        
+        # 외부(boot.py 등)에서 주입된 터널이 없다면 스스로 생성 (방어적 초기화)
+        if not self.tunnel:
+            self.tunnel = await TunnelFactory.get_default()
+            
         self.bus = TunnelEventBus(self.tunnel)
         self.bus.subscribe(self, predicate=lambda e: True)
         if self.executor:
@@ -145,9 +154,11 @@ class NodeRuntime(IPhaseAtor):
             all_recepts = {"system:signal", "system:ping"}
 
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
-        self.broker = DphiBroker()
         
-        # [정렬 완료] inter.node의 초기화 스펙에 맞게 정렬
+        # 주입된 Broker가 없다면 생성하여 덮어쓰기(Overwrite) 방지
+        if getattr(self, 'broker', None) is None:
+            self.broker = DphiBroker(tunnel_factory=TunnelFactory)
+        
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=anchor)
         
         self.log.info(f"Boot phase: {self.interpreter.phase}, boundaries: {len(anchor.recept_boundaries)}")
@@ -161,17 +172,29 @@ class NodeRuntime(IPhaseAtor):
             actuator=self.actuator,
         )
         
-        self.ctx = RuntimeContext(
-            node_id=self.node_id,
-            tunnel=self.tunnel,
-            bus=self.bus,
-            dispatcher=self.dispatcher,
-            sensor=self.sensor,
-            actuator=self.actuator,
-            idle_timeout=0.0,
-            watch_dir=watch_dir,
-            shutdown_hook=self.shutdown
-        )
+        # RuntimeContext 재활용 및 Broker 안전 바인딩
+        if getattr(self, 'ctx', None) is None:
+            self.ctx = RuntimeContext(
+                node_id=self.node_id,
+                tunnel=self.tunnel,
+                bus=self.bus,
+                dispatcher=self.dispatcher,
+                sensor=self.sensor,
+                actuator=self.actuator,
+                idle_timeout=0.0,
+                watch_dir=watch_dir,
+                shutdown_hook=self.shutdown
+            )
+        else:
+            # 부모 계층에서 생성만 해두고 비어있을 수 있으므로 핵심 인프라 속성 갱신
+            self.ctx.tunnel = self.tunnel
+            self.ctx.bus = self.bus
+            self.ctx.dispatcher = self.dispatcher
+            self.ctx.sensor = self.sensor
+            self.ctx.actuator = self.actuator
+
+        # App Layer 데몬(risk_vault 등)들이 사용할 수 있도록 ctx에 Broker를 반드시 삽입!
+        self.ctx.broker = self.broker
 
         # -----------------------------------------------------------------
         # 3. Master 마운트 및 별도 모듈 기반 Worker 프로세스 스폰
@@ -222,6 +245,14 @@ class NodeRuntime(IPhaseAtor):
         await self.deregister_node()
         await self.supervisor.shutdown()
 
+        # Broker 내부의 백그라운드 리스너 리소스 누수 방지 (Graceful Close)
+        if self.broker and hasattr(self.broker, 'close'):
+            try:
+                await self.broker.close()
+                self.log.info("DphiBroker background loops safely closed.")
+            except Exception as e:
+                self.log.warning(f"Error while closing DphiBroker: {e}")
+
         if self.actuator: await self.actuator.close()
         if self.tunnel: await self.tunnel.close()
         self.log.info("Teardown complete.")
@@ -239,7 +270,7 @@ class NodeRuntime(IPhaseAtor):
         current_boundaries = getattr(self.interpreter.anchor, 'recept_boundaries', None)
         stable_anchor = AnchorFlow.bootstrap(current_boundaries)
         
-        # [정렬 완료] 패닉 복구 시에도 inter.node 규격으로 재초기화
+        # 패닉 복구 시에도 inter.node 규격으로 재초기화
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=stable_anchor)
         
         if self.dispatcher:

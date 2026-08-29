@@ -1,4 +1,5 @@
 # xphi.kernel.daemon.bootstrap
+import os
 import asyncio
 import json
 import time
@@ -88,6 +89,7 @@ class EventBusDaemon(AbstractDaemon):
                         except Exception as e:
                             self.log.error(f"Event parsing or dispatch error: {e}")
                         
+                        # [FIX] 어떤 경우에도 ACK는 날려 파이프라인 정체 방지
                         await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
             except asyncio.CancelledError:
                 break
@@ -109,7 +111,6 @@ class HeartbeatDaemon(AbstractDaemon):
         self.log.info(f"HeartbeatDaemon initiated. Node [{self.node_id}] emitting vital signs (Role: {self.role}, Capacity: {self.capacity})...")
         try:
             while self.running:
-                # 1. 상태 메타데이터 구성
                 meta_payload = {
                     "ts": int(time.time()),
                     "role": self.role,
@@ -117,13 +118,14 @@ class HeartbeatDaemon(AbstractDaemon):
                 }
                 meta_json = json.dumps(meta_payload)
                 
-                # 2. Redis에 TTL 10초로 기록
-                await asyncio.gather(
-                    self.tunnel.set(f"{KEY_HEARTBEAT_PREFIX}{self.node_id}", meta_json, ex=10),
-                    self.tunnel.set(KEY_ACTIVE, int(time.time()), ex=10) # 전역 활성화 플래그는 기존 호환성 유지
-                )
+                try:
+                    await asyncio.gather(
+                        self.tunnel.set(f"{KEY_HEARTBEAT_PREFIX}{self.node_id}", meta_json, ex=10),
+                        self.tunnel.set(KEY_ACTIVE, int(time.time()), ex=10) 
+                    )
+                except Exception as e:
+                    self.log.error(f"Redis connection drop during heartbeat sync: {e}")
                 
-                # 3. 로드 파동(Tension) 전파
                 try:
                     active_tasks = len(self.supervisor.get_active_tasks())
                     payload = {
@@ -134,11 +136,12 @@ class HeartbeatDaemon(AbstractDaemon):
                 except Exception as e:
                     self.log.warning(f"Failed to emit load metric: {e}")
 
-                await asyncio.sleep(1.0) # 부하를 줄이기 위해 0.5초에서 1.0초로 완화
+                await asyncio.sleep(1.0) 
         except asyncio.CancelledError:
             self.log.warn("HeartbeatDaemon received cancellation signal.")
         except Exception as e:
-            self.log.error(f"HeartbeatDaemon Error: {e}")
+            self.log.error(f"Fatal HeartbeatDaemon Error: {e}", exc_info=True)
+
 
 class DynamicsDaemon(AbstractDaemon):
     def __init__(self, bus: AsyncEventBus, sensor: Optional[SurfaceSensor] = None):
@@ -166,7 +169,6 @@ class DynamicsDaemon(AbstractDaemon):
         return await super().start()
 
     async def _legacy_sensor_loop(self):
-        """기존 SensorDaemon의 역할을 서브 태스크로 흡수"""
         if not self.sensor: return
         self.log.info("Surface Sensor loop started.")
         while self.running:
@@ -197,9 +199,15 @@ class DynamicsDaemon(AbstractDaemon):
             return
 
         try:
-            await asyncio.gather(*tasks)
+            # [FIX] return_exceptions=True 적용하여 하나의 센서가 죽어도 전체 데몬이 죽지 않도록 방어
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            for result in results:
+                if isinstance(result, Exception):
+                    self.log.error(f"[Fault Isolated] A dynamics sub-task crashed unexpectedly: {result}")
         except asyncio.CancelledError:
             self.log.warn("DynamicsDaemon execution cancelled.")
+        except Exception as e:
+            self.log.error(f"Fatal error in DynamicsDaemon run loop: {e}", exc_info=True)
             
     def _create_genesis_psi(self, name: str) -> PsiEvent:
         carrier = PsiCarrier(kind="genesis", tag=name, payload={}, carrier_type=CarrierType.FIXED)
@@ -208,24 +216,49 @@ class DynamicsDaemon(AbstractDaemon):
             scope="GLOBAL", tick=0, carrier=carrier, phase_id=0, context={"domain": "kernel.bootstrap"}
         )
 
+
 def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     master_daemons = [
         HeartbeatDaemon(
             tunnel=ctx.tunnel, 
             node_id=ctx.node_id,
             supervisor=supervisor,
-            role="master",     # 명시적 마스터 롤
-            capacity=0         # 마스터는 WASM 처리를 안 하므로 0
+            role="master",     
+            capacity=0         
         ),
         DynamicsDaemon(
             bus=ctx.bus,
             sensor=ctx.sensor
         )
     ]
-    for daemon in master_daemons:
-        supervisor.mount_daemon(daemon)
     
-    log.info("Master Infra Layer (Heartbeat, Dynamics) mounted successfully.")
+    # [FIX] 코어 데몬(Infra) 마운트 실패 시에도 예외 격리
+    for daemon in master_daemons:
+        try:
+            supervisor.mount_daemon(daemon)
+        except Exception as e:
+            log.error(f"Critical Failure: Could not mount master infra daemon '{daemon.name}': {e}", exc_info=True)
+    
+    log.info("Master Infra Layer (Heartbeat, Dynamics) mount attempt complete.")
+
+    active_daemons_str = os.getenv("KERNEL_DAEMONS", "rest_edge,gateway_edge,risk_vault")
+    active_daemons = [d.strip() for d in active_daemons_str.split(",") if d.strip()]
+    
+    discovered_daemons = getattr(registry, "_daemons", {})
+    
+    for daemon_name in active_daemons:
+        DaemonClass = discovered_daemons.get(daemon_name)
+        if DaemonClass:
+            try:
+                # [FIX] 생성자 예외와 마운트 예외를 안전하게 커버
+                daemon_instance = DaemonClass(ctx=ctx)
+                supervisor.mount_daemon(daemon_instance)
+                log.info(f"App Layer Daemon Mounted on MASTER: {daemon_name} -> {DaemonClass.__name__}")
+            except Exception as e:
+                log.error(f"[Fault Isolated] Failed to construct or mount daemon '{daemon_name}'. Boot continues. Reason: {e}")
+        else:
+            log.warning(f"Requested Daemon '{daemon_name}' not found in registry. Skipping.")
+
 
 def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     worker_capacity = 4
@@ -234,7 +267,7 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
             tunnel=ctx.tunnel, 
             node_id=ctx.node_id,
             supervisor=supervisor,
-            role="worker",        # 명시적 워커 롤
+            role="worker",
             capacity=worker_capacity
         ),
         EventBusDaemon(
@@ -246,8 +279,12 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
             group_name=GROUP_NODE_MANIFOLD
         )
     ]
+    
     for daemon in worker_daemons:
-        supervisor.mount_daemon(daemon)
+        try:
+            supervisor.mount_daemon(daemon)
+        except Exception as e:
+            log.error(f"Critical Failure: Could not mount worker daemon '{daemon.name}': {e}", exc_info=True)
 
     try:
         from xphi.kernel.daemon.task.wasm import TaskWasm
@@ -258,16 +295,6 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
     except ImportError as e:
         log.warn(f"WasmTaskerDaemon bypassed (Not installed or import error): {e}")
     except Exception as e:
-        log.error(f"Failed to mount WasmTaskerDaemon: {e}")
+        log.error(f"[Fault Isolated] Failed to mount WasmTaskerDaemon. Boot continues. Reason: {e}")
 
-    log.info("Worker Data Layer (EventBus, WasmTasker, Heartbeat) mounted successfully.")
-
-    discovered_daemons = getattr(registry, "_daemons", {})
-    for daemon_name, DaemonClass in discovered_daemons.items():
-        try:
-            daemon_instance = DaemonClass(ctx=ctx)
-            supervisor.mount_daemon(daemon_instance)
-            log.info(f"App Layer Daemon Mounted: {daemon_name} -> {DaemonClass.__name__}")
-        except Exception as e:
-            log.error(f"Failed to mount dynamic daemon '{daemon_name}': {e}", exc_info=True)
-    log.info("Worker Data Layer & App Layer mounted successfully.")
+    log.info("Worker Data Layer mount attempt complete.")

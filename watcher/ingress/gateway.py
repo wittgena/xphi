@@ -1,116 +1,189 @@
 # xphi.watcher.ingress.gateway
-## @lineage: watcher.ingress.gateway
-## @lineage: dphi.receptor.ingress.server.gateway
+## @lineage: xphi.watcher.ingress.pypi
+import os
 import asyncio
+import datetime
+import hashlib
 import json
 import re
 import sys
-import datetime
-from typing import Literal
+from typing import Any, Literal, TypedDict, Tuple
+
 from aiohttp import web, ClientSession
+from mcp.server.streamable_http import EventStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from xphi.watcher.mcp.server import SecureMCPServer
+from xphi.watcher.ingress.sentinel import get_projector, SecurityContext, MetaRuleDef
+from xphi.watcher.receptor.audit.warden import AuditWarden
 from xphi.watcher.plane.emitter import get_emitter
 
-class GatewaySettings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="GATEWAY_")
-    host: str = "0.0.0.0"
-    proxy_port: int = 443         # Data Plane: 외부 클라이언트가 접근하는 Public Port
-    mcp_port: int = 8084          # Control Plane: 보안 정책을 주입하는 MCP Port
-    upstream_url: str = "http://127.0.0.1:8000"  # 숨겨진 내부 REST API (FastAPI) 주소
+class ServerRunConfig(TypedDict, total=False):
+    host: str
+    transport: Literal["stdio", "sse", "streamable-http"]
+    port: int
+    event_store: EventStore | None
+    retry_interval: int
+    uvicorn_kwargs: dict[str, Any]
+
+class PyPIProxySettings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="PYPI_")
+    host: str = "127.0.0.1"
+    # [개선] 포트 충돌 회피: Data Plane(8083) / Control Plane(8085)
+    proxy_port: int = int(os.getenv("PYPI_PROXY_PORT", 8083)) 
+    mcp_port: int = int(os.getenv("PYPI_MCP_PORT", 8085))   
+    upstream_url: str = "https://pypi.org"
     transport_mode: Literal["stdio", "sse"] = "sse"
 
-class DphiGatewayServer:
-    def __init__(self, settings: GatewaySettings):
+class PyPIMembraneServer:
+    def __init__(self, settings: PyPIProxySettings):
+        """서버 초기화 및 의존성, 상태(State) 할당"""
         self.settings = settings
-        self.log = get_emitter("ingress.gateway", phase="GATEWAY")
-        self.mcp = SecureMCPServer(name="mcp-gateway-control", version="1.0")
+        self.log = get_emitter("pypi.server", phase="INGRESS")
+        self.mcp = SecureMCPServer(name="mcp-brane-membrane", version="1.5")
+        self.projector = get_projector()
+        
         self.client_session: ClientSession | None = None
-        self.firewall_rules = {
-            "blocked_ips": set(),
-            "quarantine_paths": set()
-        }
+        self.artifact_cache: dict[str, Any] = {}
+        self.quarantine_db: dict[str, Any] = {}
         
         self._register_mcp_tools()
 
     def _register_mcp_tools(self):
-        @self.mcp.tool()
-        async def block_ip(ip_address: str, reason: str = "Malicious activity") -> str:
-            """특정 IP의 접근을 즉각 차단합니다."""
-            self.firewall_rules["blocked_ips"].add(ip_address)
-            self.log.warning(f"[Firewall] IP {ip_address} blocked. Reason: {reason}")
-            return f"[SUCCESS] IP {ip_address} is now blocked at the Edge."
+        """인스턴스 메모리를 직접 조작하는 MCP 제어 도구 등록"""
+        self.mcp.tool()(self.tool_get_time)
+        self.mcp.tool()(self.inject_mock_vulnerability)
+        self.mcp.tool()(self.inject_meta_rule)
+        self.mcp.tool()(self.clear_cache)
 
-        @self.mcp.tool()
-        async def quarantine_path(path_pattern: str) -> str:
-            """특정 URI 경로에 대한 접근을 전면 차단합니다."""
-            self.firewall_rules["quarantine_paths"].add(path_pattern)
-            self.log.warning(f"[Firewall] Path {path_pattern} quarantined.")
-            return f"[SUCCESS] Path {path_pattern} is quarantined."
+    async def tool_get_time(self) -> dict[str, str | float]:
+        now = datetime.datetime.now()
+        return {
+            "current_time": now.isoformat(),
+            "timezone": "KST",
+            "timestamp": now.timestamp(),
+        }
 
-        @self.mcp.tool()
-        async def get_gateway_status() -> dict:
-            """게이트웨이의 현재 상태와 룰 셋을 반환합니다."""
-            return {
-                "status": "OPERATIONAL",
-                "upstream": self.settings.upstream_url,
-                "blocked_ips_count": len(self.firewall_rules["blocked_ips"]),
-                "quarantine_paths_count": len(self.firewall_rules["quarantine_paths"]),
-                "timestamp": datetime.datetime.now().isoformat()
-            }
-
-    async def gateway_handler(self, request: web.Request) -> web.Response:
-        """Data Plane: 외부 트래픽 수신 -> L7 보안 검사 -> 백엔드 릴레이"""
-        client_ip = request.remote
-        path = request.path
-        
-        if not path.startswith("/v1/public"):
-            self.log.warning(f"Blocked unauthorized internal access attempt: {path} from {client_ip}")
-            raise web.HTTPForbidden(reason="Brane Security: Access Denied. Endpoint not exposed.")
-        
-        if client_ip in self.firewall_rules["blocked_ips"]:
-            self.log.warning(f"Blocked traffic from quarantined IP: {client_ip}")
-            raise web.HTTPForbidden(reason="Brane Security: IP Quarantined.")
+    async def inject_mock_vulnerability(self, package_name: str, action: str, cve_id: str) -> str:
+        """Kernel 인가 후 런타임 메모리(quarantine_db)를 즉시 변형하여 프록시 트래픽을 차단"""
+        if not re.match(r"^[a-zA-Z0-9_\-\.]+$", package_name):
+            self.log.warning(f"Injection attempt detected in package_name: {package_name}")
+            return "[ERROR] Invalid package name format. Alphanumeric, dash, underscore, dot only."
             
-        if any(re.search(qp, path) for qp in self.firewall_rules["quarantine_paths"]):
-            self.log.warning(f"Blocked traffic to quarantined path: {path}")
-            raise web.HTTPForbidden(reason="Brane Security: Path Quarantined.")
+        if not re.match(r"^CVE-\d{4}-\d+$", cve_id) and cve_id != "CUSTOM":
+            return "[ERROR] Invalid CVE ID format. Must match 'CVE-YYYY-NNNN'."
 
-        headers = dict(request.headers)
-        headers.pop("Host", None) 
-        headers['X-Forwarded-For'] = client_ip
-        headers['X-Gateway-Passed'] = "true"
+        valid_actions = ["block", "tamper_hash"]
+        if action not in valid_actions:
+            return f"[ERROR] Invalid action. Must be one of {valid_actions}."
+        
+        is_authorized = await self.projector.gateway.authorize(
+            action_id=f"quarantine_{package_name}",
+            action="INJECT_QUARANTINE_RULE",
+            payload={"target": package_name, "action": action, "cve": cve_id}
+        )
+        
+        if not is_authorized:
+            AuditWarden.record_anomaly("mcp.quarantine_rejected", f"Kernel rejected {package_name}")
+            return f"[ERROR] Quarantine rule for {package_name} rejected by Kernel."
+        
+        self.quarantine_db[package_name.lower()] = {"action": action, "cve": cve_id}
+        self.log.info(f"[Membrane] Rule applied for {package_name} ({cve_id}) - Zero latency block active.")
+        return f"[SUCCESS] Rule applied and sealed for {package_name}."
 
-        target_url = f"{self.settings.upstream_url}{path}"
-        data = await request.read()
-        
+    async def inject_meta_rule(self, rule_id: str, rule_json: str) -> str:
+        if not re.match(r"^[a-zA-Z0-9_\-]+$", rule_id):
+            return "[ERROR] Invalid rule_id format."
+            
         try:
-            data.decode('utf-8')
-        except UnicodeDecodeError:
-            self.log.warning(f"Blocked invalid UTF-8 payload from {client_ip}")
-            raise web.HTTPBadRequest(reason="Brane Security: Invalid UTF-8 Payload.")
-        
-        try:
-            async with self.client_session.request(
-                method=request.method,
-                url=target_url,
-                headers=headers,
-                data=data,
-                params=request.query
-            ) as resp:
-                response_body = await resp.read()
-                hop_by_hop = {'connection', 'keep-alive', 'proxy-authenticate', 'proxy-authorization', 'te', 'trailers', 'transfer-encoding', 'upgrade'}
-                clean_headers = {k: v for k, v in resp.headers.items() if k.lower() not in hop_by_hop}
-                
-                return web.Response(
-                    body=response_body, 
-                    status=resp.status, 
-                    headers=clean_headers
-                )
+            rule_def = MetaRuleDef.model_validate_json(rule_json)
+            if rule_def.action not in ["block", "ledger_tension"]:
+                return "[ERROR] Meta-rules can only enforce blocking actions."
+
+            is_authorized = await self.projector.gateway.authorize(
+                action_id=f"metarule_{rule_id}",
+                action="INJECT_META_RULE",
+                payload={"rule_id": rule_id, "definition": rule_json}
+            )
+            if not is_authorized:
+                return f"[ERROR] Meta-rule {rule_id} rejected."
+
+            self.projector.load_rule(rule_id, rule_def)
+            self.log.info(f"[Membrane] Meta-rule {rule_id} loaded.")
+            return f"[SUCCESS] Projector Meta-rule injected."
         except Exception as e:
-            self.log.error(f"Upstream Relay Error: {e}")
-            return web.Response(status=502, text="Bad Gateway: Internal REST Edge is unreachable.")
+            return f"[ERROR] Validation failed: {str(e)}"
+
+    async def clear_cache(self) -> str:
+        self.artifact_cache.clear()
+        return "[SUCCESS] Internal PyPI cache cleared."
+
+    async def membrane_handler(self, request: web.Request) -> web.Response:
+        path = request.path
+        try:
+            if ".." in path or "%" in path:
+                AuditWarden.record_anomaly("proxy.path_traversal", f"Traversal attempt blocked: {path}")
+                raise web.HTTPForbidden(reason="Boundary breach: Path traversal attempt blocked.")
+
+            match = re.match(r"^/(simple|packages)/([a-zA-Z0-9_\-\.]+)/?.*?$", path)
+            if not match:
+                raise web.HTTPForbidden(reason="Boundary breach: Malformed PyPI URI.")
+            
+            package_name = match.group(2).lower()
+            self._enforce_local_quarantine(package_name)
+            ctx = SecurityContext(
+                origin_ip=request.remote, 
+                auth_header=request.headers.get('Authorization'),
+                envelope_path=path, 
+                envelope_method=request.method,
+                nominal_name=package_name, 
+                topology_version=None, 
+                substance_hash=None
+            )
+            await self.projector.evaluate_pre_fetch(ctx)
+            if cached := self.artifact_cache.get(path):
+                return web.Response(body=cached['body'], content_type=cached['content_type'])
+
+            content, content_type = await self._fetch_upstream(path)
+            ctx.substance_hash = hashlib.sha256(content).hexdigest()
+            try:
+                await self.projector.evaluate_post_fetch(ctx)
+            except Exception as e:
+                del content 
+                raise e
+
+            self.artifact_cache[path] = {"content_type": content_type, "body": content}
+            return web.Response(body=content, content_type=content_type)
+        except web.HTTPForbidden as hf:
+            return web.Response(status=403, text=str(hf.reason))
+        except Exception as e:
+            self.log.error(f"Internal Proxy Error: {str(e)}")
+            return web.Response(status=500, text="Internal Server Error: Secure Membrane Engaged")
+
+    def _enforce_local_quarantine(self, package_name: str):
+        if package_name and package_name in self.quarantine_db:
+            policy = self.quarantine_db[package_name]
+            if policy.get("action") == "block":
+                cve = policy.get('cve')
+                AuditWarden.record_anomaly("proxy.block.cve", f"Blocked {package_name} due to {cve}")
+                raise web.HTTPForbidden(reason=f"Brane Security Membrane: Blocked ({cve})")
+
+    async def _fetch_upstream(self, path: str) -> Tuple[bytes, str]:
+        if not self.client_session:
+            raise RuntimeError("ClientSession not initialized")
+        
+        target_url = f"{self.settings.upstream_url}{path}"
+        async with self.client_session.get(target_url, headers={'User-Agent': 'pip/24.0 (Brane Proxy)'}) as resp:
+            if resp.status != 200:
+                raise web.HTTPForbidden(reason=f"Upstream returned {resp.status}")
+            
+            content_length = int(resp.headers.get('Content-Length', 0))
+            if content_length > 52428800:  # 50MB
+                raise web.HTTPForbidden(reason="Upstream response exceeds volumetric limits.")
+
+            content = await resp.read()
+            content_type = resp.headers.get('Content-Type', 'application/octet-stream')
+            return content, content_type
 
     async def mcp_sse_handler(self, request: web.Request) -> web.Response:
         return await self.mcp.handle_sse_connection(request)
@@ -121,7 +194,7 @@ class DphiGatewayServer:
     async def startup_context(self, app: web.Application):
         if not self.client_session:
             self.client_session = ClientSession()
-            self.log.info("Initialized global ClientSession for Upstream Relay.")
+            self.log.info("Initialized global ClientSession.")
 
     async def cleanup_context(self, app: web.Application):
         if self.client_session and not self.client_session.closed:
@@ -129,10 +202,12 @@ class DphiGatewayServer:
             self.log.info("Closed global ClientSession.")
 
     async def start_dual_servers(self):
+        """데이터 평면(Proxy)과 제어 평면(MCP)을 서로 다른 포트/앱으로 격리하여 구동"""
+        
         proxy_app = web.Application()
         proxy_app.on_startup.append(self.startup_context)
         proxy_app.on_cleanup.append(self.cleanup_context)
-        proxy_app.router.add_route('*', '/{tail:.*}', self.gateway_handler)
+        proxy_app.router.add_route('*', '/{tail:.*}', self.membrane_handler)
         
         mcp_app = web.Application()
         mcp_app.router.add_get('/mcp/sse', self.mcp_sse_handler)
@@ -146,17 +221,20 @@ class DphiGatewayServer:
         proxy_site = web.TCPSite(proxy_runner, self.settings.host, self.settings.proxy_port)
         mcp_site = web.TCPSite(mcp_runner, self.settings.host, self.settings.mcp_port)
         
-        await asyncio.gather(proxy_site.start(), mcp_site.start())
+        # [개선] aiohttp 서버 기동 중 에러 발생 시 명확히 던져서 데몬 레벨에서 캐치할 수 있도록 함
+        try:
+            await asyncio.gather(proxy_site.start(), mcp_site.start())
+        except OSError as e:
+            self.log.error(f"Failed to bind PyPI Membrane ports ({self.settings.proxy_port}, {self.settings.mcp_port}). Port in use: {e}")
+            raise e
         
         self.log.info(json.dumps({
-            "msg": "🚀 Gateway Membrane Activated",
-            "public_proxy_port": self.settings.proxy_port,
-            "control_mcp_port": self.settings.mcp_port,
-            "shielding_upstream": self.settings.upstream_url
+            "msg": "🚀 Async Membrane Activated",
+            "proxy_port": self.settings.proxy_port,
+            "mcp_port": self.settings.mcp_port
         }), file=sys.stderr)
 
     def run(self):
-        """단독 스크립트로 실행될 때 사용하는 진입점"""
         if self.settings.transport_mode == "sse":
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -164,13 +242,13 @@ class DphiGatewayServer:
                 loop.run_until_complete(self.start_dual_servers())
                 loop.run_forever()
             except KeyboardInterrupt:
-                self.log.info("Gateway shutting down gracefully...")
+                self.log.info("Server shutting down gracefully...")
             finally:
                 loop.close()
         else:
-            self.log.info(json.dumps({"msg": "Running in STDIO mode (HTTP relay disabled)"}))
+            self.log.info(json.dumps({"msg": "Running in STDIO mode (PyPI HTTP relay disabled)"}))
             self.mcp.run()
 
 if __name__ == "__main__":
-    server = DphiGatewayServer(GatewaySettings())
+    server = PyPIMembraneServer(PyPIProxySettings())
     server.run()
