@@ -8,7 +8,7 @@ import traceback
 import httpx
 from typing import Optional, Union, Dict, Tuple
 
-from xphi.arch.xor.secret.client import get_secret_from_vendor
+from xphi.xor.secret.client import get_secret_from_vendor
 from xphi.arch.model.config import config
 from xphi.watcher.plane.emitter import get_emitter
 

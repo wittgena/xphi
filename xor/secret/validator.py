@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from cryptography.fernet import Fernet
 
 from xphi.arch.model.config import config
-from xphi.arch.xor.secret.cipher import Cipher
+from xphi.xor.secret.cipher import Cipher
 from xphi.watcher.plane.emitter import get_logger
 
 class CredentialBase(BaseModel):

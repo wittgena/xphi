@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass, asdict, field
 from typing import Dict, Any, Optional, List, Union
 
-from xphi.arch.xor.parser.block.contract import CoherenceState
+from xphi.xor.parser.block.contract import CoherenceState
 from xphi.kernel.dphi.broker import DphiBroker
 from xphi.kernel.dphi.cgroup import CgroupPolicy, Tier
 from xphi.eco.dphi.config import billing_config, tier_config

@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Annotated, Any
 from pydantic import BeforeValidator, Field
 
-from xphi.arch.xor.bridge.command.workspace import CommandResult, FileOperationResult
-from xphi.arch.xor.bridge.git.schema import GitChange, GitDiff
+from xphi.xor.bridge.command.workspace import CommandResult, FileOperationResult
+from xphi.xor.bridge.git.schema import GitChange, GitDiff
 from xphi.arch.model.surge.disc import DiscMixin
 from xphi.arch.model.surge.model import DynamicSurgeModel
 

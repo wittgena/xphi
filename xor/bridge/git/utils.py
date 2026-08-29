@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from xphi.arch.xor.bridge.git.exceptions import GitCommandError, GitRepositoryError
+from xphi.xor.bridge.git.exceptions import GitCommandError, GitRepositoryError
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)

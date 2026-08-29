@@ -11,7 +11,7 @@ from dataclasses import dataclass, asdict
 
 from xphi.kernel.phase.state.spec import TransRule, NodeType
 from xphi.kernel.dphi.ledger.consensus import KernelLedger
-from xphi.arch.xor.stream.schema import (
+from xphi.xor.stream.schema import (
     LogicStream, 
     StreamMetadata, 
     StreamIdentity, 

@@ -11,7 +11,7 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
 from xphi.arch.model.surge.model import DynamicSurgeModel
-from xphi.arch.xor.secret.manager import get_secret_str
+from xphi.xor.secret.manager import get_secret_str
 from xphi.eco.dphi.config import billing_config
 from xphi.kernel.dphi.cgroup import Tier
 from xphi.watcher.plane.emitter import get_emitter

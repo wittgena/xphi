@@ -2,7 +2,7 @@
 ## @lineage: arch.xor.parser.otlp
 import orjson
 from typing import List, Dict, Any
-from xphi.arch.xor.parser.ruleset import AbstractRulesetParser, CompiledEngine
+from xphi.xor.parser.ruleset.engine import AbstractRulesetParser, CompiledEngine
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("parser.otlp")

@@ -10,7 +10,7 @@ import httpx
 from aiohttp import web
 from pydantic import BaseModel, Field, ValidationError
 
-from xphi.arch.xor.stream.schema import (
+from xphi.xor.stream.schema import (
     ActionIntent,
     LogicPayload,
     LogicStream,

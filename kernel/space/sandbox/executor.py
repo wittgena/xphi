@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol
 from enum import Enum
 
-from xphi.arch.xor.parser.block.contract import Contract, CoherenceState
+from xphi.xor.parser.block.contract import Contract, CoherenceState
 from xphi.arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
 from xphi.kernel.dphi.broker import DphiBroker, DphiMethod
 from xphi.kernel.dphi.cgroup import Tier

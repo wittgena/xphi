@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Optional
 
-from xphi.arch.xor.stream.schema import LogicStream as IngressLogicStream
+from xphi.xor.stream.schema import LogicStream as IngressLogicStream
 from xphi.kernel.dphi.ledger.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from xphi.watcher.plane.emitter import get_emitter
 

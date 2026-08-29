@@ -9,7 +9,7 @@ import tempfile
 from collections.abc import Iterator
 from contextlib import contextmanager
 
-from xphi.arch.xor.stream.store.file import FileStore
+from xphi.xor.stream.store.file import FileStore
 from xphi.watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)

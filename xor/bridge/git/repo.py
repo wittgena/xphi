@@ -5,8 +5,8 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 from filelock import FileLock, Timeout
-from xphi.arch.xor.bridge.git.exceptions import GitCommandError
-from xphi.arch.xor.bridge.git.utils import run_git_command
+from xphi.xor.bridge.git.exceptions import GitCommandError
+from xphi.xor.bridge.git.utils import run_git_command
 from xphi.watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)

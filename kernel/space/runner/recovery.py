@@ -9,7 +9,7 @@ from typing import Dict, Optional
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-from xphi.arch.xor.parser.block.contract import CoherenceState, Contract
+from xphi.xor.parser.block.contract import CoherenceState, Contract
 from xphi.kernel.dphi.adapter.state import StateAdapter
 from xphi.kernel.dphi.ledger.consensus import KernelCommit, KernelLedger
 from xphi.kernel.space.sandbox.executor import EffectResolver, TaskContext

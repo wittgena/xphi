@@ -12,7 +12,7 @@ import httpx
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from xphi.arch.xor.parser.block.contract import Contract, CoherenceState
+from xphi.xor.parser.block.contract import Contract, CoherenceState
 from xphi.kernel.space.sandbox.executor import SandboxExecutor, TaskContext, EffectResolver
 from xphi.kernel.dphi.broker import DphiBroker
 from xphi.kernel.dphi.adapter.state import StateAdapter
