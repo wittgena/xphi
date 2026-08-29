@@ -1,6 +1,5 @@
-# xphi.arch.eco.dphi.config
-## @lineage: xphi.eco.dphi.config
-## @lineage: xphi.kernel.dphi.exchange.config
+# xphi.arch.eco.config
+## @lineage: xphi.arch.eco.dphi.config
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Dict
@@ -26,14 +25,9 @@ class TierPolicySettings(BaseSettings):
     class Config:
         env_prefix = "TIER_POLICY_"
 
-
-class BillingSettings(BaseSettings):
-    """[Layer 2: Pricing] 기본 과금 단가 및 할증(Multiplier) 설정"""
-    fuel_billing_unit: int = 1_000_000
-    usd_per_billing_unit: float = 0.01  # 베이스라인 원가
-    
-    ## tracker.billing과 연결되는 티어별 과금 할증률
-    ## SYSTEM 티어는 고급 보안 자원을 쓰므로 1.5배 청구
+class FuelSettings(BaseSettings):
+    fuel_unit: int = 1_000_000
+    usd_per_fuel_unit: float = 0.01
     tier_multipliers: Dict[str, float] = Field(
         default_factory=lambda: {
             "SYSTEM": 1.5,
@@ -43,8 +37,7 @@ class BillingSettings(BaseSettings):
     )
 
     class Config:
-        env_prefix = "BILLING_"
-
+        env_prefix = "FUEL_"
 
 class TreasurySettings(BaseSettings):
     operator_share: float = 0.70      # 인프라 제공자
@@ -54,6 +47,6 @@ class TreasurySettings(BaseSettings):
     class Config:
         env_prefix = "TREASURY_"
 
-billing_config = BillingSettings()
+fuel_config = FuelSettings()
 tier_config = TierPolicySettings()
 treasury_config = TreasurySettings()

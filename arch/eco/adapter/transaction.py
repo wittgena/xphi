@@ -1,6 +1,5 @@
-# xphi.arch.eco.dphi.settlement
-## @lineage: xphi.eco.dphi.settlement
-## @lineage: xphi.kernel.dphi.eco.settlement
+# xphi.arch.eco.adapter.transaction
+import os
 import time
 import json
 import hashlib
@@ -9,8 +8,19 @@ from typing import Any, Dict, List, Optional
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidSignature
-from xphi.arch.model.surge.model import DynamicSurgeModel
 
+from xphi.arch.model.surge.model import DynamicSurgeModel
+from xphi.arch.eco.dphi.config import fuel_config
+from xphi.kernel.dphi.cgroup import Tier
+from xphi.watcher.plane.emitter import get_emitter
+
+log = get_emitter("adapter.transaction")
+
+# =====================================================================
+# 1. Data Models (DTOs)
+# =====================================================================
+
+# --- AP2 Protocol Models ---
 class Ap2MandateConstraints(DynamicSurgeModel):
     max_spend_usdc: str
     expiration_ts: int
@@ -31,8 +41,7 @@ class Ap2MandateResult(DynamicSurgeModel):
     mandate: Ap2MandatePayload
     authorization: Ap2Authorization
 
-
-# --- Settlement & Invoice Models ---
+# --- X402 Invoice & Receipt Models ---
 class X402Invoice(DynamicSurgeModel):
     status: str
     x_payment_protocol: str
@@ -50,6 +59,14 @@ class X402SettlementReceipt(DynamicSurgeModel):
     payer_wallet: str
     settled_at: int
 
+# --- Internal Transaction Models ---
+class TransactionReceipt(DynamicSurgeModel):
+    job_id: str
+    topos_id: str
+    parity_hash: str
+    fuel_consumed: int
+    settlement_status: str
+
 class SettlementPayload(DynamicSurgeModel):
     batch_id: str
     state_root: str
@@ -57,7 +74,17 @@ class SettlementPayload(DynamicSurgeModel):
     gas_used: int
     timestamp: int
 
+
+# =====================================================================
+# 2. Adapters
+# =====================================================================
+
 class EcoAdapter:
+    """
+    AP2(Agentic Payment Protocol) 및 X402(HTTP 402 기반) 프로토콜 규격에 따른
+    서명, 검증, 인보이스 발급 등 외부(External) 트랜잭션 프로토콜 처리를 담당합니다.
+    """
+    
     @classmethod
     def build_ap2_mandate(
         cls, 
@@ -82,6 +109,7 @@ class EcoAdapter:
             issued_at=int(time.time() * 1000),
             metadata=kwargs if kwargs else None
         )
+        
         mandate_dict = payload.model_dump(exclude_none=True)
         canonical_bytes = json.dumps(mandate_dict, sort_keys=True, separators=(',', ':')).encode('utf-8')
         signature = signer_key.sign(hashlib.sha256(canonical_bytes).digest()).hex()
@@ -152,7 +180,7 @@ class EcoAdapter:
         )
 
     # -----------------------------------------------------------------
-    # 기존 레거시 (즉시 능동 결제) - 호환성을 위해 유지
+    # 기존 레거시 (즉시 능동 결제)
     # -----------------------------------------------------------------
     @classmethod
     def build_x402_invoice(cls, payee_address: str, amount_usdc: str, resource_id: str) -> X402Invoice:
@@ -208,3 +236,57 @@ class EcoAdapter:
             updated_state["x402_settlement_receipt"] = receipt.model_dump(exclude_none=True)
             
         return updated_state
+
+
+class ExchangeAdapter:
+    """
+    커널 내부의 컴퓨팅 리소스(Fuel)를 기반으로 달러(USDC) 환산 및 원장 정산(Settlement)을
+    담당하는 내부(Internal) 트랜잭션 어댑터입니다.
+    """
+    
+    def __init__(self, clearing_house_pub_key: str):
+        self.clearing_house_pub = clearing_house_pub_key
+
+    def _quantize_fuel_cost(self, fuel_consumed: int, tier: Tier) -> float:
+        base_cost = (fuel_consumed / fuel_config.fuel_unit) * fuel_config.usd_per_fuel_unit
+        multiplier = 1.5 if tier == Tier.SYSTEM else 1.0
+        return base_cost * multiplier
+
+    def finalize_settlement(
+        self, 
+        entangled_state: dict, 
+        cost_metrics: dict, 
+        signatures: Optional[List[str]] = None,
+        tier: Tier = Tier.SYSTEM
+    ) -> TransactionReceipt:
+        parity = entangled_state.get("parity", {})
+        parity_topos_id = parity.get("topos_id", f"unknown_batch_{int(time.time())}")
+        parity_phase_id = parity.get("phase_id", 0) 
+        
+        fuel_consumed = cost_metrics.get("fuel_consumed", 0)
+        estimated_usd = self._quantize_fuel_cost(fuel_consumed, tier)
+        log.info(f"[ExchangeAdapter] Settlement Finalized. Topos: {parity_topos_id}, Parity: {parity_phase_id}, Cost: ${estimated_usd:.6f}")
+        
+        return TransactionReceipt(
+            job_id=str(parity_topos_id),
+            topos_id=str(parity_topos_id),
+            parity_hash=str(entangled_state.get("state_hash", parity_phase_id)), 
+            fuel_consumed=fuel_consumed,
+            settlement_status="COMMITTED_TO_NEXUS"
+        )
+        
+    def generate_settlement_payload(
+        self, 
+        receipt: TransactionReceipt,
+        attestations: Optional[List[str]] = None
+    ) -> SettlementPayload:
+        """
+        내부 영수증(TransactionReceipt)을 공증인(Notary) 증명이 포함된 외부 전송용 페이로드로 패키징합니다.
+        """
+        return SettlementPayload(
+            batch_id=receipt.job_id,
+            state_root=receipt.parity_hash,
+            attestations=attestations or [],
+            gas_used=receipt.fuel_consumed,
+            timestamp=int(time.time())
+        )
