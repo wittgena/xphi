@@ -1,7 +1,5 @@
-# xphi.kernel.space.topos.context.space
-## @lineage: kernel.space.topos.context.space
-## @lineage: arch.topos.context.space
-## @lineage: agent.space.base
+# xphi.xor.bridge.context.space
+## @lineage: xphi.kernel.space.topos.context.space
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Annotated, Any

@@ -1,4 +1,5 @@
-# xphi.kernel.space.topos.network.channel.pipeline
+# xphi.kernel.phase.network.channel.pipeline
+## @lineage: xphi.kernel.space.topos.network.channel.pipeline
 ## @lineage: kernel.space.topos.network.channel.pipeline
 import asyncio
 import logging

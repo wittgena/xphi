@@ -1,9 +1,10 @@
-# xphi.kernel.space.topos.network.channel.codec
+# xphi.kernel.phase.network.channel.codec
+## @lineage: xphi.kernel.space.topos.network.channel.codec
 ## @lineage: kernel.space.topos.network.channel.codec
 ## @lineage: arch.topos.network.channel.codec
 import json
 from typing import Any
-from xphi.kernel.space.topos.network.channel.pipeline import DuplexChannel, ChannelContext
+from xphi.kernel.phase.network.channel.pipeline import DuplexChannel, ChannelContext
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("channel.codec")

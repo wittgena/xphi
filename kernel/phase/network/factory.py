@@ -1,10 +1,11 @@
-# xphi.kernel.space.topos.network.factory
+# xphi.kernel.phase.network.factory
+## @lineage: xphi.kernel.space.topos.network.factory
 ## @lineage: kernel.space.topos.network.factory
 ## @lineage: arch.topos.network.factory
 import asyncio
 import logging
 from typing import Callable, List, Optional
-from xphi.kernel.space.topos.network.channel.pipeline import ChannelPipeline, ChannelContext, DuplexChannel
+from xphi.kernel.phase.network.channel.pipeline import ChannelPipeline, ChannelContext, DuplexChannel
 
 log = logging.getLogger("protocol.factory")
 
