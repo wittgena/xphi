@@ -21,9 +21,7 @@ from xphi.watcher.plane.metric.trajectory import (
     TopologicalStructure
 )
 from xphi.watcher.plane.emitter import get_emitter
-
-# L0 Membrane Integration
-from xphi.watcher.receptor.audit.filter import SurvivalAnchor
+from xphi.watcher.receptor.filter import SurvivalAnchor
 
 log = get_emitter("receptor.kernel")
 

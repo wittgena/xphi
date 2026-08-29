@@ -1,4 +1,5 @@
-# xphi.kernel.wasm.builder
+# xphi.arch.wasm.builder
+## @lineage: xphi.kernel.wasm.builder
 ## @lineage: xphi.watcher.wasm.builder
 import os
 import shutil

@@ -1,4 +1,5 @@
-# xphi.kernel.wasm.tester
+# xphi.arch.wasm.tester
+## @lineage: xphi.kernel.wasm.tester
 ## @lineage: xphi.watcher.wasm.tester
 ## @lineage: watcher.wasm.tester
 import sys
@@ -6,7 +7,7 @@ import json
 import asyncio
 from typing import Tuple, Dict, Type, Any
 
-from xphi.kernel.wasm.auditor import CanonicalProofAuditor
+from xphi.arch.wasm.auditor import CanonicalProofAuditor
 
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.kernel.space.bind.resolver import resolve_path

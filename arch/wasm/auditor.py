@@ -1,4 +1,5 @@
-# xphi.kernel.wasm.auditor
+# xphi.arch.wasm.auditor
+## @lineage: xphi.kernel.wasm.auditor
 ## @lineage: xphi.watcher.wasm.auditor
 ## @lineage: watcher.wasm.auditor
 ## @lineage: dphi.node.tracer.auditor.wasm

@@ -1,6 +1,5 @@
-# xphi.watcher.receptor.edge.receipt
-## @lineage: xphi.watcher.receptor.contract.model
-## @lineage: watcher.receptor.contract.model
+# xphi.arch.eco.edge.receipt
+## @lineage: xphi.watcher.receptor.edge.receipt
 from typing import Any, ClassVar, List, Optional, Dict
 from pydantic import BaseModel, ConfigDict, Field
 

@@ -22,7 +22,7 @@ from xphi.xor.stream.schema import (
 )
 from xphi.watcher.receptor.audit.warden import AuditWarden
 from xphi.watcher.receptor.policy.gateway import ToposGateway
-from xphi.watcher.receptor.edge.receipt import LogstEvent
+from xphi.arch.eco.edge.receipt import LogstEvent
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("log.store", phase="INGRESS")

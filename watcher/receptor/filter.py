@@ -1,4 +1,5 @@
-# xphi.watcher.receptor.audit.filter
+# xphi.watcher.receptor.filter
+## @lineage: xphi.watcher.receptor.audit.filter
 ## @lineage: xphi.watcher.receptor.mem.filter
 ## @lineage: watcher.receptor.mem.filter
 import json

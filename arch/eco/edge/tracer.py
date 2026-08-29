@@ -1,7 +1,5 @@
-# xphi.watcher.receptor.edge.tracer
-## @lineage: watcher.receptor.edge.tracer
-## @lineage: dphi.receptor.edge.tracer
-## @lineage: receptor.edge.tracer
+# xphi.arch.eco.edge.tracer
+## @lineage: xphi.watcher.receptor.edge.tracer
 import uuid
 import asyncio
 import time

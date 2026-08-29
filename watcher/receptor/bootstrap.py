@@ -21,7 +21,7 @@ from xphi.watcher.plane.sink import TunnelSink
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.receptor.kernel import ReceptorKernel, build_system_topos
 
-from xphi.watcher.receptor.audit.filter import (
+from xphi.watcher.receptor.filter import (
     SurvivalAnchor, 
     CognitiveMembrane, 
     TunnelL0Interceptor
