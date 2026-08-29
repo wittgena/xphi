@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional, List, Union
 from xphi.xor.parser.block.contract import CoherenceState
 from xphi.kernel.dphi.broker import DphiBroker
 from xphi.kernel.dphi.cgroup import CgroupPolicy, Tier
-from xphi.eco.dphi.config import billing_config, tier_config
+from xphi.arch.eco.dphi.config import billing_config, tier_config
 from xphi.kernel.space.sandbox.executor import SandboxExecutor, TaskContext, SandboxEnv, EffectResolver
 
 from xphi.watcher.tracer.scope import scope_trace

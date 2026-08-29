@@ -1,5 +1,4 @@
 # xphi.arch.contract.phase.aligner
-## @lineage: xphi.arch.model.phase.aligner
 import abc
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Callable

@@ -1,4 +1,5 @@
-# xphi.eco.dphi.config
+# xphi.arch.eco.dphi.config
+## @lineage: xphi.eco.dphi.config
 ## @lineage: xphi.kernel.dphi.exchange.config
 from pydantic import Field
 from pydantic_settings import BaseSettings
