@@ -1,5 +1,4 @@
 # xphi.kernel.dphi.adapter.utxo
-## @lineage: kernel.dphi.adapter.utxo
 import json
 import time
 import uuid
