@@ -1,7 +1,4 @@
 # xphi.kernel.phase.network.bridge
-## @lineage: xphi.kernel.space.topos.network.bridge
-## @lineage: kernel.space.topos.network.bridge
-## @lineage: arch.topos.network.bridge
 import uuid
 import asyncio
 from typing import Any
