@@ -1,15 +1,13 @@
 # xphi.xor.parser.ruleset.engine
-## @lineage: xphi.arch.xor.parser.ruleset
-## @lineage: arch.xor.parser.ruleset
 import json
 import re
 import orjson
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Generic, TypeVar
+from typing import List, Dict, Any, Optional, Generic, TypeVar, Tuple
 from xphi.xor.secret.redact import redact_string, sanitize_payload
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("parser.ruleset")
+log = get_emitter("ruleset.engine")
 
 InputT = TypeVar('InputT')
 OutputT = TypeVar('OutputT')
@@ -101,10 +99,6 @@ class AuditRulesetParser(AbstractRulesetParser[CompiledEngine[bytes, bytes]]):
         
         log.info("[Parser] Compiling FastRegexRedactionEngine (Flat Regex Scan Active).")
         return regex_engine
-
-import re
-from typing import List, Dict, Any, Tuple
-from xphi.xor.parser.ruleset.engine import CompiledEngine, AbstractRulesetParser
 
 class FastLifecycleEngine(CompiledEngine[str, List[str]]):
     """@desc: C 레벨 정규식으로 컴파일된 패턴을 활용해 O(1)에 가까운 속도로 스트림을 분류합니다."""

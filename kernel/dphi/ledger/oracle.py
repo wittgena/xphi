@@ -12,10 +12,6 @@ log = get_emitter("ledger.oracle", phase="KERNEL")
 LEDGER_DB_PATH = resolve_path("ledger")
 
 class LedgerOracle:
-    """
-    원장의 얽힌 상태(Entangled State)를 읽어내어, 
-    StateAdapter를 통한 정규화(Canonicalization) 후 WASM 엔진을 통해 결정론적으로 붕괴(Collapse)시키는 관측자.
-    """
     def __init__(self, broker: DphiBroker, path: str = LEDGER_DB_PATH):
         self.broker = broker
         ro_opt = Options()

@@ -1,5 +1,4 @@
 # xphi.kernel.dphi.ledger.consensus
-## @lineage: kernel.dphi.ledger.consensus
 import time
 import json
 import hashlib
