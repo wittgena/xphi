@@ -1,11 +1,12 @@
-# xphi.xor.bridge.context.space
+# xphi.xor.space.bridge.workspace
+## @lineage: xphi.xor.bridge.context.space
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Annotated, Any
 from pydantic import BeforeValidator, Field
 
-from xphi.xor.bridge.command import CommandResult, FileOperationResult
-from xphi.xor.bridge.git.schema import GitChange, GitDiff
+from xphi.xor.space.bridge.command import CommandResult, FileOperationResult
+from xphi.xor.space.bridge.git.schema import GitChange, GitDiff
 from xphi.arch.model.surge.disc import DiscMixin
 from xphi.arch.model.surge.model import DynamicSurgeModel
 

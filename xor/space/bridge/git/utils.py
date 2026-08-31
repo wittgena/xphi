@@ -1,4 +1,5 @@
-# xphi.xor.bridge.git.utils
+# xphi.xor.space.bridge.git.utils
+## @lineage: xphi.xor.bridge.git.utils
 ## @lineage: xphi.arch.xor.bridge.git.utils
 ## @lineage: arch.xor.bridge.git.utils
 ## @lineage: agent.space.tool.git.utils
@@ -7,7 +8,7 @@ import shlex
 import subprocess
 from pathlib import Path
 
-from xphi.xor.bridge.git.exceptions import GitCommandError, GitRepositoryError
+from xphi.xor.space.bridge.git.exception import GitCommandError, GitRepositoryError
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)

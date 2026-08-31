@@ -1,13 +1,14 @@
-# xphi.xor.bridge.git.changes
+# xphi.xor.space.bridge.git.changes
+## @lineage: xphi.xor.bridge.git.changes
 import glob
 import json
 import logging
 import os
 from pathlib import Path
 
-from xphi.xor.bridge.git.schema import GitChange, GitChangeStatus
-from xphi.xor.bridge.git.exceptions import GitCommandError
-from xphi.xor.bridge.git.utils import get_valid_ref, run_git_command, validate_git_repository
+from xphi.xor.space.bridge.git.schema import GitChange, GitChangeStatus
+from xphi.xor.space.bridge.git.exception import GitCommandError
+from xphi.xor.space.bridge.git.utils import get_valid_ref, run_git_command, validate_git_repository
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)

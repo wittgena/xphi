@@ -1,4 +1,5 @@
-# xphi.xor.bridge.command
+# xphi.xor.space.bridge.command
+## @lineage: xphi.xor.bridge.command
 ## @lineage: xphi.xor.bridge.command.terminal
 from enum import Enum
 from typing import Literal

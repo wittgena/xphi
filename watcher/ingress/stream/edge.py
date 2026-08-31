@@ -1,7 +1,4 @@
-# xphi.xor.stream.edge
-## @lineage: xphi.arch.xor.stream.edge
-## @lineage: arch.xor.stream.edge
-## @lineage: bound.xor.store.stream
+# xphi.watcher.ingress.stream.edge
 import asyncio
 import uuid
 import httpx
@@ -12,7 +9,7 @@ from dataclasses import dataclass, asdict
 
 from xphi.kernel.phase.state.spec import TransRule, NodeType
 from xphi.kernel.dphi.ledger.consensus import KernelLedger
-from xphi.xor.stream.schema import (
+from xphi.watcher.ingress.stream.schema import (
     LogicStream, 
     StreamMetadata, 
     StreamIdentity, 

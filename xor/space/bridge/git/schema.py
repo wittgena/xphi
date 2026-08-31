@@ -1,4 +1,5 @@
-# xphi.xor.bridge.git.schema
+# xphi.xor.space.bridge.git.schema
+## @lineage: xphi.xor.bridge.git.schema
 from enum import Enum
 from pathlib import Path
 from pydantic import BaseModel
