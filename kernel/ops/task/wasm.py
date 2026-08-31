@@ -1,4 +1,5 @@
-# xphi.kernel.daemon.task.wasm
+# xphi.kernel.ops.task.wasm
+## @lineage: xphi.kernel.daemon.task.wasm
 ## @lineage: kernel.daemon.task.wasm
 import os
 import json
@@ -9,12 +10,12 @@ from pathlib import Path
 from typing import Optional
 from contextlib import suppress
 
-from xphi.kernel.daemon.base import AbstractDaemon
+from xphi.kernel.ops.daemon.base import AbstractDaemon
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.kernel.dphi.cgroup import CgroupPolicy
 from xphi.kernel.dphi.method import DphiMethod
-from xphi.kernel.daemon.task.strategy import ExecutionStrategy
+from xphi.kernel.ops.task.strategy import ExecutionStrategy
 
 TIME_ROOT = resolve_path("time")
 

@@ -1,8 +1,4 @@
 # xphi.xor.bridge.context.status
-## @lineage: xphi.kernel.space.topos.context.status
-## @lineage: kernel.space.topos.context.status
-## @lineage: arch.topos.context.status
-## @lineage: agent.space.conv.context.state.status
 from enum import Enum
 from typing import Any, Protocol, TYPE_CHECKING
 

@@ -18,8 +18,8 @@ from xphi.kernel.phase.runtime.executor.base import BaseExecutor
 
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.kernel.space.bind.resolver import get_invoker
-from xphi.kernel.daemon.task.event import TaskSummaryEvent, TaskDetailRecord
-from xphi.kernel.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
+from xphi.kernel.ops.task.event import TaskSummaryEvent, TaskDetailRecord
+from xphi.kernel.ops.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
 
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.watcher.plane.regulator import console_surface

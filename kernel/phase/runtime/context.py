@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
 from xphi.arch.event.tunnelbus import TunnelEventBus
-from xphi.kernel.daemon.task.supervisor import Dispatcher
+from xphi.kernel.ops.task.supervisor import Dispatcher
 
 @dataclass
 class RuntimeContext:

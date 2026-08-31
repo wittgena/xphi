@@ -1,9 +1,16 @@
-# xphi.xor.bridge.command.workspace
-## @lineage: xphi.arch.xor.bridge.command.workspace
-## @lineage: arch.xor.bridge.command.workspace
-## @lineage: agent.bridge.tool.command.workspace
+# xphi.xor.bridge.command
+## @lineage: xphi.xor.bridge.command.terminal
+from enum import Enum
 from typing import Literal
 from pydantic import BaseModel, Field
+
+class TerminalCommandStatus(Enum):
+    """Status of a terminal command execution."""
+    CONTINUE = "continue"
+    COMPLETED = "completed"
+    INTERRUPTED = "interrupted"
+    NO_CHANGE_TIMEOUT = "no_change_timeout"
+    HARD_TIMEOUT = "hard_timeout"
 
 TargetType = Literal[
     "binary",

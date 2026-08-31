@@ -1,4 +1,5 @@
-# xphi.kernel.daemon.task.strategy
+# xphi.kernel.ops.task.strategy
+## @lineage: xphi.kernel.daemon.task.strategy
 ## @lineage: kernel.daemon.task.strategy
 import json
 import threading

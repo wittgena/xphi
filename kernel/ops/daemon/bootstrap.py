@@ -1,4 +1,5 @@
-# xphi.kernel.daemon.bootstrap
+# xphi.kernel.ops.daemon.bootstrap
+## @lineage: xphi.kernel.daemon.bootstrap
 import os
 import asyncio
 import json
@@ -14,8 +15,8 @@ from xphi.arch.event.bus import AsyncEventBus
 from xphi.arch.event.next import next_id
 from xphi.arch.contract.registry.unified import registry
 
-from xphi.kernel.daemon.base import AbstractDaemon
-from xphi.kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
+from xphi.kernel.ops.daemon.base import AbstractDaemon
+from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher
 from xphi.kernel.phase.runtime.context import RuntimeContext
 from xphi.kernel.phase.runtime.sensor import SurfaceSensor
 from xphi.watcher.plane.emitter import get_emitter
@@ -287,7 +288,7 @@ def mount_worker_layer(supervisor: TaskSupervisor, ctx: RuntimeContext):
             log.error(f"Critical Failure: Could not mount worker daemon '{daemon.name}': {e}", exc_info=True)
 
     try:
-        from xphi.kernel.daemon.task.wasm import TaskWasm
+        from xphi.kernel.ops.task.wasm import TaskWasm
         wasm_daemon = TaskWasm(tunnel=ctx.tunnel, supervisor=supervisor)
         wasm_daemon.concurrency_limit = worker_capacity
         supervisor.mount_daemon(wasm_daemon)

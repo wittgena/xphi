@@ -19,8 +19,8 @@ from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.kernel.phase.runtime.executor.swarm import SwarmExecutor
 from xphi.kernel.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from xphi.kernel.phase.runtime.context import RuntimeContext
-from xphi.kernel.daemon.task.supervisor import TaskSupervisor, Dispatcher
-from xphi.kernel.daemon.bootstrap import mount_master_layer, EventBusDaemon
+from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher
+from xphi.kernel.ops.daemon.bootstrap import mount_master_layer, EventBusDaemon
 from xphi.kernel.dphi.broker import DphiBroker
 
 from xphi.watcher.plane.sink import TunnelSink

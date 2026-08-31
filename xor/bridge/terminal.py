@@ -1,7 +1,4 @@
 # xphi.xor.bridge.terminal
-## @lineage: xphi.arch.xor.bridge.terminal
-## @lineage: arch.xor.bridge.terminal
-## @lineage: agent.bridge.tool.terminal
 import json
 import re
 import traceback

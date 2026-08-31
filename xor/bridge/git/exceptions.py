@@ -1,7 +1,4 @@
 # xphi.xor.bridge.git.exceptions
-## @lineage: xphi.arch.xor.bridge.git.exceptions
-## @lineage: arch.xor.bridge.git.exceptions
-## @lineage: agent.space.tool.git.exceptions
 class GitError(Exception):
     """Base exception for git-related errors."""
     pass
