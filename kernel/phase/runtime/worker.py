@@ -1,20 +1,20 @@
 # xphi.kernel.phase.runtime.worker
-## @lineage: kernel.phase.runtime.worker
 import asyncio
 import sys
 import os
 import importlib
 
+from xphi.arch.event.bus import TunnelEventBus
+from xphi.arch.event.psi import PsiEvent
+
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
-from xphi.arch.event.tunnelbus import TunnelEventBus
 from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher
 from xphi.kernel.phase.runtime.context import RuntimeContext
+from xphi.kernel.phase.runtime.sensor import SurfaceActuator
 from xphi.kernel.ops.daemon.bootstrap import mount_worker_layer
-from xphi.arch.event.psi import PsiEvent
 from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.plane.sink import TunnelSink
-from xphi.kernel.phase.runtime.sensor import SurfaceActuator
 
 def worker_process_entry(master_id: str, worker_idx: int):
     asyncio.run(_run_worker_loop(master_id, worker_idx))
