@@ -5,19 +5,20 @@ import shutil
 import asyncio
 import io
 import urllib.parse
+from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any, Optional, Dict, Annotated
 
 import httpx
 import docker
 from docker.errors import NotFound, BuildError
 from docker.models.containers import Container
+from pydantic import Field, ConfigDict, BeforeValidator
 
-from xphi.xor.space.bridge.workspace import BaseWorkspace
-from xphi.xor.space.bridge.git.schema import GitChange, GitDiff
-from xphi.xor.space.bridge.git.changes import get_git_changes
-from xphi.xor.space.bridge.git.diff import get_git_diff
 from xphi.xor.space.bridge.command import CommandResult, FileOperationResult
+from xphi.xor.space.bridge.git.schema import GitChange, GitDiff
+from xphi.arch.model.surge.disc import DiscMixin
+from xphi.arch.model.surge.model import DynamicSurgeModel
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.tracer.scope import get_current_trace_path
 from xphi.watcher.plane.emitter import get_emitter
@@ -33,6 +34,77 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y git python3-pip
 """
 
+# ==========================================
+# 1. BaseWorkspace 통합 영역
+# ==========================================
+def _convert_path_to_str(v: str | Path) -> str:
+    """Convert Path objects to string for working_dir."""
+    if isinstance(v, Path):
+        return str(v)
+    return v
+
+class BaseWorkspace(DynamicSurgeModel, DiscMixin, ABC):
+    working_dir: Annotated[
+        str,
+        BeforeValidator(_convert_path_to_str),
+        Field(
+            description=(
+                "The working directory for agent operations and tool execution. "
+                "Accepts both string paths and Path objects. "
+                "Path objects are automatically converted to strings."
+            )
+        ),
+    ]
+
+    def __enter__(self) -> "BaseWorkspace":
+        return self
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
+        pass
+
+    @abstractmethod
+    def execute_command(
+        self,
+        command: str,
+        cwd: str | Path | None = None,
+        timeout: float = 30.0,
+    ) -> CommandResult:
+        ...
+
+    @abstractmethod
+    def file_upload(
+        self,
+        source_path: str | Path,
+        destination_path: str | Path,
+    ) -> FileOperationResult:
+        ...
+
+    @abstractmethod
+    def file_download(
+        self,
+        source_path: str | Path,
+        destination_path: str | Path,
+    ) -> FileOperationResult:
+        ...
+
+    @abstractmethod
+    def git_changes(self, path: str | Path) -> list[GitChange]:
+        pass
+
+    @abstractmethod
+    def git_diff(self, path: str | Path) -> GitDiff:
+        pass
+
+    def pause(self) -> None:
+        raise NotImplementedError(f"{type(self).__name__} does not support pause()")
+
+    def resume(self) -> None:
+        raise NotImplementedError(f"{type(self).__name__} does not support resume()")
+
+
+# ==========================================
+# 2. Docker & Container Management 영역
+# ==========================================
 class SessionContainerManager:
     """Manager that provisions Docker containers on-demand per session and handles volume mounting."""
     
@@ -123,22 +195,27 @@ class SessionContainerManager:
             log.info(f"[SessionContainerManager] Retaining container {container.name} for future reuse.")
 
 
+# ==========================================
+# 3. Workspace Implementation 영역
+# ==========================================
 class CoreSandboxWorkspace(BaseWorkspace):
     """
     Core Workspace decoupled from external framework dependencies. 
     Accepts environment variables and a custom async executor via injection.
     """
-    def __init__(self, *, working_dir: str | Path, container: Optional[Container] = None, 
-                 env_vars: Optional[Dict[str, str]] = None, custom_executor: Any = None, **kwargs: Any):
-        super().__init__(working_dir=working_dir, container=container, **kwargs)
-        self.env_vars = env_vars or os.environ.copy()
-        self.custom_executor = custom_executor
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    # 💡 직렬화(Serialization) 에러 해결: 런타임 객체는 exclude=True 로 JSON 변환 방지
+    container: Optional[Container] = Field(default=None, exclude=True)
+    custom_executor: Any = Field(default=None, exclude=True)
+    
+    env_vars: Dict[str, str] = Field(default_factory=lambda: os.environ.copy())
 
     def execute_command(self, command: str, cwd: str | Path | None = None, timeout: float = 30.0) -> CommandResult:
         target_cwd = str(cwd) if cwd is not None else str(self.working_dir)
         
         async def _async_exec():
-            if self.get('container'):
+            if self.container:
                 exec_instance = await asyncio.to_thread(
                     self.container.client.api.exec_create,
                     self.container.id, cmd=["/bin/bash", "-c", command],
@@ -225,12 +302,6 @@ class CoreSandboxWorkspace(BaseWorkspace):
     def git_diff(self, path: str | Path) -> GitDiff:
         return get_git_diff(Path(self.working_dir) / path)
 
-    def pause(self) -> None: 
-        pass
-    
-    def resume(self) -> None: 
-        pass
-
 
 class SandboxProxy:
     """Proxy Logic for remote infrastructure communication."""
@@ -264,6 +335,9 @@ class SandboxProxy:
             await self._http_client.aclose()
 
 
+# ==========================================
+# 4. Global Manager 영역
+# ==========================================
 class BaseSpaceManager:
     """
     Base Manager stripped of application-level router dependencies.
@@ -273,7 +347,6 @@ class BaseSpaceManager:
     def __init__(self):
         self._local_manager = SessionContainerManager()
 
-    # Abstract methods to be overridden by subclasses (e.g., SurgentSpaceManager)
     def get_proxy_headers(self) -> dict:
         return {}
 
@@ -306,7 +379,7 @@ class BaseSpaceManager:
             return CoreSandboxWorkspace(working_dir=working_dir, container=container)
 
     async def release_workspace(self, workspace: Any, session_id: str = "shared_workspace"):
-        if isinstance(workspace, CoreSandboxWorkspace) and workspace.get('container'):
+        if isinstance(workspace, CoreSandboxWorkspace) and getattr(workspace, 'container', None):
             # Retain container state for subsequent reuse
             await self._local_manager.release(session_id, workspace.container, destroy=False)
             
