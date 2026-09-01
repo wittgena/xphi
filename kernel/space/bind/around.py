@@ -50,7 +50,7 @@ DEFAULT_BOUND_SKELETON = {
         "contract": ":contract:",
         "spec": ":contract:/spec",
         "scheme": ":contract:/scheme",
-        "registry": ":contract:/registry",
+        "registry": ":io:/registry",
         "xor": ":xor:",
         "lib": ":contract:/lib",
         "workspace": ":workspace:",
