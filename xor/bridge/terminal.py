@@ -1,15 +1,20 @@
-# xphi.xor.space.bridge.terminal
-## @lineage: xphi.xor.bridge.terminal
+# xphi.xor.bridge.terminal
+## @lineage: xphi.xor.space.bridge.terminal
 import json
 import re
 import traceback
+from enum import Enum
+from typing import Final, Literal
+
 from pydantic import BaseModel, Field
-from typing import Final
 
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
 
+# ==============================================================================
+# Constants & Configuration
+# ==============================================================================
 CMD_OUTPUT_PS1_BEGIN: Final[str] = "\n###PS1JSON###\n"
 CMD_OUTPUT_PS1_END: Final[str] = "\n###PS1END###"
 CMD_OUTPUT_METADATA_PS1_REGEX: Final[re.Pattern[str]] = re.compile(
@@ -32,6 +37,56 @@ HISTORY_LIMIT: Final[int] = 10_000
 TMUX_SOCKET_NAME: Final[str] = "surgent"
 TMUX_SESSION_WIDTH: Final[int] = 1000
 TMUX_SESSION_HEIGHT: Final[int] = 1000
+
+
+# ==============================================================================
+# Types & Enums
+# ==============================================================================
+TargetType = Literal[
+    "binary",
+    "binary-minimal",
+    "source",
+    "source-minimal",
+    "base-image-minimal",
+    "base-image",
+    "builder",
+]
+PlatformType = Literal["linux/amd64", "linux/arm64"]
+
+class TerminalCommandStatus(Enum):
+    """Status of a terminal command execution."""
+    CONTINUE = "continue"
+    COMPLETED = "completed"
+    INTERRUPTED = "interrupted"
+    NO_CHANGE_TIMEOUT = "no_change_timeout"
+    HARD_TIMEOUT = "hard_timeout"
+
+
+# ==============================================================================
+# Data Models
+# ==============================================================================
+class CommandResult(BaseModel):
+    """Result of executing a command in the workspace."""
+    command: str = Field(description="The command that was executed")
+    exit_code: int = Field(description="Exit code of the command")
+    stdout: str = Field(description="Standard output from the command")
+    stderr: str = Field(description="Standard error from the command")
+    timeout_occurred: bool = Field(
+        description="Whether the command timed out during execution"
+    )
+
+
+class FileOperationResult(BaseModel):
+    """Result of a file upload or download operation."""
+    success: bool = Field(description="Whether the operation was successful")
+    source_path: str = Field(description="Path to the source file")
+    destination_path: str = Field(description="Path to the destination file")
+    file_size: int | None = Field(
+        default=None, description="Size of the file in bytes (if successful)"
+    )
+    error: str | None = Field(
+        default=None, description="Error message (if operation failed)"
+    )
 
 
 class CmdOutputMetadata(BaseModel):

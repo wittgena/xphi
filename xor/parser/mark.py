@@ -1,40 +1,54 @@
-# xphi.xor.parser.mark.depre
-## @lineage: xphi.arch.xor.parser.mark.depre
-## @lineage: arch.xor.parser.mark.depre
-## @lineage: arch.xor.mark.depre
-## @lineage: bound.xor.bridge.mark.depre
-## @lineage: bound.eco.xor.bridge.mark.depre
-## @lineage: eco.bound.xor.bridge.mark.depre
-## @lineage: engine.xor.bridge.mark.depre
-## @lineage: xor.bridge.mark.depre
-## @lineage: xor.mark.depre
-## @lineage: arch.xor.bridge.mark.depre
-## @lineage: arch.xor.xe.depre
-## @lineage: watcher.xe.residue.depre
-## @lineage: atoa.mesh.residue.depre
+# xphi.xor.parser.mark
 from __future__ import annotations
+
+import copy
+import datetime
+import hashlib
+import itertools
+import os
 import warnings
+from collections import defaultdict
 from collections.abc import Callable
 from datetime import date
 from functools import cache
 from importlib.metadata import PackageNotFoundError, version as get_version
+from pathlib import Path
 from typing import Any, TypeVar, cast
+
+import requests
+import tqdm
 from deprecation import (
     DeprecatedWarning,
     UnsupportedWarning,
     deprecated as _deprecated,
 )
 from packaging import version as pkg_version
-import copy
-import datetime
-import itertools
-import os
-from collections import defaultdict
-import tqdm
-import requests
 
+from xphi.watcher.plane.emitter import get_logger
 
+logger = get_logger(__name__)
+
+# ---------------------------------------------------------
+# Constants & TypeVars
+# ---------------------------------------------------------
 _FuncT = TypeVar("_FuncT", bound=Callable[..., Any])
+
+DEFAULT_TEXT_CONTENT_LIMIT = 50_000
+DEFAULT_TRUNCATE_NOTICE = (
+    "<response clipped><NOTE>Due to the max output limit, only part of the full "
+    "response has been shown to you.</NOTE>"
+)
+DEFAULT_TRUNCATE_NOTICE_WITH_PERSIST = (
+    "<response clipped><NOTE>Due to the max output limit, only part of the full "
+    "response has been shown to you. The complete output has been saved to "
+    "{file_path} - you can use other tools to view the full content (truncated "
+    "part starts around line {line_num}).</NOTE>"
+)
+
+
+# =========================================================
+# Deprecation & Cleanup Utilities (formerly in depre.py)
+# =========================================================
 
 @cache
 def _current_version() -> str:
@@ -42,6 +56,7 @@ def _current_version() -> str:
         return get_version("no-version")
     except PackageNotFoundError:
         return "0.0.0"
+
 
 def deprecated(
     *,
@@ -142,6 +157,7 @@ def warn_cleanup(
             message += f" {details}"
         warnings.warn(message, UserWarning, stacklevel=stacklevel)
 
+
 def handle_deprecated_model_fields(
     data: Any,
     deprecated_fields: tuple[str, ...],
@@ -154,6 +170,72 @@ def handle_deprecated_model_fields(
 
     return data
 
+
+# =========================================================
+# Content Truncation Utilities (formerly in truncate.py)
+# =========================================================
+
+def _save_full_content(content: str, save_dir: str, tool_prefix: str) -> str | None:
+    """Save full content to the specified directory and return the file path."""
+
+    save_dir_path = Path(save_dir)
+    save_dir_path.mkdir(parents=True, exist_ok=True)
+    content_hash = hashlib.sha256(content.encode("utf-8")).hexdigest()[:8]
+    filename = f"{tool_prefix}_output_{content_hash}.txt"
+    file_path = save_dir_path / filename
+    if not file_path.exists():
+        try:
+            file_path.write_text(content, encoding="utf-8")
+        except Exception as e:
+            logger.debug(f"Failed to save full content to {file_path}: {e}")
+            return None
+
+    return str(file_path)
+
+
+def maybe_truncate(
+    content: str,
+    truncate_after: int | None = None,
+    truncate_notice: str = DEFAULT_TRUNCATE_NOTICE,
+    save_dir: str | None = None,
+    tool_prefix: str = "output",
+) -> str:
+    """Truncate the middle of content if it exceeds the specified length"""
+    if not truncate_after or len(content) <= truncate_after or truncate_after < 0:
+        return content
+
+    if len(truncate_notice) >= truncate_after:
+        return truncate_notice[:truncate_after]
+
+    available_chars = truncate_after - len(truncate_notice)
+    proposed_head = available_chars // 2 + (available_chars % 2)
+    final_notice = truncate_notice
+    if save_dir:
+        saved_file_path = _save_full_content(content, save_dir, tool_prefix)
+        if saved_file_path:
+            head_content_lines = len(content[:proposed_head].splitlines())
+            final_notice = DEFAULT_TRUNCATE_NOTICE_WITH_PERSIST.format(
+                file_path=saved_file_path,
+                line_num=head_content_lines + 1,  # +1 to indicate next line
+            )
+
+    if len(final_notice) >= truncate_after:
+        return final_notice[:truncate_after]
+
+    remaining = truncate_after - len(final_notice)
+    head_chars = min(proposed_head, remaining)
+    tail_chars = remaining - head_chars
+    return (
+        content[:head_chars]
+        + final_notice
+        + (content[-tail_chars:] if tail_chars > 0 else "")
+    )
+
+
+# =========================================================
+# General Utilities (formerly in depre.py)
+# =========================================================
+
 def download(url):
     filename = os.path.basename(url)
     remote_size = int(requests.head(url, allow_redirects=True).headers.get("Content-Length", 0))
@@ -165,6 +247,7 @@ def download(url):
             for chunk in r.iter_content(chunk_size=8192):
                 f.write(chunk)
 
+
 def print_message(*s, condition=True, pad=False, sep=None):
     s = " ".join([str(x) for x in s])
     msg = "[{}] {}".format(datetime.datetime.now().strftime("%b %d, %H:%M:%S"), s)
@@ -173,10 +256,12 @@ def print_message(*s, condition=True, pad=False, sep=None):
         print(msg, flush=True, sep=sep)
     return msg
 
+
 def timestamp(daydir=False):
     format_str = f"%Y-%m{'/' if daydir else '-'}%d{'/' if daydir else '_'}%H.%M.%S"
     result = datetime.datetime.now().strftime(format_str)
     return result
+
 
 def file_tqdm(file):
     print(f"#> Reading {file.name}")
@@ -190,6 +275,7 @@ def file_tqdm(file):
 
         pbar.close()
 
+
 def create_directory(path):
     if os.path.exists(path):
         print("\n")
@@ -199,8 +285,10 @@ def create_directory(path):
         print_message("#> Creating directory", path, "\n\n")
         os.makedirs(path)
 
+
 def deduplicate(seq: list[str]) -> list[str]:
     return list(dict.fromkeys(seq))
+
 
 def batch(group, bsize, provide_offset=False):
     offset = 0
@@ -209,6 +297,7 @@ def batch(group, bsize, provide_offset=False):
         yield ((offset, batch_data) if provide_offset else batch_data)
         offset += len(batch_data)
     return
+
 
 class dotdict(dict):  # noqa: N801
     def __getattr__(self, key):
@@ -235,16 +324,19 @@ class dotdict(dict):  # noqa: N801
         # Use the default dict copying method to avoid infinite recursion.
         return dotdict(copy.deepcopy(dict(self), memo))
 
+
 class dotdict_lax(dict):  # noqa: N801
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
+
 
 def flatten(data_list):
     result = []
     for child_list in data_list:
         result += child_list
     return result
+
 
 def zipstar(data_list, lazy=False):
     """
@@ -268,10 +360,12 @@ def zip_first(list1, list2):
     assert length in [None, len(zipped_data)], "zip_first() failure: length differs!"
     return zipped_data
 
+
 def int_or_float(val):
     if "." in val:
         return float(val)
     return int(val)
+
 
 def groupby_first_item(lst):
     groups = defaultdict(list)
@@ -317,12 +411,11 @@ def lengths2offsets(lengths):
     for length in lengths:
         yield (offset, offset + length)
         offset += length
-
     return
 
 
-# see https://stackoverflow.com/a/45187287
 class NullContextManager:
+    # see https://stackoverflow.com/a/45187287
     def __init__(self, dummy_resource=None):
         self.dummy_resource = dummy_resource
 
