@@ -1,6 +1,5 @@
-# xphi.watcher.ingress.gateway
+# xphi.watcher.server.pypi
 ## @lineage: xphi.watcher.ingress.pypi
-import os
 import asyncio
 import datetime
 import hashlib
@@ -13,8 +12,8 @@ from aiohttp import web, ClientSession
 from mcp.server.streamable_http import EventStore
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from xphi.watcher.mcp.server import SecureMCPServer
-from xphi.watcher.ingress.sentinel import get_projector, SecurityContext, MetaRuleDef
+from xphi.watcher.server.mcp import SecureMCPServer
+from xphi.watcher.tracer.chaos.sentinel import get_projector, SecurityContext, MetaRuleDef
 from xphi.watcher.receptor.audit.warden import AuditWarden
 from xphi.watcher.plane.emitter import get_emitter
 
@@ -29,9 +28,8 @@ class ServerRunConfig(TypedDict, total=False):
 class PyPIProxySettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="PYPI_")
     host: str = "127.0.0.1"
-    # [개선] 포트 충돌 회피: Data Plane(8083) / Control Plane(8085)
-    proxy_port: int = int(os.getenv("PYPI_PROXY_PORT", 8083)) 
-    mcp_port: int = int(os.getenv("PYPI_MCP_PORT", 8085))   
+    proxy_port: int = 8083  # Data Plane (PyPI 트래픽)
+    mcp_port: int = 8085    # Control Plane (보안 룰 제어)
     upstream_url: str = "https://pypi.org"
     transport_mode: Literal["stdio", "sse"] = "sse"
 
@@ -221,12 +219,7 @@ class PyPIMembraneServer:
         proxy_site = web.TCPSite(proxy_runner, self.settings.host, self.settings.proxy_port)
         mcp_site = web.TCPSite(mcp_runner, self.settings.host, self.settings.mcp_port)
         
-        # [개선] aiohttp 서버 기동 중 에러 발생 시 명확히 던져서 데몬 레벨에서 캐치할 수 있도록 함
-        try:
-            await asyncio.gather(proxy_site.start(), mcp_site.start())
-        except OSError as e:
-            self.log.error(f"Failed to bind PyPI Membrane ports ({self.settings.proxy_port}, {self.settings.mcp_port}). Port in use: {e}")
-            raise e
+        await asyncio.gather(proxy_site.start(), mcp_site.start())
         
         self.log.info(json.dumps({
             "msg": "🚀 Async Membrane Activated",

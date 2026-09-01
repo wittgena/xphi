@@ -1,5 +1,4 @@
 # xphi.arch.contract.phase.flow
-## @lineage: xphi.arch.contract.model.flow
 import uuid
 import asyncio
 import enum
@@ -10,7 +9,7 @@ from dataclasses import dataclass
 from xphi.watcher.plane.emitter import get_logger
 from xphi.arch.contract.registry.unified import contract, registry
 
-log = get_logger('model.flow')
+log = get_logger('phase.flow')
 
 PhaseElement = Union[str, Type[Any]]
 
@@ -286,8 +285,6 @@ class ResonanceAtor(PhaseAtor):
         self.next = spec["next"]
         self.buffer = {}
         op_name = spec.get("operator", "default_resonance")
-        
-        # [개선됨] 카테고리 인자("ator") 삭제
         self.custom_op = registry.create_component({"type": op_name})
 
     async def run(self, flow: PhaseFlow, operator: Resonance, ctx: FlowState):

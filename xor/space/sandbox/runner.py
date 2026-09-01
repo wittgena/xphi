@@ -1,5 +1,5 @@
-# xphi.xor.space.runner
-## @lineage: xphi.kernel.space.runner
+# xphi.xor.space.sandbox.runner
+## @lineage: xphi.xor.space.runner
 import asyncio
 import time
 import hashlib
@@ -11,8 +11,8 @@ import httpx
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from xphi.xor.parser.block.contract import Contract, CoherenceState
-from xphi.xor.space.sandbox import SandboxExecutor, TaskContext, EffectResolver
+from xphi.xor.space.contract import Contract, CoherenceState
+from xphi.xor.space.sandbox.resolver import SandboxExecutor, TaskContext, EffectResolver
 from xphi.kernel.dphi.broker import DphiBroker
 from xphi.kernel.dphi.adapter.state import StateAdapter
 from xphi.kernel.dphi.ledger.consensus import KernelLedger, KernelCommit

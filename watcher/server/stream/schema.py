@@ -1,4 +1,5 @@
-# xphi.watcher.ingress.stream.schema
+# xphi.watcher.server.stream.schema
+## @lineage: xphi.watcher.ingress.stream.schema
 ## @lineage: xphi.xor.stream.schema
 ## @lineage: xphi.arch.xor.stream.schema
 ## @lineage: arch.xor.stream.schema

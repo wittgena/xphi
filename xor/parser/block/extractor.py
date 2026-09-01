@@ -1,5 +1,4 @@
 # xphi.xor.parser.block.extractor
-## @lineage: xphi.arch.xor.parser.block.extractor
 import re
 import sys
 import json
@@ -9,7 +8,7 @@ from typing import List, Optional, Union, Dict
 from xphi.watcher.plane.emitter import get_logger
 from xphi.kernel.space.bind.resolver import find_current_self, resolve_path
 from xphi.xor.parser.block.schema import MdDocument, Heading, MdSection, MdNode, CodeBlock, Paragraph
-from xphi.xor.parser.ast import MdAstParser, PyAstParser, KtAstParser
+from xphi.xor.parser.block.ast import MdAstParser, PyAstParser, KtAstParser
 
 log = get_logger("block.extractor")
 

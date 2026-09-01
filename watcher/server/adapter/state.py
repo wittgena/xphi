@@ -1,4 +1,5 @@
-# xphi.watcher.mcp.adapter.state
+# xphi.watcher.server.adapter.state
+## @lineage: xphi.watcher.mcp.adapter.state
 from __future__ import annotations
 import uuid
 import time

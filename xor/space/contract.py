@@ -1,6 +1,4 @@
-# xphi.xor.parser.block.contract
-## @lineage: xphi.arch.xor.parser.block.contract
-## @lineage: arch.xor.parser.block.contract
+# xphi.xor.space.contract
 from enum import Enum
 from typing import Optional, Dict, Any
 from typing_extensions import Annotated

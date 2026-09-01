@@ -1,4 +1,5 @@
-# xphi.watcher.mcp.server
+# xphi.watcher.server.mcp
+## @lineage: xphi.watcher.mcp.server
 ## @lineage: xphi.watcher.ingress.mcp
 import inspect
 import json
@@ -14,7 +15,7 @@ from mcp_types import TextContent
 from mcp.server.mcpserver.server import MCPServer
 from xphi.watcher.plane.emitter import get_emitter
 
-from xphi.watcher.ingress.sentinel import SpecValidator
+from xphi.watcher.tracer.chaos.sentinel import SpecValidator
 from xphi.watcher.receptor.policy.gateway import ToposGateway
 
 log = get_emitter("server.mcp", phase="DEFENSE")

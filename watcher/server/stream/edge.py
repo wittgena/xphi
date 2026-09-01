@@ -1,4 +1,5 @@
-# xphi.watcher.ingress.stream.edge
+# xphi.watcher.server.stream.edge
+## @lineage: xphi.watcher.ingress.stream.edge
 import asyncio
 import uuid
 import httpx
@@ -9,7 +10,7 @@ from dataclasses import dataclass, asdict
 
 from xphi.kernel.phase.state.spec import TransRule, NodeType
 from xphi.kernel.dphi.ledger.consensus import KernelLedger
-from xphi.watcher.ingress.stream.schema import (
+from xphi.watcher.server.stream.schema import (
     LogicStream, 
     StreamMetadata, 
     StreamIdentity, 
@@ -19,7 +20,7 @@ from xphi.watcher.ingress.stream.schema import (
 )
 from xphi.watcher.receptor.audit.warden import AuditWarden
 from xphi.watcher.receptor.policy.gateway import ToposGateway
-from xphi.arch.eco.edge.receipt import LogstEvent
+from xphi.arch.model.edge.receipt import LogstEvent
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("log.store", phase="INGRESS")

@@ -1,4 +1,5 @@
-# xphi.arch.eco.config
+# xphi.xor.space.sandbox.config
+## @lineage: xphi.arch.eco.config
 ## @lineage: xphi.arch.eco.dphi.config
 from pydantic import Field
 from pydantic_settings import BaseSettings

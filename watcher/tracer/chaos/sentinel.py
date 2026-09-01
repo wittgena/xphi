@@ -1,4 +1,5 @@
-# xphi.watcher.ingress.sentinel
+# xphi.watcher.tracer.chaos.sentinel
+## @lineage: xphi.watcher.ingress.sentinel
 import asyncio
 import json
 import random
@@ -10,7 +11,7 @@ import httpx
 from aiohttp import web
 from pydantic import BaseModel, Field, ValidationError
 
-from xphi.watcher.ingress.stream.schema import (
+from xphi.watcher.server.stream.schema import (
     ActionIntent,
     LogicPayload,
     LogicStream,

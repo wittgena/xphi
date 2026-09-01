@@ -1,4 +1,5 @@
-# xphi.xor.space.sandbox
+# xphi.xor.space.sandbox.resolver
+## @lineage: xphi.xor.space.sandbox
 ## @lineage: xphi.kernel.space.sandbox
 import os
 import json
@@ -7,12 +8,12 @@ from enum import Enum
 from dataclasses import dataclass, asdict, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol, Union
 
-from xphi.xor.parser.block.contract import Contract, CoherenceState
+from xphi.xor.space.contract import Contract, CoherenceState
 from xphi.arch.event.next import next_id, generate_parity_triplet, parse_phase_id
 from xphi.kernel.dphi.broker import DphiBroker, DphiMethod
 from xphi.kernel.dphi.cgroup import CgroupPolicy, Tier
 from xphi.kernel.dphi.adapter.state import StateAdapter
-from xphi.arch.eco.config import fuel_config, tier_config
+from xphi.xor.space.sandbox.config import fuel_config, tier_config
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("space.sandbox")
