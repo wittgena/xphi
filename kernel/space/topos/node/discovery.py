@@ -1,6 +1,4 @@
 # xphi.kernel.space.topos.node.discovery
-## @lineage: kernel.space.topos.node.discovery
-## @lineage: arch.topos.node.discovery
 """
 @topos.role: Φ constructor (global topology discovery)
 @desc: A pure logical scanner decoupled from physical implementations (e.g., Git).

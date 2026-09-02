@@ -27,7 +27,8 @@ class Attractor:
         parent_nexus_id: int, 
         parent_commit_id: str, 
         message: str, 
-        apply: bool = False
+        apply: bool = False,
+        tag: Optional[str] = None  # [추가] 글로벌 태그 수신
     ) -> str:
         """
         Models and inscribes the lineage of the current generation.
@@ -39,13 +40,17 @@ class Attractor:
             "parent_nexus_id": parent_nexus_id,
             "parent_commit_id": parent_commit_id
         }
+        
+        # [추가] 커밋 페이로드에 태그 정보 각인 (암호학적 증명에 포함됨)
+        if tag:
+            model_dict["version_tag"] = tag
 
         # Git commit 메시지에 물리적으로 각인 (결정론적 직렬화)
         json_payload = json.dumps(model_dict, separators=(',', ':'), sort_keys=True)
         full_message = f"{message}\n\n{json_payload}"
         
-        # Git Commit 실행
-        new_commit_id = self.runner(self.path, full_message, apply)
+        # Git Commit 및 Tag 실행 (Runner로 tag 파라미터 전달)
+        new_commit_id = self.runner(self.path, full_message, apply, tag=tag)
 
         if apply:
             blob = ToposBlob(
@@ -58,7 +63,8 @@ class Attractor:
             self.store.save_transition(blob)
             self.store.update_head(self.name, new_commit_id)
 
-        print(f"  └─ [{self.name}] Inscribed. Nexus: {nexus_id} | State: {new_commit_id}")
+        tag_info = f" | Tag: {tag}" if tag else ""
+        print(f"  └─ [{self.name}] Inscribed. Nexus: {nexus_id} | State: {new_commit_id[:7]}{tag_info}")
         return new_commit_id
 
 
@@ -101,11 +107,13 @@ async def anchor_commit(
     anchor: EpochManager, 
     broker: DphiBroker, 
     message: str, 
-    apply: bool = False
+    apply: bool = False,
+    tag: Optional[str] = None  # [추가] Commiter로부터 태그 수신
 ) -> None:
     mode = "APPLY" if apply else "DRY-RUN"
     log.info(f"## Era-based Alignment Cycle Initiated ({mode})")
     current_ts = int(time.time() * 1000)
+    
     init_req: Dict[str, Any] = {
         "ts": current_ts,
         "topo": 1,
@@ -113,6 +121,11 @@ async def anchor_commit(
         "rupture": False,
         "injected_tick": None
     }
+    
+    # [추가] WASM이 초기 Parity 생성 시 태그를 인지할 수 있도록 주입
+    if tag:
+        init_req["version_tag"] = tag
+        log.info(f"[Protocol] Global Version Tag '{tag}' will be cryptographically sealed.")
     
     log.info("[Protocol] Requesting Parity Triplet from WASM Engine...")
     init_payload_str = StateAdapter.to_canonical_bytes(init_req).decode('utf-8')
@@ -136,11 +149,12 @@ async def anchor_commit(
         parent_state = anchor.resolve(r.name)
         commit_hash = await asyncio.to_thread(
             r.inscribe,
-            nexus_id,
-            parent_nexus_id,
-            parent_state,
-            message,
-            apply
+            nexus_id=nexus_id,
+            parent_nexus_id=parent_nexus_id,
+            parent_commit_id=parent_state,
+            message=message,
+            apply=apply,
+            tag=tag  # [추가] 개별 리포지토리(Attractor)에 태그 전파
         )
         current_aligned_states[r.name] = commit_hash
 
