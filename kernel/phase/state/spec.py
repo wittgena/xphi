@@ -1,7 +1,4 @@
 # xphi.kernel.phase.state.spec
-## @lineage: kernel.phase.state.spec
-## @lineage: kernel.bind.state.spec
-## @lineage: kernel.topos.state.spec
 import enum 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Tuple

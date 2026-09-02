@@ -1,5 +1,4 @@
 # xphi.kernel.phase.commit
-## @lineage: kernel.phase.commit
 import json
 import time
 import asyncio
