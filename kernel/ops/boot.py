@@ -27,7 +27,6 @@ log = get_emitter("kernel.boot")
 _node_instance: Optional[NodeRuntime] = None
 _background_tasks = set()
 
-
 class PhaseSignal(EventObserver):
     """표면(Surface) 로그 이벤트를 커널 내부의 PsiEvent(SIGNAL)로 승격하여 브리지하는 옵저버"""
     def __init__(self, event_bus: AsyncEventBus):
@@ -132,40 +131,46 @@ async def main_async():
     
     log.info("[Boot] Igniting Physical Membrane Receptor...")
     tunnel = await TunnelFactory.get_default()
-    
-    # [개선 2] Membrane Receptor 백그라운드 태스크 등록 (GC 방지)
     receptor_task = asyncio.create_task(receptor_bootstrap(tunnel))
     _background_tasks.add(receptor_task)
     receptor_task.add_done_callback(_background_tasks.discard)
 
     log.info("[Boot] Waiting for module discovery and registry sync...")
-    active_daemons = [d.strip() for d in os.getenv("KERNEL_DAEMONS", "rest_edge,gateway_edge,risk_vault,verse").split(",") if d.strip()]
+    active_daemons_str = os.getenv("KERNEL_DAEMONS", "")
+    active_daemons = [d.strip() for d in active_daemons_str.split(",") if d.strip()]
     
     wait_timeout = 30.0
     elapsed = 0.0
     poll_interval = 0.2
     
-    while elapsed < wait_timeout:
-        discovered = getattr(registry, "_daemons", {})
-        if all(d in discovered for d in active_daemons):
-            log.info(f"[Boot] Registry sync verified in {elapsed:.1f}s. Proceeding to ignite node...")
-            break
-            
-        await asyncio.sleep(poll_interval)
-        elapsed += poll_interval
+    if active_daemons:
+        while elapsed < wait_timeout:
+            discovered = getattr(registry, "_daemons", {})
+            if all(d in discovered for d in active_daemons):
+                log.info(f"[Boot] Registry sync verified in {elapsed:.1f}s. Proceeding to ignite node...")
+                break
+                
+            await asyncio.sleep(poll_interval)
+            elapsed += poll_interval
+        else:
+            missing_daemons = [d for d in active_daemons if d not in getattr(registry, "_daemons", {})]
+            log.warning(f"[Boot] Registry sync timed out after {wait_timeout}s! Missing daemons: {missing_daemons}")
     else:
-        log.warning(f"[Boot] Registry sync timed out after {wait_timeout}s! System may be unstable.")
+        log.info("[Boot] No specific KERNEL_DAEMONS requested. Proceeding directly to ignite node...")
 
     log.info("[Boot] Igniting Embedded Phase Runtime Node...")
     completion_signal = asyncio.Event()
     executor = RoutingExecutor(completion_signal)
     
-    # [개선 3] 최상위 DI 주입: NodeRuntime 인스턴스 생성 및 리소스 바인딩
     _node_instance = NodeRuntime(executor=executor)
     _node_instance.tunnel = tunnel
-    _node_instance.broker = DphiBroker(tunnel_factory=TunnelFactory)
     
-    # NodeRuntime.start() 내부에서 tunnel과 broker를 기반으로 ctx를 완성하고 데몬들을 마운트함
+    node_profile = os.getenv("NODE_PROFILE", "ALL").upper()
+    if node_profile != "EDGE":
+        _node_instance.broker = DphiBroker(tunnel_factory=TunnelFactory)
+    else:
+        log.info(f"[Boot] Bypassing DphiBroker master initialization for {node_profile} profile.")
+
     await _node_instance.start()
 
     log.info("[Boot] Control Plane and Embedded Node fully operational.")
@@ -186,15 +191,17 @@ async def teardown():
         if not task.done():
             task.cancel()
 
-    # 3. Redis 터널 및 Ledger DB 정리
-    await TunnelFactory.close_all()
+    # 3. Ledger DB 정리 (물리적 자원 및 Lock 해제)
     try:
         KernelLedger().close()
+        log.info("[Boot] KernelLedger lock safely released.")
     except Exception as e:
         log.warning(f"[Boot] Error while releasing KernelStore lock: {e}")
         
+    # 4. Redis 터널 정리 (통신망 회수)
+    await TunnelFactory.close_all()
+    
     log.info("[Boot] Resource cleanup complete.")
-
 
 if __name__ == "__main__":
     PhaseReactor.ignite(main_coro_func=main_async, teardown_hook=teardown)

@@ -47,10 +47,6 @@ class RuntimeKeyResolver:
 
 runtime_keys = RuntimeKeyResolver()
 
-
-# =====================================================================
-# Master NodeRuntime (Control Plane 역할)
-# =====================================================================
 class NodeRuntime(IPhaseAtor):
     """
     @runtime.node: Master-Worker control manifold
@@ -212,9 +208,13 @@ class NodeRuntime(IPhaseAtor):
         self.ctx.broker = self.broker
 
         # -----------------------------------------------------------------
-        # 3. Master 마운트 및 별도 모듈 기반 Worker 프로세스 스폰
+        # [개선] 노드 프로파일 판별 (기본값 ALL)
         # -----------------------------------------------------------------
-        mount_master_layer(self.supervisor, self.ctx)
+        node_profile = os.getenv("NODE_PROFILE", "ALL").upper()
+        self.log.info(f"Node Profile detected as: {node_profile}")
+
+        # 3. Master 마운트 (App 데몬 포함)
+        mount_master_layer(self.supervisor, self.ctx, profile=node_profile)
         
         master_control_bus = EventBusDaemon(
             tunnel=self.tunnel,
@@ -226,19 +226,23 @@ class NodeRuntime(IPhaseAtor):
         )
         self.supervisor.mount_daemon(master_control_bus)
         
-        self.log.info("Master Infra Layer (Heartbeat, Sensor, ControlBus) mounted successfully.")
+        self.log.info(f"Master Infra Layer (ControlBus) mounted successfully. (Profile: {node_profile})")
 
-        worker_count = int(os.environ.get("DPHI_FIXED_WORKERS", multiprocessing.cpu_count()))
-        self.log.info(f"Spawning {worker_count} isolated Worker Processes for pure computation...")
-        
-        for i in range(worker_count):
-            p = multiprocessing.Process(
-                target=worker_process_entry, 
-                args=(self.node_id, i),
-                daemon=True 
-            )
-            p.start()
-            self.worker_processes.append(p)
+        # [개선] 프로파일이 ALL 이거나 COMPUTE 일 때만 Worker 프로세스 스폰 (EDGE 등은 차단)
+        if node_profile in ["ALL", "COMPUTE"]:
+            worker_count = int(os.environ.get("DPHI_FIXED_WORKERS", multiprocessing.cpu_count()))
+            self.log.info(f"Spawning {worker_count} isolated Worker Processes for pure computation...")
+            
+            for i in range(worker_count):
+                p = multiprocessing.Process(
+                    target=worker_process_entry, 
+                    args=(self.node_id, i),
+                    daemon=True 
+                )
+                p.start()
+                self.worker_processes.append(p)
+        else:
+            self.log.info(f"Worker Process spawning bypassed (Profile: {node_profile}). Node operating in lightweight mode.")
 
     async def shutdown(self):
         if not self.running: return
