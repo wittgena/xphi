@@ -1,5 +1,4 @@
 # xphi.kernel.dphi.fsm.edge
-## @lineage: fiber.dphi.workflow.fsm.edge
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Any, Dict
