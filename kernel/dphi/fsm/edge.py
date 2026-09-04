@@ -13,7 +13,7 @@ class EdgePhaseState(Enum):
 
 @dataclass
 class StartIntentEvent:
-    agent_id: str
+    client_id: str
     action: str
     max_fuel: int
     source_code: str
@@ -38,7 +38,7 @@ class PhaseFailedEvent:
 
 @dataclass
 class RunComputePhaseCmd:
-    agent_id: str
+    client_id: str
     action: str
     max_fuel: int
     source_code: str
@@ -50,7 +50,7 @@ class RunCompliancePhaseCmd:
 
 @dataclass
 class RunSettlementPhaseCmd:
-    agent_id: str
+    client_id: str
     cost_usd: float
 
 @dataclass
@@ -74,9 +74,9 @@ class EdgePhaseFSM:
         ## Phase 1: Computing (실행 및 과금)
         if self.state == EdgePhaseState.INIT and isinstance(event, StartIntentEvent):
             self.state = EdgePhaseState.COMPUTING
-            self.context["agent_id"] = event.agent_id
+            self.context["client_id"] = event.client_id
             return RunComputePhaseCmd(
-                agent_id=event.agent_id, 
+                client_id=event.client_id, 
                 action=event.action,
                 max_fuel=event.max_fuel, 
                 source_code=event.source_code,
@@ -94,7 +94,7 @@ class EdgePhaseFSM:
         elif self.state == EdgePhaseState.COMPLIANCE_CHECKING and isinstance(event, CompliancePhaseCompletedEvent):
             self.state = EdgePhaseState.SETTLING
             return RunSettlementPhaseCmd(
-                agent_id=self.context["agent_id"],
+                client_id=self.context["client_id"],
                 cost_usd=self.context.get("cost_usd", 0.0)
             )
         elif self.state == EdgePhaseState.SETTLING and isinstance(event, SettlementPhaseCompletedEvent):

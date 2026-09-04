@@ -8,28 +8,28 @@ from xphi.watcher.plane.emitter import flow_scope, get_emitter
 log = get_emitter("rpc.bridge")
 
 class FlowPropagator(DuplexChannel):
-    def __init__(self, agent_id: str = "SERVER_SIDE"):
-        self.agent_id = agent_id
+    def __init__(self, client_id: str = "SERVER_SIDE"):
+        self.client_id = client_id
 
     async def channel_active(self, ctx: ChannelContext):
         ## 연결 성립 시 고유 flow_id 부여 및 AttributeMap 저장
-        flow_id = f"flow_{self.agent_id}_{uuid.uuid4().hex[:8]}"
+        flow_id = f"flow_{self.client_id}_{uuid.uuid4().hex[:8]}"
         ctx.set_attr("flow_id", flow_id)
         
-        with flow_scope(flow_id=flow_id, phase="NET_ACTIVE", agent_id=self.agent_id):
+        with flow_scope(flow_id=flow_id, phase="NET_ACTIVE", client_id=self.client_id):
             log.info("채널 연결 완료 (Flow 생성됨)")
             await ctx.fire_channel_active()
 
     async def channel_read(self, ctx: ChannelContext, msg: Any):
         flow_id = ctx.get_attr("flow_id", "UNKNOWN_FLOW")
         ## 수신 이벤트를 flow_scope로 래핑하여 하위 핸들러로 전달
-        with flow_scope(flow_id=flow_id, phase="NET_RX", agent_id=self.agent_id):
+        with flow_scope(flow_id=flow_id, phase="NET_RX", client_id=self.client_id):
             await ctx.fire_channel_read(msg)
 
     async def write(self, ctx: ChannelContext, msg: Any):
         flow_id = ctx.get_attr("flow_id", "UNKNOWN_FLOW")
         ## 송신 이벤트를 flow_scope로 래핑하여 Transport로 전달
-        with flow_scope(flow_id=flow_id, phase="NET_TX", agent_id=self.agent_id):
+        with flow_scope(flow_id=flow_id, phase="NET_TX", client_id=self.client_id):
             await ctx.fire_write(msg)
 
 

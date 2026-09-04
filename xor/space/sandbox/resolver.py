@@ -1,6 +1,4 @@
 # xphi.xor.space.sandbox.resolver
-## @lineage: xphi.xor.space.sandbox
-## @lineage: xphi.kernel.space.sandbox
 import os
 import json
 import time
@@ -327,17 +325,17 @@ class BenchProfile:
             policy = CgroupPolicy.standard()
             return MetabolicProfile(cgroup_policy=policy)
 
-    def _charge_account(self, agent_id: str, fuel_consumed: int):
+    def _charge_account(self, client_id: str, fuel_consumed: int):
         """
         내부 회계 및 로깅을 수행합니다. 
         실제 지갑 차감이나 원장 동기화는 상위 어댑터(EcoExchange)에서 처리하는 것을 권장합니다.
         """
         billed_amount = (fuel_consumed / fuel_config.fuel_unit) * fuel_config.usd_per_fuel_unit
-        log.info(f"[Billing] Charged ${billed_amount:.4f} for {fuel_consumed:,} fuel units. Agent: {agent_id}")
+        log.info(f"[Billing] Charged ${billed_amount:.4f} for {fuel_consumed:,} fuel units. Agent: {client_id}")
 
     async def execute(
         self, 
-        agent_id: str, 
+        client_id: str, 
         schema: Dict[str, Any], 
         entry: str, 
         depth: int, 
@@ -349,7 +347,7 @@ class BenchProfile:
         """
         profile = self._resolve_profile(tier)
         
-        log.info(f"[{agent_id}] Target Execution Tier mapped to: {tier.value}")
+        log.info(f"[{client_id}] Target Execution Tier mapped to: {tier.value}")
         
         sandbox_resolver = SandboxResolver(profile=profile)
         executor = SandboxExecutor(resolvers={"SANDBOX": sandbox_resolver}) 
@@ -386,9 +384,9 @@ class BenchProfile:
         reason = payload_data.get("reason") or payload_data.get("detail") or "Execution completed successfully"
         
         if not dry_run:
-            self._charge_account(agent_id, final_fuel_consumed)
+            self._charge_account(client_id, final_fuel_consumed)
         else:
-            log.info(f"[Billing] Dry-run complete. Estimated {final_fuel_consumed:,} units for Agent: {agent_id}")
+            log.info(f"[Billing] Dry-run complete. Estimated {final_fuel_consumed:,} units for Agent: {client_id}")
         
         return BenchResult(
             status=final_status, 

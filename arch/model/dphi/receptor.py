@@ -49,7 +49,7 @@ class ProofGenerationResponse(BaseModel):
     zk_receipt: Dict[str, Any]
 
 class TradeIngressRequest(BaseModel):
-    agent_id: str = Field(..., description="에이전트 식별자")
+    client_id: str = Field(..., description="client 식별자")
     action: str = Field(..., description="거래 액션 (예: buy, sell, swap)")
 
 class TradeIngressResponse(BaseModel):

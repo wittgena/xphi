@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class AgentMandateRequest(BaseModel):
     """에이전트가 DPHI에 제출하는 오프체인 과금 허용 서명 (EIP-712/AP2)"""
-    agent_id: str = Field(..., description="Agent DID or Wallet Address")
+    client_id: str = Field(..., description="Agent DID or Wallet Address")
     max_spend_usdc: str = Field(..., description="최대 허용 과금액 (예: '100.0')")
     expiration_ts: int = Field(..., description="서명 만료 Timestamp")
     signature: str = Field(..., description="Agent의 프라이빗 키로 서명된 무결성 증명")
@@ -15,8 +15,8 @@ class CapabilityReceiptResponse(BaseModel):
     budget_usdc: str = Field(..., description="승인된 롤업 내부 예산")
     issued_at: str = Field(..., description="발급 시간 (ISO-8601)")
 
-class CodebotIntent(BaseModel):
-    agent_id: str
+class SandboxIntent(BaseModel):
+    client_id: str
     responder_id: Optional[str] = Field(default=None, description="타겟 실행 노드 ID (없을 시 Gateway가 할당)")
     action: str
     source_code: str
