@@ -124,10 +124,6 @@ class SovereignVault(CryptoVault):
 
 
 class EphemeralVault(CryptoVault):
-    """
-    [E2E / Testing] 파일 I/O 없이 인메모리에서만 일회성으로 유지되는 볼트.
-    기존 NotarySwarm을 완벽히 대체하며, 프로덕션 코드를 우회/오염시키지 않습니다.
-    """
     def __init__(self, size: int = 3):
         self._keys = []
         for i in range(size):

@@ -41,6 +41,7 @@ DEFAULT_BOUND_SKELETON = {
         "chat": ":io:/chat",
         "memory": ":anchor:/memory",
         "ledger": ":anchor:/ledger",
+        "sign": ":anchor:/sign",
         "log": ":io:/log",
         "ailog": ":io:/ailog",
         "sandbox": ":workspace:",

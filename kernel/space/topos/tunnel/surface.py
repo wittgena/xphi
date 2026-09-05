@@ -1,6 +1,4 @@
 # xphi.kernel.space.topos.tunnel.surface
-## @lineage: kernel.space.topos.tunnel.surface
-## @lineage: arch.topos.tunnel.surface
 import json
 import time
 import asyncio
