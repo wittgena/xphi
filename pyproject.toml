@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "xphi"
-version = "1.0.1-internal" 
+version = "1.0.1+bound"
 description = "Internal Core Engine for Fiber (Not for standalone use)"
 requires-python = ">=3.10"
 dependencies = [
