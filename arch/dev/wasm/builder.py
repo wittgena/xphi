@@ -1,4 +1,5 @@
-# xphi.arch.wasm.builder
+# xphi.arch.dev.wasm.builder
+## @lineage: xphi.arch.wasm.builder
 import os
 import shutil
 import json
@@ -8,7 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Optional
 
 from xphi.kernel.space.bind.resolver import resolve_path
-from xphi.watcher.tracer.bound import BaseTracer
+from xphi.arch.dev.tracer.base import BaseTracer
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("wasm.builder")

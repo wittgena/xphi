@@ -1,9 +1,10 @@
-# xphi.watcher.tracer.infra.router
+# xphi.arch.dev.infra.router
+## @lineage: xphi.watcher.tracer.infra.router
 ## @lineage: fiber.phase.kernel.tracer.router
 import urllib.parse
 from typing import Dict, Any, Optional
 
-from xphi.watcher.tracer.scope import get_current_trace_path
+from xphi.arch.dev.tracer.scope import get_current_trace_path
 
 class InfraRouter:
     def __init__(self, host_url: str, session_api_key: Optional[str] = None):

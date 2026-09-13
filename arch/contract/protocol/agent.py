@@ -6,11 +6,8 @@ import asyncio
 import contextvars
 from typing import Dict, Any, Optional
 
-## 표준 출력(stdout)을 표준 에러(stderr)로 강제 리다이렉션하여 일반적인 print()나 서드파티 라이브러리의 출력이 JSON-RPC 통신을 오염시키는 것을 방지
 _REAL_STDOUT = sys.stdout
 sys.stdout = sys.stderr
-
-## 현재 비동기/스레드 컨텍스트에서 실행 중인 요청 ID 추적
 current_request_id = contextvars.ContextVar("current_request_id", default="SYSTEM")
 
 class JsonStderrFormatter(logging.Formatter):

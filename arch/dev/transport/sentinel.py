@@ -1,5 +1,4 @@
-# xphi.watcher.tracer.chaos.sentinel
-## @lineage: xphi.watcher.ingress.sentinel
+# xphi.arch.dev.transport.sentinel
 import asyncio
 import json
 import random
@@ -23,7 +22,7 @@ from xphi.watcher.plane.emitter import flow_scope, get_emitter
 from xphi.watcher.plane.observer.span import span_context
 from xphi.state.ledger.gateway import StoreGateway
 
-log = get_emitter("ingress.sentinel", phase="DEFENSE")
+log = get_emitter("transport.sentinel", phase="DEFENSE")
 
 class StreamTransducer:
     MAX_PAYLOAD_SIZE = 5242880

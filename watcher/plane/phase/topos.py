@@ -1,4 +1,9 @@
 # xphi.watcher.plane.phase.topos
+"""
+@desc: 
+- Infrastructure Orchestrator for Compute Plane (Docker Compose & Kubernetes).
+- Automates provisioning, health checks, and test execution for distributed topologies.
+"""
 import os
 import yaml
 import asyncio
@@ -8,10 +13,10 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, Type, Tuple
 
-from xphi.watcher.tracer.infra.topos import ContainerStateAuditor, EntropyAuditor, UniversalLogAuditor
-from xphi.watcher.tracer.infra.router import InfraRouter
+from xphi.arch.dev.infra.topos import ContainerStateAuditor, EntropyAuditor, UniversalLogAuditor
+from xphi.arch.dev.infra.router import InfraRouter
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
-from xphi.watcher.tracer.bound import SystemBound
+from xphi.arch.dev.tracer.base import SystemBound
 
 log = get_emitter("plane.topos")
 
@@ -20,7 +25,7 @@ class ToposBlueprint:
     def get_cluster_spec(workspace_dir: str) -> Dict[str, Any]:
         return {
             "services": {
-                # 1. 분산망 상태 동기화 및 메시지 큐 (Redis)
+                # 1. Message Broker and State Sync (Redis)
                 "fiber-tunnel": {
                     "image": "redis:7-alpine",
                     "container_name": "fiber-tunnel",
@@ -28,7 +33,7 @@ class ToposBlueprint:
                     "healthcheck": {"test": ["CMD", "redis-cli", "ping"], "interval": "3s", "retries": 5}
                 },
                 
-                # 2. 엣지 진입점 (Gateway)
+                # 2. Edge Ingress / API Gateway
                 "fiber-gateway": {
                     "build": {
                         "context": workspace_dir,
@@ -36,7 +41,7 @@ class ToposBlueprint:
                     },
                     "container_name": "fiber-gateway",
                     "tmpfs": [
-                        "/root/.anchor"  # USER 모드 샌드박스
+                        "/root/.anchor"  # USER mode sandbox
                     ],
                     "environment": [
                         "REDIS_URL=redis://fiber-tunnel:6379/0", 
@@ -47,7 +52,7 @@ class ToposBlueprint:
                     "depends_on": {"fiber-tunnel": {"condition": "service_healthy"}}
                 },
                 
-                # 3. 분산 워커 노드 A (Multiplex Oracle)
+                # 3. Distributed Compute Node A (Multiplex Oracle)
                 "fiber-worker-oracle": {
                     "build": {
                         "context": workspace_dir,
@@ -63,7 +68,7 @@ class ToposBlueprint:
                     "depends_on": {"fiber-tunnel": {"condition": "service_healthy"}}
                 },
                 
-                # 4. 분산 워커 노드 B (Linear Finlib)
+                # 4. Distributed Compute Node B (Linear Finlib)
                 "fiber-worker-finlib": {
                     "build": {
                         "context": workspace_dir,
@@ -98,17 +103,17 @@ class DockerComposeAdapter(BaseToposAdapter):
         with open(self.compose_file, "w") as f:
             yaml.dump(spec, f, sort_keys=False)
             
-        log.info(f"[Adapter:Compose] Manifest materialized. Igniting Remote-Dist Hologram cluster...")
+        log.info(f"[Adapter:Compose] Compose file generated. Starting containers...")
         cmd = ["docker-compose", "-f", str(self.compose_file), "up", "--build", "-d"]
         code, out, err = await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=True)
         if code != 0:
-            log.error(f"[Adapter:Compose] Apply failed: {err}")
+            log.error(f"[Adapter:Compose] Deployment failed: {err}")
             return False
         return True
 
     async def teardown(self) -> None:
         if self.compose_file.exists():
-            log.info("[Adapter:Compose] Gracefully collapsing physical manifolds...")
+            log.info("[Adapter:Compose] Tearing down Docker Compose infrastructure...")
             cmd = ["docker-compose", "-f", str(self.compose_file), "down", "-v", "--remove-orphans"]
             await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=False)
 
@@ -126,16 +131,16 @@ class KomposeK3sAdapter(BaseToposAdapter):
         with open(self.compose_file, "w") as f:
             yaml.dump(spec, f, sort_keys=False)
             
-        log.info("[Adapter:K3s] Translating Blueprint via Kompose...")
+        log.info("[Adapter:K3s] Converting Compose spec to Kubernetes manifests via Kompose...")
         convert_cmd = ["kompose", "convert", "-f", str(self.compose_file), "-o", str(self.k8s_manifest)]
         code, _, err = await self.boundary.run_command(convert_cmd, cwd=str(self.workspace), capture=True)
         if code != 0:
-            log.error(f"[Adapter:K3s] Kompose translation failed: {err}")
+            log.error(f"[Adapter:K3s] Kompose conversion failed: {err}")
             return False
 
         await self.boundary.run_command(["kubectl", "create", "namespace", self.namespace], capture=True) 
         
-        log.info(f"[Adapter:K3s] Injecting Topology into Kube Namespace '{self.namespace}'...")
+        log.info(f"[Adapter:K3s] Applying manifests to Kubernetes namespace '{self.namespace}'...")
         apply_cmd = ["kubectl", "apply", "-f", str(self.k8s_manifest), "-n", self.namespace]
         code, _, err = await self.boundary.run_command(apply_cmd, cwd=str(self.workspace), capture=True)
         
@@ -146,7 +151,7 @@ class KomposeK3sAdapter(BaseToposAdapter):
 
     async def teardown(self) -> None:
         if self.k8s_manifest.exists():
-            log.info(f"[Adapter:K3s] Eradicating topology from namespace '{self.namespace}'...")
+            log.info(f"[Adapter:K3s] Deleting resources from Kubernetes namespace '{self.namespace}'...")
             cmd = ["kubectl", "delete", "-f", str(self.k8s_manifest), "-n", self.namespace, "--ignore-not-found=true"]
             await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=False)
 
@@ -184,8 +189,8 @@ class ToposOrchestrator:
 
     def _generate_dynamic_dockerfile(self, git_ref="main"):
         """
-        @desc: 로컬 디렉토리 참조를 버리고, Github에서 직접 fiber를 받아와 빌드하는 
-        순수 원격(Direct Remote) 배포 환경을 동적으로 굽습니다.
+        @desc: Generates a dynamic Dockerfile for remote targeting, 
+               pulling the core package directly from GitHub instead of using local mounts.
         """
         dockerfile_path = self.workspace / "Dockerfile"
         dockerfile_content = f"""\
@@ -195,17 +200,18 @@ WORKDIR /home/fiber
 RUN pip install --no-cache-dir git+https://github.com/wittgena/fiber.git@{git_ref}
 """
         dockerfile_path.write_text(dockerfile_content)
-        log.info(f"  [BUILDER] Dynamic Dockerfile generated targeting Github (ref: {git_ref}) at {dockerfile_path}")
+        log.info(f"  [BUILDER] Dynamic Dockerfile generated targeting GitHub (ref: {git_ref}) at {dockerfile_path}")
 
-    async def _verify_resonance(self) -> bool:
-        log.info(f"\n>>> [PHASE] Stabilizing Topology & Verifying Resonance ({self.infra_type.upper()}) <<<")
+    async def _verify_cluster_health(self) -> bool:
+        """@desc: Polls container states and HTTP endpoints to verify network readiness and CPU stabilization."""
+        log.info(f"\n>>> [PHASE] Awaiting Cluster Readiness and Health Checks ({self.infra_type.upper()}) <<<")
         
         wait_count = 0
         is_network_ready = False
         
         while wait_count < self.timeout:
             if not self.gateway_state.is_running:
-                log.error(f"  [CRASH] Gateway container collapsed unexpectedly. (Exit: {self.gateway_state.exit_code})")
+                log.error(f"  [CRASH] Gateway container crashed unexpectedly. (Exit Code: {self.gateway_state.exit_code})")
                 return False
 
             if not is_network_ready:
@@ -215,26 +221,26 @@ RUN pip install --no-cache-dir git+https://github.com/wittgena/fiber.git@{git_re
                     async with httpx.AsyncClient() as client:
                         res = await client.get(health_url, headers=headers, timeout=2.0)
                         if res.status_code == 200:
-                            log.info("  [NETWORK] Gateway Ingress Accessibility: PASSED ✅")
+                            log.info("  [NETWORK] Gateway HTTP Health Check: PASSED ✅")
                             is_network_ready = True
                 except Exception:
                     pass 
 
             if is_network_ready and self.compute_entropy.last_cpu_usage < 80.0:
-                log.info(f"  [ENTROPY] Compute Node CPU stabilized at {self.compute_entropy.last_cpu_usage}% ✅")
-                log.crit(f"[{self.worker_name}] ✅ Topology Resonance Confirmed! Cluster is fully operational.")
+                log.info(f"  [METRICS] Compute Node CPU stabilized at {self.compute_entropy.last_cpu_usage}% ✅")
+                log.crit(f"[{self.worker_name}] ✅ Cluster Health Verified! All nodes are operational.")
                 return True
             
             await asyncio.sleep(2)
             wait_count += 2
             
-        log.error("  [TIMEOUT] Cluster failed to reach stable resonance in time.")
+        log.error("  [TIMEOUT] Cluster failed to reach healthy state within timeout.")
         return False
 
     async def _run_all_suites(self, broker: Any, context: ToposContext) -> int:
         total_fails = 0
         for suite_name, suite_cls in self.suites.items():
-            log.info(f"\n>>> [PHASE] Starting Integration Suite: {suite_name.upper()} <<<")
+            log.info(f"\n>>> [PHASE] Executing Integration Suite: {suite_name.upper()} <<<")
             try:
                 suite_instance = suite_cls(broker=broker, context=context)
                 await suite_instance.run_all()
@@ -245,32 +251,31 @@ RUN pip install --no-cache-dir git+https://github.com/wittgena/fiber.git@{git_re
         return total_fails
 
     async def execute(self, broker: Any = None) -> Tuple[bool, str]:
-        log.info(f"\n--- [START] Orchestrating Topology ({self.mode.upper()} | {self.infra_type.upper()}) ---")
+        log.info(f"\n--- [START] Provisioning Infrastructure Topology ({self.mode.upper()} | {self.infra_type.upper()}) ---")
         
         try:
-            # 1. 인프라 프로비저닝 준비
+            # 1. Prepare Workspace & Provision Infrastructure
             self.workspace.mkdir(parents=True, exist_ok=True)
-            self._generate_dynamic_dockerfile(git_ref="main") # Github Target
+            self._generate_dynamic_dockerfile(git_ref="main")
             
-            # Blueprint 병합 (로컬 참조를 완전히 배제하고 workspace 경로만 전달)
             spec = ToposBlueprint.get_cluster_spec(str(self.workspace))
             success = await self.adapter.apply(spec)
             if not success:
-                return False, f"Failed to apply physical topology via {self.infra_type} adapter."
+                return False, f"Failed to provision infrastructure via {self.infra_type} adapter."
             
-            # 2. 다차원 센서 부착
+            # 2. Attach Multi-dimensional Auditors
             self.gateway_state.attach()
             self.compute_entropy.attach()
             if self.gateway_logs: 
                 self.gateway_logs.attach()
             
-            # 3. 안정화 및 네트워크 검증
-            with flow_scope(phase="RESONANCE_CHECK"):
-                is_stable = await self._verify_resonance()
+            # 3. Wait for Cluster Readiness
+            with flow_scope(phase="HEALTH_CHECK"):
+                is_stable = await self._verify_cluster_health()
                 if not is_stable:
-                    return False, "Topology failed multidimensional verification."
+                    return False, "Infrastructure failed readiness health checks."
             
-            # 4. 비즈니스 로직(E2E Test) 실행
+            # 4. Execute Logical E2E Test Suites
             if self.suites:
                 with flow_scope(phase="TEST_EXECUTION"):
                     test_context = ToposContext(
@@ -284,16 +289,16 @@ RUN pip install --no-cache-dir git+https://github.com/wittgena/fiber.git@{git_re
                     )
                     total_fails = await self._run_all_suites(broker, test_context)
                     if total_fails > 0:
-                        return False, f"Topology verified, but {total_fails} logical E2E tests failed."
+                        return False, f"Infrastructure verified, but {total_fails} logical E2E tests failed."
             
             return True, ""
             
         except Exception as e:
-            log.error(f"[FATAL] Orchestration crashed: {e}")
+            log.error(f"[FATAL] Orchestration process crashed: {e}")
             return False, str(e)
             
         finally:
-            log.info("\n[SYSTEM] Triggering Teardown Sequence...")
+            log.info("\n[SYSTEM] Initiating Teardown Sequence...")
             self.gateway_state.detach()
             self.compute_entropy.detach()
             if self.gateway_logs: 
@@ -303,6 +308,6 @@ RUN pip install --no-cache-dir git+https://github.com/wittgena/fiber.git@{git_re
                 await self.adapter.teardown()
                 if self.workspace.exists():
                     shutil.rmtree(self.workspace, ignore_errors=True)
-                log.info("[SYSTEM] All manifolds collapsed and cleaned up.")
+                log.info("[SYSTEM] All infrastructure components torn down and cleaned up.")
             else:
                 log.warning(f"[SYSTEM] ⚠️ Keep-Workspace is ON. Inspect logs via 'docker logs fiber-gateway'.")

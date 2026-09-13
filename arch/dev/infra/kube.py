@@ -1,4 +1,5 @@
-# xphi.watcher.tracer.infra.kube
+# xphi.arch.dev.infra.kube
+## @lineage: xphi.watcher.tracer.infra.kube
 import os
 import json
 import yaml
@@ -21,7 +22,7 @@ from xphi.state.phase.channel import JsonMessageCodec
 
 # Watcher Imports
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.watcher.tracer.bound import BaseBoundary, BaseStreamAuditor, BaseAuditor
+from xphi.arch.dev.tracer.base import BaseBoundary, BaseStreamAuditor, BaseAuditor
 
 
 # =====================================================================

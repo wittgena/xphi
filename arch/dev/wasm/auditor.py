@@ -1,15 +1,12 @@
-# xphi.arch.wasm.auditor
-## @lineage: xphi.kernel.wasm.auditor
-## @lineage: xphi.watcher.wasm.auditor
-## @lineage: watcher.wasm.auditor
-## @lineage: dphi.node.tracer.auditor.wasm
+# xphi.arch.dev.wasm.auditor
+## @lineage: xphi.arch.wasm.auditor
 import asyncio
 import struct
 import json
 from typing import Union, Any, Dict, List
 
 from xphi.arch.event.next import next_id
-from xphi.watcher.tracer.bound import BaseStreamAuditor, BaseBoundary
+from xphi.arch.dev.tracer.base import BaseStreamAuditor, BaseBoundary
 from xphi.watcher.plane.emitter import get_emitter
 
 class WasmTelemetryAuditor(BaseStreamAuditor):
@@ -51,8 +48,7 @@ class WasmTelemetryAuditor(BaseStreamAuditor):
                 pass
             await asyncio.sleep(self.poll_interval)
 
-class WasmEntropyAuditor(BaseStreamAuditor):
-    """@desc: [Energy Axis] Wasmtime 엔진의 Fuel(가스) 소모량을 실시간 관측"""
+class WasmFuelAuditor(BaseStreamAuditor):
     def __init__(self, interpreter, boundary: Union[BaseBoundary, Any]):
         super().__init__(target="wasm_fuel", boundary=boundary, delay=0)
         self.interpreter = interpreter

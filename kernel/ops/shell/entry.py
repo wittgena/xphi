@@ -11,7 +11,7 @@ from typing import Optional
 from xphi.kernel.ops.shell.surge import MarketSurge, LedgerSurge, EcoSurge
 from xphi.kernel.ops.shell.inject import PhysicsInjector
 
-from xphi.arch.wasm.builder import WasmBuilder
+from xphi.arch.dev.wasm.builder import WasmBuilder
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.arch.event.psi import PsiEvent, PsiCarrier, CarrierType
 from xphi.arch.event.next import next_id

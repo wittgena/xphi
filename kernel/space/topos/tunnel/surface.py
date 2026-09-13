@@ -9,10 +9,10 @@ import httpx
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("bound.surface")
+log = get_emitter("tunnel.surface")
 
-class SurfaceMQ:
-    """@role: Echolocator & Asynchronous Result Listener (MQ)"""
+class EchoListener:
+    """@role: Echolocator & Asynchronous Result Listener"""
 
     async def register_state(self, key: str, value: str):
         """@flow: Asynchronously register state to the global tunnel"""
@@ -88,7 +88,7 @@ class SurfaceMQ:
 
 
 class SurfaceClient:
-    def __init__(self, bootstrap_runtime, mq_surface: SurfaceMQ, source_name: str, fallback_url: str, path_prefix: str = ""):
+    def __init__(self, bootstrap_runtime, mq_surface: EchoListener, source_name: str, fallback_url: str, path_prefix: str = ""):
         self.bootstrap_runtime = bootstrap_runtime
         self.mq = mq_surface 
         self.source_name = source_name
@@ -97,8 +97,8 @@ class SurfaceClient:
         self._current_endpoint = None
 
     async def _ping(self, base_url: str) -> bool:
-        """@flow: Lightweight PsiEvent validation via httpx"""
-        target_url = f"{base_url.rstrip('/')}/psi"
+        """@flow: Lightweight Health Event validation via httpx"""
+        target_url = f"{base_url.rstrip('/')}/health"
         payload = {
             "channel": "system:ping",
             "sourceId": self.source_name,
@@ -114,11 +114,9 @@ class SurfaceClient:
                     return True
                 return False
         except httpx.HTTPStatusError as e:
-            # HTTP 에러(예: 404, 500)는 서버가 살아있다는 증거이므로 긍정(True)으로 간주 (Bypass Bootstrap)
-            log.debug(f"[{self.source_name}] HTTP {e.response.status_code} at /psi. Bypassing bootstrap.")
+            log.debug(f"[{self.source_name}] HTTP {e.response.status_code} at /health. Bypassing bootstrap.")
             return True
         except httpx.RequestError as e:
-            # 네트워크 단절, 타임아웃, 커넥션 거부 등은 서버 붕괴로 판단
             log.warning(f"[{self.source_name}] Boundary collapsed (Network Error): {e}")
             return False
 
@@ -137,7 +135,6 @@ class SurfaceClient:
                 base_origin = fallback_origin
             else:
                 log.warning(f"[{self.source_name}] Surface collapsed. Forcing runtime bootstrap...")
-                # JvmRuntime의 async ensure() 정상 호출 가능
                 await self.bootstrap_runtime.ensure()
                 base_origin = fallback_origin
 
@@ -151,9 +148,7 @@ class SurfaceClient:
         
         for attempt in range(max_retries):
             full_url = f"{await self.ensure_boundary()}{query_path}"
-            
             try:
-                # httpx를 활용한 네이티브 비동기 스트리밍 (StreamClient 의존성 제거)
                 async with httpx.AsyncClient() as client:
                     async with client.stream(method=method, url=full_url, content=data, headers=req_headers, **kwargs) as response:
                         response.raise_for_status()
@@ -183,4 +178,4 @@ class SurfaceClient:
         if job_id:
             channel = f"{channel_prefix}{job_id}"
             async for data in self.mq.listen_job(channel):
-                yield ("mq", data)
+                yield ("job", data)

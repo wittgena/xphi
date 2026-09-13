@@ -1,4 +1,5 @@
-# xphi.watcher.tracer.infra.topos
+# xphi.arch.dev.infra.topos
+## @lineage: xphi.watcher.tracer.infra.topos
 import sys
 import json
 import asyncio
@@ -7,17 +8,13 @@ from typing import List, Tuple, Dict, Any, Optional, Generic, TypeVar, Union, Ca
 
 from xphi.arch.bound.xor.parser.ruleset.stream import ElasticDSLRulesetParser, LocalStreamRulesetParser
 from xphi.arch.bound.xor.parser.ruleset.engine import CompiledEngine
-from xphi.arch.contract.registry.tracer import TracerRegistry
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.watcher.tracer.bound import (
+from xphi.arch.dev.tracer.base import (
     BaseAuditor, 
     BaseStreamAuditor, 
     BaseBoundary,
     SystemBound,
-    log_streamer,
-    ReproBaseTracer, 
-    LifecycleOp, 
-    PhaseOp
+    log_streamer
 )
 
 log = get_emitter("tracer.infra.topos")
@@ -224,108 +221,7 @@ class LeakObserverAuditor(BaseStreamAuditor):
         if "🚨" in line or "└─" in line or "online" in line:
             print(f"  [OBSERVER] {line}")
 
-
-# =====================================================================
-# 2. VERDICT TABLES
-# =====================================================================
-
 HANG_VERDICT_TABLE: Dict[str, Callable[['UniversalLogAuditor'], bool]] = {
     "rustc_recursion": lambda semantic: getattr(semantic, 'max_type_depth', 0) > 20,
     "cranelift_loop": lambda semantic: getattr(semantic, 'optimization_loop_count', 0) > 500,
 }
-
-
-# =====================================================================
-# 3. TRACERS (Pure Observation Layer)
-# =====================================================================
-
-class ReproTracer(ReproBaseTracer):
-    """@desc: 인프라 제어권을 포기하고, 오직 관측과 자극 주입(Stimulus)에만 집중합니다."""
-    def __init__(self, target_name: str = "repro_worker", timeout: int = 35):
-        super().__init__(target_name=target_name, timeout=timeout)
-        self.config = TracerRegistry.get(target_name)
-        self.workspace = self.config["workspace_path"]
-        self.container_name = self.config.get("container_name", "worker")
-        self.observer = LeakObserverAuditor(self.boundary)
-
-    @PhaseOp.stimulus(
-        ["docker-compose", "-f", "{compose_file}", "exec", "-T", "{container_name}", "python", "app.py"], 
-        cwd="{workspace}", capture=True, strict=True
-    )
-    async def inject_stimulus(self, exit_code: int = 0, stdout: str = "") -> None:
-        self.log.info("## @phase.3: Injecting Stimulus (Delayed Messages)...")
-
-    async def execute(self) -> None:
-        try:
-            self.log.info("## @phase.1: ToposOrchestrator manages Manifolds. Tuning Entropy Observatory...")
-            self.register_auditors(self.observer)
-
-            await self.inject_stimulus()
-            
-            self.log.info(f"## @phase.2: Waiting for Signal Transition (ETA: {self.timeout}s)...")
-            await self.await_rupture()
-
-            self.log.info("## @phase.3: Finalizing Observation...")
-            await asyncio.sleep(2)
-        finally:
-            self.log.info("## @phase.4: Releasing Observers. (Teardown handled by Orchestrator)")
-
-
-class OOMTracer(ReproBaseTracer):
-    """@desc: OOM 붕괴(Collapse) 검증에 특화된 순수 관측 레이어"""
-    def __init__(self, target_name: str, timeout: int = 60, infra_type: str = "compose", namespace: str = "default"):
-        super().__init__(target_name=target_name, timeout=timeout)
-        self.config = TracerRegistry.get(target_name)
-        self.workspace = self.config["workspace_path"]
-        
-        c_name = self.config["container_name"]
-        v_type = self.config["verify_type"]
-        
-        # 주입받은 infra_type에 따라 다형성 센서 부착
-        self.state_auditor = ContainerStateAuditor(c_name, self.boundary, infra_type, namespace)
-        self.entropy_auditor = EntropyAuditor(c_name, self.boundary, infra_type, namespace)
-        self.semantic_auditor = UniversalLogAuditor(c_name, v_type, self.boundary, infra_type, namespace)
-
-    async def _check_boundary_hook(self, remaining: int) -> None:
-        if not getattr(self.state_auditor, 'is_running', True):
-            exit_code = getattr(self.state_auditor, 'exit_code', 'Unknown')
-            self.log.warning(f"  [BOUNDARY RUPTURE] Target Container Collapsed! (ExitCode: {exit_code})")
-            
-            # K8s(137, Error, OOMKilled)와 Docker(137) 모두 호환되는 논리 처리
-            if "137" in exit_code or "OOM" in exit_code.upper():
-                self.log.crit("[SUCCESS] Absolute OOM confirmed. Sandbox boundary crushed.")
-            elif exit_code not in ["0", "Unknown"]:
-                if getattr(self.semantic_auditor, 'hit_fatal_limit', False):
-                    self.log.crit(f"[SUCCESS] Semantic fatal divergence confirmed for {self.config['verify_type']}.")
-                else:
-                    self.log.error(f"[FAIL] Container died with code {exit_code}, lacking structural proof.")
-            
-            self.rupture_confirmed = True 
-
-    async def execute(self) -> None:
-        self.log.crit(f"## @trace.init Injecting Target Topology Sensor: {self.config.get('desc', self.config['verify_type'])}")
-        
-        try:
-            self.log.info("## @phase.1: Attaching Multidimensional Auditors (State, Entropy, Semantics)...")
-            self.register_auditors(self.state_auditor, self.entropy_auditor, self.semantic_auditor)
-
-            self.log.info("## @phase.2: Waiting for Boundary Collapse...")
-            await self.await_rupture(hook_fn=self._check_boundary_hook)
-
-            if not self.rupture_confirmed and getattr(self.state_auditor, 'is_running', True):
-                self.log.info("## @phase.3: Evaluating Hang/Livelock Judgment...")
-                
-                # CPU 95% 이상 교착 상태 판독
-                if getattr(self.entropy_auditor, 'last_cpu_usage', 0.0) > 95.0:
-                    v_type = self.config["verify_type"]
-                    verdict_fn = HANG_VERDICT_TABLE.get(v_type)
-                    
-                    if verdict_fn and verdict_fn(self.semantic_auditor):
-                        self.log.crit(f"[SUCCESS] Semantic Hang confirmed in {v_type}.")
-                    else:
-                        self.log.error("[FAIL] High CPU detected, but logical divergence depth is insufficient.")
-                else:
-                    self.log.error(f"[FAIL] Target survived without collapsing. CPU: {getattr(self.entropy_auditor, 'last_cpu_usage', 0.0)}%")
-                    
-        finally:
-            self.log.info("## @phase.4: Releasing Observers. (Teardown handled by Orchestrator)")
