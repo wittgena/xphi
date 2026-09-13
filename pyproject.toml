@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "xphi"
-description = "The Universal Integration Boundary for heterogeneous AI ecosystems"
-readme = "README.md"
+version = "1.0.1-internal" 
+description = "Internal Core Engine for Fiber (Not for standalone use)"
 requires-python = ">=3.10"
 dependencies = [
-    "uvloop", "redis", "pyyaml", "watchdog", "rocksdict", "libcst", "pydantic", "fastapi", "httpx", "eclipse-zenoh", "mcp"
+    "uvloop", "redis", "pyyaml", "watchdog", "rocksdict", 
+    "libcst", "pydantic", "fastapi", "httpx", "eclipse-zenoh", "mcp"
 ]
-dynamic = ["version", "dependencies"]
 
 [project.scripts]
 anchor-bind = "xphi.kernel.space.bind.around:run_around"
