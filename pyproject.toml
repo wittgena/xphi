@@ -8,7 +8,7 @@ version = "1.0.1+bound"
 description = "Internal Core Engine for Fiber (Not for standalone use)"
 requires-python = ">=3.10"
 dependencies = [
-    "uvloop", "redis", "pyyaml", "watchdog", "rocksdict", 
+    "uvloop", "redis", "pyyaml", "watchdog", "rocksdict",
     "libcst", "pydantic", "fastapi", "httpx", "eclipse-zenoh", "mcp"
 ]
 
