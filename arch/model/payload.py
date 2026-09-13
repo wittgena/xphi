@@ -63,7 +63,7 @@ class StreamPayloadAdapter:
             
             try:
                 # Late import to prevent circular dependencies
-                from xphi.arch.event.next import generate_parity_triplet
+                from xphi.arch.bound.event.next import generate_parity_triplet
                 
                 # 1. Generate Parity Triplet using telemetry metrics
                 parity = generate_parity_triplet(

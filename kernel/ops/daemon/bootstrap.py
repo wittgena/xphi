@@ -9,9 +9,9 @@ from contextlib import suppress
 from types import SimpleNamespace
 
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
-from xphi.arch.event.psi import PsiEvent, PsiCarrier, CarrierType
-from xphi.arch.event.bus import AsyncEventBus
-from xphi.arch.event.next import next_id
+from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.bound.event.bus import AsyncEventBus
+from xphi.arch.bound.event.next import next_id
 from xphi.arch.contract.registry.unified import registry
 
 from xphi.kernel.ops.daemon.base import AbstractDaemon
@@ -19,7 +19,7 @@ from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher
 from xphi.state.phase.runtime.context import RuntimeContext
 from xphi.state.phase.runtime.sensor import SurfaceSensor
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.state.phase.flow.cont import LoopCarrier, DynamicsXe
+from xphi.state.phase.executor.cont import LoopCarrier, DynamicsXe
 
 log = get_emitter("daemon.bootstrap")
 SENSOR_INTERVAL = 1.0

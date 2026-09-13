@@ -1,8 +1,4 @@
 # xphi.state.phase.runtime.sensor
-## @lineage: xphi.state.runtime.sensor
-## @lineage: xphi.kernel.phase.runtime.sensor
-## @lineage: kernel.phase.runtime.sensor
-## @lineage: phase.runtime.sensor
 import asyncio
 import random
 import time
@@ -12,7 +8,7 @@ from pathlib import Path
 from typing import Set, List, Optional
 
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
-from xphi.arch.event.psi import PsiType
+from xphi.arch.bound.event.psi import PsiType
 from xphi.kernel.space.bind.resolver import find_current_self, resolve_path, resolve_pattern
 from xphi.watcher.plane.emitter import get_emitter
 

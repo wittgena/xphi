@@ -1,6 +1,4 @@
 # xphi.watcher.plane.sink
-## @lineage: watcher.plane.sink
-## @lineage: phase.runtime.surface.sink
 import os
 import json
 import aiohttp

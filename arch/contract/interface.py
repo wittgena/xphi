@@ -1,20 +1,11 @@
 # xphi.arch.contract.interface
-## @lineage: arch.contract.interface
-"""
-@phase:
-- ψ: event signal resonance around
-- Φ: shared field state where tension accumulates
-- ∂Φ: observers aligning drift and detecting rupture
-- Σ: dispersion / aggregation of macro-micro flows
-@flow: ψ → ator interaction → Φ drift → ∂Φ detection → rupture → new Φ regime
-"""
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol, Callable, Tuple
 from fastapi import APIRouter
 
-from xphi.arch.event.psi import PsiEvent
+from xphi.arch.bound.event.psi import PsiEvent
 
 class IPhaseField(ABC):
     """Φ-field: shared phase space where system tension accumulates"""
@@ -68,14 +59,6 @@ class ICriticalDetector(ABC):
     def evaluate(self, field: IPhaseField, history: List[PsiEvent], current_tick: int) -> Optional[PsiEvent]: pass
 
 class ISystemRegime(ABC):
-    """
-    Φ-regime: post-rupture attrator that redefines system constraints.
-
-    A regime modifies:
-    - field dynamics (Φ)
-    - ator behavior
-    - event resonance rules
-    """
     @abstractmethod
     def modify_field(self, field: IPhaseField) -> None:
         pass
@@ -101,17 +84,3 @@ class IBoundExecutor(ABC):
     async def execute(self, field: IPhaseField) -> bool:
         """returns: bool → boundary success / failure"""
         pass
-
-class ContractRouter(APIRouter):
-    def __init__(self, namespace: str, *args: Any, **kwargs: Any):
-        self.description = kwargs.pop("description", None)
-        self.summary = kwargs.pop("summary", None)
-        
-        super().__init__(*args, **kwargs)
-        self.namespace = namespace
-
-    def add_api_route(self, path: str, endpoint: Callable[..., Any], **kwargs: Any) -> None:
-        if "name" not in kwargs:
-            kwargs["name"] = f"{self.namespace}.{endpoint.__name__}"
-            
-        super().add_api_route(path, endpoint, **kwargs)

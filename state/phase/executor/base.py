@@ -6,7 +6,7 @@ from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any, Protocol
-from xphi.arch.event.psi import PsiType, PsiEvent
+from xphi.arch.bound.event.psi import PsiType, PsiEvent
 from xphi.watcher.plane.emitter import get_emitter
 
 class BaseExecutor(ABC):

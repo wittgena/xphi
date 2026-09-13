@@ -9,14 +9,14 @@ from typing import List, Dict, Any, Optional
 
 from xphi.arch.contract.interpreter import NodeInterpreter, AnchorFlow
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade, TunnelFactory
-from xphi.arch.event.psi import PsiEvent, PsiCarrier
-from xphi.arch.event.bus import TunnelEventBus
-from xphi.arch.event.next import next_id
+from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.bound.event.bus import TunnelEventBus
+from xphi.arch.bound.event.next import next_id
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.arch.contract.registry.unified import registry
 
 from xphi.kernel.space.bind.resolver import find_current_self
-from xphi.state.phase.executor.swarm import SwarmExecutor
+from xphi.state.phase.executor.cont import SwarmExecutor
 from xphi.state.phase.runtime.sensor import SurfaceSensor, SurfaceActuator
 from xphi.state.phase.runtime.context import RuntimeContext
 from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher

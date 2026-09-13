@@ -10,8 +10,8 @@ from typing import Set, Tuple, Any, Dict, Callable, Optional
 
 from pydantic import SecretStr
 
-from xphi.bound.xor.secret.cipher import Cipher
-from xphi.state.ledger.gateway import StoreGateway
+from xphi.arch.bound.xor.secret.cipher import Cipher
+from xphi.state.anchor.gateway import StoreGateway
 from xphi.arch.model.edge.receipt import AuditLogResponse
 from xphi.watcher.plane.emitter import get_emitter
 

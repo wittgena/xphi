@@ -20,10 +20,10 @@ from mcp.server.mcpserver.server import MCPServer
 
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.plane.observer.span import start_active_span, end_active_span
-from xphi.watcher.tracer.chaos.sentinel import SpecValidator
-from xphi.state.ledger.gateway import StoreGateway
-from xphi.bound.adapter.sign import NodeSigner
-from xphi.bound.adapter.state import StateAdapter
+from xphi.arch.dev.transport.sentinel import SpecValidator
+from xphi.state.anchor.gateway import StoreGateway
+from xphi.arch.bound.adapter.pta import NodeSigner
+from xphi.arch.bound.adapter.state import StateAdapter
 
 # 통합된 서버 컨트랙트 로거
 log = get_emitter("arch.contract.server", phase="NETWORK")
