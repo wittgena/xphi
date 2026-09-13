@@ -7,17 +7,16 @@ name = "xphi"
 description = "The Universal Integration Boundary for heterogeneous AI ecosystems"
 readme = "README.md"
 requires-python = ">=3.10"
-
 dependencies = [
     "uvloop", "redis", "pyyaml", "watchdog", "rocksdict", "libcst", "pydantic", "fastapi", "httpx", "eclipse-zenoh", "mcp"
 ]
+dynamic = ["version", "dependencies"]
 
 [project.scripts]
 anchor-bind = "xphi.kernel.space.bind.around:run_around"
 
 [tool.hatch.build.targets.wheel.force-include]
 "arch" = "xphi/arch"
-"bound" = "xphi/bound"
 "kernel" = "xphi/kernel"
 "state" = "xphi/state"
 "watcher" = "xphi/watcher"
