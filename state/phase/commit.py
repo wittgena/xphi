@@ -7,10 +7,10 @@ from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
 
 from xphi.kernel.wasm.broker import DphiBroker
-from xphi.arch.bound.adapter.sign import LedgerAuthAdapter
+from xphi.arch.bound.adapter.pta import SignStateAdapter
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.state.ledger.consensus import KernelLedger, ToposBlob
+from xphi.state.anchor.consensus import KernelLedger, ToposBlob
 
 log = get_emitter("kernel.protocol", phase="KERNEL")
 
@@ -174,8 +174,8 @@ async def anchor_commit(
         cached_states=cached_states
     )
     
-    signature_hex = LedgerAuthAdapter.sign_state_payload(anchor_commit_dict)
-    current_pubkey = LedgerAuthAdapter.get_signer_pubkey()
+    signature_hex = SignStateAdapter.sign_state_payload(anchor_commit_dict)
+    current_pubkey = SignStateAdapter.get_signer_pubkey()
     seal_payload = StateAdapter.build_seal_epoch_payload(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
@@ -202,7 +202,7 @@ async def anchor_commit(
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")
         
-        from xphi.state.ledger.consensus import KernelCommit, LedgerRole
+        from xphi.state.anchor.consensus import KernelCommit, LedgerRole
         from dataclasses import asdict
         
         commit_obj = KernelCommit(**kernel_commit_data)

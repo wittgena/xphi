@@ -1,4 +1,5 @@
-# xphi.arch.event.psi
+# xphi.arch.bound.event.psi
+## @lineage: xphi.arch.event.psi
 from __future__ import annotations
 
 import time
@@ -8,7 +9,7 @@ from typing import Dict, Tuple, FrozenSet, Optional, Any, Union, Generic, TypeVa
 from dataclasses import dataclass, field, asdict
 from abc import ABC, abstractmethod
 
-from xphi.arch.event.next import LogEvent
+from xphi.arch.bound.event.next import LogEvent
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("event.psi")

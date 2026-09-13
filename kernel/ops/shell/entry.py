@@ -13,8 +13,8 @@ from xphi.kernel.ops.shell.inject import PhysicsInjector
 
 from xphi.arch.dev.wasm.builder import WasmBuilder
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
-from xphi.arch.event.psi import PsiEvent, PsiCarrier, CarrierType
-from xphi.arch.event.next import next_id
+from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.bound.event.next import next_id
 from xphi.kernel.ops.daemon.bootstrap import KEY_HEARTBEAT_PATTERN, TOPIC_BUS_STREAM
 from xphi.kernel.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter

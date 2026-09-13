@@ -1,6 +1,4 @@
-# xphi.arch.bound.adapter.ator
-## @lineage: xphi.bound.adapter.ator
-## @lineage: xphi.kernel.adapter.ator
+# xphi.arch.bound.adapter.dynamics
 import math
 from enum import Enum
 from dataclasses import dataclass, field, asdict

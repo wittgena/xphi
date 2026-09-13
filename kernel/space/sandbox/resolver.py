@@ -8,7 +8,7 @@ from dataclasses import dataclass, asdict, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol, Union
 
 from xphi.kernel.space.contract import Contract, CoherenceState
-from xphi.arch.event.next import next_id, generate_parity_triplet, parse_phase_id
+from xphi.arch.bound.event.next import next_id, generate_parity_triplet, parse_phase_id
 from xphi.kernel.wasm.broker import DphiBroker, DphiMethod
 from xphi.kernel.wasm.cgroup import CgroupPolicy, Tier
 from xphi.arch.bound.adapter.state import StateAdapter

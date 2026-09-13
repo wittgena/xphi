@@ -7,7 +7,7 @@ import random
 import json
 from typing import Any
 
-from xphi.arch.model.anchor.nexus import ActorIdentity
+from xphi.state.anchor.nexus import ActorIdentity
 from xphi.kernel.wasm.method import DphiMethod
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter

@@ -10,7 +10,7 @@ from typing import TypeVar, Optional, Any, List
 from pydantic import ConfigDict, BaseModel
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
-from xphi.arch.event.next import next_id
+from xphi.arch.bound.event.next import next_id
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade 
 from xphi.watcher.plane.emitter import get_emitter
 

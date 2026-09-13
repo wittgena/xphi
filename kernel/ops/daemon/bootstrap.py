@@ -9,9 +9,9 @@ from contextlib import suppress
 from types import SimpleNamespace
 
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
-from xphi.arch.event.psi import PsiEvent, PsiCarrier, CarrierType
-from xphi.arch.event.bus import AsyncEventBus
-from xphi.arch.event.next import next_id
+from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.bound.event.bus import AsyncEventBus
+from xphi.arch.bound.event.next import next_id
 from xphi.arch.contract.registry.unified import registry
 
 from xphi.kernel.ops.daemon.base import AbstractDaemon

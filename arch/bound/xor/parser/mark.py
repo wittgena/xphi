@@ -1,7 +1,4 @@
 # xphi.arch.bound.xor.parser.mark
-## @lineage: xphi.bound.xor.parser.mark
-## @lineage: xphi.bound.parser.mark
-## @lineage: xphi.xor.parser.mark
 from __future__ import annotations
 
 import copy

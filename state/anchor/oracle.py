@@ -1,5 +1,4 @@
-# xphi.state.ledger.oracle
-## @lineage: xphi.kernel.dphi.ledger.oracle
+# xphi.state.anchor.oracle
 import json
 from typing import Any, Dict, Optional, List
 from rocksdict import Rdict, Options, AccessType
@@ -9,18 +8,18 @@ from xphi.watcher.plane.emitter import get_emitter
 from xphi.kernel.wasm.broker import DphiBroker, DphiMethod
 from xphi.arch.bound.adapter.state import StateAdapter
 
-log = get_emitter("ledger.oracle", phase="KERNEL")
+log = get_emitter("anchor.oracle", phase="KERNEL")
 LEDGER_DB_PATH = resolve_path("ledger")
 
-class LedgerOracle:
+class AnchorOracle:
     def __init__(self, broker: DphiBroker, path: str = LEDGER_DB_PATH):
         self.broker = broker
         ro_opt = Options()
         try:
             self.db = Rdict(str(path), ro_opt, access_type=AccessType.read_only())
-            log.info("[LedgerOracle] Mounted ledger DB in Read-Only mode. Canonical WASM Broker attached.")
+            log.info("[AnchorOracle] Mounted Anchor DB in Read-Only mode. Canonical WASM Broker attached.")
         except Exception as e:
-            log.error(f"[LedgerOracle] Failed to mount ledger DB: {e}")
+            log.error(f"[AnchorOracle] Failed to mount ledger DB: {e}")
             raise
 
     def close(self):
@@ -36,7 +35,7 @@ class LedgerOracle:
     async def observe_nexus(self, epoch_hash: str) -> Dict[str, Any]:
         snapshot = self._get_raw_object("commit", epoch_hash)
         if not snapshot:
-            raise ValueError(f"Epoch not found in Ledger: {epoch_hash}")
+            raise ValueError(f"Epoch not found in Anchor Store: {epoch_hash}")
 
         entangled_state = snapshot.get("entangled_state", {})
         if not entangled_state.get("has_contention", False):
@@ -60,7 +59,7 @@ class LedgerOracle:
         )
 
         canonical_payload = StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8')
-        log.info(f"[LedgerOracle] Injecting canonical entanglement into WASM for collapse. Epoch: {epoch_hash[:8]}")
+        log.info(f"[AnchorOracle] Injecting canonical entanglement into WASM for collapse. Epoch: {epoch_hash[:8]}")
         exec_result = await self.broker.invoke(
             target_func=DphiMethod.EXECUTE_TRANSITION,
             payload=canonical_payload,
@@ -68,7 +67,7 @@ class LedgerOracle:
         )
 
         if not exec_result.success:
-            log.error(f"[LedgerOracle] WASM Collapse Failed: {exec_result.error.msg}")
+            log.error(f"[AnchorOracle] WASM Collapse Failed: {exec_result.error.msg}")
             raise RuntimeError(f"WASM State Transition Failed: {exec_result.error.msg}")
 
         collapsed_state = json.loads(exec_result.output)
@@ -100,17 +99,17 @@ class LedgerOracle:
             canonical_parity = StateAdapter.to_canonical_bytes(parity_req).decode('utf-8')
             res = await self.broker.invoke(DphiMethod.VERIFY_PARITY, canonical_parity)
             if not res.success:
-                log.warning(f"[LedgerOracle] WASM Parity verification crashed at {current_hash[:8]}")
+                log.warning(f"[AnchorOracle] WASM Parity verification crashed at {current_hash[:8]}")
                 return {"is_valid": False, "rupture_hash": current_hash, "trace": chain_trace}
 
             output = json.loads(res.output)
             is_valid = output.get("is_valid", False)
             if not is_valid and "recovered_missing" in output:
-                log.warning(f"[LedgerOracle] ⚠️ Parity fractured but recovered via XOR at {current_hash[:8]}")
+                log.warning(f"[AnchorOracle] ⚠️ Parity fractured but recovered via XOR at {current_hash[:8]}")
                 is_valid = True
 
             if not is_valid:
-                log.warning(f"[LedgerOracle] Parity invalid at {current_hash[:8]}")
+                log.warning(f"[AnchorOracle] Parity invalid at {current_hash[:8]}")
                 return {"is_valid": False, "rupture_hash": current_hash, "trace": chain_trace}
 
             chain_trace.append(current_hash)

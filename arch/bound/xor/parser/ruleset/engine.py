@@ -1,7 +1,4 @@
 # xphi.arch.bound.xor.parser.ruleset.engine
-## @lineage: xphi.bound.xor.parser.ruleset.engine
-## @lineage: xphi.bound.parser.ruleset.engine
-## @lineage: xphi.xor.parser.ruleset.engine
 import json
 import re
 import orjson

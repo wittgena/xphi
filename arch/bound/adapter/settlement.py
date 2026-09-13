@@ -1,7 +1,4 @@
 # xphi.arch.bound.adapter.settlement
-## @lineage: xphi.bound.adapter.settlement
-## @lineage: fiber.dphi.eco.transaction.settlement
-## @lineage: fiber.dphi.infra.transaction.settlement
 import os
 import time
 import json

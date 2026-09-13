@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 # --- Architecture & Kernel Imports ---
-from xphi.arch.event.next import LogEvent, next_phase_id, EventObserver
+from xphi.arch.bound.event.next import LogEvent, next_phase_id, EventObserver
 from xphi.kernel.space.bind.resolver import resolve_path
 
 # --- Metric & Trajectory Imports ---

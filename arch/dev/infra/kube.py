@@ -13,9 +13,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 
 # Arch & Topos Imports
-from xphi.arch.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField
-from xphi.arch.event.bus import AsyncEventBus
+from xphi.arch.bound.event.bus import AsyncEventBus
 from xphi.arch.contract.registry.unified import contract
 from xphi.state.phase.channel import ChannelPipeline, ChannelContext, DuplexChannel
 from xphi.state.phase.channel import JsonMessageCodec

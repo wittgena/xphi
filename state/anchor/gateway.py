@@ -1,4 +1,4 @@
-# xphi.state.ledger.gateway
+# xphi.state.anchor.gateway
 import uuid
 import time
 import json
@@ -7,16 +7,14 @@ from collections import defaultdict
 from typing import Any, Dict, Optional
 
 from xphi.arch.model.edge.stream import LogicStream as IngressLogicStream
-from xphi.state.ledger.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
+from xphi.state.anchor.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("mesh.gateway", phase="KERNEL")
+log = get_emitter("anchor.gateway", phase="KERNEL")
 
 
 class GatewayPolicy:
-    """StoreGateway의 전역 동작 정책을 관리하는 싱글턴 컨테이너"""
     _instance = None
-
     def __init__(self):
         # 기본(Default) 정책 유지 (안전망)
         self.action_costs = {
@@ -49,7 +47,6 @@ class GatewayPolicy:
         instance.rate_limit_capacity = capacity
         instance.rate_limit_refill = refill
         return instance
-
 
 class TokenBucketLimiter:
     """메모리 기반의 유동적 토큰 버킷"""
@@ -160,14 +157,11 @@ class StoreGateway:
         return True
 
     async def authorize(self, action_id: str, action: str, payload: Any, metadata: Optional[Dict[str, Any]] = None) -> bool:
-        """
-        @desc: The single choke-point for agent action validation.
-        """
+        """@desc: The single choke-point for agent action validation."""
         metadata = metadata or {}
         
         # Step 1: 정책 확인 (신뢰할 수 있는 내부 액션은 Rate Limit 및 Sanitizer 검사를 면제받음)
         is_trusted_action = action in self.policy.trusted_actions
-
         if not is_trusted_action:
             # Step 2: Quota Check (Rate Limiting)
             if not self._check_quota(action, metadata):

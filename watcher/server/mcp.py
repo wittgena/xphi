@@ -14,7 +14,7 @@ from mcp.server.mcpserver.server import MCPServer
 from xphi.watcher.plane.emitter import get_emitter
 
 from xphi.arch.dev.transport.sentinel import SpecValidator
-from xphi.state.ledger.gateway import StoreGateway
+from xphi.state.anchor.gateway import StoreGateway
 
 log = get_emitter("server.mcp", phase="DEFENSE")
 

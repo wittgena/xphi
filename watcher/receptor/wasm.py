@@ -6,7 +6,7 @@ import hashlib
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Optional
 
-from xphi.arch.bound.adapter.sign import NodeSigner
+from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.kernel.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter

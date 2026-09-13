@@ -9,9 +9,9 @@ import atexit
 from dataclasses import replace, asdict
 from typing import Dict, List, Protocol, Optional
 from pathlib import Path
-from xphi.arch.event.next import LogEvent
+from xphi.arch.bound.event.next import LogEvent
 from xphi.kernel.space.bind.resolver import resolve_path
-from xphi.arch.event.next import EventObserver
+from xphi.arch.bound.event.next import EventObserver
 
 class ConsoleSurface(EventObserver):
     """@desc: Handles standard output with level-based filtering and rich formatting."""

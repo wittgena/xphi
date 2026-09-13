@@ -1,5 +1,5 @@
-# xphi.arch.model.anchor.nexus
-## @lineage: fiber.dphi.eco.anchor
+# xphi.state.anchor.nexus
+## @lineage: xphi.arch.model.anchor.nexus
 import json
 import time
 from dataclasses import dataclass, field

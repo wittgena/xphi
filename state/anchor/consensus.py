@@ -1,4 +1,4 @@
-# xphi.state.ledger.consensus
+# xphi.state.anchor.consensus
 import time
 import json
 import hashlib
@@ -13,11 +13,10 @@ from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.kernel.space.bind.resolver import resolve_path
 
 from xphi.kernel.wasm.broker import DphiBroker  
-from xphi.arch.bound.adapter.sign import NodeSigner
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("kernel.ledger", phase="KERNEL")
+log = get_emitter("anchor.consensus", phase="KERNEL")
 
 LEDGER_DB_PATH = resolve_path("ledger")
 
@@ -154,8 +153,8 @@ class KernelLedger:
         return self._put_object("commit", asdict(commit))
 
     def seal_system_epoch(self, commit: KernelCommit, signatures: List[str], threshold: int = 1) -> str:
-        # [순환 참조 해결] AuditWarden 지연 로딩 (Lazy Import)
         from xphi.watcher.receptor.warden import AuditWarden
+        from xphi.arch.bound.adapter.pta import NodeSigner
 
         if not signatures:
             error_msg = "System Epoch Seal Rejected: No signatures provided."
@@ -168,7 +167,6 @@ class KernelLedger:
         valid_count = 0
         for sig in signatures:
             try:
-                # NodeSigner verifies the signature against the canonical payload hash
                 if signer.verify_signature(canonical_bytes, sig):
                     valid_count += 1
             except Exception as e:

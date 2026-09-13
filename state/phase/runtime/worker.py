@@ -6,8 +6,8 @@ import sys
 import os
 import importlib
 
-from xphi.arch.event.bus import TunnelEventBus
-from xphi.arch.event.psi import PsiEvent
+from xphi.arch.bound.event.bus import TunnelEventBus
+from xphi.arch.bound.event.psi import PsiEvent
 
 from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
 from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher

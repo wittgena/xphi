@@ -1,6 +1,4 @@
 # xphi.arch.bound.adapter.state
-## @lineage: xphi.bound.adapter.state
-## @lineage: xphi.kernel.adapter.state
 import canonicaljson
 
 class StateAdapter:

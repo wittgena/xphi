@@ -1,13 +1,14 @@
-# xphi.arch.event.bus
+# xphi.arch.bound.event.bus
+## @lineage: xphi.arch.event.bus
 from __future__ import annotations
 
 import asyncio
 import json
 from typing import Dict, Any, List, Optional, Callable, Tuple
 
-from xphi.arch.event.psi import PsiEvent
+from xphi.arch.bound.event.psi import PsiEvent
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
-from xphi.arch.event.mesh.transport import MeshP2PTransport
+from xphi.arch.bound.mesh.transport import MeshP2PTransport
 from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
 
 from xphi.watcher.plane.emitter import get_emitter

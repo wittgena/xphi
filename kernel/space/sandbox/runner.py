@@ -17,7 +17,7 @@ from xphi.kernel.space.contract import Contract, CoherenceState
 from xphi.kernel.space.sandbox.resolver import SandboxExecutor, TaskContext, EffectResolver
 from xphi.kernel.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.state.ledger.consensus import KernelLedger, KernelCommit
+from xphi.state.anchor.consensus import KernelLedger, KernelCommit
 from xphi.kernel.wasm.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter
 

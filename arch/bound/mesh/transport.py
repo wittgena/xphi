@@ -1,4 +1,4 @@
-# xphi.arch.event.mesh.transport
+# xphi.arch.bound.mesh.transport
 from __future__ import annotations
 import asyncio
 from typing import Dict, Set, Optional, Callable, Awaitable
@@ -8,10 +8,6 @@ from xphi.watcher.plane.emitter import get_emitter
 log = get_emitter("mesh.transport")
 
 class MeshP2PTransport:
-    """
-    @xe.desc: Native P2P physical transport layer utilizing Eclipse Zenoh protocol stack.
-              Completely decoupled from Domain Bus logic via Callback Injection.
-    """
     def __init__(self, listen_port: int = 7447):
         self.listen_port = listen_port
         self.session: Optional[zenoh.Session] = None
@@ -45,12 +41,8 @@ class MeshP2PTransport:
             if not self.ingress_callback or not self._async_loop:
                 return
             
-            # Zenoh는 데이터 중심(Data-Centric) 프로토콜이므로 발신자 ID보다는 데이터 자체(Key)를 중시함.
-            # 상위 도메인(SwarmBus)의 시그니처를 맞추기 위해 임시 ID를 부여하거나 attachment에서 추출.
             sender_id = "zenoh-peer"
             raw_bytes = sample.payload
-            
-            # [Thread Bridge] Rust 스레드 -> Python Asyncio 루프로 안전하게 진입
             asyncio.run_coroutine_threadsafe(
                 self.ingress_callback(sender_id, raw_bytes),
                 self._async_loop
@@ -59,7 +51,6 @@ class MeshP2PTransport:
         if not self.session:
             raise RuntimeError("Zenoh session is not initialized.")
 
-        # Zenoh 구독 선언 (key_expr 매핑)
         subscriber = self.session.declare_subscriber(topic, _zenoh_handler)
         self.subscribed_topics[topic] = subscriber
         log.info(f"[Transport] Joined Zenoh Mesh topic (key_expr): {topic}")
@@ -69,7 +60,6 @@ class MeshP2PTransport:
         if not self.session:
             raise RuntimeError("Zenoh session is not initialized.")
             
-        # Zenoh put (발행). 내부적으로 인접한 피어들에게 최단 경로로 멀티캐스트 됨.
         self.session.put(topic, payload_bytes)
         log.trace(f"[Transport] Broadcasted {len(payload_bytes)} bytes to {topic}")
 

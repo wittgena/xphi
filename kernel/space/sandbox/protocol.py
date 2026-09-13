@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import List, Optional
 
 from xphi.arch.bound.adapter.pta import PtaTransaction, PtaPointer, PtaAdapter
-from xphi.state.ledger.consensus import SealedKernel, ToposBlob, KernelLedger
-from xphi.state.ledger.oracle import LedgerOracle
+from xphi.state.anchor.consensus import SealedKernel, ToposBlob, KernelLedger
+from xphi.state.anchor.oracle import AnchorOracle
 
 class TriadAxis(str, Enum):
     INTENT = "Intent"
@@ -44,7 +44,7 @@ class MsgSettlementSeal:
     l1_calldata: str            # Final formatted payload for target EVM/L1
 
 class ProtocolValidator:
-    def __init__(self, pta_adapter: PtaAdapter, ledger: KernelLedger, oracle: LedgerOracle):
+    def __init__(self, pta_adapter: PtaAdapter, ledger: KernelLedger, oracle: AnchorOracle):
         self.pta = pta_adapter
         self.ledger = ledger
         self.oracle = oracle

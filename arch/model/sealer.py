@@ -4,7 +4,7 @@
 ## @lineage: arch.topos.bound.sealer
 import time
 from typing import Dict, Any
-from xphi.arch.bound.adapter.sign import NodeSigner
+from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
 

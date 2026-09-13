@@ -10,7 +10,7 @@ import httpx
 from typing import Dict, Any, List, Optional
 
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.arch.bound.adapter.sign import NodeSigner
+from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.arch.bound.xor.oracle.binance import kline as binance_kline
 from xphi.arch.bound.xor.oracle.coinbase import kline as coinbase_kline
