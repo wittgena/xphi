@@ -1,12 +1,7 @@
 # xphi.watcher.plane.phase.act
-"""
-@desc: 
-- Infrastructure Orchestrator for CI/CD Plane (GitHub Actions via Nektos/act).
-- Automates job execution, environment injection, and artifact determinism audits.
-- Enforces strict remote isolation (no local bind) while extracting artifacts to /tmp.
-"""
 import os
 import sys
+import json
 import shutil
 import platform
 import asyncio
@@ -17,21 +12,22 @@ from typing import Dict, Any, Tuple
 
 from xphi.arch.dev.tracer.base import SystemBound
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
+from xphi.kernel.space.bind.resolver import resolve_path
 
+TIME_ROOT = resolve_path("time")
 log = get_emitter("plane.phase.act")
 
 class ActBlueprint:
     @staticmethod
     def get_ci_spec() -> Dict[str, Dict[str, Any]]:
-        """CI 파이프라인의 각 Job에 주입할 환경(Env)과 목표를 정의합니다."""
+        """Defines the environment variables and descriptions for each CI pipeline job."""
         return {
-            # 새로 개편된 E2E 테스트 Job 네이밍 반영
             "system-e2e-test": {
                 "env": {}, 
                 "description": "System E2E validation (Infrastructure & Intent)"
             },
             "build-release": {
-                "env": {"FIBER_BUILD_DIST": "1"}, # CASE A: 배포용 원격 강제 바인딩
+                "env": {"FIBER_BUILD_DIST": "1"}, 
                 "description": "Deterministic remote binding for Wheel artifact"
             }
         }
@@ -41,29 +37,73 @@ class BaseActAdapter:
         raise NotImplementedError
 
 class NektosActAdapter(BaseActAdapter):
-    def __init__(self, workspace: Path, boundary: SystemBound, artifact_dir: Path):
+    def __init__(self, workspace: Path, boundary: SystemBound, artifact_dir: Path, rebuild: bool = False):
         self.workspace = workspace
         self.boundary = boundary
         self.artifact_dir = artifact_dir
+        self.image_name = "fiber-act-runner:latest"
+        self.rebuild = rebuild
         
         if not shutil.which("act"):
             raise RuntimeError("[CRITICAL] 'act' binary not found. Standard CI emulation unavailable.")
 
-    async def apply_job(self, job_name: str, env: Dict[str, str]) -> bool:
-        log.info(f"[Adapter:ACT] Provisioning Runner for Job: {job_name}")
+    async def _prepare_golden_image(self) -> str:
+        """Builds the optimized E2E image based on Dockerfile.xphi to bypass architectural emulation issues."""
+        dockerfile_path = TIME_ROOT / "Dockerfile.xphi"
+        
+        if not dockerfile_path.exists():
+            log.warning(f"  ├─ ⚠️ Dockerfile not found at {dockerfile_path}. Falling back to default act image.")
+            return "catthehacker/ubuntu:act-latest"
+            
+        log.info(f"  ├─ Building Golden Base Image ({self.image_name}) from {dockerfile_path}...")
+        
         cmd = [
-            "act", "-j", job_name, 
-            "--artifact-server-path", str(self.artifact_dir),
-            # "-P", "ubuntu-latest=catthehacker/ubuntu:full-latest"
-            "-P", "ubuntu-latest=catthehacker/ubuntu:act-latest"
+            "docker", "build", 
+            "-t", self.image_name, 
+            "-f", str(dockerfile_path), 
+            str(self.workspace)
         ]
         
-        # Apple Silicon(M1/M2/M3) 아키텍처 충돌 방어
-        if sys.platform == "darwin" and platform.machine() == "arm64":
-            cmd.extend(["--container-architecture", "linux/amd64"])
-            log.info("  ├─ Apple Silicon detected. Enforcing linux/amd64 architecture.")
+        code, _, err = await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=True)
+        if code != 0:
+            raise RuntimeError(f"Failed to build custom act image: {err}")
+            
+        log.info("  ├─ Golden Image ready ✅")
+        return self.image_name
 
-        # GitHub Token 주입 (Rate Limit 및 actions/checkout Auth 에러 방지)
+    async def apply_job(self, job_name: str, env: Dict[str, str]) -> bool:
+        log.info(f"[Adapter:ACT] Provisioning Runner for Job: {job_name}")
+        
+        target_image = await self._prepare_golden_image()
+        
+        # Inject mock GitHub context to bypass YAML branch/label constraints locally
+        mock_payload_path = self.artifact_dir / f"mock_payload_{job_name}.json"
+        mock_payload = {
+            "ref": "refs/tags/v1.0.1+bound",
+            "pull_request": {
+                "labels": [{"name": "e2e-approved"}]
+            }
+        }
+        
+        with open(mock_payload_path, "w") as f:
+            json.dump(mock_payload, f)
+            
+        log.info(f"  ├─ Mock Webhook Payload injected: {mock_payload['ref']}")
+
+        cmd = [
+            "act", "push", "-j", job_name, 
+            "--artifact-server-path", str(self.artifact_dir),
+            "-P", f"ubuntu-latest={target_image}",
+            "-e", str(mock_payload_path),
+            "--pull=false",
+            # Enforce strict OOM killer by disabling swap memory (resolves virtualization I/O thrashing)
+            "--container-options", "--memory=2g --memory-swap=2g"
+        ]
+        
+        if self.rebuild:
+            cmd.append("--rebuild")
+            log.info("  ├─ Rebuild flag injected: Forcing clean cache.")
+        
         gh_token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
         if gh_token:
             cmd.extend(["-s", f"GITHUB_TOKEN={gh_token}"])
@@ -75,7 +115,6 @@ class NektosActAdapter(BaseActAdapter):
             cmd.extend(["--env", f"{k}={v}"])
             log.info(f"  ├─ Injecting Env: {k}={v}")
 
-        # act의 출력은 실시간으로 보여야 하므로 capture=False
         code, _, err = await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=False)
         
         if code != 0:
@@ -85,7 +124,7 @@ class NektosActAdapter(BaseActAdapter):
         return True
 
 class DeterminismAuditor:
-    """빌드된 패키지(Artifact)의 의존성 무결성을 뜯어보는 감사관"""
+    """Audits the dependency integrity of the built artifacts to prevent local path leakage."""
     def __init__(self, target_dir: Path, boundary: SystemBound):
         self.target_dir = target_dir
         self.boundary = boundary
@@ -100,12 +139,10 @@ class DeterminismAuditor:
     async def verify(self) -> bool:
         log.info(f"[Auditor:Determinism] Inspecting extracted Artifacts in {self.target_dir}...")
         
-        # act가 임시 폴더 내 어느 하위 경로에 저장할지 모르므로 재귀 탐색(rglob) 수행
         wheel_files = list(self.target_dir.rglob("fiber-*.whl"))
         
         if not wheel_files:
             log.error("  └─ 💥 Artifact missing. Build phase did not produce or upload a Wheel.")
-            log.warning("     (Did you include 'actions/upload-artifact' in your build.yml?)")
             return False
             
         target_wheel = wheel_files[0]
@@ -133,12 +170,11 @@ class DeterminismAuditor:
 @dataclass
 class ActContext:
     boundary: SystemBound
-    adapter: BaseActAdapter  # E2E Scene에서 어댑터를 제어할 수 있도록 노출
+    adapter: BaseActAdapter
     auditors: Dict[str, Any]
 
 class ActOrchestrator:
-    """ToposOrchestrator와 구조적 동형성(Isomorphism)을 완벽히 유지하는 CI 제어기"""
-    def __init__(self, mode: str = "dev", suites: Dict[str, Any] = None):
+    def __init__(self, mode: str = "dev", suites: Dict[str, Any] = None, rebuild: bool = False):
         self.mode = mode
         self.suites = suites or {}
         self.keep_workspace = False
@@ -146,13 +182,10 @@ class ActOrchestrator:
         self.workspace = Path.cwd()
         self.boundary = SystemBound()
         
-        # [핵심] 호스트 OS의 /tmp 하위에 격리된 아티팩트 서버 경로 동적 생성
         self.artifact_dir = Path(tempfile.mkdtemp(prefix="fiber-act-artifacts-"))
         
-        self.adapter = NektosActAdapter(self.workspace, self.boundary, self.artifact_dir)
+        self.adapter = NektosActAdapter(self.workspace, self.boundary, self.artifact_dir, rebuild)
         self.determinism_auditor = DeterminismAuditor(self.artifact_dir, self.boundary)
-        
-        # 레포팅(ToposFlow/ActFlow)을 위해 실행된 suite 인스턴스들을 추적
         self.suite_runners = {}
 
     async def _run_all_suites(self, broker: Any, context: ActContext) -> int:
@@ -175,17 +208,13 @@ class ActOrchestrator:
         log.info(f"[SYSTEM] Artifact Extraction Target: {self.artifact_dir}")
         
         try:
-            # 1. Attach Auditors
             self.determinism_auditor.attach()
-            
-            # 2. Build Context (Scene으로 제어권 위임)
             context = ActContext(
                 boundary=self.boundary,
                 adapter=self.adapter,
                 auditors={"determinism": self.determinism_auditor}
             )
             
-            # 3. Execute Logical Suites
             if self.suites:
                 with flow_scope(phase="TEST_EXECUTION"):
                     total_fails = await self._run_all_suites(broker, context)
@@ -204,7 +233,6 @@ class ActOrchestrator:
             log.info("\n[SYSTEM] Initiating Teardown Sequence...")
             self.determinism_auditor.detach()
             
-            # 워크스페이스(아티팩트 임시 폴더) 정리 로직
             if not self.keep_workspace:
                 if self.artifact_dir.exists():
                     shutil.rmtree(self.artifact_dir, ignore_errors=True)
