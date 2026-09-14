@@ -29,8 +29,8 @@ class ExecutionStrategy:
                 interp = PythonInterpreter(
                     enable_network_access=[], 
                     enable_read_paths=[], 
-                    enable_write_paths=[], 
-                    enable_env_vars=[], 
+                    enable_write_paths=[],
+                    enable_env_vars=["FIBER_ISOLATION_MARKER"], 
                     policy=CgroupPolicy.standard()
                 )
                 interp.start()

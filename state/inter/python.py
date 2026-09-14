@@ -1,6 +1,4 @@
 # xphi.state.inter.python
-## @lineage: xphi.kernel.phase.inter.python
-## @lineage: kernel.phase.inter.python
 import functools
 import inspect
 import json
@@ -234,7 +232,8 @@ class PythonInterpreter:
                 self.deno_command[0] = resolved_exe
 
             safe_env = {
-                "TMPDIR": os.environ.get("TMPDIR", "/tmp")
+                "TMPDIR": os.environ.get("TMPDIR", "/tmp"),
+                "FIBER_ISOLATION_MARKER": "1"
             }
             
             deno_dir = self._get_deno_dir()
@@ -408,7 +407,7 @@ class PythonInterpreter:
         except Exception as e:
             log.warning(f"Failed to fetch sandbox metrics: {e}")
         return {}
-
+    
     def execute(
         self,
         code: str,
@@ -425,6 +424,9 @@ class PythonInterpreter:
             context["timestamp"] = 0
         if "seed" not in context:
             context["seed"] = "dphi_secure_fallback_seed"
+            
+        broker_timeout = float(context.get("timeout", 15.0))
+        self.execution_timeout = max(0.1, broker_timeout - 0.1)
         
         try:
             code = self._inject_variables(code, variables)
@@ -453,7 +455,7 @@ class PythonInterpreter:
             self.deno_process.stdin.flush()
         except BrokenPipeError:
             log.warning("Broken pipe during execute. Restarting Deno process.")
-            self.shutdown() # 기존 핸들 명시적 삭제 (핵심 누수 차단)
+            self.shutdown()
             self._ensure_deno_process()
             self._mount_files()
             self._register_callables(callables)
@@ -506,6 +508,103 @@ class PythonInterpreter:
             raise ProtocolError(f"Unexpected message format from sandbox: {msg}")
         raise ProtocolError(f"Too many non-JSON lines ({skipped}) during execution")
 
+    # def execute(
+    #     self,
+    #     code: str,
+    #     variables: Mapping[str, Any] | None = None,
+    #     callables: Mapping[str, Callable[..., Any]] | None = None,
+    #     context: dict | None = None,
+    # ) -> ExecutionResult:
+    #     self._check_thread_ownership()
+    #     variables = variables or {}
+    #     callables = callables or {}
+    #     context = context or {}
+
+    #     if "timestamp" not in context:
+    #         context["timestamp"] = 0
+    #     if "seed" not in context:
+    #         context["seed"] = "dphi_secure_fallback_seed"
+        
+    #     try:
+    #         code = self._inject_variables(code, variables)
+    #     except ExecutionError as e:
+    #         return ExecutionResult(success=False, error=e)
+
+    #     self._ensure_deno_process()
+    #     self._mount_files()
+        
+    #     self._register_callables(callables)
+
+    #     for name, value in self._pending_large_vars.items():
+    #         self._inject_large_var(name, value)
+
+    #     self._request_id += 1
+    #     execute_request_id = self._request_id
+    #     payload = {
+    #         "code": code,
+    #         "context": context
+    #     }
+    #     input_data = JsonRpcMessage.request("execute", payload, execute_request_id)
+    #     log.info(f"[Deno RPC Request] -> {input_data}")
+
+    #     try:
+    #         self.deno_process.stdin.write(input_data + "\n")
+    #         self.deno_process.stdin.flush()
+    #     except BrokenPipeError:
+    #         log.warning("Broken pipe during execute. Restarting Deno process.")
+    #         self.shutdown() # 기존 핸들 명시적 삭제 (핵심 누수 차단)
+    #         self._ensure_deno_process()
+    #         self._mount_files()
+    #         self._register_callables(callables)
+    #         for name, value in self._pending_large_vars.items():
+    #             self._inject_large_var(name, value)
+            
+    #         try:
+    #             self.deno_process.stdin.write(input_data + "\n")
+    #             self.deno_process.stdin.flush()
+    #         except BrokenPipeError as e:
+    #             raise ProtocolError("Deno process crashed continuously during execution.") from e
+
+    #     skipped = 0
+    #     while skipped <= self._MAX_SKIP_LINES:
+    #         output_line = self._read_response_line("during execution")
+    #         msg = self._parse_response_line(output_line, "during execution")
+    #         if msg is None:
+    #             skipped += 1
+    #             continue
+
+    #         if "method" in msg:
+    #             if msg["method"] == "tool_call":
+    #                 self._handle_callable_call(msg, callables)
+    #                 continue
+
+    #         if "result" in msg:
+    #             if msg.get("id") != execute_request_id:
+    #                 log.debug(f"Skipping mismatched JSON response during execution: {msg}")
+    #                 skipped += 1
+    #                 continue
+                
+    #             result = msg["result"]
+    #             self._sync_files()
+    #             return ExecutionResult(success=True, output=result.get("output", ""))
+
+    #         if "error" in msg:
+    #             if msg.get("id") is not None and msg.get("id") != execute_request_id:
+    #                 log.debug(f"Skipping mismatched JSON error during execution: {msg}")
+    #                 skipped += 1
+    #                 continue
+                
+    #             error = msg["error"]
+    #             error_message = error.get("message", "Unknown error")
+    #             error_data = error.get("data", {})
+    #             error_type = error_data.get("type", "Error")
+    #             return ExecutionResult(
+    #                 success=False, 
+    #                 error=ExecutionError(f"{error_type}: {error_data.get('args') or error_message}")
+    #             )
+    #         raise ProtocolError(f"Unexpected message format from sandbox: {msg}")
+    #     raise ProtocolError(f"Too many non-JSON lines ({skipped}) during execution")
+
     def start(self) -> None:
         self._ensure_deno_process()
 
@@ -525,7 +624,6 @@ class PythonInterpreter:
         return self.execute(code, variables, callables, context)
 
     def shutdown(self) -> None:
-        """가장 강력한 방어선. 프로세스와 모든 파이프를 명시적으로 파기합니다."""
         if self.deno_process:
             if self.deno_process.poll() is None:
                 try:
@@ -553,6 +651,5 @@ class PythonInterpreter:
         self._owner_thread = None
 
     def __del__(self):
-        """객체가 GC될 때, 닫히지 않은 Deno 프로세스가 있다면 동반 자살(Kill)시킵니다."""
         with suppress(Exception):
             self.shutdown()

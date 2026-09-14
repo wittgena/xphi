@@ -47,15 +47,13 @@ class DphiBroker:
         request_stream: str = BrokerChannel.EXECUTE_STREAM, 
         timeout: float = 10.0, 
         target_auditor=None,
-        tunnel_factory=None, # [FIX] 의존성 주입(DI) 지원을 위한 팩토리 파라미터 추가
-        **kwargs # [FIX] 예기치 않은 키워드 방어를 위한 kwargs 추가
+        tunnel_factory=None,
+        **kwargs
     ):
         self.request_stream = request_stream
         self.control_channel = BrokerChannel.CONTROL_REQ
         self.timeout = timeout
         self.target_auditor = target_auditor
-        
-        # [FIX] 주입된 팩토리가 없으면 기본 TunnelFactory(Redis) 사용 (100% 하위 호환)
         self.tunnel_factory = tunnel_factory or TunnelFactory
         
         self.broker_id = uuid.uuid4().hex[:8]
@@ -143,7 +141,6 @@ class DphiBroker:
                     error=ExecutionError(result_data.get(ResultKey.ERROR, "Unknown Execution Error")),
                     metrics=metrics
                 )
-                
         except asyncio.TimeoutError:
             timeout_msg = f"Remote execution timeout ({active_timeout}s)"
             log.warning(f"[{job_id[:8]}] {timeout_msg} on {route}. (Infinite loop or payload blocked)")

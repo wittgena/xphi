@@ -25,9 +25,10 @@ class ActBlueprint:
     def get_ci_spec() -> Dict[str, Dict[str, Any]]:
         """CI 파이프라인의 각 Job에 주입할 환경(Env)과 목표를 정의합니다."""
         return {
-            "integration-test": {
-                "env": {}, # CASE D (Remote Fallback): 로컬 바인딩 없이 원격 코드 통합 테스트
-                "description": "Remote source binding validation (Isolated)"
+            # 새로 개편된 E2E 테스트 Job 네이밍 반영
+            "system-e2e-test": {
+                "env": {}, 
+                "description": "System E2E validation (Infrastructure & Intent)"
             },
             "build-release": {
                 "env": {"FIBER_BUILD_DIST": "1"}, # CASE A: 배포용 원격 강제 바인딩
@@ -50,11 +51,11 @@ class NektosActAdapter(BaseActAdapter):
 
     async def apply_job(self, job_name: str, env: Dict[str, str]) -> bool:
         log.info(f"[Adapter:ACT] Provisioning Runner for Job: {job_name}")
-        
-        # [핵심 패치] --bind 제거 (로컬 오염 방지), 대신 artifact-server를 구동하여 결과물만 /tmp로 추출
         cmd = [
             "act", "-j", job_name, 
-            "--artifact-server-path", str(self.artifact_dir)
+            "--artifact-server-path", str(self.artifact_dir),
+            # "-P", "ubuntu-latest=catthehacker/ubuntu:full-latest"
+            "-P", "ubuntu-latest=catthehacker/ubuntu:act-latest"
         ]
         
         # Apple Silicon(M1/M2/M3) 아키텍처 충돌 방어

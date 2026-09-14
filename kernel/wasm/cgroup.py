@@ -1,7 +1,4 @@
 # xphi.kernel.wasm.cgroup
-## @lineage: xphi.kernel.dphi.cgroup
-## @lineage: kernel.dphi.cgroup
-## @lineage: watcher.dphi.cgroup
 import logging
 from dataclasses import dataclass
 from enum import Enum
