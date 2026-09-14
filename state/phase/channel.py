@@ -1,5 +1,4 @@
 # xphi.state.phase.channel
-## @lineage: xphi.state.network.channel
 import json
 import uuid
 import asyncio
@@ -8,7 +7,6 @@ from typing import Any, List, Optional, Dict
 
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
-# 로거 네임스페이스 분리 유지
 pipeline_log = get_emitter("channel.pipeline")
 codec_log = get_emitter("channel.codec")
 bridge_log = get_emitter("rpc.bridge")
@@ -245,3 +243,13 @@ class RpcBridge(DuplexChannel):
                 self.pending_requests.pop(fallback_req_id).set_result(msg)
                 return
         await ctx.fire_channel_read(msg)
+    
+    async def exception_caught(self, ctx: ChannelContext, exc: Exception):
+        req_id = ctx.get_attr("current_req_id")
+        if req_id and req_id in self.pending_requests:
+            self.pending_requests.pop(req_id).set_exception(exc)
+            ctx.set_attr("current_req_id", None)
+            bridge_log.debug(f"[RpcBridge] Propagated Exception to Request {req_id}: {exc}")
+            return
+            
+        await ctx.fire_exception_caught(exc)
