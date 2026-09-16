@@ -1,11 +1,10 @@
-# xphi.watcher.plane.metric.trajectory
-## @lineage: watcher.plane.metric.trajectory
-import numpy as np
+# xphi.watcher.observer.metric.trajectory
+## @lineage: xphi.watcher.plane.metric.trajectory
 import datetime
-from typing import List, Dict, Any, Callable, Optional
+from typing import List, Dict, Any, Callable, Optional, Sequence
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from xphi.watcher.plane.metric.base import (
+from xphi.watcher.observer.metric.base import (
     trend_slope,
     acceleration,
     range_amplitude,
@@ -55,7 +54,8 @@ class BaseBoundLensStrategy(ABC):
 class DefaultBoundLensStrategy(BaseBoundLensStrategy):
     """단일 노드의 절대적/통계적 폭주를 감지하는 운동학(Kinematic) 렌즈"""
 
-    METRICS_REGISTRY: Dict[str, Callable[[np.ndarray], float]] = {
+    # numpy 배열 대신 기본 Sequence[float]를 처리하도록 타입 변경
+    METRICS_REGISTRY: Dict[str, Callable[[Sequence[float]], float]] = {
         "trend": trend_slope,
         "acceleration": acceleration,
         "range": range_amplitude,
@@ -80,8 +80,11 @@ class DefaultBoundLensStrategy(BaseBoundLensStrategy):
         self.active_metrics = self.PRESETS[preset_name]
 
     def scan(self, window: WindowedTrajectory, reference_window: Optional[WindowedTrajectory] = None) -> Dict[str, Any]:
-        values = np.array([p.value for p in window.points])
-        if values.size < 3:
+        # np.array 래핑을 제거하고 순수 파이썬 리스트 사용 (작은 윈도우 사이즈에서 속도 최적화)
+        values = [p.value for p in window.points]
+        
+        # values.size 대신 len(values) 사용
+        if len(values) < 3:
             return {
                 "status": "insufficient_data",
                 "preset": self.preset_name

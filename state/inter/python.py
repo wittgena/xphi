@@ -470,11 +470,27 @@ class PythonInterpreter:
 
         skipped = 0
         while skipped <= self._MAX_SKIP_LINES:
-            output_line = self._read_response_line("during execution")
+            try:
+                output_line = self._read_response_line("during execution")
+            except ProtocolError as e:
+                # act(Linux) 환경에서 OOM 킬(code -9) 발생 시 에러 변환
+                if "code -9" in str(e):
+                    return ExecutionResult(
+                        success=False, 
+                        error=ExecutionError(f"Sandbox Hard Terminated: {str(e)}")
+                    )
+                raise  # 그 외의 통신/종료 에러는 그대로 발생시킴
+
             msg = self._parse_response_line(output_line, "during execution")
             if msg is None:
                 skipped += 1
                 continue
+
+            # output_line = self._read_response_line("during execution")
+            # msg = self._parse_response_line(output_line, "during execution")
+            # if msg is None:
+            #     skipped += 1
+            #     continue
 
             if "method" in msg:
                 if msg["method"] == "tool_call":
@@ -507,103 +523,6 @@ class PythonInterpreter:
                 )
             raise ProtocolError(f"Unexpected message format from sandbox: {msg}")
         raise ProtocolError(f"Too many non-JSON lines ({skipped}) during execution")
-
-    # def execute(
-    #     self,
-    #     code: str,
-    #     variables: Mapping[str, Any] | None = None,
-    #     callables: Mapping[str, Callable[..., Any]] | None = None,
-    #     context: dict | None = None,
-    # ) -> ExecutionResult:
-    #     self._check_thread_ownership()
-    #     variables = variables or {}
-    #     callables = callables or {}
-    #     context = context or {}
-
-    #     if "timestamp" not in context:
-    #         context["timestamp"] = 0
-    #     if "seed" not in context:
-    #         context["seed"] = "dphi_secure_fallback_seed"
-        
-    #     try:
-    #         code = self._inject_variables(code, variables)
-    #     except ExecutionError as e:
-    #         return ExecutionResult(success=False, error=e)
-
-    #     self._ensure_deno_process()
-    #     self._mount_files()
-        
-    #     self._register_callables(callables)
-
-    #     for name, value in self._pending_large_vars.items():
-    #         self._inject_large_var(name, value)
-
-    #     self._request_id += 1
-    #     execute_request_id = self._request_id
-    #     payload = {
-    #         "code": code,
-    #         "context": context
-    #     }
-    #     input_data = JsonRpcMessage.request("execute", payload, execute_request_id)
-    #     log.info(f"[Deno RPC Request] -> {input_data}")
-
-    #     try:
-    #         self.deno_process.stdin.write(input_data + "\n")
-    #         self.deno_process.stdin.flush()
-    #     except BrokenPipeError:
-    #         log.warning("Broken pipe during execute. Restarting Deno process.")
-    #         self.shutdown() # 기존 핸들 명시적 삭제 (핵심 누수 차단)
-    #         self._ensure_deno_process()
-    #         self._mount_files()
-    #         self._register_callables(callables)
-    #         for name, value in self._pending_large_vars.items():
-    #             self._inject_large_var(name, value)
-            
-    #         try:
-    #             self.deno_process.stdin.write(input_data + "\n")
-    #             self.deno_process.stdin.flush()
-    #         except BrokenPipeError as e:
-    #             raise ProtocolError("Deno process crashed continuously during execution.") from e
-
-    #     skipped = 0
-    #     while skipped <= self._MAX_SKIP_LINES:
-    #         output_line = self._read_response_line("during execution")
-    #         msg = self._parse_response_line(output_line, "during execution")
-    #         if msg is None:
-    #             skipped += 1
-    #             continue
-
-    #         if "method" in msg:
-    #             if msg["method"] == "tool_call":
-    #                 self._handle_callable_call(msg, callables)
-    #                 continue
-
-    #         if "result" in msg:
-    #             if msg.get("id") != execute_request_id:
-    #                 log.debug(f"Skipping mismatched JSON response during execution: {msg}")
-    #                 skipped += 1
-    #                 continue
-                
-    #             result = msg["result"]
-    #             self._sync_files()
-    #             return ExecutionResult(success=True, output=result.get("output", ""))
-
-    #         if "error" in msg:
-    #             if msg.get("id") is not None and msg.get("id") != execute_request_id:
-    #                 log.debug(f"Skipping mismatched JSON error during execution: {msg}")
-    #                 skipped += 1
-    #                 continue
-                
-    #             error = msg["error"]
-    #             error_message = error.get("message", "Unknown error")
-    #             error_data = error.get("data", {})
-    #             error_type = error_data.get("type", "Error")
-    #             return ExecutionResult(
-    #                 success=False, 
-    #                 error=ExecutionError(f"{error_type}: {error_data.get('args') or error_message}")
-    #             )
-    #         raise ProtocolError(f"Unexpected message format from sandbox: {msg}")
-    #     raise ProtocolError(f"Too many non-JSON lines ({skipped}) during execution")
 
     def start(self) -> None:
         self._ensure_deno_process()

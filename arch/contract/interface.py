@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Optional, Any, Protocol, Callable, Tuple
-from fastapi import APIRouter
 
 from xphi.arch.bound.event.psi import PsiEvent
 

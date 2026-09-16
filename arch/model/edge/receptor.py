@@ -1,4 +1,5 @@
-# xphi.arch.model.dphi.receptor
+# xphi.arch.model.edge.receptor
+## @lineage: xphi.arch.model.dphi.receptor
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional

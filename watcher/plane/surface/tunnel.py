@@ -1,11 +1,9 @@
 # xphi.watcher.plane.surface.tunnel
-## @lineage: watcher.plane.surface.tunnel
 import json
 import time
 import sys
 import threading
 import queue
-from dataclasses import asdict
 from typing import Optional
 from xphi.arch.bound.event.next import LogEvent
 from xphi.arch.bound.event.next import EventObserver
@@ -74,11 +72,16 @@ class TunnelSurface(EventObserver):
                 time.sleep(1.0)
 
     def update(self, event: LogEvent):
-        flow_id = event.context.get("flow_id") or "global"
+        # 1. context가 None일 경우를 대비한 안전한 추출
+        flow_id = event.context.get("flow_id") if event.context else None
+        flow_id = flow_id or "global"
+        
         if flow_id == "global":
             return
 
         channel = f"log:{flow_id}"
-        msg = json.dumps(asdict(event), ensure_ascii=False)
+        
+        event_dict = {k: v for k, v in event.__dict__.items()}
+        msg = json.dumps(event_dict, ensure_ascii=False, default=str)
         self._ensure_worker()
         self._queue.put((channel, msg))

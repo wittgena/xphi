@@ -1,5 +1,4 @@
 // kernel.space.time.pysand.ts
-// @desc: Optimized, Type-Safe, and Memory-Leak-Free Pyodide Sandbox Runner for Deno (with Cgroup & Determinism features)
 import pyodideModule from "npm:pyodide/pyodide.js";
 import { readLines } from "https://deno.land/std@0.186.0/io/mod.ts";
 

@@ -15,14 +15,14 @@ from xphi.arch.bound.event.next import LogEvent, next_phase_id, EventObserver
 from xphi.kernel.space.bind.resolver import resolve_path
 
 # --- Metric & Trajectory Imports ---
-from xphi.watcher.plane.metric.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
+from xphi.watcher.observer.metric.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 
 # --- Surface Imports ---
 from xphi.watcher.plane.surface.tunnel import TunnelSurface
 from xphi.watcher.plane.surface.console import ConsoleSurface
 from xphi.watcher.plane.surface.file import TextFileSurface, JsonFileSurface
 
-log = logging.getLogger("flow.meter")
+log = logging.getLogger("plane.regulator")
 
 
 # =====================================================================

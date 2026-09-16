@@ -18,11 +18,11 @@ from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("anchor.consensus", phase="KERNEL")
 
-LEDGER_DB_PATH = resolve_path("ledger")
+ANCHOR_DB_PATH = resolve_path("adb")
 
-class LedgerRole(Enum):
-    LEADER = "SEALER"        # Acquired physical lock; can invoke WASM and seal states
-    FOLLOWER = "PROPOSER"    # Read-Only mode; proposes raw streams to Mempool
+class AnchorRole(Enum):
+    SEALER = "SEALER"        # Acquired physical lock; can invoke WASM and seal states
+    PROPOSER = "PROPOSER"    # Read-Only mode; proposes raw streams to Mempool
 
 def deterministic_hash(data: Dict[str, Any]) -> str:
     canonical_bytes = StateAdapter.to_canonical_bytes(data)
@@ -66,7 +66,7 @@ class SealedKernel(BaseModel):
 class KernelLedger:
     _instance = None
 
-    def __new__(cls, path=LEDGER_DB_PATH):
+    def __new__(cls, path=ANCHOR_DB_PATH):
         if cls._instance is None:
             cls._instance = super(KernelLedger, cls).__new__(cls)
             cls._instance._initialize_consensus_node(path)
@@ -79,7 +79,7 @@ class KernelLedger:
         
         try:
             self.db = Rdict(str(target_path), opt)
-            self.role = LedgerRole.LEADER
+            self.role = AnchorRole.SEALER
             self.broker = None
             self.wasm = DphiBroker() 
             log.info(f"[Ledger] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
@@ -87,7 +87,7 @@ class KernelLedger:
         except Exception as e:
             error_msg = str(e).lower()
             if "lock" in error_msg or "temporarily unavailable" in error_msg:
-                self.role = LedgerRole.FOLLOWER
+                self.role = AnchorRole.PROPOSER
                 self.wasm = None 
                 log.info(f"[Ledger] Lock held by another node. Operating as {self.role.value} (Read-Only/Proposer).")
                 
@@ -115,7 +115,7 @@ class KernelLedger:
         """Routes to either physical disk write (LEADER) or Mempool proposal (FOLLOWER)."""
         obj_hash = deterministic_hash(data)
         
-        if self.role == LedgerRole.LEADER:
+        if self.role == AnchorRole.SEALER:
             key = f"{obj_type}:{obj_hash}".encode('utf-8')
             if key not in self.db:
                 self.db[key] = json.dumps(data).encode('utf-8')
@@ -133,7 +133,7 @@ class KernelLedger:
         return self._put_object("blob", asdict(blob))
 
     def update_head(self, stream_id: str, commit_hash: str) -> None:
-        if self.role == LedgerRole.LEADER:
+        if self.role == AnchorRole.SEALER:
             key = f"ref:{stream_id}".encode('utf-8')
             self.db[key] = commit_hash.encode('utf-8')
         else:
@@ -183,7 +183,7 @@ class KernelLedger:
         return self._save_kernel_unsafe(commit)
 
     async def propose_and_seal(self, stream: LogicStream) -> Optional[SealedKernel]:
-        if self.role == LedgerRole.FOLLOWER:
+        if self.role == AnchorRole.PROPOSER:
             stream_data = {
                 "id": str(stream.id), 
                 "action": str(stream.action), 
