@@ -1,5 +1,4 @@
 # xphi.kernel.wasm.broker
-## @lineage: xphi.kernel.dphi.broker
 import time
 import json
 import uuid
