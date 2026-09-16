@@ -1,5 +1,4 @@
 # xphi.state.phase.commit
-## @lineage: xphi.kernel.phase.commit
 import json
 import time
 import asyncio
@@ -202,12 +201,12 @@ async def anchor_commit(
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")
         
-        from xphi.state.anchor.consensus import KernelCommit, LedgerRole
+        from xphi.state.anchor.consensus import KernelCommit, AnchorRole
         from dataclasses import asdict
         
         commit_obj = KernelCommit(**kernel_commit_data)
         
-        if hasattr(anchor.store, 'role') and anchor.store.role == LedgerRole.FOLLOWER:
+        if hasattr(anchor.store, 'role') and anchor.store.role == AnchorRole.PROPOSER:
             log.warning("[Protocol] Node is FOLLOWER. Proposing Epoch Seal to Mempool instead of direct disk write.")
             anchor.store._put_object("commit_proposal", asdict(commit_obj))
         else:

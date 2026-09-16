@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set
 
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.watcher.plane.metric.trajectory import (
+from xphi.watcher.observer.metric.trajectory import (
     CoDiffBoundLensStrategy,
     DefaultBoundLensStrategy,
     Point,

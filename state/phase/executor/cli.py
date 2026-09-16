@@ -1,7 +1,4 @@
 # xphi.state.phase.executor.cli
-## @lineage: xphi.state.runtime.executor.cli
-## @lineage: xphi.kernel.phase.runtime.executor.cli
-## @lineage: kernel.phase.runtime.executor.cli
 import os
 import sys
 import uuid

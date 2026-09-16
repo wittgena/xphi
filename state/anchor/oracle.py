@@ -9,10 +9,10 @@ from xphi.kernel.wasm.broker import DphiBroker, DphiMethod
 from xphi.arch.bound.adapter.state import StateAdapter
 
 log = get_emitter("anchor.oracle", phase="KERNEL")
-LEDGER_DB_PATH = resolve_path("ledger")
+ANCHOR_DB_PATH = resolve_path("adb")
 
 class AnchorOracle:
-    def __init__(self, broker: DphiBroker, path: str = LEDGER_DB_PATH):
+    def __init__(self, broker: DphiBroker, path: str = ANCHOR_DB_PATH):
         self.broker = broker
         ro_opt = Options()
         try:

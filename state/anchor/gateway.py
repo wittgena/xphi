@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Any, Dict, Optional
 
 from xphi.arch.model.edge.stream import LogicStream as IngressLogicStream
-from xphi.state.anchor.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, LedgerRole
+from xphi.state.anchor.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, AnchorRole
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("anchor.gateway", phase="KERNEL")
@@ -189,7 +189,7 @@ class StoreGateway:
                 log.info(f"[Gateway] AUTHORIZED: Stream {kernel_stream.id} successfully sealed into {sealed_kernel.kernel_id}.")
                 return True
             else:
-                if hasattr(self.store, 'role') and self.store.role == LedgerRole.FOLLOWER:
+                if hasattr(self.store, 'role') and self.store.role == AnchorRole.PROPOSER:
                     log.info(f"[Gateway] PROPOSED: Stream {kernel_stream.id} delegated to Mempool (FOLLOWER mode).")
                     return True
                 else:

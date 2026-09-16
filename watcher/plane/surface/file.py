@@ -1,11 +1,9 @@
 # xphi.watcher.plane.surface.file
-## @lineage: watcher.plane.surface.file
 import os
 import json
 import time
 import sys
 from pathlib import Path
-from dataclasses import asdict
 from datetime import datetime, timezone
 from xphi.arch.bound.event.next import LogEvent
 from xphi.arch.bound.event.next import EventObserver
@@ -17,10 +15,6 @@ def _safe_json_serializer(obj):
     return str(obj)
 
 class TextFileSurface(EventObserver):
-    """
-    @role: Human-Readable File Logger
-    @desc: 개발자가 터미널이나 에디터에서 직접 열어보고 흐름을 파악하기 위한 순수 텍스트(.log) 서페이스
-    """
     def __init__(self, base_dir: str | Path, min_level: str = "DEBUG"):
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
@@ -82,7 +76,8 @@ class JsonFileSurface(EventObserver):
             safe_phase = "".join(c for c in phase_str if c.isalnum() or c in "_-").lower() or "system"
             target_file = self.base_dir / f"{safe_phase}.jsonl"
 
-        event_dict = asdict(event)
+        # [핵심 수정] dataclasses.asdict()의 deepcopy로 인한 pickle 에러 방지를 위해 얕은 복사 사용
+        event_dict = {k: v for k, v in event.__dict__.items()}
         event_dict["@timestamp"] = datetime.now(timezone.utc).isoformat()
         
         try:

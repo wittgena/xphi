@@ -1,4 +1,5 @@
-# XPHI
+# xphi.README
+@lineage: XPHI
 
 @desc: Core Infrastructure Kernel
 

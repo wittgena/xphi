@@ -41,7 +41,7 @@ DEFAULT_BOUND_SKELETON = {
         "ext": ":anchor:/ext",
         "chat": ":io:/chat",
         "memory": ":anchor:/memory",
-        "ledger": ":anchor:/ledger",
+        "adb": ":anchor:/adb",
         "sign": ":anchor:/sign",
         "log": ":io:/log",
         "ailog": ":io:/ailog",

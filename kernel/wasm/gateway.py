@@ -38,7 +38,7 @@ class GatewayWasm:
 
     @classmethod
     def _initialize_module(cls, wasm_filename: str):
-        """JIT/AOT 컴파일은 애플리케이션 부트스트랩 시 1회만 수행 (Thread-Safe)"""
+        """JIT/AOT compilation occurs exactly once during application bootstrap (Thread-Safe)."""
         with cls._compile_lock:
             if cls._engine is None:
                 config = wasmtime.Config()
@@ -51,7 +51,7 @@ class GatewayWasm:
                 cls._module = wasmtime.Module.from_file(cls._engine, wasm_path)
 
     def _get_local_instance(self) -> Any:
-        """현재 스레드에 WASM 인스턴스가 없다면 새로 생성하여 캐싱"""
+        """Instantiates and caches a WASM module instance per thread via TLS."""
         if not hasattr(self._tls, "is_initialized"):
             self._tls.store = wasmtime.Store(self._engine)
             linker = wasmtime.Linker(self._engine)
@@ -64,7 +64,6 @@ class GatewayWasm:
             self._tls.execute_gateway = exports.get("execute_gateway")
             self._tls.dealloc_c_string = exports.get("dealloc_c_string") 
             
-            # 현재 스레드 전용 1MB 버퍼(Zero-Alloc) 선할당
             self._tls.input_ptr = self._tls.alloc(self._tls.store, self.MAX_INPUT_SIZE)
             self._tls.is_initialized = True
             
@@ -80,7 +79,6 @@ class GatewayWasm:
             raise GatewayRuptureError(f"C-String direct read failed: {e}")
 
     def invoke_raw_ffi(self, payload_str: str) -> str:
-        """Lock 없이 현재 스레드의 전용 WASM 메모리를 타격"""
         payload_bytes = payload_str.encode('utf-8') + b'\0'
         req_len = len(payload_bytes)
         
@@ -102,14 +100,10 @@ class GatewayWasm:
                 try:
                     tls.dealloc_c_string(tls.store, res_ptr)
                 except Exception as e:
-                    log.error(f"[Gateway] C-String dealloc failed: {e}")
-
-    # =====================================================================
-    # Routing Wrappers for C-FFI
-    # =====================================================================
+                    log.error(f"❌ [Gateway] C-String deallocation failed: {e}")
 
     def evaluate_intent(self, dimension: int, base_friction: float, raw_payload: str, state_vector: List[int]) -> Dict[str, Any]:
-        """기존 L0 Computing Parser 라우팅"""
+        """Routes payload to the Computing Parser."""
         req_payload = {
             "target_module": "intent_parser",
             "dimension": dimension,
@@ -120,7 +114,7 @@ class GatewayWasm:
         return self._safe_invoke(req_payload)
 
     def execute_transaction_fsm(self, fsm_state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
-        """Transaction FSM 라우팅 (상태 기계 평가)"""
+        """Routes and evaluates the Transaction FSM state."""
         req_payload = {
             "target_module": "transaction_fsm",
             "fsm_state": fsm_state,
@@ -128,11 +122,10 @@ class GatewayWasm:
         }
         return self._safe_invoke(req_payload)
 
-    # [NEW] Defin FSM을 WASM으로 넘기기 위한 래퍼 메서드 추가
-    def execute_defin_fsm(self, fsm_state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
-        """Defin FSM 라우팅 (상태 기계 평가)"""
+    def execute_clearing_fsm(self, fsm_state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+        """Routes and evaluates the Clearing FSM state."""
         req_payload = {
-            "target_module": "defin_fsm", # Rust 측 GatewayRequest::DefinFsm 과 매핑됨
+            "target_module": "clearing_fsm",
             "fsm_state": fsm_state,
             "event": event
         }
@@ -140,24 +133,24 @@ class GatewayWasm:
 
     def _safe_invoke(self, payload_dict: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            # 1. Payload 직렬화 및 크기 측정
+            # 1. Serialize payload and measure size
             json_str = json.dumps(payload_dict, separators=(',', ':'))
             payload_size_kb = len(json_str.encode('utf-8')) / 1024.0
             
             target_module = payload_dict.get("target_module", "unknown")
-            log.info(f"⚡ [WASM Gateway] '{target_module}' 모듈 호출 준비 ({payload_size_kb:.2f} KB)")
+            log.info(f"⚡ [WASM Gateway] Invoking module '{target_module}' ({payload_size_kb:.2f} KB)")
             
-            # 2. 실행 시간 측정 및 FFI 타격
+            # 2. Measure execution time and invoke FFI
             start_time = time.perf_counter()
             res_str = self.invoke_raw_ffi(json_str)
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             
-            # 3. 결과 파싱 및 로깅
+            # 3. Parse and log receipt
             receipt = json.loads(res_str)
             if receipt.get("success"):
-                log.info(f"✅ [WASM Gateway] '{target_module}' 모듈 실행 성공 (소요시간: {elapsed_ms:.2f} ms)")
+                log.info(f"✅ [WASM Gateway] Execution successful: '{target_module}' ({elapsed_ms:.2f} ms)")
             else:
-                log.warning(f"⚠️ [WASM Gateway] '{target_module}' 모듈 실행 실패 (Revert: {receipt.get('revert_reason')})")
+                log.warning(f"⚠️ [WASM Gateway] Execution reverted: '{target_module}' (Reason: {receipt.get('revert_reason')})")
                 
             return receipt
             

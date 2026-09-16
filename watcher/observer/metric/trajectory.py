@@ -1,9 +1,10 @@
-# xphi.watcher.plane.metric.trajectory
+# xphi.watcher.observer.metric.trajectory
+## @lineage: xphi.watcher.plane.metric.trajectory
 import datetime
 from typing import List, Dict, Any, Callable, Optional, Sequence
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
-from xphi.watcher.plane.metric.base import (
+from xphi.watcher.observer.metric.base import (
     trend_slope,
     acceleration,
     range_amplitude,
