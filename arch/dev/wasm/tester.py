@@ -7,7 +7,7 @@ from typing import Tuple, Dict, Type, Any
 
 from xphi.arch.dev.wasm.auditor import CanonicalProofAuditor
 
-from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.kernel.ops.task.supervisor import TaskSupervisor
 from xphi.kernel.ops.task.wasm import TaskWasm

@@ -9,7 +9,7 @@ from typing import Dict, Any, List, Optional, Callable, Tuple
 from xphi.arch.bound.event.psi import PsiEvent
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.arch.bound.mesh.transport import MeshP2PTransport
-from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
+from xphi.kernel.space.tunnel.factory import UniversalFacade
 
 from xphi.watcher.plane.emitter import get_emitter
 

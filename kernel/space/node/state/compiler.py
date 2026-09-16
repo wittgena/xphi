@@ -1,10 +1,11 @@
-# xphi.kernel.space.topos.node.state.compiler
+# xphi.kernel.space.node.state.compiler
+## @lineage: xphi.kernel.space.topos.node.state.compiler
 ## @lineage: kernel.space.topos.node.state.compiler
 import json
 from typing import List, Dict, Any
 
-from xphi.kernel.space.topos.node.state.vocab import NodeType, EdgeMode, SigType 
-from xphi.kernel.space.topos.node.state.schema import Fragment, FragmentSig, AgentAttributes, EdgeRelation
+from xphi.kernel.space.node.state.vocab import NodeType, EdgeMode, SigType 
+from xphi.kernel.space.node.state.schema import Fragment, FragmentSig, AgentAttributes, EdgeRelation
 
 from xphi.watcher.plane.emitter import get_emitter
 

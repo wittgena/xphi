@@ -9,7 +9,7 @@ import importlib
 from xphi.arch.bound.event.bus import TunnelEventBus
 from xphi.arch.bound.event.psi import PsiEvent
 
-from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher
 from xphi.state.phase.runtime.context import RuntimeContext
 from xphi.state.phase.runtime.sensor import SurfaceActuator

@@ -32,6 +32,7 @@ class ExecutionResult:
     output: Any | None = None
     error: ExecutionError | None = None
     metrics: Optional[dict] = None
+    edge_hash: Optional[str] = None
 
 @runtime_checkable
 class CodeInterpreter(Protocol):

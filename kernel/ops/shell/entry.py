@@ -12,7 +12,7 @@ from xphi.kernel.ops.shell.surge import MarketSurge, LedgerSurge, EcoSurge
 from xphi.kernel.ops.shell.inject import PhysicsInjector
 
 from xphi.arch.dev.wasm.builder import WasmBuilder
-from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
 from xphi.arch.bound.event.next import next_id
 from xphi.kernel.ops.daemon.bootstrap import KEY_HEARTBEAT_PATTERN, TOPIC_BUS_STREAM

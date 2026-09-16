@@ -19,7 +19,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 
-from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
+from xphi.kernel.space.tunnel.factory import UniversalFacade
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.gateway")

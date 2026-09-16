@@ -10,25 +10,17 @@ from dataclasses import replace
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
-# --- Architecture & Kernel Imports ---
 from xphi.arch.bound.event.next import LogEvent, next_phase_id, EventObserver
 from xphi.kernel.space.bind.resolver import resolve_path
 
-# --- Metric & Trajectory Imports ---
 from xphi.watcher.observer.metric.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
-
-# --- Surface Imports ---
 from xphi.watcher.plane.surface.tunnel import TunnelSurface
 from xphi.watcher.plane.surface.console import ConsoleSurface
 from xphi.watcher.plane.surface.file import TextFileSurface, JsonFileSurface
 
 log = logging.getLogger("plane.regulator")
 
-
-# =====================================================================
-# 1. Telemetry & Flow Meter Layer
-# =====================================================================
-
+"""Telemetry & Flow Meter Layer"""
 class PressureMeter:
     def __init__(self, window: float = 2.0):
         self.window = window
@@ -198,8 +190,10 @@ class PlaneRegulator:
         # 4. 폴딩 캐시 키 생성
         fold_key = telemetry_key if is_bursting else f"{telemetry_key}:{event.message}"
 
-        # 5. 우선순위 레벨 즉시 방출
-        if event.level in self.PRIORITY_LEVELS:
+        # 5. [개선] 우선순위 레벨 및 우회(RAW) 모드 즉시 방출
+        # - e2e 테스트 등 상위 흐름에서 주입된 RAW 모드는 압축 로직을 완벽히 건너뜁니다.
+        is_raw_mode = (event.context and event.context.get("mode") == "RAW")
+        if event.level in self.PRIORITY_LEVELS or is_raw_mode:
             self._notify(event)
             return
 
@@ -235,7 +229,6 @@ class PlaneRegulator:
             self.fold_cache[fold_key] = summary_event
             self._notify(summary_event)
         else:
-            # 정상 트래픽
             if fold_key in self.fold_cache:
                 folded_event = self.fold_cache.pop(fold_key)
                 if getattr(folded_event, "fold_count", 0) > 1:
@@ -260,11 +253,7 @@ class PlaneRegulator:
             if folded_event and getattr(folded_event, "fold_count", 0) > 1:
                 self._notify(folded_event)
 
-
-# =====================================================================
-# 3. Ecosystem Assembly & Deployment Region
-# =====================================================================
-
+"""3. Ecosystem Assembly & Deployment Region"""
 default_plane = PlaneRegulator(telemetry_engine=default_telemetry)
 console_surface = ConsoleSurface(
     mode="NORMAL", 

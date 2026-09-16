@@ -12,7 +12,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from xphi.arch.contract.discovery import discover_modules
-from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
+from xphi.kernel.space.tunnel.factory import UniversalFacade
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
 from xphi.arch.bound.event.next import next_id
 

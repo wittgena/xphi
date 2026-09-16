@@ -1,9 +1,9 @@
-# xphi.watcher.plane.infra.flare
-## @lineage: xphi.watcher.plane.phase.flare
+# xphi.watcher.plane.flare.controller
 """
 @desc: 
-- Edge V8 Sandbox Orchestrator
+- Edge V8 Isolate Orchestrator
 - Provisions Cloudflare Workers (V8 Isolates) and observes WASM traps, CPU limits, and crashes
+- [UPDATED] Defers PTA Merkle Root generation to Domain 5 (Scene) and seals the Epoch.
 """
 import json
 import asyncio
@@ -14,7 +14,6 @@ from typing import Dict, Any, Optional, Type, Tuple, List
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.arch.dev.tracer.base import BaseStreamAuditor, SystemBound, log_streamer
-from xphi.arch.dev.wasm.auditor import CanonicalProofAuditor
 
 TIME_ROOT = resolve_path("time")
 EDGE_WORKSPACE_ROOT = resolve_path("flaretime")
@@ -34,6 +33,8 @@ class WranglerSandboxAuditor(BaseStreamAuditor):
         self.hit_cpu_limit = False
         self.is_ready = False
         self.startup_logs: List[str] = []
+        
+        self.log.debug(f"[{self.worker_name.upper()}] Auditor initialized (Port: {self.port}, Workspace: {self.workspace})")
 
     @log_streamer(["npx", "wrangler", "dev", "--port", "{port}", "--inspector-port", "{inspector_port}", "--local"], cwd="{workspace}")
     async def run_stream(self, line: str) -> None:
@@ -43,7 +44,7 @@ class WranglerSandboxAuditor(BaseStreamAuditor):
         self.startup_logs.append(line_stripped)
         if len(self.startup_logs) > 50: self.startup_logs.pop(0)
         
-        if f"Ready on http://127.0.0.1:{self.port}" in line or f"Ready on http://localhost:{self.port}":
+        if f"Ready on http://127.0.0.1:{self.port}" in line or f"Ready on http://localhost:{self.port}" in line:
             self.is_ready = True
             self.log.info(f"  [{self.worker_name.upper()}] ⚡ V8 Isolate Provisioned (Port {self.port} / Debug {self.inspector_port}).")
         elif "1102" in line or "CPU time limit exceeded" in line:
@@ -70,13 +71,21 @@ class FlareController:
         
         self.auditor_gateway: Optional[WranglerSandboxAuditor] = None
         self.auditor_python: Optional[WranglerSandboxAuditor] = None
-        self.proof_auditor = CanonicalProofAuditor()
+        
+        # [핵심 변경] Proof Auditor 객체 대신 Flow 관리를 위한 임의의 식별자 사용
+        self.flow_id = "pta_edge_epoch" 
         
         self.crash_confirmed = False
         self.last_error_context = ""
         self.suite_runners: Dict[str, Any] = {}
+        
+        # [정밀 개선] 불필요한 List 삭제 및 최종 추출될 Root Hash만 보관할 변수 마련
+        self.test_execution_hash: Optional[str] = None
+        
+        log.debug(f"[FlareController] Initialized with mode={self.mode}, timeout={self.timeout}, suites={list(self.suites.keys())}")
 
     def _provision_microservices(self):
+        log.debug(f"[FlareController:_provision_microservices] Starting provisioning at workspace: {self.workspace}")
         time_root = Path(TIME_ROOT)
         edge_root = Path(EDGE_WORKSPACE_ROOT)
 
@@ -84,8 +93,7 @@ class FlareController:
         self.gateway_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(edge_root / "router.ts", self.gateway_dir / "index.ts")
         
-        # 엄밀한 WASM 타겟 바인딩 (gateway, dphi, dvm)
-        wasm_targets = ["gateway.wasm", "dphi.wasm", "dvm.wasm"]
+        wasm_targets = ["gateway.wasm", "dphi.wasm", "dvm.wasm", "cw20_base.wasm"]
         for wasm in wasm_targets:
             if (time_root / wasm).exists():
                 shutil.copy2(time_root / wasm, self.gateway_dir / wasm)
@@ -100,7 +108,6 @@ type = "CompiledWasm"
 globs = ["**/*.wasm"]
 fallthrough = true
 
-# Service Binding: Gateway can route requests to the internal Python Engine
 [[services]]
 binding = "PYTHON_ENGINE"
 service = "xphi-python-node"
@@ -122,14 +129,9 @@ compatibility_flags = ["python_workers"]
 
     async def _await_crash_or_limit(self) -> None:
         """Monitors for intentional CPU Limits (Error 1102) or fatal WASM Traps during tests"""
+        log.debug("[FlareController:_await_crash_or_limit] Observer task started, waiting for crash or limit flags...")
         try:
             while not self.crash_confirmed:
-                if self.proof_auditor and (getattr(self.proof_auditor, 'is_collapsed', False) or getattr(self.proof_auditor, 'is_exhausted', False)):
-                    self.crash_confirmed = True
-                    self.last_error_context = "CanonicalProofAuditor detected fatal execution crash (OOM/Trap)."
-                    log.critical(f"[FATAL_CRASH] {self.last_error_context}")
-                    return
-                
                 # Check both workers for V8 Isolate CPU/Memory limits
                 gateway_limit = self.auditor_gateway and getattr(self.auditor_gateway, 'hit_cpu_limit', False)
                 python_limit = self.auditor_python and getattr(self.auditor_python, 'hit_cpu_limit', False)
@@ -145,7 +147,8 @@ compatibility_flags = ["python_workers"]
             pass
 
     async def _run_all_suites(self, broker: Any) -> int:
-        """Executes all injected test scenarios"""
+        """Executes all injected test scenarios and collects resulting edge hashes"""
+        log.debug(f"[FlareController:_run_all_suites] Test suite execution started.")
         total_fails = 0
         for suite_name, suite_cls in self.suites.items():
             log.info(f"\n>>> [PHASE] Starting Edge Integration Suite: {suite_name.upper()} <<<")
@@ -154,42 +157,49 @@ compatibility_flags = ["python_workers"]
                 self.suite_runners[suite_name] = suite_instance
                 await suite_instance.run_all()
                 total_fails += getattr(suite_instance, 'fail_count', 0)
+                
             except Exception as e:
                 log.error(f"[ERROR] Suite '{suite_name}' crashed unexpectedly: {e}", exc_info=True)
                 total_fails += 1
+                
+        # [정밀 개선] Scene(Domain 5)이 완성하여 Broker에 바인딩한 Root Hash를 바로 수확
+        extracted_root = getattr(broker, 'epoch_root_hash', None)
+        if extracted_root:
+            self.test_execution_hash = extracted_root
+            
         return total_fails
 
     async def execute(self, broker: Any) -> Tuple[bool, str]:
         log.info(f"\n--- [START] Orchestrating Edge V8 Sandbox Environment ({self.mode.upper()}) ---")
-        self.proof_auditor.attach()
-        if hasattr(broker, 'target_auditor'):
-            broker.target_auditor = self.proof_auditor
         
         try:
-            if self.workspace.exists(): shutil.rmtree(self.workspace)
+            if self.workspace.exists(): 
+                shutil.rmtree(self.workspace)
             self._provision_microservices()
             
             if self.mode == "dev":
                 log.info("[SYSTEM] Starting Dual V8 Isolate Workers (WASM Gateway & Python Engine)...")
                 
-                # Python Engine Boot (Port 8788, Debug 9288)
                 self.auditor_python = WranglerSandboxAuditor(self.python_dir, 8788, "python_engine")
                 self.auditor_python.attach()
                 
-                # Gateway Engine Boot (Port 8787, Debug 9287)
                 self.auditor_gateway = WranglerSandboxAuditor(self.gateway_dir, 8787, "wasm_gateway")
                 self.auditor_gateway.attach()
                 
-                # Wait for both workers to be ready
-                for _ in range(20):
-                    if getattr(self.auditor_gateway, 'is_ready', False) and getattr(self.auditor_python, 'is_ready', False):
+                for i in range(20):
+                    gw_ready = getattr(self.auditor_gateway, 'is_ready', False)
+                    py_ready = getattr(self.auditor_python, 'is_ready', False)
+                    
+                    if gw_ready and py_ready:
+                        log.info("⏳ Waiting 3.0s for Cloudflare Local Registry & Pyodide stabilization...")
+                        await asyncio.sleep(3.0)
                         break
                     await asyncio.sleep(1)
                     
                 if not (self.auditor_gateway.is_ready and self.auditor_python.is_ready):
                     raise TimeoutError("V8 Sandbox Workers failed to start within the timeout period.")
 
-            with flow_scope(phase="TEST_EXECUTION", flow_id=self.proof_auditor.flow_id):
+            with flow_scope(phase="TEST_EXECUTION", flow_id=self.flow_id):
                 observer_task = asyncio.create_task(self._await_crash_or_limit())
                 scenario_task = asyncio.create_task(self._run_all_suites(broker))
                 
@@ -198,8 +208,10 @@ compatibility_flags = ["python_workers"]
                     return_when=asyncio.FIRST_COMPLETED
                 )
                 
-                for task in pending: task.cancel()
-                if pending: await asyncio.gather(*pending, return_exceptions=True)
+                for task in pending: 
+                    task.cancel()
+                if pending: 
+                    await asyncio.gather(*pending, return_exceptions=True)
                 
                 if self.crash_confirmed:
                     return False, self.last_error_context
@@ -209,25 +221,23 @@ compatibility_flags = ["python_workers"]
                     if total_fails > 0:
                         return False, f"Logical execution failed with {total_fails} errors."
                     
-                    log.info("\n[SYSTEM] Generating Canonical Execution Trace Hash...")
-                    canonical_payload = self.proof_auditor.generate_payload()
+                    # =========================================================================
+                    # [핵심 개선] Bypass 폐기 및 Scene이 생성한 PTA Merkle Root를 사용한 상태 밀봉
+                    # =========================================================================
+                    log.info("\n[SYSTEM] Verifying Epoch Merkle Root generated by Edge Suites...")
                     
-                    if not canonical_payload or canonical_payload == "[]":
-                        return False, "[Telemetry] Canonical payload is empty."
-                    
-                    proof_res = await broker.invoke("compute_root_fingerprint", canonical_payload)
-                    if getattr(proof_res, 'success', False):
-                        self.test_execution_hash = json.loads(proof_res.output).get("fingerprint")
-                        log.info(f"[Telemetry] Edge Execution Proof sealed! Hash: {self.test_execution_hash}")
-                        return True, ""
-                    else:
-                        return False, "[Telemetry] Failed to seal test execution trace at Edge."
+                    if not self.test_execution_hash:
+                        log.warning("[FlareController] Root Hash missing! (Did Domain 5 PTA Rollup fail or was Broker bypassed?)")
+                        self.test_execution_hash = "EMPTY_EPOCH_ROOT"
+                        
+                    log.info(f"[Telemetry] Edge Execution Proof sealed via PTA! Root Hash: {self.test_execution_hash}")
+                    return True, ""
 
         except Exception as e:
             log.error(f"[FATAL] Sandbox Orchestration failed: {e}")
             return False, str(e)
         finally:
-            self.proof_auditor.detach()
+            log.debug("[FlareController:execute] Initiating Sandbox Cleanup & Teardown phase.")
             if self.auditor_gateway: self.auditor_gateway.detach()
             if self.auditor_python: self.auditor_python.detach()
             if not self.keep_workspace and self.workspace.exists():

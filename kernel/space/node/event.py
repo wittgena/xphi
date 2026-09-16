@@ -1,4 +1,5 @@
-# xphi.kernel.space.topos.node.event
+# xphi.kernel.space.node.event
+## @lineage: xphi.kernel.space.topos.node.event
 ## @lineage: kernel.space.topos.node.event
 ## @lineage: arch.topos.node.event
 ## @lineage: arch.topos.flow.event
@@ -6,7 +7,7 @@
 ## @lineage: watcher.xe.scope.event
 ## @lineage: topos.scope.flow.event
 from typing import Any, Optional
-from xphi.kernel.space.topos.node.gan import Message
+from xphi.kernel.space.node.gan import Message
 
 class AgentConfigured(Message):
     def __init__(self, settings=None, is_proxy: bool = False):

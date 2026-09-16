@@ -9,7 +9,7 @@ from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
 from rocksdict import Rdict, Options, AccessType
 
-from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.kernel.space.bind.resolver import resolve_path
 
 from xphi.kernel.wasm.broker import DphiBroker  

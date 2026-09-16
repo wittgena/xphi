@@ -1,11 +1,12 @@
-# xphi.kernel.space.topos.node.state.schema
+# xphi.kernel.space.node.state.schema
+## @lineage: xphi.kernel.space.topos.node.state.schema
 ## @lineage: kernel.space.topos.node.state.schema
 ## @lineage: arch.topos.node.state.schema
 ## @lineage: arch.gov.state.schema
 ## @lineage: ops.tester.state.schema
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
-from xphi.kernel.space.topos.node.state.vocab import NodeType, EdgeMode
+from xphi.kernel.space.node.state.vocab import NodeType, EdgeMode
 
 @dataclass
 class AgentAttributes:

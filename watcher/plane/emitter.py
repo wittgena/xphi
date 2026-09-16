@@ -1,5 +1,4 @@
 # xphi.watcher.plane.emitter
-## @lineage: watcher.plane.emitter
 """@flow: Context -> Event -> Control -> Projection"""
 import logging
 import os
@@ -15,11 +14,7 @@ from xphi.watcher.plane.regulator import default_plane
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})
 _event_interceptors: List[Callable[[LogEvent], None]] = []
 
-# =========================================================================
-# 🎚️ Log Level & State Management
-# =========================================================================
 _GLOBAL_MIN_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
-
 _LEVEL_WEIGHTS = {
     "TRACE": 10,
     "DEBUG": 20,
@@ -33,14 +28,9 @@ _LEVEL_WEIGHTS = {
 }
 
 def set_log_level(level: str):
-    """
-    동적으로 시스템 전체의 SurfaceEmitter 및 Native Logger의 로그 출력 임계치를 조정합니다.
-    (벤치마크나 런타임 디버깅 시 코어 로그를 일시적으로 억제하거나 활성화하는 데 사용)
-    """
     global _GLOBAL_MIN_LEVEL
     _GLOBAL_MIN_LEVEL = level.upper()
     
-    # Native Python Logging Root Logger 호환성 동기화
     native_level = getattr(logging, _GLOBAL_MIN_LEVEL, logging.INFO)
     logging.getLogger().setLevel(native_level)
 
@@ -59,10 +49,6 @@ def flow_scope(auto_flush=False, **kwargs):
             default_plane.flush()
         _flow_context.reset(token)
 
-
-# =========================================================================
-# 📡 Surface Event Emitter
-# =========================================================================
 class SurfaceEmitter:
     def __init__(
         self, 
@@ -91,8 +77,6 @@ class SurfaceEmitter:
         return str(msg)
 
     def _log(self, level: str, msg: str, *args, **kwargs):
-        # [Early Return 최적화] 
-        # 설정된 전역 레벨보다 낮으면 무거운 Context 추출, ID 생성, 문자열 포맷팅을 모두 생략함
         current_weight = _LEVEL_WEIGHTS.get(level.upper(), 30)
         min_weight = _LEVEL_WEIGHTS.get(_GLOBAL_MIN_LEVEL, 30)
         if current_weight < min_weight:
@@ -105,7 +89,7 @@ class SurfaceEmitter:
         if exc_info:
             formatted_msg += "\n" + traceback.format_exc()
         
-        # [flow_id 제어] 컨텍스트에 flow_id가 없다면 단독 루트 스팬으로 간주하여 자동 부여
+        ## [flow_id 제어] 컨텍스트에 flow_id가 없다면 단독 루트 스팬으로 간주하여 자동 부여
         flow_id = ctx.get("flow_id")
         if not flow_id:
             flow_id = next_id()
@@ -114,6 +98,7 @@ class SurfaceEmitter:
             "flow_id": flow_id,
             "phase": self.phase or ctx.get("phase"),
             "bound": self.bound or ctx.get("bound"),
+            "mode": self.mode if self.mode != "NORMAL" else ctx.get("mode", "NORMAL"),
             **ctx.get("extra", {}),
             **kwargs
         }
@@ -158,9 +143,7 @@ def get_emitter(name: str, phase: Optional[str] = None, boundary: Optional[str] 
     return SurfaceEmitter(name, phase, boundary, mode=mode)
 
 
-# =========================================================================
-# 🔌 @legacy.compat: Native Python logging fallback setup
-# =========================================================================
+"""@legacy.compat: Native Python logging fallback setup"""
 DEBUG = True
 
 class SurfacePlaneHandler(logging.Handler):
@@ -179,8 +162,6 @@ class SurfacePlaneHandler(logging.Handler):
                 logging.NOTSET: "TRACE"
             }
             mapped_level = level_map.get(record.levelno, "INFO")
-            
-            # 여기서도 전역 레벨 필터링을 한 번 더 수행하여 불필요한 포맷팅 방지
             current_weight = _LEVEL_WEIGHTS.get(mapped_level, 30)
             min_weight = _LEVEL_WEIGHTS.get(_GLOBAL_MIN_LEVEL, 30)
             if current_weight < min_weight:
@@ -195,7 +176,7 @@ class SurfacePlaneHandler(logging.Handler):
                 source_id=record.name,
                 message=formatted_msg,
                 level=mapped_level,
-                context={"phase": "LEGACY"},
+                context={"phase": "LEGACY", "mode": current_mode},
                 parent_id=None
             )
             default_plane.handle(event)
@@ -208,7 +189,6 @@ def _create_logger(name: str) -> logging.Logger:
     if logger.handlers:
         return logger
         
-    # 변경됨: _LEVEL 대신 _GLOBAL_MIN_LEVEL을 동적으로 참조하여 호환성 강화
     level_num = getattr(logging, _GLOBAL_MIN_LEVEL, logging.INFO)
     logger.setLevel(level_num)
     handler = SurfacePlaneHandler()

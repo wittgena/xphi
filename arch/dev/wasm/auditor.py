@@ -1,5 +1,4 @@
 # xphi.arch.dev.wasm.auditor
-## @lineage: xphi.arch.wasm.auditor
 import asyncio
 import struct
 import json
@@ -78,19 +77,12 @@ class WasmFuelAuditor(BaseStreamAuditor):
 
 
 class CanonicalProofAuditor(BaseStreamAuditor):
-    """
-    @desc: [Cryptographic Axis] Meta-Boundary(Tracer/Tester)로부터 직접 상태를 투영받아
-           결정론적 상태 전이(Canonical Log)를 추출하고 연산 증명(Proof)을 생성합니다.
-           (실행계의 로깅에 의존하는 자기 참조 모순을 제거한 순수 관측기)
-    """
     def __init__(self, boundary: Union[BaseBoundary, Any] = None):
         super().__init__(target="canonical_proof", boundary=boundary, delay=0)
         self.log = get_emitter("auditor.canonical_proof", phase="agent")
         
         self.flow_id = next_id()
         self.canonical_records: List[Dict[str, Any]] = []
-        
-        # WasmTester 생명주기에 맞추기 위한 상태 플래그
         self.is_collapsed = False
         self.is_exhausted = False
 
@@ -107,7 +99,6 @@ class CanonicalProofAuditor(BaseStreamAuditor):
                 "mem_usage": metrics.get("mem_usage_bytes"),
                 "mem_peak": metrics.get("mem_peak_bytes")
             }
-            # None 값 필터링 (결정론적 해싱을 위해 스키마를 정규화)
             clean_record = {k: v for k, v in record.items() if v is not None}
             self.canonical_records.append(clean_record)
 
