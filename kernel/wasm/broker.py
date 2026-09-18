@@ -1,5 +1,4 @@
 # xphi.kernel.wasm.broker
-## @lineage: xphi.kernel.dphi.broker
 import time
 import json
 import uuid
@@ -8,7 +7,7 @@ from enum import Enum
 from typing import Optional, Any, Mapping, Union, Dict
 from contextlib import suppress
 
-from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.arch.contract.interpreter import ExecutionResult, ExecutionError
 from xphi.kernel.wasm.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter, _flow_context
@@ -68,7 +67,6 @@ class DphiBroker:
             self._listener_task = asyncio.create_task(self._listen_responses())
 
     async def _listen_responses(self):
-        # [FIX] 동적 팩토리 참조 적용
         self._listener_client = await self.tunnel_factory.get_isolated()
         pubsub = self._listener_client.pubsub()
         await pubsub.subscribe(self.response_channel)
@@ -129,17 +127,19 @@ class DphiBroker:
                 result_data = await future
                 
             metrics = result_data.get(ResultKey.METRICS, {})
+            edge_hash = result_data.get("edge_canonical_hash") or result_data.get("edge_hash")
             if metrics and self.target_auditor and hasattr(self.target_auditor, "project_state"):
                 self.target_auditor.project_state(action=method_name, metrics=metrics)
             
             if result_data.get(ResultKey.SUCCESS):
-                return ExecutionResult(success=True, output=result_data.get(ResultKey.OUTPUT, ""), metrics=metrics)
+                return ExecutionResult(success=True, output=result_data.get(ResultKey.OUTPUT, ""), metrics=metrics, edge_hash=edge_hash)
             else:
                 return ExecutionResult(
                     success=False, 
                     output=result_data.get(ResultKey.OUTPUT, ""),
                     error=ExecutionError(result_data.get(ResultKey.ERROR, "Unknown Execution Error")),
-                    metrics=metrics
+                    metrics=metrics,
+                    edge_hash=edge_hash
                 )
         except asyncio.TimeoutError:
             timeout_msg = f"Remote execution timeout ({active_timeout}s)"

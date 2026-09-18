@@ -17,7 +17,7 @@ from xphi.state.phase.runtime.node import NodeRuntime
 from xphi.state.anchor.consensus import KernelLedger
 from xphi.state.anchor.gateway import GatewayPolicy 
 
-from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.kernel.wasm.broker import DphiBroker
 
 from xphi.arch.bound.event.next import EventObserver

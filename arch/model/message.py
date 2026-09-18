@@ -91,7 +91,7 @@ class ImageContent(BaseContent):
             images[-1]["cache_control"] = {"type": "ephemeral"}
         return images
 
-class Message(BaseModel):
+class BaseMessage(BaseModel):
     role: Literal["user", "system", "assistant", "tool", "environment", "watcher"]
     content: Sequence[TextContent | ImageContent] = Field(default_factory=list)
     tool_calls: list[MessageToolCall] | None = None

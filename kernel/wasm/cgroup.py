@@ -49,7 +49,6 @@ class CgroupPolicy:
 class WasmCgroup:
     """@desc: In-process resource controller (Data Plane) for a Wasm instance"""
     def __init__(self, cgroup_name: str, policy: CgroupPolicy = None):
-        # [개선] WasmCgroup 인스턴스화 시점에만 wasmtime 존재 여부 검증
         if wasmtime is None:
             raise ImportError("The 'wasmtime' module is required to use WasmCgroup.")
             

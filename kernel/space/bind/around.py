@@ -45,6 +45,7 @@ DEFAULT_BOUND_SKELETON = {
         "sign": ":anchor:/sign",
         "log": ":io:/log",
         "ailog": ":io:/ailog",
+        "fixture": ":io:/log/fixture",
         "sandbox": ":workspace:",
         "origin": ":kernel:/space/bind/origin",
         "time": ":kernel:/space/time",

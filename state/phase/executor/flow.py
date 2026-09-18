@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
-from xphi.kernel.space.topos.tunnel.factory import TunnelFactory
+from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.state.phase.executor.base import BaseExecutor
 from xphi.arch.contract.registry.unified import registry
 from xphi.arch.bound.event.next import next_id

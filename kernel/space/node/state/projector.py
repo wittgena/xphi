@@ -1,11 +1,12 @@
-# xphi.kernel.space.topos.node.state.projector
+# xphi.kernel.space.node.state.projector
+## @lineage: xphi.kernel.space.topos.node.state.projector
 ## @lineage: kernel.space.topos.node.state.projector
 ## @lineage: arch.topos.node.state.projector
 ## @lineage: arch.gov.state.projector
 ## @lineage: ops.tester.state.projector
 from typing import Dict, Any, Optional
-from xphi.kernel.space.topos.node.state.vocab import NodeType, SigType, EdgeMode, SpecKey, DEFAULT_TYPE_MAP
-from xphi.kernel.space.topos.node.state.schema import Fragment, FragmentSig, AgentAttributes
+from xphi.kernel.space.node.state.vocab import NodeType, SigType, EdgeMode, SpecKey, DEFAULT_TYPE_MAP
+from xphi.kernel.space.node.state.schema import Fragment, FragmentSig, AgentAttributes
 
 from xphi.watcher.plane.emitter import get_emitter
 

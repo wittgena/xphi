@@ -1,4 +1,5 @@
-# xphi.kernel.space.topos.tunnel.factory
+# xphi.kernel.space.tunnel.factory
+## @lineage: xphi.kernel.space.topos.tunnel.factory
 import logging
 import asyncio
 from typing import Optional, Any, List, Tuple
@@ -9,7 +10,7 @@ import redis.exceptions
 from redis.asyncio.connection import BlockingConnectionPool as AsyncBlockingConnectionPool
 from redis.connection import BlockingConnectionPool as SyncBlockingConnectionPool
 
-from xphi.kernel.space.topos.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
+from xphi.kernel.space.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
 
 log = logging.getLogger("tunnel.factory")
 
@@ -187,7 +188,6 @@ class TunnelFactory:
             config = resolve_default_config()
             scheme, state_url, mq_url = parse_connection_urls(config.default_url)
             
-            # [FIX] 안전한 추출 로직
             mq_url = kwargs.pop("mq_url", mq_url)
             state_url = kwargs.pop("state_url", state_url)
             scheme = kwargs.pop("mq_protocol", scheme)

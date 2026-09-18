@@ -1,6 +1,4 @@
 # xphi.arch.dev.tracer.scope
-## @lineage: xphi.watcher.tracer.scope
-## @lineage: watcher.tracer.scope
 import contextvars
 import time
 import uuid

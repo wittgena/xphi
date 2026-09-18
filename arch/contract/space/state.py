@@ -1,6 +1,5 @@
-# xphi.kernel.space.contract
-## @lineage: xphi.bound.space.contract
-## @lineage: xphi.xor.space.contract
+# xphi.arch.contract.space.state
+## @lineage: xphi.kernel.space.contract
 from enum import Enum
 from typing import Optional, Dict, Any
 from typing_extensions import Annotated

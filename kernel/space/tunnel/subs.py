@@ -1,4 +1,5 @@
-# xphi.kernel.space.topos.tunnel.subs
+# xphi.kernel.space.tunnel.subs
+## @lineage: xphi.kernel.space.topos.tunnel.subs
 ## @lineage: kernel.space.topos.tunnel.subs
 ## @lineage: arch.topos.tunnel.subs
 import asyncio
@@ -11,7 +12,7 @@ from pydantic import ConfigDict, BaseModel
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 
 from xphi.arch.bound.event.next import next_id
-from xphi.kernel.space.topos.tunnel.factory import UniversalFacade 
+from xphi.kernel.space.tunnel.factory import UniversalFacade 
 from xphi.watcher.plane.emitter import get_emitter
 
 logger = get_emitter(__name__)

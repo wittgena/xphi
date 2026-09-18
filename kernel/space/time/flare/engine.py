@@ -9,11 +9,11 @@ import hashlib
 import random
 import traceback
 
-# =====================================================================
-# [보안 1] 호스트 환경 변수 완전 격리 (Environment Leakage 원천 차단)
-# =====================================================================
+print("[PythonEngine] 🚀 Pyodide Environment Initialized (Cold Boot Finished).")
+
+"""Strict Host Environment Isolation (Prevent Env Leakage)"""
 class RestrictedEnviron:
-    """os.environ 접근 시도 자체를 Exception으로 차단하여 샌드박스 격리(Isolation) 강제"""
+    """Block os.environ access with Exception to enforce sandbox isolation."""
     def __getitem__(self, key): raise PermissionError("Isolated")
     def __setitem__(self, key, value): raise PermissionError("Isolated")
     def __delitem__(self, key): raise PermissionError("Isolated")
@@ -24,13 +24,13 @@ class RestrictedEnviron:
     def values(self): raise PermissionError("Isolated")
     def items(self): raise PermissionError("Isolated")
     def update(self, *args, **kwargs): raise PermissionError("Isolated")
-    def clear(self): pass # 내부 프레임워크 호출 허용
+    def clear(self): pass # Allow internal framework calls
     def __getattr__(self, name): raise PermissionError("Isolated")
 
 os.environ = RestrictedEnviron()
 
 # =====================================================================
-# [보안 2] 가상 시간 & 결정론적 난수 모의 (Spectre 방어 및 PRNG 멱등성)
+# [Security 2] Virtual Time & Deterministic PRNG (Anti-Spectre & Idempotency)
 # =====================================================================
 _virtual_context = {
     "time": 0.0,
@@ -47,7 +47,7 @@ def _mock_perf():
     return _virtual_context["perf_time"]
 
 def _mock_sleep(secs):
-    # 실제 블로킹(Thread Sleep)을 방지하고 가상 시간만 전진시킴
+    # Prevent actual thread blocking; only advance virtual time
     _virtual_context["time"] += secs
     _virtual_context["perf_time"] += secs
 
@@ -67,11 +67,11 @@ def _mock_urandom(size):
 os.urandom = _mock_urandom
 
 def _apply_execution_context(ts, seed_string):
-    """매 요청(Request)마다 V8 Isolate의 글로벌 상태를 완벽히 초기화 (Determinism 보장)"""
+    """Completely reset V8 Isolate global state per request (Enforce Determinism)."""
     _virtual_context["time"] = float(ts) if ts is not None else 0.0
     _virtual_context["perf_time"] = 0.0
     
-    # 시드가 없더라도 기본 시드를 강제하여 두 번 실행해도 100% 동일한 난수가 나오게 함 (PRNG Idempotency)
+    # Force a fallback seed to guarantee PRNG idempotency even without input
     actual_seed = seed_string.encode('utf-8') if seed_string else b"dphi_secure_fallback_seed"
     _virtual_context["base_seed"] = actual_seed
     _virtual_context["seed_counter"] = 0
@@ -87,48 +87,83 @@ async def on_fetch(request, env):
         req_text = await request.text()
         input_data = json.loads(req_text)
         params = input_data.get("params", {})
-        request_id = input_data.get("id", None)
+        request_id = input_data.get("id", "unknown")
+        
+        # [LOG ADDED] Captures the exact moment the Python engine starts processing the request
+        print(f"[PythonEngine] 📥 Received Request ID: {request_id}")
         
         context = params.get("context", {})
         ts = context.get("timestamp", None)
         seed = context.get("seed", None)
         
-        # [방어기제] 실행 컨텍스트 초기화 (시간, 난수 시드 강제 리셋)
+        # [Defense] Initialize execution context (Time & PRNG seed reset)
         _apply_execution_context(ts, json.dumps(seed) if seed else None)
         
-        # [방어기제] Warm Start 상태 출혈 방지 (이전 요청의 sys 속성 찌꺼기 완벽 제거)
+        # [Defense] Prevent Warm-Start bleeding (Clear sys attributes from prior runs)
         if hasattr(sys, 'FLARE_BLEED_TEST'):
             delattr(sys, 'FLARE_BLEED_TEST')
             
         old_stdout, old_stderr = sys.stdout, sys.stderr
         buf_stdout, buf_stderr = io.StringIO(), io.StringIO()
+        
+        # Hijack standard streams
         sys.stdout, sys.stderr = buf_stdout, buf_stderr
         
         code = params.get("code", "")
         variables = params.get("variables", {})
         
-        # 전역/지역 네임스페이스 분리 및 외부 변수 주입
+        # Separate global/local namespaces and inject external variables
         global_env = dict(variables)
         local_env = {}
         
+        # [METRICS] 시작 가상 시간 측정
+        start_perf = _virtual_context["perf_time"]
+        
         try:
-            # 컴파일 먼저 수행하여 Syntax 에러 분리
-            compiled_code = compile(code, "<string>", "exec")
+            # Compile first to isolate SyntaxErrors
+            print(f"[PythonEngine] ⚙️ Compiling & Executing payload for ID: {request_id}...", file=old_stdout) # [LOG ADDED]
+            compiled_code = compile(code, "", "exec")
             exec(compiled_code, global_env, local_env)
             output = buf_stdout.getvalue()
             
+            # [METRICS] 종료 가상 시간 및 환경 메모리 사이즈 측정 (Fuel 환산)
+            end_perf = _virtual_context["perf_time"]
+            fuel_consumed = int((end_perf - start_perf) * 1_000_000) # 마이크로초 기반 정수 Fuel
+            mem_usage = sys.getsizeof(local_env)
+            
+            print(f"[PythonEngine] ✅ Execution successful. Formatting Response...", file=old_stdout) # [LOG ADDED]
+            
             headers = Headers.new({"Content-Type": "application/json"}.items())
             return Response.new(
-                json.dumps({"jsonrpc": "2.0", "result": {"output": output}, "id": request_id}),
+                json.dumps({
+                    "jsonrpc": "2.0", 
+                    "result": {
+                        "output": output,
+                        # [ADDED] router.ts가 Canonical Hash 생성을 위해 읽어들일 메트릭 데이터
+                        "metrics": {
+                            "fuel_consumed": fuel_consumed,
+                            "mem_usage_bytes": mem_usage,
+                            "tier": "EDGE_PYTHON"
+                        }
+                    }, 
+                    "id": request_id
+                }),
                 headers=headers
             )
             
         except BaseException as e:
-            # Native 예외 규격 표준화 (JSON-RPC 엄격 준수)
+            # [METRICS] 에러 발생 시점의 가상 시간 및 환경 메모리 사이즈 측정
+            end_perf = _virtual_context["perf_time"]
+            fuel_consumed = int((end_perf - start_perf) * 1_000_000)
+            mem_usage = sys.getsizeof(local_env)
+
+            # Standardize native exceptions (Strict JSON-RPC compliance)
             error_output = buf_stdout.getvalue()
             error_type = type(e).__name__
             
-            # 파이썬 로컬 환경과 완벽히 동일한 에러 문자열 생성 (예: "PermissionError: Isolated")
+            print(f"[PythonEngine] ⚠️ Execution Fault Caught: {error_type} | Formatting Error Response...", file=old_stdout) # [LOG ADDED]
+            
+            # Replicate local Python error string formats exactly
             formatted_error_msg = f"{error_type}: {str(e)}"
             
             headers = Headers.new({"Content-Type": "application/json"}.items())
@@ -140,7 +175,13 @@ async def on_fetch(request, env):
                         "data": {
                             "type": error_type,
                             "stdout": error_output,
-                            "traceback": traceback.format_exc()
+                            "traceback": traceback.format_exc(),
+                            # [ADDED] 실패 트랜잭션도 해싱할 수 있도록 메트릭 주입
+                            "metrics": {
+                                "fuel_consumed": fuel_consumed,
+                                "mem_usage_bytes": mem_usage,
+                                "tier": "EDGE_PYTHON"
+                            }
                         }
                     },
                     "id": request_id
@@ -149,8 +190,11 @@ async def on_fetch(request, env):
             )
             
         finally:
+            # Restore standard streams
             sys.stdout, sys.stderr = old_stdout, old_stderr
+            print(f"[PythonEngine] 🏁 Request ID: {request_id} execution phase finalized.") # [LOG ADDED]
             
     except Exception as e:
-        # JSON 파싱 등 프레임워크 레벨 예외 처리
+        # Handle framework-level exceptions (e.g., JSON parsing)
+        print(f"[PythonEngine] 🚨 Framework Internal Error: {str(e)}") # [LOG ADDED]
         return Response.new(json.dumps({"error": str(e)}), status=400)

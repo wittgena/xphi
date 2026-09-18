@@ -8,7 +8,7 @@ from typing import Optional, Callable, Awaitable, List, Tuple
 from contextlib import suppress
 from types import SimpleNamespace
 
-from xphi.kernel.space.topos.tunnel.factory import UniversalFacade
+from xphi.kernel.space.tunnel.factory import UniversalFacade
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
 from xphi.arch.bound.event.bus import AsyncEventBus
 from xphi.arch.bound.event.next import next_id

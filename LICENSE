@@ -1,5 +1,5 @@
 Portions of this software are licensed as follows:
-* This software incorporates portions of OpenHands, DSPy, and LiteLLM.
+* This software incorporates portions of OpenHands, DSPy, LLamaIndex and LiteLLM.
 * These components are available under the MIT license as defined below.
 
 ==============================================================================
@@ -8,6 +8,7 @@ The MIT License (MIT)
 
 Copyright (c) 2024-2026 OpenHands Contributors
 Copyright (c) 2023-2026 Stanford NLP Group (DSPy Authors)
+Copyright (c) 2022-2026 Jerry Liu / LlamaIndex
 Copyright (c) 2023-2026 BerriAI (LiteLLM Authors)
 
 Permission is hereby granted, free of charge, to any person

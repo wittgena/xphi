@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 
 from xphi.arch.contract.interpreter import NodeInterpreter, AnchorFlow
-from xphi.kernel.space.topos.tunnel.factory import UniversalFacade, TunnelFactory
+from xphi.kernel.space.tunnel.factory import UniversalFacade, TunnelFactory
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier
 from xphi.arch.bound.event.bus import TunnelEventBus
 from xphi.arch.bound.event.next import next_id
