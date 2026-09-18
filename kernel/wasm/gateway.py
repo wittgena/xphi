@@ -131,6 +131,16 @@ class GatewayWasm:
         }
         return self._safe_invoke(req_payload)
 
+    # 💡 새로 추가된 Flow Transition (Epoch) FSM 라우터
+    def execute_flow_transition_fsm(self, fsm_state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
+        """Routes and evaluates the Flow Transition (Topology/Dominium) FSM state."""
+        req_payload = {
+            "target_module": "flow_transition_fsm",
+            "fsm_state": fsm_state,
+            "event": event
+        }
+        return self._safe_invoke(req_payload)
+
     def _safe_invoke(self, payload_dict: Dict[str, Any]) -> Dict[str, Any]:
         try:
             # 1. Serialize payload and measure size
@@ -153,7 +163,6 @@ class GatewayWasm:
                 log.warning(f"⚠️ [WASM Gateway] Execution reverted: '{target_module}' (Reason: {receipt.get('revert_reason')})")
                 
             return receipt
-            
         except MemoryBoundaryError as mbe:
             log.warning(f"🛡️ [Circuit Breaker Triggered] {mbe}")
             return {"success": False, "revert_reason": "Memory Boundary Exceeded"}
