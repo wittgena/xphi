@@ -1,4 +1,5 @@
-# xphi.watcher.plane.emitter
+# xphi.watcher.plane.emitter copy
+## @lineage: xphi.watcher.plane.emitter
 """@flow: Context -> Event -> Control -> Projection"""
 import logging
 import os
@@ -14,10 +15,7 @@ from xphi.watcher.plane.regulator import default_plane
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})
 _event_interceptors: List[Callable[[LogEvent], None]] = []
 
-# [핵심] 환경변수로 전역 로그 레벨을 결정 (기본값: INFO)
-# VCR_MODE 테스트 시 거슬리는 로그를 끄려면 `LOG_LEVEL=WARN`으로 실행하면 됩니다.
 _GLOBAL_MIN_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
-
 _LEVEL_WEIGHTS = {
     "TRACE": 10,
     "DEBUG": 20,
@@ -31,18 +29,11 @@ _LEVEL_WEIGHTS = {
 }
 
 def set_log_level(level: str):
-    """런타임에 전역 로그 레벨을 동적으로 변경합니다."""
     global _GLOBAL_MIN_LEVEL
     _GLOBAL_MIN_LEVEL = level.upper()
     
-    # Python Native Logging 레벨도 동기화
     native_level = getattr(logging, _GLOBAL_MIN_LEVEL, logging.INFO)
     logging.getLogger().setLevel(native_level)
-    
-    # 모든 기존 로거들의 핸들러 레벨도 강제 업데이트 (오버라이드 방지)
-    for logger_name in logging.root.manager.loggerDict:
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(native_level)
 
 def register_interceptor(interceptor: Callable[[LogEvent], None]):
     """Registers an external interceptor to hook and extend LogEvents."""
@@ -89,8 +80,6 @@ class SurfaceEmitter:
     def _log(self, level: str, msg: str, *args, **kwargs):
         current_weight = _LEVEL_WEIGHTS.get(level.upper(), 30)
         min_weight = _LEVEL_WEIGHTS.get(_GLOBAL_MIN_LEVEL, 30)
-        
-        # [필터링] 현재 로그의 가중치가 전역 설정보다 낮으면 즉시 무시 (성능 최적화)
         if current_weight < min_weight:
             return
 
@@ -101,6 +90,7 @@ class SurfaceEmitter:
         if exc_info:
             formatted_msg += "\n" + traceback.format_exc()
         
+        ## [flow_id 제어] 컨텍스트에 flow_id가 없다면 단독 루트 스팬으로 간주하여 자동 부여
         flow_id = ctx.get("flow_id")
         if not flow_id:
             flow_id = next_id()
@@ -114,6 +104,7 @@ class SurfaceEmitter:
             **kwargs
         }
 
+        # event_id는 LogEvent의 default_factory(next_id)에 의해 이 시점에 자동 생성됨
         event = LogEvent(
             source_id=self.name,
             message=formatted_msg,
@@ -154,8 +145,7 @@ def get_emitter(name: str, phase: Optional[str] = None, boundary: Optional[str] 
 
 
 """@legacy.compat: Native Python logging fallback setup"""
-# [수정] 혼란을 야기하는 전역 DEBUG = True 하드코딩 제거 (환경변수로 통일)
-DEBUG = _GLOBAL_MIN_LEVEL == "DEBUG"
+DEBUG = True
 
 class SurfacePlaneHandler(logging.Handler):
     """
@@ -163,6 +153,7 @@ class SurfacePlaneHandler(logging.Handler):
     """
     def emit(self, record):
         try:
+            ## @step.1: Map standard logging levels to Surface architecture topology
             level_map = {
                 logging.CRITICAL: "CRIT",
                 logging.ERROR: "ERROR",
@@ -174,19 +165,19 @@ class SurfacePlaneHandler(logging.Handler):
             mapped_level = level_map.get(record.levelno, "INFO")
             current_weight = _LEVEL_WEIGHTS.get(mapped_level, 30)
             min_weight = _LEVEL_WEIGHTS.get(_GLOBAL_MIN_LEVEL, 30)
-            
-            # [필터링] 레거시 로깅에서도 전역 레벨 검사
             if current_weight < min_weight:
                 return
             
+            ## @step.2: Format raw record payload
             formatted_msg = self.format(record)
             
+            ## @step.3: Assemble standard LogEvent and dispatch to Plane
+            ## @notice: record.name equals the registered logger namespace (e.g., "bound")
             event = LogEvent(
                 source_id=record.name,
                 message=formatted_msg,
                 level=mapped_level,
-                # [수정] NameError를 유발하던 current_mode 변수 제거
-                context={"phase": "LEGACY", "mode": "NORMAL"}, 
+                context={"phase": "LEGACY", "mode": current_mode},
                 parent_id=None
             )
             default_plane.handle(event)

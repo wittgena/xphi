@@ -88,7 +88,7 @@ class PhaseAirlock:
     """
 
     @classmethod
-    def establish_resonance(cls, legacy_path: str, canonical_path: str, submodules: list[str] = None):
+    def establish(cls, legacy_path: str, canonical_path: str, submodules: list[str] = None):
         """
         Manipulates sys.modules to match the memory IDs of two namespaces (preventing fragmentation).
         If the canonical physical module does not exist, it synthesizes a dummy module in memory.
