@@ -82,10 +82,6 @@ def _has_top_level_side_effects(py_file: Path) -> bool:
 
 
 def _contains_forbidden_imports(py_file: Path, forbidden_libs: Set[str], airlocked_libs: Set[str]) -> bool:
-    """
-    @internal: Statically verifies if a module references restricted external packages.
-    Airlocked(Hijacked) namespaces are explicitly exempted.
-    """
     if not forbidden_libs:
         return False
         

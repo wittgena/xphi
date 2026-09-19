@@ -6,7 +6,7 @@
 ## @lineage: ops.tester.state.schema
 from dataclasses import dataclass, field
 from typing import List, Dict, Any, Optional
-from xphi.kernel.space.node.state.vocab import NodeType, EdgeMode
+from xphi.kernel.node.state.vocab import NodeType, EdgeMode
 
 @dataclass
 class AgentAttributes:
