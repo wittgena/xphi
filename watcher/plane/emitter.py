@@ -14,8 +14,6 @@ from xphi.watcher.plane.regulator import default_plane
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})
 _event_interceptors: List[Callable[[LogEvent], None]] = []
 
-# [핵심] 환경변수로 전역 로그 레벨을 결정 (기본값: INFO)
-# VCR_MODE 테스트 시 거슬리는 로그를 끄려면 `LOG_LEVEL=WARN`으로 실행하면 됩니다.
 _GLOBAL_MIN_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 
 _LEVEL_WEIGHTS = {
