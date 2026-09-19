@@ -69,7 +69,8 @@ DEFAULT_BOUND_SKELETON = {
         "xphi": {
             "pattern": "^(theoria|psi|delta|meta|xphi|ion|ex|xe|xor|loop|field|watcher):"
         }
-    }
+    },
+    "quarantine": ["venv", "env", "node_modules", "dev", "ex", "tests"]
 }
 
 

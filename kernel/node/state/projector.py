@@ -5,8 +5,8 @@
 ## @lineage: arch.gov.state.projector
 ## @lineage: ops.tester.state.projector
 from typing import Dict, Any, Optional
-from xphi.kernel.space.node.state.vocab import NodeType, SigType, EdgeMode, SpecKey, DEFAULT_TYPE_MAP
-from xphi.kernel.space.node.state.schema import Fragment, FragmentSig, AgentAttributes
+from xphi.kernel.node.state.vocab import NodeType, SigType, EdgeMode, SpecKey, DEFAULT_TYPE_MAP
+from xphi.kernel.node.state.schema import Fragment, FragmentSig, AgentAttributes
 
 from xphi.watcher.plane.emitter import get_emitter
 
