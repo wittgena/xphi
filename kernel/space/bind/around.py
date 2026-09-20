@@ -32,7 +32,7 @@ DEFAULT_BOUND_SKELETON = {
         "xor": "anchor/io/xor",
         "contract": "anchor/io/contract",
         "kernel": "xphi/kernel",
-        "phase": "xphi/phase"
+        "phase": "fiber/phase"
     },
     "paths": {
         "theoria": "theoria",
@@ -138,7 +138,8 @@ def discover_repos(base_dir: Path, max_depth: int = 1) -> list[Path]:
         try:
             for child in current.iterdir():
                 if child.is_dir() and child.name not in exclude:
-                    if (child / '.git').exists():
+                    if (child / '.git').exists() or (child / 'pyproject.toml').exists():
+                    # if (child / '.git').exists():
                         found.append(child)
                     else:
                         _scan(child, depth + 1)
