@@ -1,4 +1,5 @@
-# fiber.llm.model.config
+# xphi.arch.contract.config.resolver
+## @lineage: fiber.llm.model.config
 import os
 import logging
 from typing import Any

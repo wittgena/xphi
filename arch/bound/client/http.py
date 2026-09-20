@@ -1,4 +1,5 @@
-# fiber.dphi.eco.client.http
+# xphi.arch.bound.client.http
+## @lineage: fiber.dphi.eco.client.http
 import hashlib
 import json
 import os

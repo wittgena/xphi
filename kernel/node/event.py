@@ -1,4 +1,5 @@
-# xphi.kernel.space.node.event
+# xphi.kernel.node.event
+## @lineage: xphi.kernel.space.node.event
 ## @lineage: xphi.kernel.space.topos.node.event
 ## @lineage: kernel.space.topos.node.event
 ## @lineage: arch.topos.node.event

@@ -1,4 +1,5 @@
-# xphi.kernel.space.node.state.projector
+# xphi.kernel.node.state.projector
+## @lineage: xphi.kernel.space.node.state.projector
 ## @lineage: xphi.kernel.space.topos.node.state.projector
 ## @lineage: kernel.space.topos.node.state.projector
 ## @lineage: arch.topos.node.state.projector

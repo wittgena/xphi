@@ -1,4 +1,5 @@
-# xphi.kernel.space.node.gan
+# xphi.kernel.node.gan
+## @lineage: xphi.kernel.space.node.gan
 ## @lineage: xphi.kernel.space.topos.node.gan
 ## @lineage: kernel.space.topos.node.gan
 """

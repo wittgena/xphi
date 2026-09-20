@@ -6,6 +6,16 @@ from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("parser.otlp")
 
+default_otlp_ruleset = {
+    "global_config": {"required_root_keys": ["resourceLogs"]},
+    "targets": [
+        {"tag": "tenant_id", "path": "resourceLogs.0.resource.attributes.tenant.id"},
+        {"tag": "model", "path": "resourceLogs.0.scopeLogs.0.logRecords.0.attributes.llm.model"},
+        {"tag": "prompt_tokens", "path": "resourceLogs.0.scopeLogs.0.logRecords.0.attributes.prompt_tokens"},
+        {"tag": "completion_tokens", "path": "resourceLogs.0.scopeLogs.0.logRecords.0.attributes.completion_tokens"}
+    ]
+}
+
 class OtlpExtractionEngine(CompiledEngine[bytes, Dict[str, Any]]):
     def __init__(self, required_root_keys: List[str], extract_paths: Dict[str, List[str]]):
         self.required_root_keys = required_root_keys
