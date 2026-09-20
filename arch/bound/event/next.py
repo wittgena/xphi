@@ -3,6 +3,7 @@ import os
 import time
 import threading
 import random
+import hashlib
 import uuid as _std_uuid
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -76,12 +77,19 @@ def parse_id(snowflake_id: str):
         "seq": sequence
     }
 
-def uuid4() -> _std_uuid.UUID:
+# 💡 [핵심 개선 1] 하위 호환성 유지 + 결정론적 시드 지원
+def uuid4(deterministic_seed: Optional[str] = None) -> _std_uuid.UUID:
     """
-    - ToposId(64bit)를 상위 비트에, 랜덤 값(64bit)을 하위 비트에 결합하여 128비트 UUID 객체(8-4-4-4-12 포맷)로 변환하여 반환
+    - deterministic_seed 제공 시: 해당 시드를 해싱하여 결정론적 128비트 UUID 객체 반환 (VCR Replay 등)
+    - 미제공 시: ToposId(상위 64bit) + 난수(하위 64bit)를 결합한 UUID 객체 반환 (시간순 정렬 호환)
     - ToposGenerator 실패 시 표준 UUIDv4로 안전하게 폴백(Fallback)
     """
     try:
+        if deterministic_seed:
+            # 시드를 MD5 해싱하여 128비트(32자리 Hex) 추출 후 UUID 객체로 래핑
+            full_hash = hashlib.md5(deterministic_seed.encode('utf-8')).hexdigest()
+            return _std_uuid.UUID(hex=full_hash)
+            
         # 기존 체계의 ToposId (64비트 정수) 추출
         topos_int = generator.generate()
         
@@ -92,8 +100,17 @@ def uuid4() -> _std_uuid.UUID:
         return _std_uuid.UUID(int=uuid_int)
         
     except Exception:
-        # Clock backwards 등 ToposGenerator 예외 발생 시 표준 UUIDv4로 폴백
+        # Clock backwards 등 예외 발생 시 표준 UUIDv4로 폴백
         return _std_uuid.uuid4()
+
+# 💡 [핵심 개선 2] OTLP Trace ID 생성을 위한 전용 인터페이스 신설
+def next_trace_id(deterministic_seed: Optional[str] = None) -> str:
+    """
+    @desc: OTLP / W3C Trace Context 규격을 완벽히 준수하는 32자리 Hex String 반환
+    - 일반 런타임: next_trace_id() -> Topos 기반 랜덤 32자리 Hex (정렬 가능)
+    - 결정 런타임: next_trace_id("scenario") -> 시나리오 기반 고정 32자리 Hex (VCR 호환)
+    """
+    return uuid4(deterministic_seed=deterministic_seed).hex
 
 
 """Phase ID Generator (32-bit 차분 신호)"""

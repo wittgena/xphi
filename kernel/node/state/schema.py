@@ -1,4 +1,5 @@
-# xphi.kernel.space.node.state.schema
+# xphi.kernel.node.state.schema
+## @lineage: xphi.kernel.space.node.state.schema
 ## @lineage: xphi.kernel.space.topos.node.state.schema
 ## @lineage: kernel.space.topos.node.state.schema
 ## @lineage: arch.topos.node.state.schema

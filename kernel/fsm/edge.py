@@ -1,4 +1,5 @@
-# fiber.dev.infra.edge.fsm
+# xphi.kernel.fsm.edge
+## @lineage: fiber.dev.infra.edge.fsm
 from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Any, Dict
