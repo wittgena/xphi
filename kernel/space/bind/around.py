@@ -36,6 +36,7 @@ DEFAULT_BOUND_SKELETON = {
     },
     "paths": {
         "theoria": "theoria",
+        "abc": ":phase:/abc",
         "fiber": "fiber",
         "io": ":io:",
         "ext": ":anchor:/ext",
@@ -54,7 +55,6 @@ DEFAULT_BOUND_SKELETON = {
         "contract": ":contract:",
         "spec": ":contract:/spec",
         "scheme": ":contract:/scheme",
-        "registry": ":io:/registry",
         "xor": ":xor:",
         "lib": ":contract:/lib",
         "workspace": ":workspace:",
