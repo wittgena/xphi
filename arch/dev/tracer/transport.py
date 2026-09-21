@@ -1,7 +1,4 @@
 # xphi.arch.dev.tracer.transport
-## @lineage: xphi.watcher.tracer.edge
-## @lineage: xphi.arch.eco.edge.tracer
-## @lineage: xphi.watcher.receptor.edge.tracer
 import uuid
 import asyncio
 import time

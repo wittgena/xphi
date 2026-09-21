@@ -1,5 +1,4 @@
 # xphi.arch.dev.infra.topos
-## @lineage: xphi.watcher.tracer.infra.topos
 import sys
 import json
 import asyncio
