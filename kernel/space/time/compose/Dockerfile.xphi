@@ -1,40 +1,26 @@
 FROM python:3.11-slim
 
-# 1. 기초 기질(OS Dependency) 형성
 RUN apt-get update && apt-get install -y curl git jq build-essential sudo unzip && rm -rf /var/lib/apt/lists/*
-
-# 2. 샌드박스가 인지할 자아(runner) 형성
 RUN groupadd -g 1001 runner && \
     useradd -u 1001 -g 1001 -m -s /bin/bash runner && \
     echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# 아티팩트 추출용 디렉토리만 마운트 포인트로 잡아둠
 RUN mkdir -p /artifact_mount && chown -R runner:runner /artifact_mount
 
 USER runner
 ENV HOME=/home/runner
 
-# 3. [위상 정렬] 가상환경(venv) 기반 USER 모드 샌드박스 환경변수 선언
 ENV VIRTUAL_ENV="$HOME/.venv"
 ENV PATH="$VIRTUAL_ENV/bin:$HOME/.local/bin:$HOME/.deno/bin:$PATH"
 
-# 4. Runtime 구축 (Deno, uv 설치 및 가상환경 생성)
 RUN curl -fsSL https://deno.land/install.sh | sh && \
     curl -LsSf https://astral.sh/uv/install.sh | sh && \
     $HOME/.local/bin/uv venv $VIRTUAL_ENV
 
-# 5. [씨앗 파종] Core 패키지 정적 설치
-# 이 단계에서는 작업 디렉토리(cwd)가 어디든 상관없이, uv가 VIRTUAL_ENV를 인지하여
-# ~/.venv/lib/.../site-packages 내부로 정확히 패키지를 투하(Installation)합니다.
 RUN uv pip install build hatch && \
     uv pip install git+https://github.com/wittgena/fiber.git
 
 ## missing packages temp install    
 RUN uv pip install tinytag dataclasses_json requests deprecated Pillow tiktoken PyNaCl
-
-# 6. [그라운드 안착] 이후의 모든 컨텍스트 기준점을 USER의 생활 공간(Home)으로 전환
 WORKDIR $HOME
-
-# 7. [앵커 발현] 그라운드(Home)에서 자신의 위상을 인지하고 바인딩 수행
-# Path.cwd()가 정확히 $HOME을 가리키며, site-packages를 스캔하여 ~/.anchor/bound.json을 생성합니다.
 RUN python -m xphi.kernel.space.bind.around
