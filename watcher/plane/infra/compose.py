@@ -96,8 +96,26 @@ class DockerComposeAdapter(BaseComposeAdapter):
         """Bootstraps background infrastructure."""
         self._sync_compose_blueprint()
         
-        log.info(f"  ├─ Provisioning Topology from {self.compose_file.name}...")
         os.environ["COMPOSE_ROOT"] = str(COMPOSE_ROOT)
+        
+        # --- NEW CACHE-BUSTING LOGIC ---
+        # If rebuild is requested, forcefully build without cache before bringing up
+        if self.rebuild:
+            log.info(f"  ├─ [Force Rebuild] Igniting topology build without cache...")
+            build_cmd = [
+                "docker-compose", 
+                "-f", str(self.compose_file), 
+                "--project-directory", str(self.workspace),
+                "build", "--no-cache"
+            ]
+            code, _, _ = await self.boundary.run_command(build_cmd, cwd=str(self.workspace), capture=False)
+            if code != 0:
+                log.error("  └─ 💥 Topology Build (no-cache) Failed. Inspect Docker logs.")
+                return False
+            log.info("  ├─ Clean Build Completed.")
+        # -------------------------------
+
+        log.info(f"  ├─ Provisioning Topology from {self.compose_file.name}...")
         
         cmd = [
             "docker-compose", 
@@ -106,12 +124,7 @@ class DockerComposeAdapter(BaseComposeAdapter):
             "up", "-d"
         ]
         
-        # Dockerfile 내에 패키지 설치 및 bind.around가 캡슐화되었으므로
-        # rebuilding 시 깨끗한 USER 모드 샌드박스가 매번 새롭게 직조(Provisioning)됨.
-        if self.rebuild:
-            cmd.append("--build")
-            
-        log.info("  ├─ [Streaming Infrastructure Build Logs...]")
+        log.info("  ├─ [Streaming Infrastructure Provisioning Logs...]")
         code, _, _ = await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=False)
         
         if code != 0:
