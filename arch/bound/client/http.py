@@ -1,5 +1,4 @@
 # xphi.arch.bound.client.http
-## @lineage: fiber.dphi.eco.client.http
 import hashlib
 import json
 import os
@@ -14,7 +13,7 @@ from urllib.parse import urlparse, urlunparse
 import certifi
 import httpx
 
-from arch.bound.client.constants import (
+from xphi.arch.bound.client.constants import (
     AIOHTTP_CONNECTOR_LIMIT,
     AIOHTTP_KEEPALIVE_TIMEOUT,
     COMPLETION_HTTP_FALLBACK_SECONDS,
