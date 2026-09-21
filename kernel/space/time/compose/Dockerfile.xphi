@@ -29,6 +29,8 @@ RUN curl -fsSL https://deno.land/install.sh | sh && \
 RUN uv pip install build hatch && \
     uv pip install git+https://github.com/wittgena/fiber.git
 
+RUN uv pip install tinytag dataclasses_json requests deprecated Pillow tiktoken
+
 # 6. [그라운드 안착] 이후의 모든 컨텍스트 기준점을 USER의 생활 공간(Home)으로 전환
 WORKDIR $HOME
 
