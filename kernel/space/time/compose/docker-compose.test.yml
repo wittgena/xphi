@@ -1,7 +1,6 @@
 services:
   redis:
     image: redis:7-alpine
-    # Mac 호스트와의 충돌 방지를 위해 ports 바인딩 제거 (컨테이너 내부 통신 전용)
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -16,12 +15,7 @@ services:
       - ${FIBER_ARTIFACT_MOUNT:-/tmp}:/artifact_mount
     environment:
       - XPHI_ENV=ci
-    
-    # [인프라 정렬] Kubernetes Pod 패턴 적용
-    # test-runner의 네트워크를 redis 서비스에 완전히 융합시켜, 
-    # 어플리케이션이 외부를 모른 채 localhost:6379를 호출해도 투명하게 연결되도록 보장함.
     network_mode: "service:redis"
-    
     depends_on:
       redis:
         condition: service_healthy

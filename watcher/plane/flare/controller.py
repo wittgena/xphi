@@ -3,7 +3,7 @@
 @desc: 
 - Edge V8 Isolate Orchestrator
 - Provisions Cloudflare Workers (V8 Isolates) and observes WASM traps, CPU limits, and crashes
-- [UPDATED] Defers PTA Merkle Root generation to Domain 5 (Scene) and seals the Epoch.
+- Defers PTA Merkle Root generation to Domain 5 (Scene) and seals the Epoch.
 """
 import json
 import asyncio
@@ -18,7 +18,7 @@ from xphi.arch.dev.tracer.base import BaseStreamAuditor, SystemBound, log_stream
 TIME_ROOT = resolve_path("time")
 EDGE_WORKSPACE_ROOT = resolve_path("flaretime")
 
-log = get_emitter("edge.sandbox.controller")
+log = get_emitter("flane.flare.controller")
 
 class WranglerSandboxAuditor(BaseStreamAuditor):
     """@desc: Observes standard I/O from local V8 Isolate (Wrangler) processes."""
@@ -72,16 +72,11 @@ class FlareController:
         self.auditor_gateway: Optional[WranglerSandboxAuditor] = None
         self.auditor_python: Optional[WranglerSandboxAuditor] = None
         
-        # [핵심 변경] Proof Auditor 객체 대신 Flow 관리를 위한 임의의 식별자 사용
         self.flow_id = "pta_edge_epoch" 
-        
         self.crash_confirmed = False
         self.last_error_context = ""
         self.suite_runners: Dict[str, Any] = {}
-        
-        # [정밀 개선] 불필요한 List 삭제 및 최종 추출될 Root Hash만 보관할 변수 마련
         self.test_execution_hash: Optional[str] = None
-        
         log.debug(f"[FlareController] Initialized with mode={self.mode}, timeout={self.timeout}, suites={list(self.suites.keys())}")
 
     def _provision_microservices(self):
@@ -162,7 +157,6 @@ compatibility_flags = ["python_workers"]
                 log.error(f"[ERROR] Suite '{suite_name}' crashed unexpectedly: {e}", exc_info=True)
                 total_fails += 1
                 
-        # [정밀 개선] Scene(Domain 5)이 완성하여 Broker에 바인딩한 Root Hash를 바로 수확
         extracted_root = getattr(broker, 'epoch_root_hash', None)
         if extracted_root:
             self.test_execution_hash = extracted_root
@@ -171,7 +165,6 @@ compatibility_flags = ["python_workers"]
 
     async def execute(self, broker: Any) -> Tuple[bool, str]:
         log.info(f"\n--- [START] Orchestrating Edge V8 Sandbox Environment ({self.mode.upper()}) ---")
-        
         try:
             if self.workspace.exists(): 
                 shutil.rmtree(self.workspace)
@@ -179,10 +172,9 @@ compatibility_flags = ["python_workers"]
             
             if self.mode == "dev":
                 log.info("[SYSTEM] Starting Dual V8 Isolate Workers (WASM Gateway & Python Engine)...")
-                
                 self.auditor_python = WranglerSandboxAuditor(self.python_dir, 8788, "python_engine")
                 self.auditor_python.attach()
-                
+
                 self.auditor_gateway = WranglerSandboxAuditor(self.gateway_dir, 8787, "wasm_gateway")
                 self.auditor_gateway.attach()
                 
