@@ -1,5 +1,4 @@
 # xphi.arch.dev.infra.kube
-## @lineage: xphi.watcher.tracer.infra.kube
 import os
 import json
 import yaml
