@@ -1,10 +1,4 @@
 # xphi.watcher.plane.infra.kube
-"""
-@desc: 
-- Kubernetes (Minikube) Native Infrastructure Orchestrator.
-- Manages dynamic topology provisioning, port-forwarding, and shell execution.
-- Delegates YAML rendering to xphi.watcher.plane.infra.yaml.deployment.
-"""
 import os
 import shutil
 import socket
@@ -14,26 +8,34 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Dict, Any, Tuple, Optional, Type
 
-from xphi.arch.dev.tracer.base import SystemBound
+from xphi.arch.dev.tracer.kube import KubeTracer, KubeStatusAuditor
+from xphi.arch.dev.tracer.base import SystemBound, PhaseOp, ExecutorOp
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.watcher.plane.infra.yaml.deployment import KubeBlueprint
+from xphi.kernel.space.bind.resolver import resolve_path
 
-log = get_emitter("infra.kube")
+COMPOSE_ROOT = resolve_path("time") / "compose"
 
+# -------------------------------------------------------------------------
+# Minikube Native Adapter (명령어 실행 및 프로세스 관리 대행)
+# -------------------------------------------------------------------------
 class MinikubeNativeAdapter:
     def __init__(self, workspace: Path, boundary: SystemBound, artifact_dir: Path, 
                  namespace: str = "fiber-topos", rebuild: bool = False, base_env: Optional[Dict[str, str]] = None):
+        self.log = get_emitter("infra.adapter")
         self.workspace = workspace
         self.boundary = boundary
         self.artifact_dir = artifact_dir
         self.namespace = namespace
         self.rebuild = rebuild
-        self.manifest_file = self.workspace / "k8s-gateway.yaml"
         
-        # 포트 포워딩 프로세스 관리용
+        # ExecutorOp의 동적 렌더링을 위한 문자열 속성
+        self.workspace_str = str(self.workspace)
+        self.manifest_file = self.workspace / "gateway.yaml"
+        self.manifest_file_str = str(self.manifest_file)
+        
         self._port_forward_processes: Dict[int, asyncio.subprocess.Process] = {}
         
-        # 글로벌 환경변수 초기화
         self.global_env = {
             "XPHI_ENV": "ci",
             "VCR_MODE": "live",
@@ -42,91 +44,42 @@ class MinikubeNativeAdapter:
         if base_env:
             self.global_env.update(base_env)
 
-        # 자체 Redis 터널 배포 여부 판단 (외부 URL이 제공되지 않은 경우 배포)
         self.deploy_internal_redis = "REDIS_URL" not in self.global_env
         if self.deploy_internal_redis:
             self.global_env["REDIS_URL"] = "redis://fiber-tunnel:6379/0"
 
-    async def _build_local_node_image(self) -> bool:
-        """Minikube의 내장 데몬을 사용하여 로컬 이미지를 직접 빌드합니다."""
-        log.info("  ├─ [Minikube] Building 'fiber-node:local' inside cluster...")
-        cmd = ["minikube", "image", "build", "-t", "fiber-node:local", "-f", "Dockerfile.xphi", "."]
-        
-        if self.rebuild:
-            cmd.append("--no-cache")
-            log.info("  ├─ [Force Rebuild] Using --no-cache.")
-            
-        code, _, err = await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=False)
-        return code == 0
-
-    async def _get_gateway_pod_name(self) -> str:
-        """현재 네임스페이스에 배포된 Gateway Pod의 실제 이름을 조회합니다."""
-        cmd = f"kubectl get pods -n {self.namespace} -l app=fiber-gateway -o jsonpath='{{.items[0].metadata.name}}'"
-        code, out, _ = await self.boundary.run_command(["bash", "-c", cmd], capture=True)
-        return out.strip() if code == 0 else ""
-
-    async def apply(self) -> bool:
-        """Kubernetes 인프라 프로비저닝 메인 플로우"""
-        self.workspace.mkdir(parents=True, exist_ok=True)
-        
-        # 1. 이미지 빌드
-        if not await self._build_local_node_image():
-            log.error("  └─ 💥 Minikube image build failed.")
-            return False
-
-        # 2. YAML 매니페스트 렌더링 (분리된 모듈 활용)
+    def render_manifest(self) -> None:
+        """YAML 매니페스트를 생성하고 저장합니다."""
         blueprint_yaml = KubeBlueprint.generate_manifest(
             namespace=self.namespace,
             global_env=self.global_env,
             deploy_redis=self.deploy_internal_redis
         )
         self.manifest_file.write_text(blueprint_yaml, encoding="utf-8")
-        
         if self.deploy_internal_redis:
-            log.info("  ├─ [K8s] Provisioning Internal Redis Tunnel...")
+            self.log.info("  ├─ [K8s] Provisioning Internal Redis Tunnel...")
         else:
-            log.info(f"  ├─ [K8s] Binding to External Redis: {self.global_env['REDIS_URL']}")
+            self.log.info(f"  ├─ [K8s] Binding to External Redis: {self.global_env['REDIS_URL']}")
 
-        log.info(f"  ├─ [K8s] Applying Native Topology to namespace '{self.namespace}'...")
-        await self.boundary.run_command(["kubectl", "create", "namespace", self.namespace], capture=True)
-        
-        apply_cmd = ["kubectl", "apply", "-f", str(self.manifest_file), "-n", self.namespace]
-        code, _, err = await self.boundary.run_command(apply_cmd, capture=True)
-        if code != 0:
-            log.error(f"  └─ 💥 Kubectl apply failed: {err}")
-            return False
+    async def _get_gateway_pod_name(self) -> str:
+        cmd = ["kubectl", "get", "pods", "-n", self.namespace, "-l", "app=fiber-gateway", "-o", "jsonpath='{.items[0].metadata.name}'"]
+        code, out, _ = await self.boundary.run_command(cmd, capture=True)
+        return out.strip().replace("'", "") if code == 0 else ""
 
-        # 3. Pod 가용성 대기 (Readiness Probe 확인)
-        log.info("  ├─ [K8s] Awaiting Pod Readiness...")
-        wait_cmd = ["kubectl", "wait", "--for=condition=Ready", "pod", "--all", "-n", self.namespace, "--timeout=120s"]
-        code, _, _ = await self.boundary.run_command(wait_cmd, capture=False)
-        
-        if code != 0:
-            log.error("  └─ 💥 Pods failed to reach Ready state.")
-            return False
-            
-        log.info("  ├─ Runtime Topology (KUBE Mode) Ready ✅")
-        return True
-
-    # -------------------------------------------------------------------------
-    # Network Tunneling (Port Forwarding)
-    # -------------------------------------------------------------------------
+    # (이전 코드에서 누락되었던 포트포워딩 기능 완벽 복구)
     async def start_port_forward(self, local_port: int = 8000, target_port: int = 8000, service_name: str = "fiber-gateway") -> bool:
-        """SDK 테스트를 위해 K8s Service 포트를 로컬 호스트로 개방합니다."""
         if local_port in self._port_forward_processes:
-            log.warning(f"  ├─ [PortForward] Local port {local_port} is already being forwarded.")
+            self.log.warning(f"  ├─ [PortForward] Local port {local_port} is already being forwarded.")
             return True
 
-        log.info(f"  ├─ [PortForward] Tunneling: 127.0.0.1:{local_port} -> svc/{service_name}:{target_port}")
+        self.log.info(f"  ├─ [PortForward] Tunneling: 127.0.0.1:{local_port} -> svc/{service_name}:{target_port}")
         cmd = ["kubectl", "port-forward", f"svc/{service_name}", f"{local_port}:{target_port}", "-n", self.namespace]
         
         try:
-            # 백그라운드 프로세스로 실행 유지
             process = await asyncio.create_subprocess_exec(
-                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, cwd=str(self.workspace)
+                *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, cwd=self.workspace_str
             )
             
-            # 소켓 연결이 성공할 때까지 최대 3초 대기
             is_open = False
             for _ in range(30):
                 await asyncio.sleep(0.1)
@@ -136,103 +89,97 @@ class MinikubeNativeAdapter:
                         break
                         
             if not is_open:
-                log.error(f"  └─ 💥 [PortForward] Failed to bind local port {local_port} within timeout.")
+                self.log.error(f"  └─ 💥 [PortForward] Failed to bind local port {local_port} within timeout.")
                 process.terminate()
                 return False
                 
             self._port_forward_processes[local_port] = process
-            log.info("  └─ ✨ [PortForward] Tunnel established successfully.")
+            self.log.info("  └─ ✨ [PortForward] Tunnel established successfully.")
             return True
             
         except Exception as e:
-            log.error(f"  └─ 💥 [PortForward] Failed: {e}")
+            self.log.error(f"  └─ 💥 [PortForward] Failed: {e}")
             return False
 
     async def stop_port_forward(self, local_port: int = None):
-        """활성화된 포트 포워딩 프로세스를 안전하게 닫습니다."""
         ports_to_close = [local_port] if local_port else list(self._port_forward_processes.keys())
         for p in ports_to_close:
             process = self._port_forward_processes.pop(p, None)
             if process:
-                log.info(f"  ├─ [PortForward] Closing tunnel on port {p}...")
+                self.log.info(f"  ├─ [PortForward] Closing tunnel on port {p}...")
                 process.terminate()
                 try:
                     await asyncio.wait_for(process.wait(), timeout=3.0)
                 except asyncio.TimeoutError:
-                    log.warning(f"  ├─ [PortForward] Process on port {p} did not exit cleanly, killing it.")
+                    self.log.warning(f"  ├─ [PortForward] Process on port {p} did not exit cleanly, killing it.")
                     process.kill()
 
-    # -------------------------------------------------------------------------
-    # Execution & Extractor
-    # -------------------------------------------------------------------------
+    # (이전 코드에서 누락되었던 셸 실행 기능 완벽 복구)
     async def apply_job(self, job_name: str, env: Dict[str, str]) -> bool:
-        """kubectl exec를 활용하여 파드 내부에 명령어와 동적 환경변수를 주입합니다."""
-        log.info(f"[Adapter:KUBE] Executing Job Phase: {job_name}")
+        self.log.info(f"[Adapter:KUBE] Executing Job Phase: {job_name}")
         
         pod_name = await self._get_gateway_pod_name()
         if not pod_name:
-            log.error("  └─ 💥 Gateway Pod not found.")
+            self.log.error("  └─ 💥 Gateway Pod not found.")
             return False
 
-        # 의도에 따른 명령어 파싱
         if job_name == "system-e2e-test" or "FIBER_E2E_STEPS" in env:
             exec_command = env.get("FIBER_E2E_STEPS", "fiber e2e dphi.wasm.entry && VCR_MODE=replay fiber ex switch")
         elif job_name == "build-release":
             exec_command = "python -m build --wheel && cp dist/*.whl /artifact_mount/"
         else:
-            log.error(f"  └─ Unknown job phase: {job_name}")
+            self.log.error(f"  └─ Unknown job phase: {job_name}")
             return False
 
-        # 런타임 쉘 변수 주입용 export 체인 생성
         env_exports = " ".join([f"export {k}='{v}';" for k, v in env.items()])
         full_command = f"{env_exports} {exec_command}"
         
         for k, v in env.items():
-            log.info(f"  ├─ Injecting Env Override: {k}={v}")
+            self.log.info(f"  ├─ Injecting Env Override: {k}={v}")
 
         cmd = ["kubectl", "exec", "-i", pod_name, "-n", self.namespace, "--", "bash", "-c", full_command]
-        code, _, _ = await self.boundary.run_command(cmd, cwd=str(self.workspace), capture=False)
+        code, _, _ = await self.boundary.run_command(cmd, cwd=self.workspace_str, capture=False)
         
         if code != 0:
-            log.error(f"[Adapter:KUBE] Phase '{job_name}' fractured.")
+            self.log.error(f"[Adapter:KUBE] Phase '{job_name}' fractured.")
             return False
 
-        # 빌드 아티팩트 추출 (kubectl cp)
         if job_name == "build-release":
-            log.info("  ├─ Extracting built artifacts from K8s pod volume...")
+            self.log.info("  ├─ Extracting built artifacts from K8s pod volume...")
             cp_cmd = ["kubectl", "cp", f"{self.namespace}/{pod_name}:/artifact_mount/.", str(self.artifact_dir)]
             cp_code, _, _ = await self.boundary.run_command(cp_cmd, capture=True)
             if cp_code != 0:
-                 log.error("  └─ 💥 Failed to extract artifacts via kubectl cp.")
+                 self.log.error("  └─ 💥 Failed to extract artifacts via kubectl cp.")
                  return False
 
-        log.info(f"  └─ Phase '{job_name}' completed successfully.")
+        self.log.info(f"  └─ Phase '{job_name}' completed successfully.")
         return True
 
     async def teardown(self):
-        """사용된 인프라 리소스와 프로세스를 정리합니다."""
         await self.stop_port_forward()
-        log.info(f"  ├─ [K8s] Tearing down Kube topology (Namespace: {self.namespace})...")
+        self.log.info(f"  ├─ [K8s] Tearing down Kube topology (Namespace: {self.namespace})...")
         cmd = ["kubectl", "delete", "namespace", self.namespace, "--ignore-not-found=true"]
         await self.boundary.run_command(cmd, capture=False)
 
-
+# -------------------------------------------------------------------------
+# Auditors
+# -------------------------------------------------------------------------
 class DeterminismAuditor:
-    """Audits built artifacts for dependency integrity to prevent local path leakage."""
     def __init__(self, target_dir: Path, boundary: SystemBound):
         self.target_dir = target_dir
         self.boundary = boundary
+        self.log = get_emitter("auditor.determinism")
         self.is_clean = False
 
     def attach(self): pass 
     def detach(self): pass
 
     async def verify(self) -> bool:
-        log.info(f"[Auditor:Determinism] Inspecting extracted Artifacts in {self.target_dir}...")
+        self.log.info(f"[Auditor:Determinism] Inspecting extracted Artifacts in {self.target_dir}...")
         wheel_files = list(self.target_dir.rglob("fiber-*.whl"))
         
         if not wheel_files:
-            log.error("  └─ 💥 Artifact missing. Wheel not found in the extracted directory.")
+            self.log.error("  └─ 💥 Artifact missing. Wheel not found in the extracted directory.")
             return False
             
         target_wheel = wheel_files[0]
@@ -240,22 +187,21 @@ class DeterminismAuditor:
         code, out, _ = await self.boundary.run_command(["bash", "-c", cmd], capture=True)
         
         if code != 0:
-            log.error("  └─ 💥 Metadata extraction failed. Zip structure might be corrupted.")
+            self.log.error("  └─ 💥 Metadata extraction failed. Zip structure might be corrupted.")
             return False
             
         metadata_line = out.strip()
-        log.info(f"  ├─ Target Wheel: {target_wheel.name}")
-        log.info(f"  ├─ Extracted Dependency: {metadata_line}")
+        self.log.info(f"  ├─ Target Wheel: {target_wheel.name}")
+        self.log.info(f"  ├─ Extracted Dependency: {metadata_line}")
         
         if "file://" in metadata_line:
-            log.error("  └─ 💥 FATAL BREACH: Local absolute path leaked into Distribution Artifact!")
+            self.log.error("  └─ 💥 FATAL BREACH: Local absolute path leaked into Distribution Artifact!")
             self.is_clean = False
             return False
             
-        log.info("  └─ ✨ AUDIT PASSED: Remote Binding Enforced mathematically.")
+        self.log.info("  └─ ✨ AUDIT PASSED: Remote Binding Enforced mathematically.")
         self.is_clean = True
         return True
-
 
 @dataclass
 class KubeContext:
@@ -263,19 +209,25 @@ class KubeContext:
     adapter: MinikubeNativeAdapter
     auditors: Dict[str, Any]
 
-
-class KubeOrchestrator:
+# -------------------------------------------------------------------------
+# Orchestrator (지휘자: KubeTracer 상속)
+# -------------------------------------------------------------------------
+class KubeOrchestrator(KubeTracer):
     def __init__(self, mode: str = "dev", suites: Dict[str, Type] = None, rebuild: bool = False, base_env: Dict[str, str] = None):
+        # KubeTracer 초기화
+        super().__init__(tracer_name="kube_orchestrator", timeout=600)
+        
         self.mode = mode
         self.suites = suites or {}
         self.keep_workspace = False
         
-        self.workspace = Path.cwd()
-        self.boundary = SystemBound()
+        self.workspace = COMPOSE_ROOT
+        self.workspace.mkdir(parents=True, exist_ok=True) 
         
         self.artifact_dir = Path(tempfile.mkdtemp(prefix="fiber-kube-artifacts-"))
         os.environ["FIBER_ARTIFACT_MOUNT"] = str(self.artifact_dir)
         
+        # Adapter 초기화 및 Boundary 전달
         self.adapter = MinikubeNativeAdapter(
             workspace=self.workspace, 
             boundary=self.boundary, 
@@ -284,26 +236,41 @@ class KubeOrchestrator:
             base_env=base_env
         )
         self.determinism_auditor = DeterminismAuditor(self.artifact_dir, self.boundary)
+        
+        # ExecutorOp용 렌더링 속성을 클래스 최상위에 할당
+        self.workspace_str = self.adapter.workspace_str
+        self.manifest_file_str = self.adapter.manifest_file_str
+        self.namespace_str = self.adapter.namespace
+        
+        # 백그라운드 Kube Status 감시 Auditor 등록
+        self.status_auditor = KubeStatusAuditor(
+            target="kube_pods", 
+            boundary=self.boundary, 
+            namespace=self.adapter.namespace, 
+            delay=10
+        )
+        self.register_auditors(self.status_auditor)
+        
         self.suite_runners = {}
 
     async def _run_all_suites(self, broker: Any, context: KubeContext) -> int:
         total_fails = 0
         for suite_name, suite_cls in self.suites.items():
-            log.info(f"\n>>> [PHASE] Executing K8s CI Suite: {suite_name.upper()} <<<")
+            self.log.info(f"\n>>> [PHASE] Executing K8s CI Suite: {suite_name.upper()} <<<")
             try:
-                # E2E Scene 인스턴스화 (e2e.plane.kube 등에서 전달된 Scene 클래스)
                 suite_instance = suite_cls(broker=broker, context=context)
                 self.suite_runners[suite_name] = suite_instance
                 await suite_instance.run_all()
                 total_fails += getattr(suite_instance, 'fail_count', 0)
             except Exception as e:
-                log.error(f"[ERROR] Suite '{suite_name}' crashed: {e}", exc_info=True)
+                self.log.error(f"[ERROR] Suite '{suite_name}' crashed: {e}", exc_info=True)
                 total_fails += 1
         return total_fails
 
-    async def execute(self, broker: Any = None) -> Tuple[bool, str]:
-        log.info(f"\n--- [START] Orchestrating CI/CD Plane via Kubernetes ({self.mode.upper()}) ---")
-        log.info(f"[SYSTEM] Artifact Extraction Target: {self.artifact_dir}")
+    async def execute(self) -> Tuple[bool, str]:
+        """BaseTracer의 trace() 내부에서 실행되는 메인 로직"""
+        self.log.info(f"\n--- [START] Orchestrating CI/CD Plane via Kubernetes ({self.mode.upper()}) ---")
+        self.log.info(f"[SYSTEM] Artifact Extraction Target: {self.artifact_dir}")
         
         try:
             self.determinism_auditor.attach()
@@ -313,33 +280,65 @@ class KubeOrchestrator:
                 auditors={"determinism": self.determinism_auditor}
             )
             
-            # 인프라 프로비저닝 (Manifest 적용)
-            if not await self.adapter.apply():
-                return False, "Failed to provision Kubernetes infrastructure."
+            # 1. 매니페스트 렌더링
+            self.adapter.render_manifest()
 
-            # E2E 테스트 스위트 구동
+            # 2. 인프라 프로비저닝 (ExecutorOp를 활용하여 시퀀스 실행)
+            dockerfile_path = self.workspace / "Dockerfile.xphi" if (self.workspace / "Dockerfile.xphi").exists() else self.workspace / "Dockerfile"
+            self.dockerfile_path_str = str(dockerfile_path)
+
+            build_cmd = ["minikube", "image", "build", "-t", "fiber-node:local", "-f", "{dockerfile_path_str}", "{workspace_str}"]
+            if self.adapter.rebuild:
+                build_cmd.append("--no-cache")
+
+            apply_cmds = [
+                build_cmd,
+                ["kubectl", "create", "namespace", "{namespace_str}"],
+                ["kubectl", "apply", "-f", "{manifest_file_str}", "-n", "{namespace_str}"]
+            ]
+
+            # 명령어가 실패하면 self.rupture_confirmed가 True로 바뀜
+            if not await ExecutorOp.run_sequence(self, apply_cmds, phase_name="K8s.Provision", cwd=self.workspace_str, strict=True):
+                return False, "Infrastructure provisioning sequence failed."
+
+            # 3. Pod 가용성 대기
+            self.log.info("  ├─ [K8s] Awaiting Pod Readiness (Timeout: 180s)...")
+            wait_cmd = ["kubectl", "wait", "--for=condition=Ready", "pod", "--all", "-n", self.namespace_str, "--timeout=180s"]
+            code, _, _ = await self.boundary.run_command(wait_cmd, capture=False)
+            
+            if code != 0:
+                self.rupture_confirmed = True
+                return False, "Pods failed to reach Ready state within timeout."
+                
+            self.log.info("  ├─ Runtime Topology (KUBE Mode) Ready ✅")
+
+            # 4. E2E 테스트 스위트 구동
             if self.suites:
                 with flow_scope(phase="TEST_EXECUTION"):
-                    total_fails = await self._run_all_suites(broker, context)
+                    total_fails = await self._run_all_suites(broker=None, context=context)
                     if total_fails > 0:
+                        self.rupture_confirmed = True
                         return False, f"Topology verified, but {total_fails} logical E2E tests failed."
             
+            self.equilibrium_achieved = True
             return True, ""
             
         except Exception as e:
-            log.error(f"[FATAL] Orchestration process crashed: {e}")
+            self.log.error(f"[FATAL] Orchestration process crashed: {e}")
+            self.rupture_confirmed = True
             return False, str(e)
             
         finally:
-            log.info("\n[SYSTEM] Initiating Teardown Sequence...")
+            self.log.info("\n[SYSTEM] Initiating Teardown Sequence...")
             self.determinism_auditor.detach()
             
+            # Tracer의 collapse 로직과 함께 명시적 teardown 호출
             if not self.keep_workspace:
                 await self.adapter.teardown()
                 if self.artifact_dir.exists():
                     shutil.rmtree(self.artifact_dir, ignore_errors=True)
-                    log.info(f"  └─ Cleaned up temporary artifact directory: {self.artifact_dir}")
+                    self.log.info(f"  └─ Cleaned up temporary artifact directory: {self.artifact_dir}")
             else:
-                log.info(f"  └─ Workspace preserved. Inspect via: kubectl get pods -n {self.adapter.namespace}")
+                self.log.info(f"  └─ Workspace preserved. Inspect via: kubectl get pods -n {self.adapter.namespace}")
             
-            log.info("[SYSTEM] Kube Orchestration finalized.")
+            self.log.info("[SYSTEM] Kube Orchestration finalized.")
