@@ -15,15 +15,14 @@ from xphi.watcher.plane.emitter import get_emitter
 
 DEFAULT_TARGET_TAGS = [
     "xphi.kernel",
-    "kernel.ops",
     "dphi",
     "deno",
     "workerd",
-    "multiprocessing.spawn",           # OS 멀티프로세싱 워커 노드
-    "multiprocessing.resource_tracker" # 자원 추적 데몬
+    "multiprocessing.spawn",
+    "multiprocessing.resource_tracker"
 ]
 
-log = get_emitter("node.reaper", phase="BOOT")
+log = get_emitter("kernel.ops.reaper", phase="BOOT")
 
 class SystemOps:
     """@desc: 시스템 프로세스의 생명주기를 통제(Kill)하거나, 커널 최적화 상태를 감사(Audit)하는 코어 유틸리티"""

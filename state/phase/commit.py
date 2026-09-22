@@ -28,12 +28,8 @@ class Attractor:
         parent_commit_id: str, 
         message: str, 
         apply: bool = False,
-        tag: Optional[str] = None  # [추가] 글로벌 태그 수신
+        tag: Optional[str] = None
     ) -> str:
-        """
-        Models and inscribes the lineage of the current generation.
-        @note: String anchor_id is replaced by integer nexus_id for Parity-based deterministic consensus.
-        """
         # WASM의 RepoCommit 스키마와 동일한 형태의 딕셔너리 생성
         model_dict = {
             "nexus_id": nexus_id,
@@ -41,15 +37,11 @@ class Attractor:
             "parent_commit_id": parent_commit_id
         }
         
-        # [추가] 커밋 페이로드에 태그 정보 각인 (암호학적 증명에 포함됨)
         if tag:
             model_dict["version_tag"] = tag
 
-        # Git commit 메시지에 물리적으로 각인 (결정론적 직렬화)
         json_payload = json.dumps(model_dict, separators=(',', ':'), sort_keys=True)
         full_message = f"{message}\n\n{json_payload}"
-        
-        # Git Commit 및 Tag 실행 (Runner로 tag 파라미터 전달)
         new_commit_id = self.runner(self.path, full_message, apply, tag=tag)
 
         if apply:
@@ -77,10 +69,6 @@ class EpochManager(Attractor):
         self.registry_key = f"legacy_registry:{self.name}".encode('utf-8')
 
     def load_history(self) -> List[Dict]:
-        """
-        @desc: Perfect backward compatibility method for external protocol.commit invocations.
-               Extracts and returns the legacy .registry.json array format directly from RocksDB.
-        """
         if self.registry_key in self.store.db:
             try:
                 raw_data = self.store.db[self.registry_key].decode('utf-8')
@@ -108,7 +96,7 @@ async def anchor_commit(
     broker: DphiBroker, 
     message: str, 
     apply: bool = False,
-    tag: Optional[str] = None  # [추가] Commiter로부터 태그 수신
+    tag: Optional[str] = None
 ) -> None:
     mode = "APPLY" if apply else "DRY-RUN"
     log.info(f"## Era-based Alignment Cycle Initiated ({mode})")
@@ -122,7 +110,6 @@ async def anchor_commit(
         "injected_tick": None
     }
     
-    # [추가] WASM이 초기 Parity 생성 시 태그를 인지할 수 있도록 주입
     if tag:
         init_req["version_tag"] = tag
         log.info(f"[Protocol] Global Version Tag '{tag}' will be cryptographically sealed.")
@@ -154,7 +141,7 @@ async def anchor_commit(
             parent_commit_id=parent_state,
             message=message,
             apply=apply,
-            tag=tag  # [추가] 개별 리포지토리(Attractor)에 태그 전파
+            tag=tag
         )
         current_aligned_states[r.name] = commit_hash
 
@@ -182,9 +169,9 @@ async def anchor_commit(
         repos=current_aligned_states,
         cached_states=cached_states,
         timestamp=float(current_ts),
-        signers=[current_pubkey],        # Extracted via LedgerAuthAdapter
-        signatures=[signature_hex],      # Extracted via LedgerAuthAdapter
-        threshold=1                      # Single active signer threshold
+        signers=[current_pubkey],
+        signatures=[signature_hex],
+        threshold=1
     )
 
     log.info("[Protocol] Sealing Epoch cryptographically...")

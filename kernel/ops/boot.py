@@ -4,6 +4,7 @@ import json
 import asyncio
 from typing import Optional
 
+from xphi.arch.bound.event.next import EventObserver
 from xphi.arch.bound.event.next import LogEvent
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
 from xphi.arch.bound.event.bus import AsyncEventBus
@@ -13,27 +14,26 @@ from xphi.state.phase.executor.base import BaseExecutor
 from xphi.state.phase.executor.cont import SwarmExecutor
 from xphi.state.phase.executor.flow import FlowExecutor
 from xphi.state.phase.reactor import PhaseReactor
-from xphi.state.phase.runtime.node import NodeRuntime
 from xphi.state.anchor.consensus import KernelLedger
 from xphi.state.anchor.gateway import GatewayPolicy 
 
+from xphi.kernel.node.runtime.anchor import RuntimeAnchor
 from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.kernel.wasm.broker import DphiBroker
 
-from xphi.arch.bound.event.next import EventObserver
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.plane.regulator import default_plane
 from xphi.watcher.receptor.bootstrap import receptor_bootstrap
 
 log = get_emitter("kernel.boot")
 
-_node_instance: Optional[NodeRuntime] = None
+_node_instance: Optional[RuntimeAnchor] = None
 _background_tasks = set()
 
 class PhaseSignal(EventObserver):
     def __init__(self, event_bus: AsyncEventBus):
         self.bus = event_bus
-        self.log = get_emitter("anchor.bridge", phase="BRANE")
+        self.log = get_emitter("anchor.bridge", phase="BOOT")
 
     def update(self, event: LogEvent) -> None:
         if event.level != "SIGNAL":
@@ -188,15 +188,11 @@ async def main_async():
     completion_signal = asyncio.Event()
     executor = RoutingExecutor(completion_signal)
     
-    _node_instance = NodeRuntime(executor=executor)
+    _node_instance = RuntimeAnchor(executor=executor)
     _node_instance.tunnel = tunnel
     
     node_profile = os.getenv("NODE_PROFILE", "ALL").upper()
-    if node_profile != "EDGE":
-        _node_instance.broker = DphiBroker(tunnel_factory=TunnelFactory)
-    else:
-        log.info(f"[Boot] Bypassing DphiBroker master initialization for {node_profile} profile.")
-
+    _node_instance.broker = DphiBroker(tunnel_factory=TunnelFactory)
     await _node_instance.start()
 
     log.info("[Boot] Control Plane and Embedded Node fully operational.")
@@ -206,24 +202,19 @@ async def main_async():
 async def teardown():
     global _node_instance
     log.info("[Boot] Releasing system resources...")
-    
-    # 1. NodeRuntime 및 하위 컴포넌트(Broker, Daemons, Workers) 종료
     if _node_instance and getattr(_node_instance, 'running', False):
         await _node_instance.shutdown()
 
-    # 2. 잔여 백그라운드 태스크 취소
     for task in list(_background_tasks):
         if not task.done():
             task.cancel()
 
-    # 3. Ledger DB 정리
     try:
         KernelLedger().close()
         log.info("[Boot] KernelLedger lock safely released.")
     except Exception as e:
         log.warning(f"[Boot] Error while releasing KernelStore lock: {e}")
         
-    # 4. Redis 터널 정리
     await TunnelFactory.close_all()
     log.info("[Boot] Resource cleanup complete.")
 
