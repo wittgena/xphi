@@ -16,8 +16,8 @@ from xphi.arch.contract.registry.unified import registry
 
 from xphi.kernel.ops.daemon.base import AbstractDaemon
 from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher
-from xphi.state.phase.runtime.context import RuntimeContext
-from xphi.state.phase.runtime.sensor import SurfaceSensor
+from xphi.kernel.node.runtime.context import RuntimeContext
+from xphi.kernel.node.runtime.sensor import SurfaceSensor
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.state.phase.executor.cont import LoopCarrier, DynamicsXe
 

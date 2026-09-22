@@ -3,7 +3,7 @@ import json
 import re
 import orjson
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any, Optional, Generic, TypeVar, Tuple
+from typing import List, Dict, Any, Optional, Generic, TypeVar, Tuple, Callable
 from xphi.arch.bound.xor.secret.redact import redact_string, sanitize_payload
 from xphi.watcher.plane.emitter import get_emitter
 
@@ -100,19 +100,20 @@ class AuditRulesetParser(AbstractRulesetParser[CompiledEngine[bytes, bytes]]):
         log.info("[Parser] Compiling FastRegexRedactionEngine (Flat Regex Scan Active).")
         return regex_engine
 
+
+# =====================================================================
+# [Legacy] 추후 StreamTaggingParser로 마이그레이션 완료 시 제거 가능
+# =====================================================================
 class FastLifecycleEngine(CompiledEngine[str, List[str]]):
     """@desc: C 레벨 정규식으로 컴파일된 패턴을 활용해 O(1)에 가까운 속도로 스트림을 분류합니다."""
     def __init__(self, compiled_rules: List[Tuple[re.Pattern, str]]):
         self.rules = compiled_rules
 
     def execute(self, payload: str) -> List[str]:
-        # C 언어로 작성된 re.search만 호출하므로 Python 레벨의 연산 최소화
         return [tag for pattern, tag in self.rules if pattern.search(payload)]
-
 
 class LifecycleRegexParser(AbstractRulesetParser[FastLifecycleEngine]):
     """@desc: JSON 룰셋의 AND/OR 조건을 정규식 패턴으로 변환 후 컴파일합니다."""
-    
     def parse_ruleset(self, ruleset: Dict[str, Any]) -> FastLifecycleEngine:
         compiled_rules = []
         for target in ruleset.get("targets", []):
@@ -120,21 +121,140 @@ class LifecycleRegexParser(AbstractRulesetParser[FastLifecycleEngine]):
             keywords = target.get("keywords", [])
             if not tag or not keywords: continue
 
-            # AND 조건을 정규식의 전방 탐색(Positive Lookahead)으로 변환
-            # 예: {"AND": ["Netty started", "port"]} -> (?=.*Netty started)(?=.*port)
             regex_parts = []
             for group in keywords:
                 if "AND" in group:
-                    # 대소문자 무시 및 순서 무관 매칭
                     lookaheads = "".join(f"(?=.*{re.escape(word)})" for word in group["AND"])
                     regex_parts.append(f"^{lookaheads}.*")
                 elif "OR" in group:
-                    # OR 조건 변환
                     ors = "|".join(re.escape(word) for word in group["OR"])
                     regex_parts.append(f"(?:{ors})")
 
             if regex_parts:
-                # 각 키워드 그룹을 결합하여 단일 정규식으로 컴파일 (IGNORECASE 플래그 적용)
+                final_regex = "|".join(regex_parts)
+                compiled_pattern = re.compile(final_regex, re.IGNORECASE)
+                compiled_rules.append((compiled_pattern, tag))
+
+        return FastLifecycleEngine(compiled_rules)
+
+class LocalStreamEngine(CompiledEngine[str, List[str]]):
+    def __init__(self, evaluators: List[Tuple[Callable[[str], bool], str]]):
+        self.evaluators = evaluators
+
+    def execute(self, payload: str) -> List[str]:
+        return [tag for eval_fn, tag in self.evaluators if eval_fn(payload)]
+
+class LocalStreamRulesetParser(AbstractRulesetParser[LocalStreamEngine]):
+    """@desc: JSON 룰셋을 로컬 스트림 평가 엔진(LocalStreamEngine)으로 컴파일합니다."""
+    def _keywords_to_evaluator(self, keywords: List[Dict[str, List[str]]]) -> Optional[Callable[[str], bool]]:
+        if not keywords: return None
+        
+        def evaluator(line: str) -> bool:
+            line_lower = line.lower()
+            for group in keywords:
+                if "AND" in group and group["AND"]:
+                    if not all(val.lower() in line_lower for val in group["AND"]):
+                        return False
+                elif "OR" in group and group["OR"]:
+                    if not any(val.lower() in line_lower for val in group["OR"]):
+                        return False
+            return True
+            
+        return evaluator
+
+    def parse_ruleset(self, ruleset: Dict[str, Any], target_tags: Optional[List[str]] = None) -> LocalStreamEngine:
+        compiled_evaluators = []
+        for target in ruleset.get("targets", []):
+            tag = target.get("tag")
+            if target_tags and tag not in target_tags: continue
+            
+            kw_evaluator = self._keywords_to_evaluator(target.get("keywords", []))
+            if kw_evaluator:
+                compiled_evaluators.append((kw_evaluator, tag))
+                
+        return LocalStreamEngine(compiled_evaluators)
+
+
+# =====================================================================
+# [New] 결함(버그) 해결 및 인터페이스가 정렬된 통합 파서
+# =====================================================================
+class StreamTaggingParser(AbstractRulesetParser[CompiledEngine[str, List[str]]]):
+    """@desc: JSON 룰셋을 파싱하여 정규식(C-Level) 또는 로컬(Python) 스트림 태깅 엔진으로 컴파일합니다.
+              (Outer OR 논리 정합성 및 클로저 스코프 이슈 픽스 버전)"""
+    
+    def __init__(self, engine_type: str = "local", target_tags: Optional[List[str]] = None):
+        self.engine_type = engine_type
+        self.target_tags = target_tags
+
+    def parse_ruleset(self, ruleset: Dict[str, Any]) -> CompiledEngine[str, List[str]]:
+        config_engine = ruleset.get("global_config", {}).get("engine", self.engine_type)
+        
+        if config_engine == "regex":
+            return self._compile_regex_engine(ruleset)
+        else:
+            return self._compile_local_engine(ruleset)
+
+    def _compile_local_engine(self, ruleset: Dict[str, Any]) -> LocalStreamEngine:
+        compiled_evaluators = []
+        for target in ruleset.get("targets", []):
+            tag = target.get("tag")
+            keywords = target.get("keywords", [])
+            
+            if not tag or not keywords: 
+                continue
+            if self.target_tags and tag not in self.target_tags: 
+                continue
+
+            # 파이썬 지연 바인딩 버그 방지를 위해 kw_groups로 현재 루프의 keywords 캡처
+            def evaluator(line: str, kw_groups=keywords) -> bool:
+                line_lower = line.lower()
+                for group in kw_groups:
+                    group_match = True
+                    
+                    if "AND" in group and group["AND"]:
+                        if not all(val.lower() in line_lower for val in group["AND"]):
+                            group_match = False
+                            
+                    if "OR" in group and group["OR"]:
+                        if not any(val.lower() in line_lower for val in group["OR"]):
+                            group_match = False
+                    
+                    # 그룹 내 조건(AND, OR)을 하나라도 완벽히 통과하면 즉시 매칭 성공 (Outer OR)
+                    if group_match:
+                        return True
+                        
+                return False
+
+            compiled_evaluators.append((evaluator, tag))
+            
+        # 기존 평가 엔진 재사용
+        return LocalStreamEngine(compiled_evaluators)
+
+    def _compile_regex_engine(self, ruleset: Dict[str, Any]) -> FastLifecycleEngine:
+        compiled_rules = []
+        for target in ruleset.get("targets", []):
+            tag = target.get("tag")
+            keywords = target.get("keywords", [])
+            
+            if not tag or not keywords: 
+                continue
+            if self.target_tags and tag not in self.target_tags: 
+                continue
+
+            regex_parts = []
+            for group in keywords:
+                lookaheads = ""
+                # AND와 OR 조건이 함께 있을 경우 전방 탐색을 중첩하여 논리 교집합 보장
+                if "AND" in group and group["AND"]:
+                    lookaheads += "".join(f"(?=.*{re.escape(word)})" for word in group["AND"])
+                if "OR" in group and group["OR"]:
+                    ors = "|".join(re.escape(word) for word in group["OR"])
+                    lookaheads += f"(?=.*(?:{ors}))"
+                
+                if lookaheads:
+                    regex_parts.append(f"^{lookaheads}.*")
+
+            if regex_parts:
                 final_regex = "|".join(regex_parts)
                 compiled_pattern = re.compile(final_regex, re.IGNORECASE)
                 compiled_rules.append((compiled_pattern, tag))

@@ -1,6 +1,5 @@
-# xphi.state.phase.runtime.worker
-## @lineage: xphi.state.runtime.worker
-## @lineage: xphi.kernel.phase.runtime.worker
+# xphi.kernel.node.runtime.worker
+## @lineage: xphi.state.phase.runtime.worker
 import asyncio
 import sys
 import os
@@ -11,8 +10,8 @@ from xphi.arch.bound.event.psi import PsiEvent
 
 from xphi.kernel.space.tunnel.factory import TunnelFactory
 from xphi.kernel.ops.task.supervisor import TaskSupervisor, Dispatcher
-from xphi.state.phase.runtime.context import RuntimeContext
-from xphi.state.phase.runtime.sensor import SurfaceActuator
+from xphi.kernel.node.runtime.context import RuntimeContext
+from xphi.kernel.node.runtime.sensor import SurfaceActuator
 from xphi.kernel.ops.daemon.bootstrap import mount_worker_layer
 from xphi.kernel.space.bind.resolver import find_current_self
 from xphi.watcher.plane.emitter import get_emitter
@@ -24,10 +23,13 @@ def worker_process_entry(master_id: str, worker_idx: int):
 async def _run_worker_loop(master_id: str, worker_idx: int):
     worker_id = f"{master_id}-w{worker_idx}"
     log = get_emitter(f"node.worker.{worker_idx}", phase="SYSTEM")
-    log.info(f"🚀 Worker Process Booting: [{worker_id}] (PID: {os.getpid()})")
-
+    
+    log.info(f"🚀 [Boot:1/4] Worker Process Started: [{worker_id}] (PID: {os.getpid()})")
     supervisor = TaskSupervisor(source=f"Worker-{worker_id}")
+
+    log.info(f"⚙️ [Boot:2/4] [{worker_id}] Provisioning isolated TunnelFactory...")
     tunnel = await TunnelFactory.get_default()
+    
     dispatcher = Dispatcher(supervisor=supervisor)
     
     def _worker_reload_handler(psi: PsiEvent):
@@ -52,6 +54,7 @@ async def _run_worker_loop(master_id: str, worker_idx: int):
         handler=_ignore_cli_commands
     )
 
+    log.info(f"📦 [Boot:3/4] [{worker_id}] Assembling RuntimeContext (EventBus, Actuator)...")
     ctx = RuntimeContext(
         node_id=worker_id,
         tunnel=tunnel,
@@ -64,13 +67,15 @@ async def _run_worker_loop(master_id: str, worker_idx: int):
         shutdown_hook=supervisor.shutdown
     )
 
+    log.info(f"🛠️ [Boot:4/4] [{worker_id}] Mounting Worker Layer Daemons...")
     mount_worker_layer(supervisor, ctx)
+    log.signal(f"✅ Worker [{worker_id}] Fully Operational & Idling.")
     
     try:
         while not supervisor._closed:
             await asyncio.sleep(1)
     except asyncio.CancelledError:
-        log.info(f"Worker {worker_id} received shutdown signal.")
+        log.warn(f"⚠️ Worker [{worker_id}] received shutdown signal.")
     finally:
         await tunnel.close()
-        log.info(f"Worker Process Terminated: [{worker_id}]")
+        log.info(f"🛑 Worker Process Terminated: [{worker_id}]")

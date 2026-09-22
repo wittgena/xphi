@@ -3,8 +3,7 @@ import sys
 import asyncio
 from typing import List, Dict, Any, Optional, TypeVar, Callable, Generic
 
-from xphi.arch.bound.xor.parser.ruleset.stream import ElasticDSLRulesetParser, LocalStreamRulesetParser
-from xphi.arch.bound.xor.parser.ruleset.engine import CompiledEngine
+from xphi.arch.bound.xor.parser.ruleset.engine import CompiledEngine, StreamTaggingParser
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.arch.dev.tracer.base import (
     BaseAuditor, 
@@ -13,6 +12,8 @@ from xphi.arch.dev.tracer.base import (
 )
 
 log = get_emitter("tracer.infra.topos")
+
+T = TypeVar('T')
 
 class ContainerStateAuditor(BaseAuditor):
     def __init__(self, target_label: str, boundary: SystemBound, namespace: str = "default"):
@@ -38,7 +39,6 @@ class ContainerStateAuditor(BaseAuditor):
                         parts = out.split(":")
                         self.exit_code = parts[1].strip() if len(parts) > 1 and parts[1] else "Unknown"
                         
-                        # 카오스 테스트 관점: 비정상 종료 시 즉시 루프 탈출
                         if self.exit_code not in ["", "0", "Unknown"]:
                             self.log.crit(f"  [CHAOS STATE] Pod crashed with Phase: {parts[0]}, ExitCode: {self.exit_code}")
                             break
@@ -78,6 +78,7 @@ class EntropyAuditor(BaseAuditor):
         except asyncio.CancelledError:
             pass
 
+
 class UniversalLogAuditor(BaseStreamAuditor):
     """@desc: [Semantics Axis] kubectl logs -f 를 통해 스트림을 확보하고 DSL 규칙으로 파싱합니다."""
     def __init__(self, target_label: str, verify_type: str, boundary: SystemBound, namespace: str = "default", ruleset: Optional[Dict] = None):
@@ -88,7 +89,7 @@ class UniversalLogAuditor(BaseStreamAuditor):
         self.log = get_emitter(f"auditor.semantic_log.{target_label}", phase="agent")
         
         _ruleset = ruleset or {"targets": []}
-        self.resolver = LogResolver[CompiledEngine](ruleset=_ruleset, parser=LocalStreamRulesetParser())
+        self.resolver = LogResolver[CompiledEngine](ruleset=_ruleset, parser=StreamTaggingParser(engine_type="local"))
         self.rule_engine: CompiledEngine = self.resolver.resolve()
         
         self.hit_fatal_limit = False
@@ -122,16 +123,53 @@ class UniversalLogAuditor(BaseStreamAuditor):
 
 
 class LogResolver(Generic[T]):
-    """Ruleset을 엔진으로 파싱하는 모듈 (기존 동일)"""
-    def __init__(self, ruleset: Optional[Dict[str, Any]] = None, parser: Optional[Any] = None):
+    """Ruleset을 엔진으로 파싱하는 모듈 (인터페이스 정합성 보완)"""
+    def __init__(self, ruleset: Optional[Dict[str, Any]] = None, parser: Optional[Any] = None, target_tags: Optional[List[str]] = None):
         self.ruleset = ruleset or {"targets": []}
-        self.parser = parser or LocalStreamRulesetParser()
+        self.parser = parser or StreamTaggingParser(engine_type="local", target_tags=target_tags)
 
-    def resolve(self, target_tags: Optional[List[str]] = None) -> T:
+    def resolve(self) -> T:
         try:
-            return self.parser.parse_ruleset(self.ruleset, target_tags)
-        except Exception:
+            return self.parser.parse_ruleset(self.ruleset)
+        except Exception as e:
+            log.error(f"[LogResolver] Engine compilation failed: {e}")
             return None
+
+
+# [복원됨] fiber.phase.cli.observer 가 호출하지만 누락되었던 Auditor
+class LeakObserverAuditor(BaseAuditor):
+    """@desc: 메모리 릭(Memory Leak) 발생 여부를 지속 관찰하는 Auditor"""
+    def __init__(self, boundary: SystemBound, target_label: str = "app=fiber-worker", namespace: str = "fiber-topos"):
+        super().__init__(target=target_label, namespace=namespace, boundary=boundary)
+        self.pod_label = target_label
+        self.log = get_emitter(f"auditor.leak.{target_label}", phase="agent")
+        self.memory_growth_detected = False
+        self._baseline_mem = 0.0
+
+    async def _observe(self) -> None:
+        try:
+            while True:
+                cmd = ["kubectl", "top", "pod", "-l", self.pod_label, "-n", self.namespace, "--no-headers"]
+                code, out, _ = await self.boundary.run_command(cmd, capture=True)
+                
+                if code == 0 and out:
+                    try:
+                        parts = out.strip().split()
+                        if len(parts) >= 3:
+                            # 예: "pod-name 5m 120Mi"
+                            mem_str = parts[2].replace("Mi", "").replace("Gi", "")
+                            current_mem = float(mem_str)
+                            
+                            if self._baseline_mem == 0.0:
+                                self._baseline_mem = current_mem
+                            elif current_mem > (self._baseline_mem * 1.5): # 50% 이상 증가 시 릭으로 판단
+                                self.memory_growth_detected = True
+                                self.log.warning(f"  [CHAOS EVENT] Rapid memory growth detected: {self._baseline_mem}Mi -> {current_mem}Mi")
+                    except Exception:
+                        pass
+                await asyncio.sleep(3)
+        except asyncio.CancelledError:
+            pass
 
 HANG_VERDICT_TABLE: Dict[str, Callable[['UniversalLogAuditor'], bool]] = {
     "deadlock": lambda semantic: getattr(semantic, 'hit_fatal_limit', False),

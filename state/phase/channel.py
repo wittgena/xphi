@@ -11,10 +11,6 @@ pipeline_log = get_emitter("channel.pipeline")
 codec_log = get_emitter("channel.codec")
 bridge_log = get_emitter("rpc.bridge")
 
-# =====================================================================
-# 1. Pipeline Classes (Base Structures & Orchestration)
-# =====================================================================
-
 class ChannelContext:
     """핸들러 간의 이벤트 라우팅 및 전역 상태(AttributeMap) 공유"""
     def __init__(self, pipeline: 'ChannelPipeline', index: int):
