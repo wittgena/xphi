@@ -229,7 +229,6 @@ class AsyncAgentProtocol:
             self.log.error(f"Async Routing/Execution Fault: {e}", exc_info=True)
             await self.send_error(req_id, -32000, f"Execution failed: {str(e)}")
         finally:
-            # 컨텍스트 복원 (다른 코루틴과 섞이지 않음)
             current_request_id.reset(token)
 
     """Abstract Async Handlers"""
