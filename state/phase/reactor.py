@@ -1,6 +1,4 @@
 # xphi.state.phase.reactor
-## @lineage: xphi.kernel.phase.reactor
-## @lineage: kernel.phase.reactor
 import asyncio
 import sys
 import os
@@ -20,7 +18,7 @@ class PhaseReactor:
         if cls._policy_applied:
             return
 
-        worker_idx = int(os.environ.get("DPHI_WORKER_IDX", os.getpid()))
+        worker_idx = int(os.environ.get("XPHI_WORKER_IDX", os.getpid()))
         if sys.platform == 'darwin':
             log.info("[Reactor] ⚡ macOS detected. Native CPU Affinity pinning is bypassed (OS constraint).")
             cls._pinned_core = f"Virtual-{worker_idx}"
@@ -107,8 +105,7 @@ class PhaseReactor:
     ) -> None:
         loop = asyncio.get_running_loop()
         
-        # [중요] 디버그 모드를 켜야 source_traceback이 context에 포함됩니다.
-        if os.environ.get("DPHI_DEBUG") == "1":
+        if os.environ.get("XPHI_DEBUG") == "1":
             loop.set_debug(True)
             
         loop.set_exception_handler(cls._global_exception_handler)

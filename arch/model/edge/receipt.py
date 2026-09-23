@@ -3,7 +3,7 @@ from typing import Any, ClassVar, List, Optional, Dict
 from pydantic import BaseModel, ConfigDict, Field
 
 class ClientMandateRequest(BaseModel):
-    """DPHI에 제출하는 오프체인 과금 허용 서명 (EIP-712/AP2)"""
+    """PHASE에 제출하는 오프체인 과금 허용 서명 (EIP-712/AP2)"""
     client_id: str = Field(..., description="Client DID or Wallet Address")
     max_spend_usdc: str = Field(..., description="최대 허용 과금액 (예: '100.0')")
     expiration_ts: int = Field(..., description="서명 만료 Timestamp")
