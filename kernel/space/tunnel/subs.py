@@ -1,7 +1,4 @@
 # xphi.kernel.space.tunnel.subs
-## @lineage: xphi.kernel.space.topos.tunnel.subs
-## @lineage: kernel.space.topos.tunnel.subs
-## @lineage: arch.topos.tunnel.subs
 import asyncio
 import json
 from abc import ABC, abstractmethod
@@ -46,7 +43,6 @@ class DistributedPubSub[T]:
     _listener_task: Optional[asyncio.Task] = None
 
     async def start_listening(self):
-        """Tunnel의 스트림을 청취하여 로컬 Subscriber들에게 분배하는 백그라운드 태스크"""
         if self._listener_task:
             return
 
@@ -90,9 +86,7 @@ class DistributedPubSub[T]:
         event_payload = _safe_serialize(event)
         await self.tunnel.publish(self.channel, event_payload)
 
-    # [핵심 수정] 누락되어 있던 publish_batch 메서드 구현
     async def publish_batch(self, topic: str, events: List[Any]) -> None:
-        """다건(Batch) 이벤트를 특정 토픽 메타데이터와 함께 발행"""
         batch_payload = _safe_serialize({
             "topic": topic,
             "events": events
