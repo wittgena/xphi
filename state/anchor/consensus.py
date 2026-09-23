@@ -97,7 +97,6 @@ class KernelLedger:
             else:
                 raise 
 
-        # [순환 참조 해결] AuditWarden 지연 로딩 (Lazy Import)
         from xphi.watcher.receptor.warden import AuditWarden
         AuditWarden.register_anomaly_handler(self._handle_warden_anomaly)
 
