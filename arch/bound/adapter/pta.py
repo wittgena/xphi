@@ -21,13 +21,7 @@ from xphi.kernel.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.arch.bound.adapter.state import StateAdapter
 
-# Unified Logger for adapter.pta
 log = get_emitter("adapter.pta", phase="KERNEL")
-
-
-# ==========================================
-# 1. Cryptography & Signature Utilities
-# ==========================================
 
 class NodeSigner:
     """Singleton identity manager responsible for hierarchical key loading and deterministic cryptographic signature generation for the node"""
