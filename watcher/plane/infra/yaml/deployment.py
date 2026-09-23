@@ -1,9 +1,4 @@
 # xphi.watcher.plane.infra.yaml.deployment
-"""
-@desc: 
-- Dynamic Kubernetes YAML Blueprint Generator.
-- Separated from infrastructure orchestrator for better readability and maintenance.
-"""
 from typing import Dict
 
 class KubeBlueprint:

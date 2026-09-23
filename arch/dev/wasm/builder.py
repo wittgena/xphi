@@ -1,5 +1,4 @@
 # xphi.arch.dev.wasm.builder
-## @lineage: xphi.arch.wasm.builder
 import os
 import shutil
 import json
@@ -20,7 +19,7 @@ REGISTRY_FILE = TIME_ROOT / "registry.json"
 
 WASM_PROJECTS = [
     {
-        "name": "dphi",
+        "name": "phase",
         "env": {"RUSTFLAGS": "-C target-feature=+simd128 -C opt-level=3"}
     },
     {
@@ -29,14 +28,13 @@ WASM_PROJECTS = [
     },
     {
         "name": "gateway", 
-        # [FIX] 컴파일 랙(Stuttering) 제거: fat -> thin 으로 변경하고 codegen-units 제한을 해제하여 멀티코어 빌드 허용
         "env": {"RUSTFLAGS": "-C opt-level=3 -C lto=thin"}
     },
 ]
 
 
 class WasmBuilder(BaseTracer):
-    """WASM 컴파일 (Dphi, DVM, Gateway) 및 Rust-Driven JSON 스키마 자동 추출 페이즈"""
+    """WASM 컴파일 (phase, DVM, Gateway) 및 Rust-Driven JSON 스키마 자동 추출 페이즈"""
     
     def __init__(self, timeout: int = 120, target_projects: Optional[List[str]] = None):
         super().__init__(tracer_name="wasm.builder", timeout=timeout)
@@ -59,11 +57,11 @@ class WasmBuilder(BaseTracer):
         self.log.info("[Builder] Extracting JSON Schema using Standard Binary...")
         await asyncio.to_thread(os.makedirs, TIME_ROOT, exist_ok=True)
         
-        dphi_dir = THEORIA_ROOT / "dphi"
+        phase_dir = THEORIA_ROOT / "phase"
         
         code, out, err = await self.boundary.run_command(
             ["cargo", "run", "--bin", "schema", "--quiet"], 
-            cwd=str(dphi_dir), capture=True
+            cwd=str(phase_dir), capture=True
         )
         
         if code != 0:
@@ -194,7 +192,7 @@ class WasmBuilder(BaseTracer):
         
         self.log.info(f"\n--- [START] Compiling WASM Artifacts ({', '.join(project_names).upper()}) ---")
         
-        if not self.target_projects or "dphi" in self.target_projects:
+        if not self.target_projects or "phase" in self.target_projects:
             if not await self.generate_schema_from_rust():
                 self.rupture_confirmed = True
                 return

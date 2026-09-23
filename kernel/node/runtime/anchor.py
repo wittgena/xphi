@@ -1,5 +1,4 @@
 # xphi.kernel.node.runtime.anchor
-## @lineage: xphi.state.phase.runtime.node
 import asyncio
 import time
 import json

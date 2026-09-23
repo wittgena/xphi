@@ -252,7 +252,7 @@ class ShellEntry:
     async def _print_header(self):
         await self.manifold.refresh_cluster_state()
         log.info("\n" + "="*75)
-        log.info(" 🌌 [\033[95mDPHI Cluster Administration & Diagnostics Console\033[0m]")
+        log.info(" 🌌 [\033[95mPHASE Cluster Administration & Diagnostics Console\033[0m]")
         log.info(f" ⚙️  Status: \033[92mOnline\033[0m | Workers: {self.manifold.worker_count} | Max Capacity: {self.manifold.total_capacity}")
         log.info("="*75)
         log.info(" [Pre-flight & Observation]")
@@ -292,7 +292,7 @@ class ShellEntry:
                 if builder.rupture_confirmed: 
                     log.error("❌ WASM Artifact build failed. Structural rupture confirmed.")
                 else: 
-                    log.info("✅ WASM Artifacts (dphi.wasm, dvm.wasm) are armed and ready.")
+                    log.info("✅ WASM Artifacts (phase.wasm, dvm.wasm) are armed and ready.")
             elif cmd == "nodes":
                 await self.manifold.refresh_cluster_state()
                 log.info(f"📊 Active Compute Market: {self.manifold.worker_count} Workers / {self.manifold.total_capacity} Slots.")

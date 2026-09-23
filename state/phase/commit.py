@@ -85,7 +85,9 @@ class EpochManager(Attractor):
                 return snapshot["repos"][repo_name]
             if repo_name in snapshot.get("cached_states", {}):
                 return snapshot["cached_states"][repo_name]
-        return "0000000"
+        
+        # [수정 1] 하드코딩된 "0000000" 대신 WASM/PTA 표준 초기값인 "genesis" 반환
+        return "genesis"
 
     def project(self, states: Dict[str, str]) -> Dict[str, str]:
         return states
@@ -188,6 +190,19 @@ async def anchor_commit(
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")
         
+        # [수정 2] 다음 번 커밋 시 resolve()가 읽을 수 있도록 Anchor(self) 해시를 히스토리 페이로드에 명시적으로 주입
+        if "anchor_result" in sealed_data:
+            seal_payload["repos"][anchor.name] = sealed_data["anchor_result"]["commit_hash"]
+
+        # [수정 3] 에러(PermissionError 등) 발생 시 데이터 유실을 막기 위해 
+        # 물리적 렛저(seal_system_epoch) 접근 전에 히스토리를 메모리에서 디스크로 선제적 저장
+        full_history = history + [seal_payload]
+        try:
+            if hasattr(anchor.store, 'db') and anchor.store.db is not None:
+                anchor.store.db[anchor.registry_key] = json.dumps({"history": full_history}).encode('utf-8')
+        except Exception as e:
+            log.warning(f"Failed to update legacy registry: {e}")
+        
         from xphi.state.anchor.consensus import KernelCommit, AnchorRole
         from dataclasses import asdict
         
@@ -211,13 +226,5 @@ async def anchor_commit(
             except PermissionError as pe:
                 log.critical(f"Physical state finalization aborted due to Kernel Store privilege denial: {pe}")
                 return
-            
-        # Append to Legacy Registry for backwards compatibility
-        full_history = history + [seal_payload]
-        try:
-            if hasattr(anchor.store, 'db') and anchor.store.db is not None:
-                anchor.store.db[anchor.registry_key] = json.dumps({"history": full_history}).encode('utf-8')
-        except Exception as e:
-            log.warning(f"Failed to update legacy registry: {e}")
 
     log.info(f"## Era Fixed. Nexus: {nexus_id} (Aligned: {len(current_aligned_states)}, Lagged: {len(cached_states)})")

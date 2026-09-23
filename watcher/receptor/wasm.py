@@ -1,5 +1,4 @@
 # xphi.watcher.receptor.wasm
-## @lineage: watcher.receptor.wasm
 import json
 import time
 import hashlib
@@ -54,7 +53,6 @@ class WasmReceptor:
             "timestamp": int(signal.timestamp * 1000)
         }
         
-        ## dphi.wasm 내 validate_intent Entry 호출
         val_res = await self.broker.invoke("validate_intent", json.dumps(intent_payload))
         if not val_res.success:
             log.warn(f"[{self.receptor_id}] 🚫 Intent Validation Rejected: {val_res.error}")
@@ -137,7 +135,7 @@ class WasmReceptor:
 
         if trans_res.success:
             trans_output = json.loads(trans_res.output)
-            log.info(f"[{self.receptor_id}] ✨ Signal successfully bound to dphi.wasm! Commit: {commit_hash[:8]}...")
+            log.info(f"[{self.receptor_id}] ✨ Signal successfully bound to phase.wasm! Commit: {commit_hash[:8]}...")
             
             return ReceptorBindingResult(
                 is_bound=True,
