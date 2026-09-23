@@ -15,6 +15,7 @@ services:
       - ${FIBER_ARTIFACT_MOUNT:-/tmp}:/artifact_mount
     environment:
       - XPHI_ENV=ci
+    
     network_mode: "service:redis"
     depends_on:
       redis:
