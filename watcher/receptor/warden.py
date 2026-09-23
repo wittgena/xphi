@@ -214,11 +214,6 @@ class AuditWarden:
             log.critical(f"[Warden] Failed to install audit hook: {e}")
             raise RuntimeError("Warden installation failed. Cannot guarantee system boundary.") from e
 
-
-# ============================================================================
-# 3. SECRET AUDITOR (Secure Event Persistence)
-# ============================================================================
-
 class SecretAuditor:
     def __init__(self, cipher: Cipher, gateway: StoreGateway = None):
         self.cipher = cipher
@@ -286,6 +281,6 @@ class SecretAuditor:
 
 
 async def get_secret_auditor() -> SecretAuditor:
-    secret_key = os.getenv("LEDGER_CIPHER_KEY", "mock-secret-key-for-dev-only")
+    secret_key = os.getenv("DPHI_CIPHER_KEY", "mock-secret-key-for-dev-only")
     cipher_instance = Cipher(secret_key=secret_key)
     return SecretAuditor(cipher=cipher_instance)
