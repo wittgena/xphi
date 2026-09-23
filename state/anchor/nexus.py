@@ -1,5 +1,4 @@
 # xphi.state.anchor.nexus
-## @lineage: xphi.arch.model.anchor.nexus
 import json
 import time
 from dataclasses import dataclass, field
@@ -14,7 +13,7 @@ from xphi.kernel.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("adapter.anchor")
+log = get_emitter("adapter.nexus")
 
 class ActorIdentity:
     def __init__(self, name: str = "Anonymous"):

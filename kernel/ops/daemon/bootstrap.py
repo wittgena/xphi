@@ -89,7 +89,6 @@ class EventBusDaemon(AbstractDaemon):
                         except Exception as e:
                             self.log.error(f"Event parsing or dispatch error: {e}")
                         
-                        # [FIX] 어떤 경우에도 ACK는 날려 파이프라인 정체 방지
                         await self.tunnel.stream_ack(self.topic, self.group_name, message_id)
             except asyncio.CancelledError:
                 break
@@ -216,18 +215,7 @@ class DynamicsDaemon(AbstractDaemon):
             scope="GLOBAL", tick=0, carrier=carrier, phase_id=0, context={"domain": "kernel.bootstrap"}
         )
 
-
-# =========================================================================
-# [개선] 노드 프로파일(profile) 파라미터를 수신하여 위상 분리 지원
-# =========================================================================
 def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext, profile: str = "ALL"):
-    """
-    profile 매개변수를 기반으로 현재 노드에 필요한 인프라 데몬만 선별하여 마운트합니다.
-    (기본값 "ALL"을 유지하여 기존 하위 호환성 100% 보장)
-    """
-    
-    # 1. 공통 필수 데몬: Heartbeat는 프로파일과 무관하게 항상 동작 (네트워크 상태 보고용)
-    # 기존 코드와의 사이드 이펙트 차단을 위해 "ALL"일 때는 기존 명칭인 "master"를 그대로 사용
     assigned_role = profile.lower() if profile != "ALL" else "master"
     
     master_daemons = [
@@ -240,7 +228,6 @@ def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext, profile:
         )
     ]
     
-    # 2. 제어/관측 노드 전용 데몬: 무거운 DynamicsDaemon은 EDGE/COMPUTE 노드에서는 스킵
     if profile in ["ALL", "CONTROL"]:
         master_daemons.append(
             DynamicsDaemon(
@@ -249,7 +236,6 @@ def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext, profile:
             )
         )
     
-    # [FIX] 코어 데몬(Infra) 마운트 실패 시에도 예외 격리
     for daemon in master_daemons:
         try:
             supervisor.mount_daemon(daemon)
@@ -257,8 +243,7 @@ def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext, profile:
             log.error(f"Critical Failure: Could not mount master infra daemon '{daemon.name}': {e}", exc_info=True)
     
     log.info(f"Master Infra Layer mount attempt complete. (Profile: {profile})")
-
-    active_daemons_str = os.getenv("KERNEL_DAEMONS", "rest_edge,gateway_edge,risk_vault")
+    active_daemons_str = os.getenv("KERNEL_DAEMONS", "rest_edge,gateway_edge,rpc_worker,risk_vault")
     active_daemons = [d.strip() for d in active_daemons_str.split(",") if d.strip()]
     
     discovered_daemons = getattr(registry, "_daemons", {})
@@ -267,7 +252,6 @@ def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext, profile:
         DaemonClass = discovered_daemons.get(daemon_name)
         if DaemonClass:
             try:
-                # [FIX] 생성자 예외와 마운트 예외를 안전하게 커버
                 daemon_instance = DaemonClass(ctx=ctx)
                 supervisor.mount_daemon(daemon_instance)
                 log.info(f"App Layer Daemon Mounted on MASTER: {daemon_name} -> {DaemonClass.__name__}")

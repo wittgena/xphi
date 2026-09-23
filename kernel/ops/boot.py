@@ -128,18 +128,14 @@ async def main_async():
     
     bridge_watcher = PhaseSignal(event_bus=system_bus)
     default_plane.attach(bridge_watcher)
-
-    ## Gateway 보안 정책(Action Cost, Rate Limit) 동적 주입
     log.info("[Boot] Injecting Gateway Security Policies...")
     try:
         env_costs_str = os.getenv("GATEWAY_ACTION_COSTS", "{}")
         env_costs = json.loads(env_costs_str)
-        
         env_trusted_str = os.getenv("GATEWAY_TRUSTED_ACTIONS", "")
         if env_trusted_str:
             env_trusted = {a.strip() for a in env_trusted_str.split(",") if a.strip()}
         else:
-            # 설정값이 없으면 시스템의 필수 안전 동작들을 기본 신뢰 액션으로 지정
             env_trusted = {"LOGSTREAM_BULK_INSERT", "SECURITY_TENSION_ALERT", "AUDIT_LOG_APPEND"}
             
         capacity = int(os.getenv("GATEWAY_RATE_CAPACITY", "100"))
@@ -168,7 +164,6 @@ async def main_async():
     wait_timeout = 30.0
     elapsed = 0.0
     poll_interval = 0.2
-    
     if active_daemons:
         while elapsed < wait_timeout:
             discovered = getattr(registry, "_daemons", {})

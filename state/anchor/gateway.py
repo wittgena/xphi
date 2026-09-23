@@ -12,18 +12,15 @@ from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("anchor.gateway", phase="KERNEL")
 
-
 class GatewayPolicy:
     _instance = None
     def __init__(self):
-        # 기본(Default) 정책 유지 (안전망)
         self.action_costs = {
             "READ_RESOURCE": 1,
             "INVOKE_TOOL": 5,
             "INJECT_QUARANTINE_RULE": 10,
             "INJECT_META_RULE": 10
         }
-        # 내부 시스템 동작으로 간주하여 Rate Limit과 Sanitizer를 우회할 액션들
         self.trusted_actions = {
             "LOGSTREAM_BULK_INSERT", 
             "SECURITY_TENSION_ALERT",
@@ -70,7 +67,6 @@ class TokenBucketLimiter:
             self.tokens[identity_id] -= cost
             return True
         return False
-
 
 class PayloadSanitizer:
     OS_INJECTION_PATTERN = re.compile(r"(?:;|\||&&|`|\$\()")

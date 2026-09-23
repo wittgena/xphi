@@ -1,8 +1,8 @@
 # xphi.kernel.space.sandbox.resolver
-## @lineage: xphi.bound.space.sandbox.resolver
 import os
 import json
 import time
+import asyncio
 from enum import Enum
 from dataclasses import dataclass, asdict, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol, Union
@@ -15,11 +15,8 @@ from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.kernel.space.sandbox.config import fuel_config, tier_config
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("space.sandbox")
+log = get_emitter("sandbox.resolver")
 
-# =====================================================================
-# 1. Constants & Enums
-# =====================================================================
 SOURCE_NAME = "sandbox_executor"
 WASM_KIND_INFO = "INFO"
 WASM_KIND_TRANSITION = "TRANSITION"
@@ -31,9 +28,6 @@ class SandboxEnv(str, Enum):
     WASM = "wasm"       # 순수 WASM 바이너리 커널
     DOCKER = "docker"   # 향후 지원할 Heavy-duty 컨테이너 격리
 
-# =====================================================================
-# 2. Protocols & Data Models
-# =====================================================================
 class EffectResolver(Protocol):
     async def resolve(self, payload: Dict[str, Any], instruction: str, env: SandboxEnv, tier: Union[Tier, str]) -> Dict[str, Any]:
         ...
@@ -80,14 +74,10 @@ class BenchResult:
     tier_applied: str
     reason: Optional[str] = None
 
-
-# =====================================================================
-# 3. Resolvers & Executor
-# =====================================================================
 class SandboxResolver(EffectResolver):
-    def __init__(self, profile: Optional[MetabolicProfile] = None):
+    def __init__(self, broker: DphiBroker, profile: Optional[MetabolicProfile] = None):
         self.profile = profile or MetabolicProfile()
-        self.broker = DphiBroker(timeout=self.profile.max_compute_time)
+        self.broker = broker
 
     def _get_policy_from_tier(self, tier: Tier) -> CgroupPolicy:
         if tier == Tier.SYSTEM: 
@@ -118,18 +108,37 @@ class SandboxResolver(EffectResolver):
         report = SandboxReport(is_valid=False)
         if env in (SandboxEnv.DENO, SandboxEnv.WASM, SandboxEnv.LOCAL):
             start_time = time.time()
-            exec_res = await self.broker.execute(code=code, variables=variables, tier=target_tier.value)
-            elapsed_ms = (time.time() - start_time) * 1000
             
-            report.is_valid = exec_res.success
-            report.output = exec_res.output if exec_res.success else ""
-            report.error = str(exec_res.error) if not exec_res.success else ""
+            # 🚨 [LOG INJECTION: 실행할 순수 코드 및 변수 덤프]
+            log.error(f"[DEBUG-TRACE: 5] ➔ SandboxResolver.broker.execute 호출. Env: {env.value}")
+            log.error(f"[DEBUG-TRACE: 5] ➔ Code Preview: {code[:200]}")
+            log.error(f"[DEBUG-TRACE: 5] ➔ Variables: {variables}")
+
+            try:
+                exec_res = await self.broker.execute(code=code, variables=variables, tier=target_tier.value)
+                elapsed_ms = (time.time() - start_time) * 1000
+                
+                # 🚨 [LOG INJECTION: 실행 결과 확인]
+                log.error(f"[DEBUG-TRACE: 6] 🟢 코드 실행 응답 완료. Success: {exec_res.success}")
+                if not exec_res.success:
+                    log.error(f"[DEBUG-TRACE: 6] 🔴 코드 실행 실패 사유: {exec_res.error}")
+                
+                report.is_valid = exec_res.success
+                report.output = exec_res.output if exec_res.success else ""
+                report.error = str(exec_res.error) if not exec_res.success else ""
+                
+            except Exception as e:
+                elapsed_ms = (time.time() - start_time) * 1000
+                # 🚨 [LOG INJECTION: 브로커 크래시 추적]
+                log.error(f"[DEBUG-TRACE: 7] 💥 코드 실행 중 파이썬 예외 크래시: {str(e)}", exc_info=True)
+                report.is_valid = False
+                report.error = f"Broker Execution Crash: {str(e)}"
             
             fuel_consumed = 0
             mem_usage_bytes = 0
-            if exec_res.success:
+            if report.is_valid:
                 try:
-                    out_data = json.loads(exec_res.output)
+                    out_data = json.loads(report.output)
                     fuel_consumed = out_data.get("fuel_consumed", 0)
                     mem_usage_bytes = out_data.get("mem_usage_bytes", 0)
                 except json.JSONDecodeError:
@@ -154,10 +163,9 @@ class SandboxResolver(EffectResolver):
             
         return result_data
 
-
 class SandboxExecutor:
-    def __init__(self, resolvers: Optional[Dict[str, EffectResolver]] = None):
-        self.broker = DphiBroker()
+    def __init__(self, broker: DphiBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
+        self.broker = broker
         self.resolvers = resolvers or {}
 
     async def execute_stream(self, context: TaskContext) -> AsyncGenerator[Contract, None]:
@@ -191,11 +199,45 @@ class SandboxExecutor:
                 evolution_ctx=evo_ctx
             )
 
-            exec_result = await self.broker.invoke(
-                target_func=DphiMethod.EXECUTE_TRANSITION, 
-                payload=StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8'),
-                tier=context.tier  # 브로커 레벨 Cgroup 주입
-            )
+            canonical_bytes = StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8')
+            
+            # 🚨 [LOG INJECTION: 직렬화된 데이터 덤프 및 크기 확인]
+            log.error(f"[DEBUG-TRACE: 1] ➔ 브로커로 진입 직전. Payload Size: {len(canonical_bytes)} bytes")
+            log.error(f"[DEBUG-TRACE: 1] ➔ Canonical Payload Dump: {canonical_bytes[:500]} ... (truncated)")
+            
+            try:
+                # 🚨 [LOG INJECTION: 실제 대기 시간 측정]
+                invoke_start_time = time.time()
+                
+                exec_result = await asyncio.wait_for(
+                    self.broker.invoke(
+                        target_func=DphiMethod.EXECUTE_TRANSITION, 
+                        payload=canonical_bytes,
+                        tier=context.tier 
+                    ),
+                    timeout=11.0 # 10초 타임아웃 후 1초 여유 마진
+                )
+                
+                invoke_elapsed = time.time() - invoke_start_time
+                log.error(f"[DEBUG-TRACE: 2] 🟢 브로커 응답 수신 완료! 소요시간: {invoke_elapsed:.3f}초 | success: {exec_result.success}")
+                
+            except asyncio.TimeoutError:
+                # 🚨 [LOG INJECTION: 타임아웃 확정 지점]
+                log.error(f"[DEBUG-TRACE: 3] 🛑 브로커 11초 타임아웃 발생! (ToposID: {context.topos_id})")
+                yield Contract(
+                    id=next_id(), topos_id=context.topos_id, phase_id=context.phase_id, nexus_id=context.nexus_id,
+                    kind="divergence", source=SOURCE_NAME, state=CoherenceState.FRAGMENTED,
+                    payload={"reason": "Sandbox invoke timed out (Internal Deadlock)"}
+                )
+                break
+            except Exception as e:
+                log.error(f"[DEBUG-TRACE: 4] 💥 브로커 호출 중 예외 발생: {str(e)}", exc_info=True)
+                yield Contract(
+                    id=next_id(), topos_id=context.topos_id, phase_id=context.phase_id, nexus_id=context.nexus_id,
+                    kind="divergence", source=SOURCE_NAME, state=CoherenceState.FRAGMENTED,
+                    payload={"reason": f"Invoke Crash: {str(e)}"}
+                )
+                break
             
             if not exec_result.success:
                 log.warning(f"[{SOURCE_NAME}] Divergence: {exec_result.error}")
@@ -255,7 +297,6 @@ class SandboxExecutor:
                 
                 resolver = self.resolvers.get(target_key)
                 if resolver:
-                    # 런타임 환경(env)과 권한(tier)을 어댑터에 전달하여 올바른 샌드박스로 라우팅 유도
                     current_payload = await resolver.resolve(
                         current_payload, 
                         instruction=req_msg, 
@@ -296,23 +337,11 @@ class SandboxExecutor:
                 )
                 break
 
-
-# =====================================================================
-# 4. Profile Manager (BenchProfile)
-# =====================================================================
 class BenchProfile:
-    """
-    에이전트 인텐트(코드)의 실제 샌드박스 실행 및 Fuel(과금 단위) 측정을 담당합니다.
-    인가 및 보안 검증 로직은 Gateway 계층으로 위임하고 순수 리소스 할당 및 실행에 집중합니다.
-    """
-    def __init__(self):
-        pass
+    def __init__(self, broker: Optional[DphiBroker] = None):
+        self.broker = broker or DphiBroker()
 
     def _resolve_profile(self, tier: Tier) -> MetabolicProfile:
-        """
-        외부(Policy Engine 또는 Handler)에서 주입받은 Tier를 바탕으로
-        샌드박스 실행 리소스 제한(CgroupPolicy) 프로필을 설정합니다.
-        """
         if tier == Tier.SYSTEM:
             policy = CgroupPolicy.system()
             return MetabolicProfile(
@@ -327,10 +356,6 @@ class BenchProfile:
             return MetabolicProfile(cgroup_policy=policy)
 
     def _charge_account(self, client_id: str, fuel_consumed: int):
-        """
-        내부 회계 및 로깅을 수행합니다. 
-        실제 지갑 차감이나 원장 동기화는 상위 어댑터(EcoExchange)에서 처리하는 것을 권장합니다.
-        """
         billed_amount = (fuel_consumed / fuel_config.fuel_unit) * fuel_config.usd_per_fuel_unit
         log.info(f"[Billing] Charged ${billed_amount:.4f} for {fuel_consumed:,} fuel units. Agent: {client_id}")
 
@@ -343,15 +368,14 @@ class BenchProfile:
         tier: Tier = Tier.STANDARD,
         dry_run: bool = False
     ) -> BenchResult:
-        """
-        주어진 스키마(코드)를 샌드박스 환경에서 실행하고 결과 메트릭을 반환합니다.
-        """
         profile = self._resolve_profile(tier)
-        
         log.info(f"[{client_id}] Target Execution Tier mapped to: {tier.value}")
         
-        sandbox_resolver = SandboxResolver(profile=profile)
-        executor = SandboxExecutor(resolvers={"SANDBOX": sandbox_resolver}) 
+        # 🚨 [LOG INJECTION: 상위 진입점 상태 확인]
+        log.error(f"[DEBUG-TRACE: 8] ➔ BenchProfile 진입. Client: {client_id[:8]}, Dry_run: {dry_run}, Tier: {tier.value}")
+        
+        sandbox_resolver = SandboxResolver(broker=self.broker, profile=profile)
+        executor = SandboxExecutor(broker=self.broker, resolvers={"SANDBOX": sandbox_resolver}) 
         
         flat_payload = {"schema": schema, "entry": entry, "depth": depth}
         context = TaskContext(
@@ -365,10 +389,11 @@ class BenchProfile:
         try:
             async for contract in executor.execute_stream(context):
                 latest_contract = contract
-                log.debug(f"[{contract.topos_id}] Event Stream -> State: {contract.state.name} | Kind: {contract.kind}")
+                # 🚨 [LOG INJECTION: Contract Yield 확인]
+                log.error(f"[DEBUG-TRACE: 9] ➔ Contract 방출됨: Kind={contract.kind}, State={contract.state.name}")
                 
         except Exception as e:
-            log.error(f"[{context.topos_id}] Host Crash during execution: {e}")
+            log.error(f"[{context.topos_id}] Host Crash during execution: {e}", exc_info=True)
             return BenchResult(status="HOST_DIVERGENCE", fuel_consumed=0, tier_applied=tier.value, reason=str(e))
 
         if not latest_contract:

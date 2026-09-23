@@ -1,5 +1,4 @@
 # xphi.kernel.wasm.method
-## @lineage: xphi.kernel.dphi.method
 from enum import Enum
 
 class DphiMethod(str, Enum):
