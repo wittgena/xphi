@@ -81,9 +81,11 @@ class KernelLedger:
             self.db = Rdict(str(target_path), opt)
             self.role = AnchorRole.SEALER
             self.broker = None
-            self.wasm = DphiBroker() 
+
+            # import os
+            # wasm_timeout = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
+            # self.wasm = DphiBroker(timeout=wasm_timeout)
             log.info(f"[Ledger] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
-            
         except Exception as e:
             error_msg = str(e).lower()
             if "lock" in error_msg or "temporarily unavailable" in error_msg:
