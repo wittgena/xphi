@@ -47,7 +47,7 @@ def get_cached_module(wasm_path: str, cg_policy: WasmCgroup):
 class WasmInterpreter:
     def __init__(
         self,
-        wasm_module_path: str = "dphi.wasm",
+        wasm_module_path: str = "phase.wasm",
         enable_read_paths: Optional[List[Union[PathLike, str]]] = None,
         enable_write_paths: Optional[List[Union[PathLike, str]]] = None,
         enable_env_vars: Optional[List[str]] = None,
@@ -272,9 +272,7 @@ class WasmInterpreter:
             log.error(f"CosmWasm Execution Failed: {e}", exc_info=True)
             return ExecutionResult(success=False, error=ExecutionError(f"Execute Fatal: {str(e)}"))
 
-    # =========================================================================
-    # Standard DPHI Execution
-    # =========================================================================
+    ## Standard PHASE Execution
     def _run_wasm_function(self, target_func_name: str, payload: Any, context: Optional[dict] = None) -> str:
         self._ensure_engine_started()
         

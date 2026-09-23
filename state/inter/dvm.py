@@ -117,13 +117,13 @@ class DvmInterpreter:
                     vm_target = payload.get("vm_target", "UNKNOWN").upper()
                     
                     if vm_target == "DPHI_KERNEL":
-                        log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> dphi.wasm")
+                        log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> phase.wasm")
                         dphi_method = payload.get("method", "evaluate_tension")
                         dphi_context = payload.get("context", {"injected_anchor": 1, "injected_tick": 0})
                         dphi_payload = payload.get("payload", {})
                         
-                        dphi_wasm_path = str(Path(TIME_ROOT) / "dphi.wasm")
-                        with WasmInterpreter(dphi_wasm_path, policy=CgroupPolicy.system()) as dphi_kernel:
+                        phase_wasm_path = str(Path(TIME_ROOT) / "phase.wasm")
+                        with WasmInterpreter(phase_wasm_path, policy=CgroupPolicy.system()) as dphi_kernel:
                             res = dphi_kernel.invoke(dphi_method, json.dumps(dphi_payload), context=dphi_context)
                             
                             if res.success:

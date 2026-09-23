@@ -88,21 +88,16 @@ class _MockStateStore:
             base_payload = payload.get(PayloadKey.PAYLOAD, {})
             context = payload.get(PayloadKey.CONTEXT, {})
 
-            # =========================================================================
             # [Dynamic Timeout] Worker Limit 회피 및 Fast-Fail 복구
-            # =========================================================================
             requested_timeout = float(context.get("timeout", 15.0))
             dynamic_timeout = httpx.Timeout(requested_timeout + 3.0, connect=5.0)
-
-            # [라우팅 패치] DphiMethod를 기반으로 DPHI 커널 프로토콜 필터링
             dphi_kernel_methods = {
                 m.value for m in DphiMethod 
                 if m.value not in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_DVM.value)
             }
 
-            # [라우팅 패치] vm_target 정밀 분기
-            if wasm_path == "dphi.wasm" or method_func in dphi_kernel_methods:
-                vm_tgt = "DPHI"
+            if wasm_path == "phase.wasm" or method_func in dphi_kernel_methods:
+                vm_tgt = "PHASE"
             elif wasm_path == "dvm.wasm" or method_func == DphiMethod.EXECUTE_DVM.value:
                 vm_tgt = "DVM"
             elif wasm_path: 

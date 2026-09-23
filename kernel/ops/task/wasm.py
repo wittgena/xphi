@@ -21,7 +21,7 @@ REDIS_CONTROL_CHANNEL = "wasm:control:req"
 REDIS_STREAM_TOPIC    = "wasm:execute:stream"
 REDIS_GROUP_NAME      = "wasm_tasker_group"
 
-DEFAULT_WASM_PATH     = "dphi.wasm"
+DEFAULT_WASM_PATH     = "phase.wasm"
 DEFAULT_TIER          = "STANDARD"
 DEFAULT_CONCURRENCY   = 5
 POLL_TIMEOUT_MS       = 1000
