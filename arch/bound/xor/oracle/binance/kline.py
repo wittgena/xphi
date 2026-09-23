@@ -1,6 +1,4 @@
 # xphi.arch.bound.xor.oracle.binance.kline
-## @lineage: xphi.bound.xor.oracle.binance.kline
-## @lineage: xphi.bound.oracle.binance.kline
 """
 @arn: arn:bound:oracle:binance:kline:v1.0.1
 @desc: Deterministic data adapter and validator for Binance K-line data

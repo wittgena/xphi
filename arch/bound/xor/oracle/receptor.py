@@ -1,6 +1,4 @@
 # xphi.arch.bound.xor.oracle.receptor
-## @lineage: xphi.bound.xor.oracle.receptor
-## @lineage: xphi.bound.oracle.receptor
 import os
 import time
 import hashlib
@@ -98,12 +96,23 @@ class ProvableOracleAggregator:
             "request_params": intent_params
         }
         
-        try:
-            response = await client.get(intent_params["url"], params=intent_params["query"])
-            response.raise_for_status()
-        except httpx.RequestError as e:
-            self.log.error(f"[Aggregator] Source {arn} failed: {str(e)}")
-            raise # Fail-fast 원칙 유지
+        max_retries = 3
+        retry_delay = 0.5  # 초기 대기 시간 (초)
+        response = None
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = await client.get(intent_params["url"], params=intent_params["query"])
+                response.raise_for_status()
+                break
+            except httpx.RequestError as e:
+                if attempt == max_retries:
+                    self.log.error(f"[Aggregator] Source {arn} failed after {max_retries} attempts: {str(e)}")
+                    raise  # 최종 실패 시 에러 전파 (Fail-fast 복귀)
+                
+                self.log.warning(f"[Aggregator] Source {arn} attempt {attempt} failed ({str(e)}). Retrying in {retry_delay}s...")
+                await asyncio.sleep(retry_delay)
+                retry_delay *= 2  # 0.5s -> 1.0s -> 2.0s
             
         parsed_data = adapter.parse_observation(response.json())
         obs_hash = hashlib.sha256(StateAdapter.to_canonical_bytes(parsed_data)).hexdigest()
@@ -118,7 +127,6 @@ class ProvableOracleAggregator:
     async def fetch_aggregate_and_seal(self, symbol: str, target_arns: List[str], strategy: str = "mean") -> Dict[str, Any]:
         fetch_time = int(time.time())
         end_time_ms = (fetch_time // 60 * 60 * 1000) - 1
-        
         self.log.info(f"[Aggregator] Initiating async multi-source fetch for {symbol} (Strategy: {strategy})")
 
         composite_sources = {}
