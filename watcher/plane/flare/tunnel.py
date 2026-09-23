@@ -105,7 +105,7 @@ class _MockStateStore:
             else:
                 vm_tgt = "PYTHON"
 
-            if vm_tgt == "DPHI":
+            if vm_tgt == "PHASE":
                 actual_edge_payload = {
                     "method": method_func,     
                     "context": context,        

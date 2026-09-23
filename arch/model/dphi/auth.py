@@ -21,4 +21,3 @@ class KernelAuthPayload(BaseModel):
     """Broker에서 반환되는 Kernel Auth 데이터 규격"""
     fuel_budget: float = Field(default=float('inf'), description="할당된 최대 토큰/연료")
     audit_hash: Optional[str] = Field(default=None, description="영수증 봉합을 위한 해시")
-    # 향후 권한 관련 필드 추가 시 여기에 집중

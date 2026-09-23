@@ -67,7 +67,7 @@ def get_client(
     if cache_key in _HTTPX_CLIENT_CACHE:
         return _HTTPX_CLIENT_CACHE[cache_key]
 
-    headers = {"User-Agent": os.environ.get("DPHI_USER_AGENT", "gate/1.0")}
+    headers = {"User-Agent": os.environ.get("XPHI_USER_AGENT", "gate/1.0")}
     verify = _get_ssl_context()
     limits = _get_httpx_limits()
     
@@ -179,10 +179,6 @@ class ReplayAttackError(ValueError):
     pass
 
 class VerifiedHttpClient:
-    """
-    내가 구축한 서버(Edge Node)에서 AttestationMiddleware를 통해 주입한 
-    암호학적 서명을 검증하는 클라이언트입니다. Root Key 기반의 동적 키 교환을 지원합니다.
-    """
     def __init__(self, client: Union[httpx.Client, httpx.AsyncClient], max_age_seconds: int = 60):
         self._client = client
         self._max_age_seconds = max_age_seconds

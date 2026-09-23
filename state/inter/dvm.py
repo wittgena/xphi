@@ -116,7 +116,7 @@ class DvmInterpreter:
                     payload = json.loads(json_str)
                     vm_target = payload.get("vm_target", "UNKNOWN").upper()
                     
-                    if vm_target == "DPHI_KERNEL":
+                    if vm_target == "PHASE":
                         log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> phase.wasm")
                         dphi_method = payload.get("method", "evaluate_tension")
                         dphi_context = payload.get("context", {"injected_anchor": 1, "injected_tick": 0})
@@ -135,7 +135,7 @@ class DvmInterpreter:
                                     "revert_reason": residue.get("error")
                                 }
                             else:
-                                native_result = {"success": False, "revert_reason": f"DPHI Kernel Panic: {res.error}"}
+                                native_result = {"success": False, "revert_reason": f"XPHI Kernel Panic: {res.error}"}
 
                     elif vm_target == "COSMWASM_EXTERNAL":
                         log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> External CosmWasm")
