@@ -16,7 +16,7 @@ class StartIntentEvent:
     client_id: str
     action: str
     max_fuel: int
-    source_code: str
+    payload: Any
     signature: str
 
 @dataclass
@@ -41,7 +41,7 @@ class RunComputePhaseCmd:
     client_id: str
     action: str
     max_fuel: int
-    source_code: str
+    payload: Any
     signature: str
 
 @dataclass
@@ -78,7 +78,7 @@ class EdgePhaseFSM:
                 client_id=event.client_id, 
                 action=event.action,
                 max_fuel=event.max_fuel, 
-                source_code=event.source_code,
+                payload=event.payload,
                 signature=event.signature
             )
         elif self.state == EdgePhaseState.COMPUTING and isinstance(event, ComputePhaseCompletedEvent):

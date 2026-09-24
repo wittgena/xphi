@@ -19,18 +19,32 @@ class SandboxIntent(BaseModel):
     client_id: str
     responder_id: Optional[str] = Field(default=None, description="타겟 실행 노드 ID (없을 시 Gateway가 할당)")
     action: str
-    source_code: str
+    payload: Any
     max_fuel: int = Field(..., description="최대 허용 CPU 사이클 (가스 리밋)")
     signature: str
 
+# class AuditReceipt(BaseModel):
+#     receipt_id: str
+#     receipt_type: str
+#     status: str
+#     fuel_consumed: int
+#     metered_cost_usd: float
+#     state_root: str
+#     audit_trail: List[str]
+
 class AuditReceipt(BaseModel):
-    receipt_id: str
-    receipt_type: str
-    status: str
-    fuel_consumed: int
-    metered_cost_usd: float
-    state_root: str
-    audit_trail: List[str]
+    # --- [검증 필수 필드 (Mandatory)] ---
+    receipt_id: str = Field(..., description="발급된 영수증/이벤트 고유 ID")
+    state_root: str = Field(..., description="검증할 대상의 트랜잭션 해시 또는 머클 루트")
+
+    # --- [부가/상태 필드 (Optional / Default)] ---
+    status: str = Field(default="COMPLETED", description="현재 영수증의 처리 상태")
+    receipt_type: str = Field(default="AUDIT", description="영수증 유형 (예: AUDIT, COMPUTE)")
+    
+    # --- [과금 및 추적 필드 (Optional)] ---
+    fuel_consumed: int = Field(default=0, description="실행에 소모된 컴퓨팅 자원")
+    metered_cost_usd: float = Field(default=0.0, description="USDC 기준 과금액")
+    audit_trail: List[str] = Field(default_factory=list, description="이력 추적 트레일")
 
 class AuditEvent(BaseModel):
     message: str
