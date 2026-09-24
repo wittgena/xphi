@@ -8,7 +8,6 @@ from dataclasses import dataclass
 class UnifiedRegistry:
     """단일 진실 공급원 (SSOT) 레지스트리 - Ator 대통합 구조"""
     def __init__(self):
-        # 파편화된 카테고리를 삭제하고 단일 물리적 저장소로 통합 (Primary Key: name)
         self._ators: Dict[str, Type] = {}
         self._daemons: Dict[str, Type] = {}
         self._cli_tasks: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
@@ -63,14 +62,7 @@ class UnifiedRegistry:
 # 싱글톤 인스턴스
 registry = UnifiedRegistry()
 
-# =========================================================================
-# UNIVERSAL DECORATORS
-# =========================================================================
 def ator_contract(name: str, role: str = "ator"):
-    """
-    모든 시스템 컴포넌트를 수용하는 범용 데코레이터
-    사용 예: @contract.ator("topos.watcher", role="watcher")
-    """
     def decorator(cls: Type): 
         registry.register_component(name, cls, role=role)
         return cls
