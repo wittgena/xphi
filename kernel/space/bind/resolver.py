@@ -134,9 +134,12 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
     anchor_dir = get_anchor_dir(self_root)
     
     clean_name = _clean_subpath(self_root.name, name)
-    direct_candidate = (self_root / clean_name).resolve()
-    if direct_candidate.exists() and direct_candidate.is_dir():
-        return direct_candidate
+    
+    # USER 모드(Docker)에서는 우연히 존재하는 가짜 빈 폴더에 속지 않도록 DEV 모드일 때만 숏컷 허용
+    if self_root != Path.home():
+        direct_candidate = (self_root / clean_name).resolve()
+        if direct_candidate.exists() and direct_candidate.is_dir():
+            return direct_candidate
 
     ## @phase: Path mapping & Substitution
     bound = load_bound(self_root)
@@ -158,8 +161,6 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
             if base_module in around_topology:
                 
                 # --- [CORE FIX] 동적 패키지 경로 추적 (Dynamic Core Resolution) ---
-                # USER 모드(self_root가 Home 디렉터리)일 경우, bound.json의 하드코딩된 경로를 
-                # 무시하고 importlib을 이용해 메모리 상의 실제 site-packages 절대 경로를 찾아옵니다.
                 if self_root == Path.home(): 
                     try:
                         import importlib.util
@@ -167,13 +168,10 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
                         if spec and spec.submodule_search_locations:
                             base_abs_path = Path(spec.submodule_search_locations[0])
                         else:
-                            # Fallback 1: 네임스페이스 패키지 문제 등으로 찾을 수 없을 때
                             base_abs_path = Path(around_topology[base_module]["path"])
                     except ImportError:
-                        # Fallback 2: 패키지 임포트 실패 시
                         base_abs_path = Path(around_topology[base_module]["path"])
                 else:
-                    # DEV 모드: bound.json에 기록된 로컬 소스 디렉터리 경로를 그대로 사용 (No Side-Effect)
                     base_abs_path = Path(around_topology[base_module]["path"])
                 # ------------------------------------------------------------------
 
@@ -185,7 +183,6 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
             elif base_module == "anchor":
                 sub_path_parts = safe_rel_path.split("/")[1:]
                 sub_path = "/".join(sub_path_parts) if sub_path_parts else ""
-                # self_root / "anchor" 가 아닌 계산된 anchor_dir 사용
                 substitutions[prefix_key] = (anchor_dir / sub_path).resolve()
                 
             # 3. 기타 런타임 데이터 및 DEV 모드 (self_root 기준 상대 매핑)
@@ -202,8 +199,35 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
             else:
                 raise RuntimeError(f"Unknown substitution prefix ':{prefix}:' in paths mapping '{name}: {raw_mapped}'")
         else:
+            # 💡 [CORE FIX 2] 콜론이 없는 일반 매핑 처리 (Core Repo 실체 바인딩)
             mapped_subpath = _clean_subpath(self_root.name, raw_mapped)
-            target_path = (self_root / mapped_subpath).resolve()
+            base_module = mapped_subpath.split("/")[0]
+            
+            # 물리적으로 존재하는 코어 Repo일 경우 무조건 around 토폴로지를 신뢰함
+            if base_module in around_topology:
+                if self_root == Path.home(): 
+                    # USER 모드: 메모리 상의 실제 site-packages 절대 경로 확정
+                    try:
+                        import importlib.util
+                        spec = importlib.util.find_spec(base_module)
+                        if spec and spec.submodule_search_locations:
+                            base_abs_path = Path(spec.submodule_search_locations[0])
+                        else:
+                            base_abs_path = Path(around_topology[base_module]["path"])
+                    except ImportError:
+                        base_abs_path = Path(around_topology[base_module]["path"])
+                else:
+                    # DEV 모드: bound.json에 기록된 로컬 소스 디렉터리 경로 사용
+                    base_abs_path = Path(around_topology[base_module]["path"])
+                
+                # Repo 루트 경로 + 나머지 하위 경로 결합
+                sub_path_parts = mapped_subpath.split("/")[1:]
+                sub_path_str = "/".join(sub_path_parts) if sub_path_parts else ""
+                target_path = (base_abs_path / sub_path_str).resolve()
+                
+            else:
+                # 코어 Repo가 아닌 일반 파일/폴더는 기존처럼 self_root 기준 상대 경로
+                target_path = (self_root / mapped_subpath).resolve()
     else:
         ## @fallback: Isolate unbound paths into anchor namespace
         target_path = (anchor_dir / clean_name).resolve()
@@ -235,7 +259,7 @@ def resolve_channel(name: str, start: Path | None = None) -> str:
         return anchor[name]
 
     if ":" not in name:
-        raise RuntimeError(f"Invalid channel '{name}'. Format: '<namespace>:<name>'")
+        raise RuntimeError(f"Invalid channel '{name}'. Format: ':'")
 
     prefix = name.split(":")[0]
     if prefix not in namespaces:
