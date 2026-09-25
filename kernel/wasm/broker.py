@@ -61,17 +61,43 @@ class DphiBroker:
         
         self._listener_task: Optional[asyncio.Task] = None
         self._listener_client = None
+        
+        # 💡 [핵심 픽스] 구독(Subscribe) 완료 시점을 메인 로직에 알려주기 위한 이벤트 객체
+        self._listener_ready = asyncio.Event()
 
     async def _ensure_listener_started(self):
-        if getattr(self, '_listener_task', None) is None:
+        # 1. Self-Healing: 기존 태스크가 에러 등으로 종료(Done)되었으면 강제 초기화
+        if self._listener_task is not None and self._listener_task.done():
+            self._listener_task = None
+            self._listener_ready.clear()
+
+        # 2. 백그라운드 리스너 태스크 실행
+        if self._listener_task is None:
             self._listener_task = asyncio.create_task(self._listen_responses())
 
-    async def _listen_responses(self):
-        self._listener_client = await self.tunnel_factory.get_isolated()
-        pubsub = self._listener_client.pubsub()
-        await pubsub.subscribe(self.response_channel)
-        
+        # 3. 💡 [핵심 픽스] 리스너가 Redis 채널 구독을 완벽히 마칠 때까지 대기
         try:
+            # Redis 지연으로 인한 영구 데드락 방지 (최대 5초 대기)
+            await asyncio.wait_for(self._listener_ready.wait(), timeout=5.0)
+        except asyncio.TimeoutError:
+            log.error("[Broker] Listener failed to start within 5s. (Redis Connection Error?)")
+            if self._listener_task and not self._listener_task.done():
+                self._listener_task.cancel()
+            self._listener_task = None
+            self._listener_ready.clear()
+            raise RuntimeError("Broker Failed to connect to Redis Pub/Sub")
+
+    async def _listen_responses(self):
+        try:
+            self._listener_client = await self.tunnel_factory.get_isolated()
+            pubsub = self._listener_client.pubsub()
+            
+            # 여기서 실제 네트워크 I/O 발생 -> 구독 완료를 보장
+            await pubsub.subscribe(self.response_channel)
+            
+            # 💡 [핵심 픽스] 구독이 완전히 끝났음을 메인 쓰레드에 통보
+            self._listener_ready.set()
+            
             async for msg in pubsub.listen():
                 if msg and msg["type"] == "message":
                     try:
@@ -85,9 +111,15 @@ class DphiBroker:
                         log.warning(f"[Broker] Unparseable response received on {self.response_channel}")
                     except Exception as e:
                         log.error(f"[Broker] Error processing response: {e}", exc_info=True)
+                        
         except asyncio.CancelledError:
             pass
+        except Exception as e:
+            log.error(f"[Broker] Listener crashed unexpectedly: {e}")
         finally:
+            # 💡 [핵심 픽스] 연결 종료 시 상태 초기화 -> 다음 요청 시 우아하게 재연결 유도
+            self._listener_ready.clear()
+            
             with suppress(Exception):
                 await pubsub.unsubscribe(self.response_channel)
                 await pubsub.close()
@@ -106,7 +138,9 @@ class DphiBroker:
         target_route: str = None, 
         timeout: Optional[float] = None
     ) -> ExecutionResult:
+        # 이 시점에서 구독(Subscribe)이 100% 완료되었음을 보장받음
         await self._ensure_listener_started()
+        
         route = target_route or self.request_stream
         tunnel = await self.tunnel_factory.get_default()
         method_name = payload.get(PayloadKey.METHOD_FUNC, 'unknown')
@@ -118,6 +152,7 @@ class DphiBroker:
         active_timeout = timeout if timeout is not None else self.timeout
         
         try:
+            # 워커가 아무리 빨리 응답해도, 이미 수신부가 열려 있으므로 100% 수신됨
             if route == self.control_channel:
                 await tunnel.publish(route, json.dumps(payload))
             else:
