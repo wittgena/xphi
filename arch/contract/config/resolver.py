@@ -1,5 +1,4 @@
 # xphi.arch.contract.config.resolver
-## @lineage: fiber.llm.model.config
 import os
 import logging
 from typing import Any
@@ -28,7 +27,7 @@ class ConfigResolver:
         env_key = name.upper()
         if env_key in os.environ:
             return os.environ[env_key]
-        raise AttributeError(f"'{type(self).__name__}' object (brane config) has no attribute '{name}'")
+        raise AttributeError(f"'{type(self).__name__}' object (xphi config) has no attribute '{name}'")
     
     def __setattr__(self, name: str, value: Any):
         if name == "_local_overrides":

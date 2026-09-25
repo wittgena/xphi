@@ -1,5 +1,4 @@
 # xphi.watcher.plane.flare.tunnel
-## @lineage: xphi.kernel.space.topos.tunnel.flare
 import json
 import asyncio
 import httpx
@@ -7,7 +6,7 @@ import time
 from typing import Optional, Any, List, Tuple
 
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.kernel.space.tunnel.config import BackendProtocol, resolve_default_config, parse_connection_urls
+from xphi.arch.contract.config.tunnel import BackendProtocol, resolve_default_config, parse_connection_urls
 from xphi.kernel.wasm.method import DphiMethod
 
 log = get_emitter("tunnel.flare")
@@ -25,7 +24,6 @@ class ResultKey:
     SUCCESS = "success"
     OUTPUT = "output"
     ERROR = "error"
-    # [ADDED] Edge 환경에서 계산되어 Header로 넘어온 Canonical Hash를 담기 위한 키
     EDGE_HASH = "edge_canonical_hash" 
 
 class _MockPubSub:

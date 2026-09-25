@@ -1,6 +1,5 @@
 # xphi.watcher.receptor.warden
 import sys
-import os
 import threading
 import traceback
 import asyncio
@@ -10,9 +9,10 @@ from typing import Set, Tuple, Any, Dict, Callable, Optional
 
 from pydantic import SecretStr
 
+from xphi.arch.contract.config import env
 from xphi.arch.bound.xor.secret.cipher import Cipher
-from xphi.state.anchor.gateway import StoreGateway
 from xphi.arch.model.edge.receipt import AuditLogResponse
+from xphi.state.anchor.gateway import StoreGateway
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("receptor.warden", phase="KERNEL")
@@ -54,10 +54,7 @@ def is_authorized_env_reader() -> bool:
     return False
 
 
-# ============================================================================
-# 2. AUDIT WARDEN (System Runtime Security Monitor)
-# ============================================================================
-
+"""AUDIT WARDEN (System Runtime Security Monitor)"""
 class WardenTLS(threading.local):
     """@desc: Thread-local storage to safely track audit hook reentrancy state."""
     def __init__(self):
@@ -121,6 +118,7 @@ class AuditWarden:
             return
 
         cls._tls.in_hook = True
+        strict_mode = env.AIRGAP_MODE == "1"
         try:
             # 1. Environment Variable Protection
             if event in ("os.putenv", "os.unsetenv"):
@@ -129,7 +127,6 @@ class AuditWarden:
                     if not is_authorized_env_reader():
                         caller_info = get_caller_origin()
                         msg = f"Unauthorized mutation of protected Env var '{key}' by {caller_info}"
-                        strict_mode = os.environ.get("BRANE_AIRGAP_MODE", "0") == "1"
                         
                         if strict_mode:
                             log.critical(f"[WARDEN: BLOCK] {msg}")
@@ -152,7 +149,7 @@ class AuditWarden:
                     log.critical(f"[WARDEN: CRIT] {alert_msg}")
                     cls.record_anomaly("os.env_dump_alert", alert_msg)
                     
-                    if os.environ.get("BRANE_AIRGAP_MODE", "0") == "1":
+                    if strict_mode:
                         raise PermissionError("[Brane Warden] OS environment dumping via subprocess is strictly blocked.")
 
                 if any(d in cmd for d in cls._policies["dangerous_cmds"]):
@@ -167,7 +164,6 @@ class AuditWarden:
 
                 if host not in cls._policies["allowed_hosts"]:
                     port = address[1] if isinstance(address, tuple) and len(address) > 1 else "Unknown"
-                    strict_mode = os.environ.get("BRANE_AIRGAP_MODE", "0") == "1"
                     caller_info = get_caller_origin()
 
                     if strict_mode:
@@ -207,12 +203,13 @@ class AuditWarden:
         try:
             sys.addaudithook(cls._audit_hook)
             cls._is_active = True
-            mode = "STRICT (AIR-GAPPED)" if os.environ.get("BRANE_AIRGAP_MODE") == "1" else "AUDIT (LOGGING)"
+            mode = "STRICT (AIR-GAPPED)" if env.BRANE_AIRGAP_MODE == "1" else "AUDIT (LOGGING)"
             log.info(f"[Warden] System Runtime Audit Hook established. Security mode: {mode}")
             cls.record_anomaly("system.warden_init", f"Warden initialized in {mode} mode.")
         except Exception as e:
             log.critical(f"[Warden] Failed to install audit hook: {e}")
             raise RuntimeError("Warden installation failed. Cannot guarantee system boundary.") from e
+
 
 class SecretAuditor:
     def __init__(self, cipher: Cipher, gateway: StoreGateway = None):
@@ -278,9 +275,3 @@ class SecretAuditor:
     def _generate_deterministic_hash(self, event: Dict[str, Any]) -> str:
         deterministic_str = json.dumps(event, sort_keys=True, separators=(',', ':')).encode('utf-8')
         return hashlib.sha256(deterministic_str).hexdigest()
-
-
-async def get_secret_auditor() -> SecretAuditor:
-    secret_key = os.getenv("DPHI_CIPHER_KEY", "mock-secret-key-for-dev-only")
-    cipher_instance = Cipher(secret_key=secret_key)
-    return SecretAuditor(cipher=cipher_instance)

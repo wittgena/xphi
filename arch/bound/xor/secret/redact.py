@@ -1,9 +1,4 @@
 # xphi.arch.bound.xor.secret.redact
-## @lineage: xphi.bound.xor.secret.redact
-## @lineage: xphi.bound.secret.redact
-## @lineage: xphi.xor.secret.redact
-## @lineage: xphi.arch.xor.secret.redact
-## @lineage: arch.xor.secret.redact
 import copy
 import re
 from collections.abc import Mapping

@@ -9,6 +9,7 @@ from typing import List, Set
 from redis.asyncio import Redis
 import psutil
 
+from xphi.arch.contract.config import env
 from xphi.state.phase.reactor import PhaseReactor
 from xphi.kernel.ops.task.supervisor import TaskSupervisor
 from xphi.watcher.plane.emitter import get_emitter
@@ -269,9 +270,7 @@ class CommandCLI:
         parser.add_argument("--task", type=str, default="clean", choices=["strike", "force", "clean", "nuke", "audit", "flare"], help="Task to run")
         args = parser.parse_args()
 
-        self.redis_conn = Redis(host=os.getenv("REDIS_HOST", "localhost"), decode_responses=True)
-        
-        # [ALIGNMENT] --task flare일 경우 다른 태그들을 다 뒤지지 않고 오직 포트 청소만 수행
+        self.redis_conn = Redis(host=env.REDIS_HOST, port=env.REDIS_PORT, decode_responses=True)
         if args.task == "flare":
             target_tags = ["flare.edge"]
         else:

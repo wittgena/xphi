@@ -69,7 +69,6 @@ class WasmCgroup:
         current_fuel = store.get_fuel()
         new_fuel = current_fuel + additional_fuel
         
-        ## Wasmtime Store의 Fuel을 새로운 값으로 덮어씁니다.
         store.set_fuel(new_fuel)
         self.policy.cpu_fuel_quota += additional_fuel
         log.warning(f"[{self.cgroup_name}] Emergency Fuel Injected: +{additional_fuel:,} (New Total Quota: {self.policy.cpu_fuel_quota:,})")

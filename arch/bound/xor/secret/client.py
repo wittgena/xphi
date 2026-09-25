@@ -1,12 +1,11 @@
 # xphi.arch.bound.xor.secret.client
-## @lineage: xphi.bound.xor.secret.client
 import base64
-import os
 import binascii
 import httpx
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Union
 
+from xphi.arch.contract.config import env
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("secret.client")
@@ -88,14 +87,17 @@ def get_secret_from_vendor(
     google_kms_resource_name: Optional[str] = None,  # config 의존성 대체를 위해 추가
 ) -> Optional[str]:
     """Vendor 별로 분기하여 Secret을 가져옵니다."""
+    
+    # [변경됨] os.getenv(secret_name) -> env.get_dynamic_env(secret_name)
     if key_manager == KMSVendor.LOCAL:
-        return os.getenv(secret_name)
+        return env.get_dynamic_env(secret_name)
 
     if key_manager == KMSVendor.AZURE_KEY_VAULT or type(client).__name__ == "SecretClient":
         return client.get_secret(secret_name).value
 
     if key_manager == KMSVendor.GOOGLE_KMS or client.__class__.__name__ == "KeyManagementServiceClient":
-        encrypted_secret = os.getenv(secret_name)
+        # [변경됨] os.getenv(secret_name) -> env.get_dynamic_env(secret_name)
+        encrypted_secret = env.get_dynamic_env(secret_name)
         if not encrypted_secret:
             raise ValueError("Google KMS requires the encrypted secret to be in the environment!")
         if not _is_base64(encrypted_secret):
@@ -110,7 +112,8 @@ def get_secret_from_vendor(
         return response.plaintext.decode("utf-8")
 
     if key_manager == KMSVendor.AWS_KMS:
-        encrypted_value = os.getenv(secret_name)
+        # [변경됨] os.getenv(secret_name) -> env.get_dynamic_env(secret_name)
+        encrypted_value = env.get_dynamic_env(secret_name)
         if not encrypted_value:
             raise Exception(f"AWS KMS - Encrypted Value of Key={secret_name} is None")
         
@@ -145,4 +148,5 @@ def get_secret_from_vendor(
         if secret is None:
             raise ValueError(f"No secret found in Custom Secret Manager for {secret_name}")
         return secret
+        
     return client.get_secret(secret_name).secret_value
