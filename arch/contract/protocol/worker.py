@@ -1,4 +1,5 @@
-# xphi.arch.contract.protocol.agent
+# xphi.arch.contract.protocol.worker
+## @lineage: xphi.arch.contract.protocol.agent
 import sys
 import json
 import logging
@@ -20,7 +21,6 @@ class JsonStderrFormatter(logging.Formatter):
             "req_id": current_request_id.get(),
             "message": record.getMessage()
         }
-        # 워커에서 extra 딕셔너리로 넘긴 커스텀 필드 병합
         if hasattr(record, "extra_ctx"):
             log_record.update(record.extra_ctx)
 
@@ -29,8 +29,6 @@ class JsonStderrFormatter(logging.Formatter):
 def _setup_json_logger(agent_name: str) -> logging.Logger:
     logger = logging.getLogger(agent_name)
     logger.setLevel(logging.INFO)
-
-    # 중복 핸들러 방지
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stderr)
         handler.setFormatter(JsonStderrFormatter())
@@ -38,7 +36,7 @@ def _setup_json_logger(agent_name: str) -> logging.Logger:
         logger.propagate = False
     return logger
 
-class AgentProtocol:
+class WorkerProtocol:
     """@desc: 레거시(동기식) 워커를 위한 베이스 클래스 - 순차적 처리 및 YIELD 시 Blocking 발생"""
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
@@ -94,8 +92,6 @@ class AgentProtocol:
         params = req.get("params", {})
 
         token = current_request_id.set(req_id)
-        
-        # [보강] 동기 워커 인입 성공 로그
         self.log.info(f"Incoming RPC payload recognized. Method: {method}")
         
         try:
@@ -125,7 +121,7 @@ class AgentProtocol:
         self.send_error(req_id, -32601, f"Tool '{tool_name}' not implemented")
 
 
-class AsyncAgentProtocol:
+class AsyncWorkerProtocol:
     """@desc: 모던(비동기) 워커를 위한 베이스 클래스 - 코루틴 라우팅 및 Non-blocking I/O 지원"""
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
@@ -202,12 +198,8 @@ class AsyncAgentProtocol:
         params = req.get("params", {})
         action = req.get("action") 
 
-        # [핵심] 컨텍스트에 현재 req_id 할당
         token = current_request_id.set(req_id)
-        
-        # [보강 3] 인입 성공 로그 (이 로그가 안 찍히면 파이프 통신 파손을 의미)
         self.log.info(f"Incoming RPC payload recognized. Action/Method: {action or method}")
-
         try:
             if action == "RESUME":
                 self.log.info(f"Initiating RESUME sequence for parked intent.")
