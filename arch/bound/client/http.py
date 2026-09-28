@@ -20,6 +20,7 @@ from xphi.arch.bound.client.constants import (
     HTTP_HANDLER_CONNECT_TIMEOUT_SECONDS,
 )
 from xphi.arch.contract.config.resolver import config
+from xphi.arch.contract.config import env
 from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
@@ -67,7 +68,7 @@ def get_client(
     if cache_key in _HTTPX_CLIENT_CACHE:
         return _HTTPX_CLIENT_CACHE[cache_key]
 
-    headers = {"User-Agent": os.environ.get("XPHI_USER_AGENT", "gate/1.0")}
+    headers = {"User-Agent": env.USER_AGENT}
     verify = _get_ssl_context()
     limits = _get_httpx_limits()
     
