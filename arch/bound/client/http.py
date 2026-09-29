@@ -13,12 +13,7 @@ from urllib.parse import urlparse, urlunparse
 import certifi
 import httpx
 
-from xphi.arch.bound.client.constants import (
-    AIOHTTP_CONNECTOR_LIMIT,
-    AIOHTTP_KEEPALIVE_TIMEOUT,
-    COMPLETION_HTTP_FALLBACK_SECONDS,
-    HTTP_HANDLER_CONNECT_TIMEOUT_SECONDS,
-)
+from xphi.arch.bound.client.constants import AIOHTTP_CONNECTOR_LIMIT, AIOHTTP_KEEPALIVE_TIMEOUT, COMPLETION_HTTP_FALLBACK_SECONDS, HTTP_HANDLER_CONNECT_TIMEOUT_SECONDS
 from xphi.arch.contract.config.resolver import config
 from xphi.arch.contract.config import env
 from xphi.arch.bound.adapter.pta import NodeSigner
