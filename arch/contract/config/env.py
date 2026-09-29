@@ -14,6 +14,7 @@ def _get_int(key: str, default: str) -> int:
 
 XPHI_BASE = _get_string("XPHI_BASE", "http://localhost:8079")
 LOG_LEVEL = _get_string("LOG_LEVEL", "INFO")
+USER_AGENT = _get_string("XPHI_USER_AGENT", "xphi-agent/1.0.1")
 
 """Cryptography & KMS"""
 AIRGAP_MODE = _get_string("AIRGAP_MODE", "0")
@@ -26,6 +27,5 @@ MQ_ENGINE = _get_string("MQ_ENGINE", "redis")
 MQ_HOST = _get_string("MQ_HOST", REDIS_HOST)
 MQ_PORT = _get_int("MQ_PORT", str(REDIS_PORT))
 
-# State Store URL의 기본값을 REDIS_HOST/PORT를 참조하여 동적으로 생성
 _default_state_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
 STATE_STORE_URL = _get_string("STATE_STORE_URL", _default_state_url)

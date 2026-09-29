@@ -28,7 +28,7 @@ AIOHTTP_CONNECTOR_LIMIT = get_env_int("AIOHTTP_CONNECTOR_LIMIT", 1000)
 AIOHTTP_KEEPALIVE_TIMEOUT = get_env_int("AIOHTTP_KEEPALIVE_TIMEOUT", 120)
 COMPLETION_HTTP_FALLBACK_SECONDS: float = 600.0
 
-OPENAI_EMBEDDING_PARAMS = ["dimensions", "encoding_format", "user", "extra_headers", "extra_body"]
+OPENAI_EMBEDDING_PARAMS = ["dimensions", "encoding_format", "user"]
 DEFAULT_EMBEDDING_PARAM_VALUES = {
     **{k: None for k in OPENAI_EMBEDDING_PARAMS},
     "model": None,
@@ -41,17 +41,27 @@ DEFAULT_IMAGE_HEIGHT = get_env_int("DEFAULT_IMAGE_HEIGHT", 300)
 DEFAULT_MAX_LRU_CACHE_SIZE = get_env_int("DEFAULT_MAX_LRU_CACHE_SIZE", 64)
 DEFAULT_MAX_RECURSE_DEPTH = get_env_int("DEFAULT_MAX_RECURSE_DEPTH", 100)
 DEFAULT_IMAGE_TOKEN_COUNT = get_env_int("DEFAULT_IMAGE_TOKEN_COUNT", 250)
+
 DEFAULT_REPLICATE_GPU_PRICE_PER_SECOND = get_env_float("DEFAULT_REPLICATE_GPU_PRICE_PER_SECOND", 0.001400)
 
 DEFAULT_SSL_CIPHERS = os.getenv(
     "DEFAULT_SSL_CIPHERS",
-    "TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256:TLS_CHACHA20_POLY1305_SHA256:"
-    "ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:"
-    "ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-CHACHA20-POLY1305:"
-    "ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA256:AES256-GCM-SHA384:AES128-GCM-SHA256"
+    "TLS_AES_256_GCM_SHA384:"  # Fastest observed in testing
+    "TLS_AES_128_GCM_SHA256:"  # Slightly faster than 256-bit
+    "TLS_CHACHA20_POLY1305_SHA256:"  # Fast on ARM/mobile
+    "ECDHE-RSA-AES256-GCM-SHA384:"
+    "ECDHE-RSA-AES128-GCM-SHA256:"
+    "ECDHE-ECDSA-AES256-GCM-SHA384:"
+    "ECDHE-ECDSA-AES128-GCM-SHA256:"
+    "ECDHE-RSA-CHACHA20-POLY1305:" "ECDHE-ECDSA-CHACHA20-POLY1305:"
+    "ECDHE-RSA-AES256-SHA384:"  # Common fallback
+    "ECDHE-RSA-AES128-SHA256:"  # Very widely supported
+    "AES256-GCM-SHA384:"  # Non-PFS fallback (compatibility)
+    "AES128-GCM-SHA256"   # Last resort (maximum compatibility)
 )
 
 DEFAULT_TRIM_RATIO = get_env_float("DEFAULT_TRIM_RATIO", 0.75)
+
 HTTP_HANDLER_CONNECT_TIMEOUT_SECONDS: float = 5.0
 MAX_STREAMING_DURATION_SECONDS: float = 300.0
 REPLICATE_MODEL_NAME_WITH_ID_LENGTH = get_env_int("REPLICATE_MODEL_NAME_WITH_ID_LENGTH", 64)
@@ -62,13 +72,11 @@ MAX_SHORT_SIDE_FOR_IMAGE_HIGH_RES = get_env_int("MAX_SHORT_SIDE_FOR_IMAGE_HIGH_R
 MAX_TILE_WIDTH = get_env_int("MAX_TILE_WIDTH", 512)
 MAX_TILE_HEIGHT = get_env_int("MAX_TILE_HEIGHT", 512)
 
-# ✨ [개선] 제어 플래그 완전 제거 및 범용 표준 파라미터(top_k, extra_body 등) 편입
 DEFAULT_CHAT_COMPLETION_PARAM_VALUES = {
     "functions": None,
     "function_call": None,
     "temperature": None,
     "top_p": None,
-    "top_k": None,             # ✨ 타 벤더 필수 파라미터 복구
     "n": None,
     "stream": None,
     "stream_options": None,
@@ -92,9 +100,11 @@ DEFAULT_CHAT_COMPLETION_PARAM_VALUES = {
     "logprobs": None,
     "top_logprobs": None,
     "extra_headers": None,
-    "extra_body": None,        # ✨ Passthrough 규격 복구
     "api_version": None,
     "parallel_tool_calls": None,
+    "drop_params": None,
+    "allowed_openai_params": None,
+    "additional_drop_params": None,
     "messages": None,
     "reasoning_effort": None,
     "verbosity": None,
@@ -106,6 +116,8 @@ DEFAULT_CHAT_COMPLETION_PARAM_VALUES = {
     "prompt_cache_key": None,
     "prompt_cache_retention": None,
     "store": None,
+    "metadata": None,
+    "context_management": None,
 }
 
 DEFAULT_TEMPERATURE = 0.7
