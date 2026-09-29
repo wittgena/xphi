@@ -19,5 +19,7 @@ class DphiAction(str, Enum):
 
 class KernelAuthPayload(BaseModel):
     """Broker에서 반환되는 Kernel Auth 데이터 규격"""
+    tenant_id: str = Field(default="anonymous", description="부서, 프로젝트 또는 사용자 식별자")
     fuel_budget: float = Field(default=float('inf'), description="할당된 최대 토큰/연료")
     audit_hash: Optional[str] = Field(default=None, description="영수증 봉합을 위한 해시")
+    is_enforced: bool = Field(default=False, description="엄격한 예산 통제 적용 여부")
