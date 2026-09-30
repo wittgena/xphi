@@ -29,3 +29,5 @@ MQ_PORT = _get_int("MQ_PORT", str(REDIS_PORT))
 
 _default_state_url = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
 STATE_STORE_URL = _get_string("STATE_STORE_URL", _default_state_url)
+
+FIBER_COMPAT_RULES_PATH = _get_string("FIBER_COMPAT_RULES_PATH", "")
