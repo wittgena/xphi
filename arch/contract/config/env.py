@@ -16,6 +16,8 @@ XPHI_BASE = _get_string("XPHI_BASE", "http://localhost:8000")
 LOG_LEVEL = _get_string("LOG_LEVEL", "INFO")
 USER_AGENT = _get_string("XPHI_USER_AGENT", "xphi-agent/1.0.1")
 
+RPC_QUEUE_TOPIC = os.getenv("RPC_QUEUE_TOPIC", "internal.rpc.queue")
+
 """Cryptography & KMS"""
 DPHI_ENV = _get_string("DPHI_ENV", "prod")
 AIRGAP_MODE = _get_string("AIRGAP_MODE", "0")
