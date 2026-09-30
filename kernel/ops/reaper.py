@@ -83,9 +83,7 @@ class SystemOps:
             
         return active_pids
 
-    # =========================================================================
-    # [1] REAPER MODULE: 파괴적 통제 (Strike, Force, Nuke)
-    # =========================================================================
+    # REAPER MODULE: Strike, Force, Nuke
     async def _execute_kill(self, pid: str, force: bool = True):
         signal_flag = "-9" if force else "-15"
         proc = await asyncio.create_subprocess_exec(
@@ -149,7 +147,7 @@ class SystemOps:
             self.log.error(f"   [Phase 2/3] Registry cleanup failed: {e}")
 
     async def nuke_redis_state(self):
-        """@action: 현재 사용 중인 Redis Database의 모든 잔여물 완벽 삭제"""
+        """@action: 현재 사용 중인 Redis의 모든 잔여물 완벽 삭제"""
         self.log.warning(f"🧨 NUKING REDIS STATE: Executing FLUSHDB...")
         try:
             await self.redis.flushdb(asynchronous=True)
@@ -158,10 +156,6 @@ class SystemOps:
             self.log.error(f"   └─ Redis FLUSHDB failed: {e}")
 
     async def nuke_flare(self, target_port: int = 8787):
-        """
-        @action: Cloudflare Wrangler (Node.js) 좀비 프로세스 완벽 사냥
-        @desc: 지정된 포트(주로 8787)를 강제로 해방하여 Edge Hologram 부팅 충돌을 방지합니다.
-        """
         self.log.warning(f"☄️  Initiating Tactical Flare Nuke on Port {target_port}...")
         pids = await self.get_pids_from_port(target_port)
         
@@ -175,9 +169,7 @@ class SystemOps:
         
         return len(pids)
 
-    # =========================================================================
-    # [2] PROBE/AUDITOR MODULE: 비파괴적 아키텍처 감사 (Audit)
-    # =========================================================================
+    # PROBE/AUDITOR MODULE
     async def _verify_cpu_pinning(self, pid: str) -> bool:
         try:
             proc = await asyncio.create_subprocess_exec(
@@ -234,9 +226,7 @@ class SystemOps:
             self.supervisor.create(self._audit_node(pid), name=f"Audit-{pid}")
         return len(pids)
 
-    # =========================================================================
     # 오케스트레이션 실행 및 종료
-    # =========================================================================
     async def execute_task(self, task_type: str) -> int:
         count = 0
         try:
@@ -258,7 +248,6 @@ class SystemOps:
         finally:
             self.log.info(f"Awaiting resolution of all {task_type} tasks for [{self.tag}]...")
             await self.supervisor.shutdown()
-
 
 class CommandCLI:
     def __init__(self):
@@ -292,7 +281,6 @@ class CommandCLI:
         if self.redis_conn:
             log.info("[Teardown] Releasing Redis connection pool cleanly...")
             await self.redis_conn.aclose()
-
 
 if __name__ == "__main__":
     cli = CommandCLI()

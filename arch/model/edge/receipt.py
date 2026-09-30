@@ -15,7 +15,7 @@ class CapabilityReceiptResponse(BaseModel):
     budget_usdc: str = Field(..., description="승인된 롤업 내부 예산")
     issued_at: str = Field(..., description="발급 시간 (ISO-8601)")
 
-class SandboxIntent(BaseModel):
+class HandshakeIntent(BaseModel):
     client_id: str
     responder_id: Optional[str] = Field(default=None, description="타겟 실행 노드 ID (없을 시 Gateway가 할당)")
     action: str

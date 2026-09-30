@@ -243,7 +243,7 @@ def mount_master_layer(supervisor: TaskSupervisor, ctx: RuntimeContext, profile:
             log.error(f"Critical Failure: Could not mount master infra daemon '{daemon.name}': {e}", exc_info=True)
     
     log.info(f"Master Infra Layer mount attempt complete. (Profile: {profile})")
-    active_daemons_str = os.getenv("KERNEL_DAEMONS", "rest_edge,gateway_edge,rpc_worker,risk_vault")
+    active_daemons_str = os.getenv("KERNEL_DAEMONS", "rest_edge,rpc_worker,risk_vault")
     active_daemons = [d.strip() for d in active_daemons_str.split(",") if d.strip()]
     
     discovered_daemons = getattr(registry, "_daemons", {})

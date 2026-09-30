@@ -180,9 +180,6 @@ async def main_async():
     else:
         log.info("[Boot] No specific KERNEL_DAEMONS requested. Proceeding directly to ignite node...")
 
-    # -------------------------------------------------------------------------
-    # [핵심 개선]: Shared Broker 생성 및 KernelLedger/RuntimeAnchor 종속성 주입
-    # -------------------------------------------------------------------------
     wasm_timeout = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
     log.info(f"[Boot] Provisioning Shared WASM Broker (Timeout: {wasm_timeout}s)...")
     shared_broker = DphiBroker(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
@@ -190,7 +187,6 @@ async def main_async():
     log.info("[Boot] Initializing KernelLedger and injecting Shared Broker...")
     ledger = KernelLedger()
     
-    # KernelLedger가 SEALER(장부 쓰기 권한 보유자)인 경우, 기본 10초 브로커를 덮어씁니다.
     if hasattr(ledger, 'role') and ledger.role == AnchorRole.SEALER:
         ledger.wasm = shared_broker
         log.info("[Boot] Shared Broker injected into KernelLedger successfully.")
@@ -201,7 +197,7 @@ async def main_async():
     
     _node_instance = RuntimeAnchor(executor=executor)
     _node_instance.tunnel = tunnel
-    _node_instance.broker = shared_broker  # 런타임 노드에도 동일한 공용 브로커 주입
+    _node_instance.broker = shared_broker
     
     await _node_instance.start()
 
