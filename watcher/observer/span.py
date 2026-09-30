@@ -1,5 +1,4 @@
 # xphi.watcher.observer.span
-## @lineage: xphi.watcher.plane.observer.span
 import os
 import inspect
 import functools

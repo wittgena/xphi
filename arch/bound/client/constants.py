@@ -28,14 +28,6 @@ AIOHTTP_CONNECTOR_LIMIT = get_env_int("AIOHTTP_CONNECTOR_LIMIT", 1000)
 AIOHTTP_KEEPALIVE_TIMEOUT = get_env_int("AIOHTTP_KEEPALIVE_TIMEOUT", 120)
 COMPLETION_HTTP_FALLBACK_SECONDS: float = 600.0
 
-OPENAI_EMBEDDING_PARAMS = ["dimensions", "encoding_format", "user", "extra_headers", "extra_body"]
-DEFAULT_EMBEDDING_PARAM_VALUES = {
-    **{k: None for k in OPENAI_EMBEDDING_PARAMS},
-    "model": None,
-    "custom_llm_provider": "",
-    "input": None,
-}
-
 DEFAULT_IMAGE_WIDTH = get_env_int("DEFAULT_IMAGE_WIDTH", 300)
 DEFAULT_IMAGE_HEIGHT = get_env_int("DEFAULT_IMAGE_HEIGHT", 300)
 DEFAULT_MAX_LRU_CACHE_SIZE = get_env_int("DEFAULT_MAX_LRU_CACHE_SIZE", 64)
@@ -61,52 +53,6 @@ MAX_LONG_SIDE_FOR_IMAGE_HIGH_RES = get_env_int("MAX_LONG_SIDE_FOR_IMAGE_HIGH_RES
 MAX_SHORT_SIDE_FOR_IMAGE_HIGH_RES = get_env_int("MAX_SHORT_SIDE_FOR_IMAGE_HIGH_RES", 768)
 MAX_TILE_WIDTH = get_env_int("MAX_TILE_WIDTH", 512)
 MAX_TILE_HEIGHT = get_env_int("MAX_TILE_HEIGHT", 512)
-
-# ✨ [개선] 제어 플래그 완전 제거 및 범용 표준 파라미터(top_k, extra_body 등) 편입
-DEFAULT_CHAT_COMPLETION_PARAM_VALUES = {
-    "functions": None,
-    "function_call": None,
-    "temperature": None,
-    "top_p": None,
-    "top_k": None,             # ✨ 타 벤더 필수 파라미터 복구
-    "n": None,
-    "stream": None,
-    "stream_options": None,
-    "stop": None,
-    "max_tokens": None,
-    "max_completion_tokens": None,
-    "modalities": None,
-    "prediction": None,
-    "audio": None,
-    "presence_penalty": None,
-    "frequency_penalty": None,
-    "logit_bias": None,
-    "user": None,
-    "model": None,
-    "custom_llm_provider": "",
-    "response_format": None,
-    "seed": None,
-    "tools": None,
-    "tool_choice": None,
-    "max_retries": None,
-    "logprobs": None,
-    "top_logprobs": None,
-    "extra_headers": None,
-    "extra_body": None,        # ✨ Passthrough 규격 복구
-    "api_version": None,
-    "parallel_tool_calls": None,
-    "messages": None,
-    "reasoning_effort": None,
-    "verbosity": None,
-    "thinking": None,
-    "web_search_options": None,
-    "include_server_side_tool_invocations": None,
-    "service_tier": None,
-    "safety_identifier": None,
-    "prompt_cache_key": None,
-    "prompt_cache_retention": None,
-    "store": None,
-}
 
 DEFAULT_TEMPERATURE = 0.7
 DEFAULT_NUM_OUTPUTS = 2048
