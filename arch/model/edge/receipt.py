@@ -15,7 +15,7 @@ class CapabilityReceiptResponse(BaseModel):
     budget_usdc: str = Field(..., description="승인된 롤업 내부 예산")
     issued_at: str = Field(..., description="발급 시간 (ISO-8601)")
 
-class SandboxIntent(BaseModel):
+class HandshakeIntent(BaseModel):
     client_id: str
     responder_id: Optional[str] = Field(default=None, description="타겟 실행 노드 ID (없을 시 Gateway가 할당)")
     action: str
@@ -33,15 +33,15 @@ class SandboxIntent(BaseModel):
 #     audit_trail: List[str]
 
 class AuditReceipt(BaseModel):
-    # --- [검증 필수 필드 (Mandatory)] ---
+    # 검증 필수 필드 (Mandatory)
     receipt_id: str = Field(..., description="발급된 영수증/이벤트 고유 ID")
     state_root: str = Field(..., description="검증할 대상의 트랜잭션 해시 또는 머클 루트")
 
-    # --- [부가/상태 필드 (Optional / Default)] ---
+    # 부가/상태 필드 (Optional / Default)
     status: str = Field(default="COMPLETED", description="현재 영수증의 처리 상태")
     receipt_type: str = Field(default="AUDIT", description="영수증 유형 (예: AUDIT, COMPUTE)")
     
-    # --- [과금 및 추적 필드 (Optional)] ---
+    # 과금 및 추적 필드 (Optional)
     fuel_consumed: int = Field(default=0, description="실행에 소모된 컴퓨팅 자원")
     metered_cost_usd: float = Field(default=0.0, description="USDC 기준 과금액")
     audit_trail: List[str] = Field(default_factory=list, description="이력 추적 트레일")
@@ -101,7 +101,7 @@ class KernelOtlpRecord(BaseModel):
     metrics_summary: Dict[str, Any]
     receipt_ref: Optional[str] = None
 
-class KernelLedgerAppendRecord(BaseModel):
+class PhaseStoreAppendRecord(BaseModel):
     stream_name: str
     timestamp: int
     events: List[Dict[str, Any]]
@@ -113,35 +113,35 @@ class LogstEvent(BaseModel):
     trace_id: str | None = Field(default=None, description="Trace identifier")
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
-class LogstUsage(BaseModel):
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
+# class LogstUsage(BaseModel):
+#     prompt_tokens: int = 0
+#     completion_tokens: int = 0
+#     total_tokens: int = 0
 
-class LogstResponseBody(BaseModel):
-    usage: LogstUsage | None = None
-    model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
+# class LogstResponseBody(BaseModel):
+#     usage: LogstUsage | None = None
+#     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
 
-class LogstRequest(BaseModel):
-    time: str
-    uri: str
-    verb: str
-    api_version: str | None = None
-    ip_address: str | None = None
-    headers: dict[str, str] | None = None
-    body: Any = None
+# class LogstRequest(BaseModel):
+#     time: str
+#     uri: str
+#     verb: str
+#     api_version: str | None = None
+#     ip_address: str | None = None
+#     headers: dict[str, str] | None = None
+#     body: Any = None
 
-class LogstResponse(BaseModel):
-    time: str
-    status: int
-    body: LogstResponseBody | None = None
+# class LogstResponse(BaseModel):
+#     time: str
+#     status: int
+#     body: LogstResponseBody | None = None
 
-class LogstEventPayload(BaseModel):
-    request: LogstRequest
-    response: LogstResponse
-    user_id: str | None = None
-    company_id: str | None = None
-    metadata: dict[str, Any] | None = None
+# class LogstEventPayload(BaseModel):
+#     request: LogstRequest
+#     response: LogstResponse
+#     user_id: str | None = None
+#     company_id: str | None = None
+#     metadata: dict[str, Any] | None = None
 
 class KeyValue(BaseModel):
     key: str

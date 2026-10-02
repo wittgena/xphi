@@ -1,12 +1,8 @@
 # xphi.kernel.space.sandbox.config
-## @lineage: xphi.bound.space.sandbox.config
-## @lineage: xphi.xor.space.sandbox.config
-## @lineage: xphi.arch.eco.config
-## @lineage: xphi.arch.eco.dphi.config
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Dict
-from xphi.kernel.wasm.cgroup import Tier
+from xphi.kernel.wasm.quota import Tier
 
 class TierPolicySettings(BaseSettings):
     fuel_to_seconds_ratio: int = 100_000_000

@@ -48,11 +48,6 @@ def _get_httpx_limits() -> httpx.Limits:
         keepalive_expiry=AIOHTTP_KEEPALIVE_TIMEOUT if AIOHTTP_KEEPALIVE_TIMEOUT > 0 else 5.0,
     )
 
-
-# ==========================================
-# 2. Client Factory (Native Client 반환)
-# ==========================================
-
 def get_client(
     is_async: bool, params: Optional[dict] = None, **kwargs
 ) -> Union[httpx.Client, httpx.AsyncClient]:

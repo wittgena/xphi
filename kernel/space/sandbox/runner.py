@@ -1,7 +1,4 @@
 # xphi.kernel.space.sandbox.runner
-## @lineage: xphi.bound.space.sandbox.runner
-## @lineage: xphi.xor.space.sandbox.runner
-## @lineage: xphi.xor.space.runner
 import asyncio
 import time
 import hashlib
@@ -17,7 +14,7 @@ from xphi.arch.contract.space.state import Contract, CoherenceState
 from xphi.kernel.space.sandbox.resolver import SandboxExecutor, TaskContext, EffectResolver
 from xphi.kernel.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.state.anchor.consensus import KernelLedger, KernelCommit
+from xphi.state.anchor.consensus import PhaseStore, PhaseCommit
 from xphi.kernel.wasm.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter
 
@@ -205,7 +202,7 @@ class RecoveryRunner(RuntimeRunner):
                 encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
             ).hex() for k in self.auditor_keys
         ]
-        self.store = KernelLedger()
+        self.store = PhaseStore()
 
     def _sign_multisig(self, signers: list, commit_dict: dict) -> list:
         canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
@@ -287,7 +284,7 @@ class RecoveryRunner(RuntimeRunner):
         async for seal_contract in self.executor.execute_stream(seal_context):
             if seal_contract.state == CoherenceState.COHERENT:
                 sealed_data = seal_contract.payload.get("data", {})
-                kernel_commit = KernelCommit(**sealed_data.get("kernel_commit", {}))
+                kernel_commit = PhaseCommit(**sealed_data.get("phase_commit", {}))
                 
                 try:
                     commit_hash = self.store.seal_system_epoch(

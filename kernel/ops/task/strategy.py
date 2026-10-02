@@ -10,7 +10,7 @@ from contextlib import suppress
 from xphi.state.inter.wasm import WasmInterpreter
 from xphi.state.inter.python import PythonInterpreter
 from xphi.state.inter.dvm import DvmInterpreter
-from xphi.kernel.wasm.cgroup import CgroupPolicy
+from xphi.kernel.wasm.quota import QuotaPolicy
 
 class ExecutionStrategy:
     """Class-based Execution Strategy for isolated sandboxing and execution"""
@@ -31,7 +31,7 @@ class ExecutionStrategy:
                     enable_read_paths=[], 
                     enable_write_paths=[],
                     enable_env_vars=["FIBER_ISOLATION_MARKER"], 
-                    policy=CgroupPolicy.standard()
+                    policy=QuotaPolicy.standard()
                 )
                 interp.start()
                 self.py_pool.put(interp)
@@ -73,7 +73,7 @@ class ExecutionStrategy:
         changed_accounts = len(state_diff)
         log.info(f"💾 [Host Commit] 상태 변경분 마스터 DB 반영 완료 (요청자: {target_addr}, 대상: {changed_accounts}개 계정)")
 
-    def run_dvm_sandbox(self, target_path: Path, job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
+    def run_dvm_sandbox(self, target_path: Path, job_policy: QuotaPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
         try:
             safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
             if isinstance(safe_payload, str):
@@ -156,7 +156,7 @@ class ExecutionStrategy:
             log.error(f"[{job_id[:8]}] Sandbox Execution crashed: {e}", exc_info=True)
             return {"success": False, "output": "", "error": f"Execution Error: {e}"}
 
-    def run_python_sandbox(self, job_policy: CgroupPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
+    def run_python_sandbox(self, job_policy: QuotaPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
         if self._is_request_expired(context):
             log.warning(f"[{job_id[:8]}] 🗑️ Dropping expired zombie request before acquiring Python Sandbox.")
             return {"success": False, "output": "", "error": "Request expired (TTL Exceeded)."}

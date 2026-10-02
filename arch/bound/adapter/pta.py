@@ -15,7 +15,7 @@ import nacl.exceptions
 from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from xphi.state.anchor.consensus import KernelLedger, LogicStream
+from xphi.state.anchor.consensus import PhaseStore, LogicStream
 from xphi.state.anchor.oracle import AnchorOracle
 from xphi.kernel.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter
@@ -220,7 +220,7 @@ class PtaAdapter:
     """PTA 모델 기반의 오프체인 마이크로 빌링 및 상태 병합 어댑터"""
     def __init__(self, broker: DphiBroker):
         self.broker = broker
-        self.ledger = KernelLedger()
+        self.ledger = PhaseStore()
         self.oracle = AnchorOracle(broker=broker)
         self._unfold_pool: Dict[str, PtaOutput] = {}
 
@@ -246,7 +246,7 @@ class PtaAdapter:
             return False
 
     async def execute_transaction(self, tx: PtaTransaction) -> str:
-        """PTA 상태 전이를 검증하고 Ledger에 제안 및 밀봉(Seal)"""
+        """PTA 상태 전이를 검증하고 PhaseStore에 제안 및 밀봉(Seal)"""
         for idx, current_input in enumerate(tx.inputs):
             if current_input.owner_address:
                 payload_to_verify = current_input.pointer.to_key()
@@ -268,12 +268,12 @@ class PtaAdapter:
             receipt_signature = sealed_kernel.signature
             log.info(f"[PtaAdapter] Tx Sealed. Receipt: {receipt_signature[:8]}... | Hash: {tx.tx_hash[:8]}")
             
-            # 소모된 Input 제거 (Burn)
+            # consume - 소모된 Input 제거
             for current_input in tx.inputs:
                 pointer_key = current_input.pointer.to_key()
                 self._unfold_pool.pop(pointer_key, None)
             
-            # 새롭게 생성된 Output 등록 (Mint)
+            # produce - 새롭게 생성된 Output 등록
             for idx, output in enumerate(tx.outputs):
                 new_pointer_key = f"{tx.tx_hash}:{idx}"
                 self._unfold_pool[new_pointer_key] = output
@@ -284,7 +284,7 @@ class PtaAdapter:
             return tx.tx_hash
 
     async def get_balance(self, owner_address: str, asset_type: str = "fuel") -> int:
-        """@desc: 외부 Edge 레이어(API)에서 호출할 잔고 조회 접점"""
+        """@desc: 외부 Edge 레이어(API)에서 호출할 잔고 조회"""
         total_balance = 0
         for output in self._unfold_pool.values():
             if output.owner == owner_address and output.asset_type == asset_type:

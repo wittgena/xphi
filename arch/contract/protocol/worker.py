@@ -1,5 +1,4 @@
 # xphi.arch.contract.protocol.worker
-## @lineage: xphi.arch.contract.protocol.agent
 import sys
 import json
 import logging

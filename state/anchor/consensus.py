@@ -37,7 +37,7 @@ class LogicStream(BaseModel):
 
 @dataclass
 class ToposBlob:
-    """OOB Log / Residue representation from WASM transitions or System Anomalies."""
+    """OOB Log / Residue representation from Phase transitions or System Anomalies."""
     action: str
     from_state: str
     to_state: str
@@ -46,8 +46,8 @@ class ToposBlob:
     timestamp: float = field(default_factory=time.time)
 
 @dataclass
-class KernelCommit:
-    """Sealed kernel snapshot verified by WASM or Multi-Sig Core."""
+class PhaseCommit:
+    """Sealed kernel snapshot verified by Phase or Multi Signature"""
     stream_id: str
     executable_payload: Any
     tension_at_seal: float
@@ -63,12 +63,12 @@ class SealedKernel(BaseModel):
     tension_at_seal: float
     signature: str 
 
-class KernelLedger:
+class PhaseStore:
     _instance = None
 
     def __new__(cls, path=ANCHOR_DB_PATH):
         if cls._instance is None:
-            cls._instance = super(KernelLedger, cls).__new__(cls)
+            cls._instance = super(PhaseStore, cls).__new__(cls)
             cls._instance._initialize_consensus_node(path)
         return cls._instance
 
@@ -150,10 +150,10 @@ class KernelLedger:
             return self.db[key].decode('utf-8')
         return None
 
-    def _save_kernel_unsafe(self, commit: KernelCommit) -> str:
+    def _save_kernel_unsafe(self, commit: PhaseCommit) -> str:
         return self._put_object("commit", asdict(commit))
 
-    def seal_system_epoch(self, commit: KernelCommit, signatures: List[str], threshold: int = 1) -> str:
+    def seal_system_epoch(self, commit: PhaseCommit, signatures: List[str], threshold: int = 1) -> str:
         from xphi.watcher.receptor.warden import AuditWarden
         from xphi.arch.bound.adapter.pta import NodeSigner
 
@@ -245,7 +245,7 @@ class KernelLedger:
             b_hash = await asyncio.to_thread(self.save_transition, blob)
             blob_hashes.append(b_hash)
 
-        commit = KernelCommit(
+        commit = PhaseCommit(
             stream_id=stream.id,
             executable_payload=final_root,
             tension_at_seal=tension_at_seal,

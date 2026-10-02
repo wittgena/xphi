@@ -9,7 +9,7 @@ from xphi.kernel.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.pta import SignStateAdapter
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.state.anchor.consensus import KernelLedger, ToposBlob
+from xphi.state.anchor.consensus import PhaseStore, ToposBlob
 
 log = get_emitter("kernel.protocol", phase="KERNEL")
 
@@ -19,7 +19,7 @@ class Attractor:
         self.name = name
         self.path = Path(path).expanduser().resolve()
         self.runner = runner
-        self.store = KernelLedger()
+        self.store = PhaseStore()
 
     def inscribe(
         self, 
@@ -203,10 +203,10 @@ async def anchor_commit(
         except Exception as e:
             log.warning(f"Failed to update legacy registry: {e}")
         
-        from xphi.state.anchor.consensus import KernelCommit, AnchorRole
+        from xphi.state.anchor.consensus import PhaseCommit, AnchorRole
         from dataclasses import asdict
         
-        commit_obj = KernelCommit(**kernel_commit_data)
+        commit_obj = PhaseCommit(**kernel_commit_data)
         
         if hasattr(anchor.store, 'role') and anchor.store.role == AnchorRole.PROPOSER:
             log.warning("[Protocol] Node is FOLLOWER. Proposing Epoch Seal to Mempool instead of direct disk write.")

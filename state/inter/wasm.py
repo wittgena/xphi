@@ -15,7 +15,7 @@ except ImportError:
 from xphi.arch.contract.interpreter import ExecutionError, ProtocolError, ExecutionResult
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.kernel.wasm.cgroup import WasmCgroup, CgroupPolicy
+from xphi.kernel.wasm.quota import WasmQuotaManager, QuotaPolicy
 
 TIME_ROOT = resolve_path("time")
 
@@ -26,13 +26,13 @@ _GLOBAL_MODULE_CACHE = {}
 _CACHE_LOCK = threading.Lock()
 
 
-def get_cached_module(wasm_path: str, cg_policy: WasmCgroup):
+def get_cached_module(wasm_path: str, quota_manager: WasmQuotaManager):
     global _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE
     
     with _CACHE_LOCK:
         if _GLOBAL_ENGINE is None:
             config = wasmtime.Config()
-            cg_policy.apply_to_config(config)
+            quota_manager.apply_to_config(config)
             _GLOBAL_ENGINE = wasmtime.Engine(config)
             
         if wasm_path not in _GLOBAL_MODULE_CACHE:
@@ -52,7 +52,7 @@ class WasmInterpreter:
         enable_write_paths: Optional[List[Union[PathLike, str]]] = None,
         enable_env_vars: Optional[List[str]] = None,
         sync_files: bool = True,
-        policy: Optional[CgroupPolicy] = None,
+        policy: Optional[QuotaPolicy] = None,
         abi: str = "standard",
         initial_state: Optional[Dict[str, str]] = None,
     ) -> None:
@@ -89,12 +89,12 @@ class WasmInterpreter:
         self.shared_size = 0
         
         self.valid_methods = set()
-        cg_policy = policy or CgroupPolicy.standard()
-        self.cg = WasmCgroup(cgroup_name=f"worker-{id(self)}", policy=cg_policy)
+        cg_policy = policy or QuotaPolicy.standard()
+        self.cg = WasmQuotaManager(policy_name=f"worker-{id(self)}", policy=cg_policy)
         
         self.current_timestamp = 0.0 
 
-    def apply_policy(self, policy: CgroupPolicy) -> None:
+    def apply_policy(self, policy: QuotaPolicy) -> None:
         self.cg.policy = policy
         if self.store is not None:
             if hasattr(self.cg, 'apply_to_store'):

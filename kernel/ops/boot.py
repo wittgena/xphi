@@ -15,7 +15,7 @@ from xphi.state.phase.executor.cont import SwarmExecutor
 from xphi.state.phase.executor.flow import FlowExecutor
 from xphi.state.phase.reactor import PhaseReactor
 
-from xphi.state.anchor.consensus import KernelLedger, AnchorRole
+from xphi.state.anchor.consensus import PhaseStore, AnchorRole
 from xphi.state.anchor.gateway import GatewayPolicy 
 
 from xphi.kernel.node.runtime.anchor import RuntimeAnchor
@@ -180,20 +180,16 @@ async def main_async():
     else:
         log.info("[Boot] No specific KERNEL_DAEMONS requested. Proceeding directly to ignite node...")
 
-    # -------------------------------------------------------------------------
-    # [핵심 개선]: Shared Broker 생성 및 KernelLedger/RuntimeAnchor 종속성 주입
-    # -------------------------------------------------------------------------
     wasm_timeout = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
     log.info(f"[Boot] Provisioning Shared WASM Broker (Timeout: {wasm_timeout}s)...")
     shared_broker = DphiBroker(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
 
-    log.info("[Boot] Initializing KernelLedger and injecting Shared Broker...")
-    ledger = KernelLedger()
+    log.info("[Boot] Initializing PhaseStore and injecting Shared Broker...")
+    ledger = PhaseStore()
     
-    # KernelLedger가 SEALER(장부 쓰기 권한 보유자)인 경우, 기본 10초 브로커를 덮어씁니다.
     if hasattr(ledger, 'role') and ledger.role == AnchorRole.SEALER:
         ledger.wasm = shared_broker
-        log.info("[Boot] Shared Broker injected into KernelLedger successfully.")
+        log.info("[Boot] Shared Broker injected into PhaseStore successfully.")
 
     log.info("[Boot] Igniting Embedded Phase Runtime Node...")
     completion_signal = asyncio.Event()
@@ -201,7 +197,7 @@ async def main_async():
     
     _node_instance = RuntimeAnchor(executor=executor)
     _node_instance.tunnel = tunnel
-    _node_instance.broker = shared_broker  # 런타임 노드에도 동일한 공용 브로커 주입
+    _node_instance.broker = shared_broker
     
     await _node_instance.start()
 
@@ -220,10 +216,10 @@ async def teardown():
             task.cancel()
 
     try:
-        KernelLedger().close()
-        log.info("[Boot] KernelLedger lock safely released.")
+        PhaseStore().close()
+        log.info("[Boot] PhaseStore lock safely released.")
     except Exception as e:
-        log.warning(f"[Boot] Error while releasing KernelStore lock: {e}")
+        log.warning(f"[Boot] Error while releasing PhaseStore lock: {e}")
         
     await TunnelFactory.close_all()
     log.info("[Boot] Resource cleanup complete.")
