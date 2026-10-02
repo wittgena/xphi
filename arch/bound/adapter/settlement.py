@@ -11,7 +11,7 @@ from cryptography.exceptions import InvalidSignature
 
 from xphi.kernel.space.sandbox.config import fuel_config
 from xphi.arch.model.surge.model import DynamicSurgeModel
-from xphi.kernel.wasm.cgroup import Tier
+from xphi.kernel.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.transaction")

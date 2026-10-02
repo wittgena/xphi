@@ -10,7 +10,7 @@ from typing import Any, Dict, AsyncGenerator, Optional, Protocol, Union
 from xphi.arch.contract.space.state import Contract, CoherenceState
 from xphi.arch.bound.event.next import next_id, generate_parity_triplet, parse_phase_id
 from xphi.kernel.wasm.broker import DphiBroker, DphiMethod
-from xphi.kernel.wasm.cgroup import CgroupPolicy, Tier
+from xphi.kernel.wasm.quota import QuotaPolicy, Tier
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.kernel.space.sandbox.config import fuel_config, tier_config
 from xphi.watcher.plane.emitter import get_emitter
@@ -54,14 +54,14 @@ class SandboxReport:
     is_valid: bool
     output: str = ""
     error: str = ""
-    cgroup_metrics: Dict[str, Any] = field(default_factory=dict)
+    quota_metrics: Dict[str, Any] = field(default_factory=dict)
     
     def to_dict(self) -> dict:
         return asdict(self)
 
 @dataclass
 class MetabolicProfile:
-    cgroup_policy: CgroupPolicy = field(default_factory=CgroupPolicy.standard)
+    quota_policy: QuotaPolicy = field(default_factory=QuotaPolicy.standard)
     max_compute_time: float = 3.0
     max_threads: int = 1
     max_node_capacity: int = 3
@@ -79,12 +79,12 @@ class SandboxResolver(EffectResolver):
         self.profile = profile or MetabolicProfile()
         self.broker = broker
 
-    def _get_policy_from_tier(self, tier: Tier) -> CgroupPolicy:
+    def _get_policy_from_tier(self, tier: Tier) -> QuotaPolicy:
         if tier == Tier.SYSTEM: 
-            return CgroupPolicy.system()
+            return QuotaPolicy.system()
         elif tier == Tier.UNLIMITED: 
-            return CgroupPolicy.custom(1024, 10_000_000_000)
-        return CgroupPolicy.standard()
+            return QuotaPolicy.custom(1024, 10_000_000_000)
+        return QuotaPolicy.standard()
 
     async def resolve(self, payload: Dict[str, Any], instruction: str, env: SandboxEnv, tier: Union[Tier, str]) -> Dict[str, Any]:
         if isinstance(tier, str):
@@ -96,7 +96,7 @@ class SandboxResolver(EffectResolver):
             target_tier = tier
 
         log.info(f"[SandboxResolver] Routing instruction '{instruction}' to Env '{env.value}' (Tier: {target_tier.value})")
-        self.profile.cgroup_policy = self._get_policy_from_tier(target_tier)
+        self.profile.quota_policy = self._get_policy_from_tier(target_tier)
 
         schema = payload.get("schema", {})
         files = schema.get("files", {})
@@ -144,13 +144,13 @@ class SandboxResolver(EffectResolver):
                 except json.JSONDecodeError:
                     pass
 
-            report.cgroup_metrics = {
+            report.quota_metrics = {
                 "tier": target_tier.value,
                 "env": env.value,
                 "elapsed_ms": round(elapsed_ms, 2),
                 "fuel_consumed": fuel_consumed,
                 "mem_usage_bytes": mem_usage_bytes,
-                "mem_limit_bytes": self.profile.cgroup_policy.max_memory_bytes
+                "mem_limit_bytes": self.profile.quota_policy.max_memory_bytes
             }
         elif env == SandboxEnv.DOCKER:
             report.error = "Docker environment is provisioned in the architecture but not yet attached."
@@ -343,17 +343,17 @@ class BenchProfile:
 
     def _resolve_profile(self, tier: Tier) -> MetabolicProfile:
         if tier == Tier.SYSTEM:
-            policy = CgroupPolicy.system()
+            policy = QuotaPolicy.system()
             return MetabolicProfile(
-                cgroup_policy=policy,
+                quota_policy=policy,
                 max_threads=tier_config.system_max_threads, 
                 max_compute_time=float(policy.cpu_fuel_quota / tier_config.fuel_to_seconds_ratio), 
                 max_node_capacity=tier_config.system_max_node_capacity,
                 max_simulation_ticks=tier_config.system_max_simulation_ticks
             )
         else:
-            policy = CgroupPolicy.standard()
-            return MetabolicProfile(cgroup_policy=policy)
+            policy = QuotaPolicy.standard()
+            return MetabolicProfile(quota_policy=policy)
 
     def _charge_account(self, client_id: str, fuel_consumed: int):
         billed_amount = (fuel_consumed / fuel_config.fuel_unit) * fuel_config.usd_per_fuel_unit
@@ -402,10 +402,10 @@ class BenchProfile:
         payload_data = latest_contract.payload.get("data", latest_contract.payload)
         
         sandbox_report = payload_data.get("sandbox_report", {})
-        cgroup_fuel = sandbox_report.get("cgroup_metrics", {}).get("fuel_consumed", 0)
+        quota_fuel = sandbox_report.get("quota_metrics", {}).get("fuel_consumed", 0)
         dag_cycles = payload_data.get("cycles", 0)
         
-        final_fuel_consumed = cgroup_fuel if cgroup_fuel > 0 else dag_cycles
+        final_fuel_consumed = quota_fuel if quota_fuel > 0 else dag_cycles
         final_status = latest_contract.kind.upper()
         reason = payload_data.get("reason") or payload_data.get("detail") or "Execution completed successfully"
         

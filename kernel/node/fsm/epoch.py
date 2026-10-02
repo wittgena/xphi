@@ -14,7 +14,7 @@ from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.arch.contract.flow import PhaseFlow, FlowState
 from xphi.kernel.node.gan import Message, GanNode
 from xphi.kernel.wasm.broker import DphiBroker
-from xphi.kernel.wasm.cgroup import Tier
+from xphi.kernel.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.kernel.wasm.gateway import GatewayWasm 
 

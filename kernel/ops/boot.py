@@ -15,7 +15,7 @@ from xphi.state.phase.executor.cont import SwarmExecutor
 from xphi.state.phase.executor.flow import FlowExecutor
 from xphi.state.phase.reactor import PhaseReactor
 
-from xphi.state.anchor.consensus import KernelLedger, AnchorRole
+from xphi.state.anchor.consensus import PhaseStore, AnchorRole
 from xphi.state.anchor.gateway import GatewayPolicy 
 
 from xphi.kernel.node.runtime.anchor import RuntimeAnchor
@@ -184,12 +184,12 @@ async def main_async():
     log.info(f"[Boot] Provisioning Shared WASM Broker (Timeout: {wasm_timeout}s)...")
     shared_broker = DphiBroker(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
 
-    log.info("[Boot] Initializing KernelLedger and injecting Shared Broker...")
-    ledger = KernelLedger()
+    log.info("[Boot] Initializing PhaseStore and injecting Shared Broker...")
+    ledger = PhaseStore()
     
     if hasattr(ledger, 'role') and ledger.role == AnchorRole.SEALER:
         ledger.wasm = shared_broker
-        log.info("[Boot] Shared Broker injected into KernelLedger successfully.")
+        log.info("[Boot] Shared Broker injected into PhaseStore successfully.")
 
     log.info("[Boot] Igniting Embedded Phase Runtime Node...")
     completion_signal = asyncio.Event()
@@ -216,10 +216,10 @@ async def teardown():
             task.cancel()
 
     try:
-        KernelLedger().close()
-        log.info("[Boot] KernelLedger lock safely released.")
+        PhaseStore().close()
+        log.info("[Boot] PhaseStore lock safely released.")
     except Exception as e:
-        log.warning(f"[Boot] Error while releasing KernelStore lock: {e}")
+        log.warning(f"[Boot] Error while releasing PhaseStore lock: {e}")
         
     await TunnelFactory.close_all()
     log.info("[Boot] Resource cleanup complete.")

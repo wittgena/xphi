@@ -31,7 +31,7 @@ interface JsProxy {
   destroy: () => void;
 }
 
-// Python Code Templates (Optimized with Virtual Cgroup, Metrics & Determinism)
+// Python Code Templates (Optimized with Virtual Quota, Metrics & Determinism)
 const PYTHON_SETUP_CODE = `
 import sys, io, json
 import tracemalloc
@@ -88,28 +88,28 @@ def _apply_execution_context(ts, seed_string):
         det_hash = hashlib.sha256(_virtual_context["base_seed"]).hexdigest()
         random.seed(int(det_hash, 16))
 
-_cgroup_state = {
+_quota_state = {
     "fuel_quota": None,
     "fuel_consumed": 0,
     "memory_limit_bytes": None
 }
 
-def _cgroup_tracer(frame, event, arg):
+def _quota_tracer(frame, event, arg):
     """명령어 라인 단위로 가상 Fuel 차감 (무한 루프/과도한 연산 방어)"""
-    if _cgroup_state["fuel_quota"] is not None:
-        _cgroup_state["fuel_consumed"] += 1
-        if _cgroup_state["fuel_consumed"] >= _cgroup_state["fuel_quota"]:
-            raise RuntimeError(f"Cgroup Error: CPU Fuel Quota Exceeded ({_cgroup_state['fuel_quota']})")
-    return _cgroup_tracer
+    if _quota_state["fuel_quota"] is not None:
+        _quota_state["fuel_consumed"] += 1
+        if _quota_state["fuel_consumed"] >= _quota_state["fuel_quota"]:
+            raise RuntimeError(f"Quota Error: CPU Fuel Quota Exceeded ({_quota_state['fuel_quota']})")
+    return _quota_tracer
 
-def _apply_cgroup(fuel, mem_bytes):
+def _apply_policy(fuel, mem_bytes):
     """Control Plane(Broker)에서 전달된 정책을 인-프로세스에 적용"""
-    _cgroup_state["fuel_quota"] = fuel
-    _cgroup_state["fuel_consumed"] = 0
-    _cgroup_state["memory_limit_bytes"] = mem_bytes
+    _quota_state["fuel_quota"] = fuel
+    _quota_state["fuel_consumed"] = 0
+    _quota_state["memory_limit_bytes"] = mem_bytes
     
     if fuel is not None:
-        sys.settrace(_cgroup_tracer)
+        sys.settrace(_quota_tracer)
     else:
         sys.settrace(None)
 
@@ -117,13 +117,13 @@ def _get_metrics():
     """현재 샌드박스의 리소스 사용량을 계측하여 반환"""
     current, peak = tracemalloc.get_traced_memory()
     fuel_remaining = -1
-    if _cgroup_state["fuel_quota"] is not None:
-        fuel_remaining = max(0, _cgroup_state["fuel_quota"] - _cgroup_state["fuel_consumed"])
+    if _quota_state["fuel_quota"] is not None:
+        fuel_remaining = max(0, _quota_state["fuel_quota"] - _quota_state["fuel_consumed"])
         
     return json.dumps({
         "mem_usage_bytes": current,
         "mem_peak_bytes": peak,
-        "fuel_consumed": _cgroup_state["fuel_consumed"],
+        "fuel_consumed": _quota_state["fuel_consumed"],
         "fuel_remaining": fuel_remaining
     })
 
@@ -380,13 +380,13 @@ while (true) {
     continue;
   }
 
-  if (method === "apply_cgroup") {
+  if (method === "apply_policy") {
     const { fuel = null, mem_bytes = null } = params;
     try {
-      pyodide.runPython(`_apply_cgroup(${toPythonLiteral(fuel)}, ${toPythonLiteral(mem_bytes)})`);
+      pyodide.runPython(`_apply_policy(${toPythonLiteral(fuel)}, ${toPythonLiteral(mem_bytes)})`);
       if (requestId !== undefined) console.log(jsonrpcResult({ applied: true }, requestId));
     } catch (e: any) {
-      if (requestId !== undefined) console.log(jsonrpcError(JSONRPC_APP_ERRORS.RuntimeError, `Cgroup config failed: ${e.message}`, requestId));
+      if (requestId !== undefined) console.log(jsonrpcError(JSONRPC_APP_ERRORS.RuntimeError, `Policy config failed: ${e.message}`, requestId));
     }
     continue;
   }

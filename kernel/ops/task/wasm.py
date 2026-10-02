@@ -11,7 +11,7 @@ from contextlib import suppress
 from xphi.kernel.ops.daemon.base import AbstractDaemon
 from xphi.kernel.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
-from xphi.kernel.wasm.cgroup import CgroupPolicy
+from xphi.kernel.wasm.quota import QuotaPolicy
 from xphi.kernel.wasm.method import DphiMethod
 from xphi.kernel.ops.task.strategy import ExecutionStrategy
 
@@ -174,11 +174,11 @@ class TaskWasm(AbstractDaemon):
             if response_channel:
                 await self.tunnel.publish(response_channel, json.dumps({"success": True, "job_id": job_id}))
 
-    def _get_policy_from_tier(self, tier_str: str) -> CgroupPolicy:
+    def _get_policy_from_tier(self, tier_str: str) -> QuotaPolicy:
         tier_str = (tier_str or self.default_tier).upper()
-        if tier_str == "SYSTEM": return CgroupPolicy.system()
-        if tier_str == "UNLIMITED": return CgroupPolicy.custom(mem_mb=1024, fuel=10_000_000_000)
-        return CgroupPolicy.standard()
+        if tier_str == "SYSTEM": return QuotaPolicy.system()
+        if tier_str == "UNLIMITED": return QuotaPolicy.custom(mem_mb=1024, fuel=10_000_000_000)
+        return QuotaPolicy.standard()
 
     async def _process_and_reply(self, payload: dict, message_id: str, interp_instance):
         response_channel = payload.get("response_channel")

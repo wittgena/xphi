@@ -1,7 +1,4 @@
 # xphi.arch.bound.adapter.dphi.dvm
-## @lineage: xphi.bound.adapter.dphi.dvm
-## @lineage: xphi.kernel.adapter.dphi.dvm
-## @lineage: fiber.dphi.adapter.dvm
 import time
 import json
 import hashlib

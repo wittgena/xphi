@@ -17,7 +17,7 @@ from contextlib import suppress
 from xphi.arch.contract.interpreter import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
 from xphi.kernel.space.bind.resolver import find_current_self, resolve_path
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.kernel.wasm.cgroup import CgroupPolicy, Tier
+from xphi.kernel.wasm.quota import QuotaPolicy, Tier
 
 log = get_emitter("inter.python", phase="SYSTEM")
 TIME_ROOT = resolve_path("time")
@@ -32,7 +32,7 @@ class PythonInterpreter:
         enable_env_vars: list[str] | None = None,
         enable_network_access: list[str] | None = None,
         sync_files: bool = True,
-        policy: CgroupPolicy | None = None,
+        policy: QuotaPolicy | None = None,
     ) -> None:
         if isinstance(deno_command, dict):
             raise TypeError("deno_command must be a list of strings")
@@ -42,7 +42,7 @@ class PythonInterpreter:
         self.enable_env_vars = enable_env_vars or []
         self.enable_network_access = enable_network_access or []
         self.sync_files = sync_files
-        self.policy = policy or CgroupPolicy.standard()
+        self.policy = policy or QuotaPolicy.standard()
 
         if deno_command:
             self.deno_command = list(deno_command)
@@ -200,22 +200,20 @@ class PythonInterpreter:
         except (BrokenPipeError, AttributeError):
             pass 
 
-    def _apply_cgroup_policy(self) -> None:
+    def _apply_quota_policy(self) -> None:
         use_fuel = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else None
         params = {
             "fuel": use_fuel,
             "mem_bytes": self.policy.max_memory_bytes
         }
-        self._send_request("apply_cgroup", params, "Applying Cgroup Policy")
+        self._send_request("apply_policy", params, "Applying Quota Policy")
 
-    def apply_policy(self, policy: CgroupPolicy) -> None:
-        """런타임에 Cgroup 정책(Tier, 리소스 제한 등)을 동적으로 변경하고 Deno 샌드박스에 즉시 적용합니다."""
+    def apply_policy(self, policy: QuotaPolicy) -> None:
         self.policy = policy
         if self.deno_process and self.deno_process.poll() is None:
-            self._apply_cgroup_policy()
+            self._apply_quota_policy()
 
     def _ensure_deno_process(self) -> None:
-        # 기존 프로세스가 깨졌거나 죽어있다면 완벽하게 수거(Cleanup) 후 재생성
         if self.deno_process is not None:
             if self.deno_process.poll() is not None:
                 self.shutdown()
@@ -258,7 +256,7 @@ class PythonInterpreter:
             raise ProtocolError("Deno executable not found.") from e
         
         self._health_check()
-        self._apply_cgroup_policy()
+        self._apply_quota_policy()
 
     _MAX_SKIP_LINES = 100
 

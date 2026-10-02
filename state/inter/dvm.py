@@ -13,7 +13,7 @@ except ImportError:
 
 from xphi.arch.contract.interpreter import ExecutionError, ExecutionResult
 from xphi.kernel.space.bind.resolver import resolve_path
-from xphi.kernel.wasm.cgroup import WasmCgroup, CgroupPolicy, Tier
+from xphi.kernel.wasm.quota import WasmQuotaManager, QuotaPolicy, Tier
 
 from xphi.state.inter.wasm import WasmInterpreter
 from xphi.watcher.plane.emitter import get_emitter
@@ -26,13 +26,13 @@ _GLOBAL_MODULE_CACHE = {}
 _CACHE_LOCK = threading.Lock()
 
 
-def get_cached_module(wasm_path: str, cg_policy: WasmCgroup):
+def get_cached_module(wasm_path: str, quota_manager: WasmQuotaManager):
     global _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE
     
     with _CACHE_LOCK:
         if _GLOBAL_ENGINE is None:
             config = wasmtime.Config()
-            cg_policy.apply_to_config(config)
+            quota_manager.apply_to_config(config)
             _GLOBAL_ENGINE = wasmtime.Engine(config)
             
         if wasm_path not in _GLOBAL_MODULE_CACHE:
@@ -51,13 +51,13 @@ class DvmInterpreter:
     def __init__(
         self,
         wasm_module_name: str = "dvm.wasm",
-        policy: Optional[CgroupPolicy] = None,
+        policy: Optional[QuotaPolicy] = None,
     ) -> None:
         if wasmtime is None:
             raise ImportError("The 'wasmtime' package is required. Please install it.")
             
         self.wasm_module_path = str(Path(TIME_ROOT) / wasm_module_name)
-        self.policy = policy or CgroupPolicy.standard()
+        self.policy = policy or QuotaPolicy.standard()
         
         self._execution_count = 0
 
@@ -72,7 +72,7 @@ class DvmInterpreter:
         self._wasm_alloc = None
         self._wasm_dealloc = None
         self._wasm_execute_router = None
-        self.cg = WasmCgroup(cgroup_name=f"multi-vm-worker-{id(self)}", policy=self.policy)
+        self.cg = WasmQuotaManager(policy_name=f"multi-vm-worker-{id(self)}", policy=self.policy)
         
         self._ensure_engine_started()
 
@@ -123,7 +123,7 @@ class DvmInterpreter:
                         dphi_payload = payload.get("payload", {})
                         
                         phase_wasm_path = str(Path(TIME_ROOT) / "phase.wasm")
-                        with WasmInterpreter(phase_wasm_path, policy=CgroupPolicy.system()) as dphi_kernel:
+                        with WasmInterpreter(phase_wasm_path, policy=QuotaPolicy.system()) as dphi_kernel:
                             res = dphi_kernel.invoke(dphi_method, json.dumps(dphi_payload), context=dphi_context)
                             
                             if res.success:

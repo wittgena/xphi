@@ -7,7 +7,7 @@ from collections import defaultdict
 from typing import Any, Dict, Optional
 
 from xphi.arch.model.edge.stream import LogicStream as IngressLogicStream
-from xphi.state.anchor.consensus import KernelLedger, LogicStream as KernelLogicStream, SealedKernel, AnchorRole
+from xphi.state.anchor.consensus import PhaseStore, LogicStream as KernelLogicStream, SealedKernel, AnchorRole
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("anchor.gateway", phase="KERNEL")
@@ -116,8 +116,8 @@ class PayloadSanitizer:
 
 class StoreGateway:
     """@desc: Compliant middleware & Adapter bridging external Ingress to the unified KernelStore"""
-    def __init__(self, store: Optional[KernelLedger] = None):
-        self.store = store or KernelLedger()
+    def __init__(self, store: Optional[PhaseStore] = None):
+        self.store = store or PhaseStore()
         self.policy = GatewayPolicy.get_current()
         
         self.limiter = TokenBucketLimiter(
