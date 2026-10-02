@@ -1,5 +1,4 @@
 # xphi.kernel.node.fsm.epoch
-## @lineage: theoria.phase.model.epoch
 import asyncio
 import json
 import time
@@ -21,14 +20,27 @@ from xphi.kernel.wasm.gateway import GatewayWasm
 epoch_log = get_emitter("fsm.epoch")
 
 class EdgeFlow(Enum):
-    ZERO = "0"
-    COLLAPSED = "Φ⁻"
-    COHERENT = "Φ⁺"
-    FRAGMENTED = "Φᶠ"
-    DOMINIUM = "Ψᴰ"
+    # JSON 통신 안정성을 위해 직렬화 값을 100% 대문자 영문으로 정렬
+    ZERO = "ZERO"
+    COLLAPSED = "COLLAPSED"
+    COHERENT = "COHERENT"
+    FRAGMENTED = "FRAGMENTED"
+    ANCHOR = "ANCHOR"  # Dominium -> Anchor 통일
+
+    @property
+    def symbol(self) -> str:
+        """콘솔 출력 및 로깅의 미적 요소(Topology Aesthetic) 유지를 위한 시각 기호"""
+        mapping = {
+            "ZERO": "0",
+            "COLLAPSED": "Φ⁻",
+            "COHERENT": "Φ⁺",
+            "FRAGMENTED": "Φᶠ",
+            "ANCHOR": "Ψᴰ"
+        }
+        return mapping[self.value]
 
 class FlowTransition:
-    """WASM 게이트웨이(FSM)와 통신하여 토폴로지 전이 상태 및 비용 정산 Dominium 도달을 추적하는 셸(Shell)"""
+    """WASM 게이트웨이(FSM)와 통신하여 토폴로지 전이 상태 및 비용 정산 Anchor 도달을 추적하는 셸(Shell)"""
     def __init__(self, origin: str = "0"):
         self.id: str = next_id()
         self.origin: str = origin
@@ -48,15 +60,17 @@ class FlowTransition:
         self.future = asyncio.Future()
 
     def record(self, message: str, state_change: Optional[EdgeFlow] = None) -> None:
-        log_entry = {"event": message, "previous_state": self.edge.value}
+        # 로그에는 기호(symbol)를 함께 기록하여 추적성 확보
+        prev_sym = self.edge.symbol
+        log_entry = {"event": message, "previous_state": prev_sym}
         if state_change:
-            log_entry["new_state"] = state_change.value
+            log_entry["new_state"] = state_change.symbol
             self.edge = state_change
         self.memory.append(log_entry)
 
     def _apply_event(self, event: dict) -> None:
         """이벤트를 WASM FSM으로 전송하고 반환된 상태와 커맨드를 처리합니다."""
-        # 1. 현재 상태 DTO화
+        # 1. 현재 상태 DTO화 (영문 값으로 직렬화)
         fsm_state = {
             "origin": self.origin,
             "edge": self.edge.value,
@@ -83,11 +97,12 @@ class FlowTransition:
     def _handle_command(self, cmd: dict) -> None:
         ctype = cmd.get("command_type")
         
-        if ctype == "ResolveDominiumCmd":
+        # ResolveDominiumCmd -> ResolveAnchorCmd 정렬
+        if ctype == "ResolveAnchorCmd":
             if self.future and not self.future.done():
                 self.future.set_result(cmd.get("success", True))
             addr = cmd.get("resource_address")
-            self.record(f"Anchored Dominium to {addr}")
+            self.record(f"Anchored state to {addr}")
             
         elif ctype == "FractureCmd":
             if self.future and not self.future.done():
@@ -109,7 +124,7 @@ class FlowTransition:
             "event_type": "Bind", 
             "target_phase": target_phase.value
         })
-        self.record(f"Bound to phase {target_phase.value}")
+        self.record(f"Bound to phase {target_phase.symbol}")
 
     def threshold_test(self, lmbda: float, tau: float) -> bool:
         self._apply_event({
@@ -121,9 +136,10 @@ class FlowTransition:
         self.record(f"Threshold test: λ({lmbda}) vs τ({tau})", state_change=self.edge)
         return is_coherent
 
-    def reach_dominium(self, resource_address: str) -> None:
+    # reach_dominium -> reach_anchor 정렬
+    def reach_anchor(self, resource_address: str) -> None:
         self._apply_event({
-            "event_type": "ReachDominium", 
+            "event_type": "ReachAnchor", 
             "resource_address": resource_address
         })
 
@@ -144,7 +160,7 @@ class FlowTransition:
             success = await asyncio.wait_for(self.future, timeout=timeout)
             trace = "\n".join([f"[{m.get('new_state', m.get('previous_state', '0'))}] {m['event']}" for m in self.memory])
             if not success:
-                trace += "\n[⚠️ SYSTEM COLLAPSED] Execution fractured before reaching dominium."
+                trace += "\n[⚠️️ SYSTEM COLLAPSED] Execution fractured before reaching anchor."
             return trace
         except asyncio.TimeoutError:
             self.fracture_topology(lmbda=0.0, tau=1.0, force_collapse=True)
@@ -157,7 +173,7 @@ class FlowTransition:
 
 @dataclass
 class TopologyResidue:
-    edge_state: str
+    edge_state: str  # 내부값 보존
     trajectory_trace: str
     receipt: Optional[TransactionReceipt]
 
@@ -176,7 +192,7 @@ class TransitionManager:
         self.transition.record(message)
 
     async def settle(self, broker: DphiBroker, cost: float, fuel_consumed: int) -> TopologyResidue:
-        """Dominium 비용 정산을 수행하고 TopologyResidue를 반환합니다."""
+        """Anchor 비용 정산을 수행하고 TopologyResidue를 반환합니다."""
         entangled_state = {
             "parity": {"topos_id": f"task_{self.transition.id}", "phase_id": 0, "nexus_id": 0},
             "repos": {}
@@ -201,11 +217,13 @@ class TransitionManager:
             tier=Tier.STANDARD.value
         )
         epoch_log.info(f"[{self.origin_name}] 🧾 Transaction Receipt Issued: {receipt.job_id}")
-        self.transition.reach_dominium(resource_address=f"urn:surgent:resource:resolved_task_{self.transition.id}")
+        
+        # reach_dominium -> reach_anchor 정렬
+        self.transition.reach_anchor(resource_address=f"urn:surgent:resource:resolved_task_{self.transition.id}")
         
         residue = TopologyResidue(
             edge_state=self.transition.edge.value,
-            trajectory_trace=str(self.transition.edge),
+            trajectory_trace=str(self.transition.edge.symbol),
             receipt=receipt
         )
         self._print_verification_report(residue)
@@ -215,8 +233,11 @@ class TransitionManager:
         return self.transition
 
     def _print_verification_report(self, residue: TopologyResidue) -> None:
+        # 로깅 시 기호(Symbol) 복원하여 출력
+        visual_symbol = EdgeFlow(residue.edge_state).symbol if residue.edge_state in [e.value for e in EdgeFlow] else residue.edge_state
+        
         epoch_log.info("\n" + "="*60)
-        epoch_log.info(f"🌌 [TOPOLOGY FINALIZED] Dominium Edge State: {residue.edge_state}")
+        epoch_log.info(f"🌌 [TOPOLOGY FINALIZED] Edge State: {visual_symbol} ({residue.edge_state})")
         if residue.receipt:
             epoch_log.info(f"  Receipt ID (Topos): {residue.receipt.job_id}")
             epoch_log.info(f"  Fuel Burned (Compute): {residue.receipt.fuel_consumed}")

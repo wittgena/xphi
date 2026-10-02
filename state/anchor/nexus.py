@@ -53,7 +53,7 @@ class AnchorResult:
     receipt: Optional[TransactionReceipt] = None
     rupture_reason: Optional[str] = None
 
-class LedgerEventSchema(BaseModel):
+class PIIEventSchema(BaseModel):
     action: str
     user_id: str
     pii_data: Optional[Dict[str, Any]] = None
@@ -61,7 +61,7 @@ class LedgerEventSchema(BaseModel):
 
 class StreamAppendRequest(BaseModel):
     stream_name: str
-    events: List[LedgerEventSchema]
+    events: List[PIIEventSchema]
     verbose: bool = False
 
 class NexusAnchor:
