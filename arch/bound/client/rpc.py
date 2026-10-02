@@ -1,6 +1,6 @@
 # xphi.arch.bound.client.rpc
-import json
 import asyncio
+import orjson
 from typing import Dict, Any
 
 from xphi.arch.contract.config import env
@@ -29,21 +29,20 @@ class InternalRpcClient:
         await pubsub.subscribe(reply_channel)
         
         try:
-            rpc_payload = json.dumps({
+            rpc_payload = orjson.dumps({
                 "id": job_id,
                 "method": method,
                 "params": params,
                 "reply_to": reply_channel
-            })
+            }, option=orjson.OPT_NON_STR_KEYS).decode('utf-8')
             
             log.debug(f"[RPC Request] {method} ({job_id})")
             await tunnel.stream_produce(self.queue_name, {"payload": rpc_payload})
             
             async with asyncio.timeout(timeout):
                 async for msg in pubsub.listen():
-                    if msg and msg["type"] == "message":
-                        response = json.loads(msg["data"])
-                        
+                    if isinstance(msg, dict) and msg.get("type") == "message":
+                        response = orjson.loads(msg["data"])
                         err_data = response.get("error")
                         if err_data:
                             code = err_data.get("code", 500)
@@ -62,7 +61,7 @@ class InternalRpcClient:
         except RpcException:
             raise
         except Exception as e:
-            log.error(f"[RPC Exception] Method {method} crashed: {e}")
+            log.error(f"[RPC Exception] Method {method} crashed: {e}", exc_info=True)
             raise RpcException(status_code=500, detail="Internal Edge Communication Error")
         finally:
             await pubsub.unsubscribe(reply_channel)
@@ -71,8 +70,9 @@ class InternalRpcClient:
     async def publish_intent(self, channel: str, payload: Dict[str, Any]):
         tunnel = await TunnelFactory.get_default()
         try:
-            await tunnel.publish(channel, json.dumps(payload))
+            encoded_payload = orjson.dumps(payload, option=orjson.OPT_NON_STR_KEYS).decode('utf-8')
+            await tunnel.publish(channel, encoded_payload)
             log.debug(f"[RPC Broadcast] Sent intent to {channel}")
         except Exception as e:
-            log.error(f"[RPC Broadcast Error] Failed to publish to {channel}: {e}")
+            log.error(f"[RPC Broadcast Error] Failed to publish to {channel}: {e}", exc_info=True)
             raise
