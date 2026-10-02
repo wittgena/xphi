@@ -186,8 +186,7 @@ class VerifiedHttpClient:
             return
 
         try:
-            # 설정된 base_url을 기준으로 keys 엔드포인트 호출
-            res = await self._client.get("/v1/public/keys")
+            res = await self._client.get("/v1/exchange/keys")
             res.raise_for_status()
             
             data = res.json()
