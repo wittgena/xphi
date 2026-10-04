@@ -24,10 +24,6 @@ from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.gateway")
 
-# ==========================================
-# Data Models
-# ==========================================
-
 class AgentIdentity(BaseModel):
     target_server_id: str
     agent_uri: AnyUrl
@@ -36,10 +32,6 @@ class AgentIdentity(BaseModel):
     client_ip: IPvAnyAddress
     nonce: str
     idempotency_key: str
-
-# ==========================================
-# DPoP Client & Validation
-# ==========================================
 
 class DPoPClientGenerator:
     def __init__(self, key_size: int = 2048):
@@ -55,7 +47,6 @@ class DPoPClientGenerator:
         """RSA 공개키를 JWK (JSON Web Key) 포맷으로 변환"""
         numbers = self.public_key.public_numbers()
         
-        # PyJWT의 base64url_encode는 bytes를 반환하므로 문자열로 디코딩
         n_bytes = numbers.n.to_bytes((numbers.n.bit_length() + 7) // 8, 'big')
         e_bytes = numbers.e.to_bytes((numbers.e.bit_length() + 7) // 8, 'big')
         
@@ -66,7 +57,6 @@ class DPoPClientGenerator:
         }
 
     def generate_proof(self, url: str, method: str, nonce: str) -> str:
-        # JWT Header 규격
         headers = {
             "typ": "dpop+jwt",
             "alg": "RS256",
@@ -82,16 +72,13 @@ class DPoPClientGenerator:
             "nonce": nonce               # Replay Attack 방지용 논스
         }
 
-        # PyJWT를 활용하여 Private Key로 서명
         token = jwt.encode(
             payload=payload,
             key=self.private_key,
             algorithm="RS256",
             headers=headers
         )
-        
         return token
-
 
 class JwkAdapter:
     @staticmethod
@@ -127,7 +114,6 @@ class JwkAdapter:
         except Exception as e:
             raise ValueError(f"Malformed JWK structure: {e}")
 
-
 class DPoPValidator:
     @staticmethod
     def _b64_decode_str(data: str) -> str:
@@ -143,7 +129,6 @@ class DPoPValidator:
             payload = json.loads(cls._b64_decode_str(parts[1]))
             signature = JwkAdapter._b64_decode(parts[2])
             
-            # Replay 공격 방어 (시간 검증)
             if payload.get("nonce") != expected_nonce: return False
             if payload.get("htm") != htm or payload.get("htu") != htu: return False
             if abs(time.time() - payload.get("iat", 0)) > 60: return False
@@ -151,7 +136,6 @@ class DPoPValidator:
             jwk = header.get("jwk")
             if not jwk: return False
             
-            # 캐싱된 공개키 객체 로드
             public_key = JwkAdapter.parse_public_key(jwk)
             signed_data = f"{parts[0]}.{parts[1]}".encode('utf-8')
             
@@ -167,10 +151,7 @@ class DPoPValidator:
             log.warning(f"DPoP Verification Failed: {e}")
             return False
 
-# ==========================================
-# Gateway Security & Tunnel Components
-# ==========================================
-
+"""Gateway Security & Tunnel Components"""
 class IdempotencyMapper:
     def __init__(self, tunnel: UniversalFacade):
         self.tunnel = tunnel
@@ -178,18 +159,14 @@ class IdempotencyMapper:
     async def get_or_create_handle(self, target_id: str, idempotency_key: str) -> Tuple[str, bool]:
         redis_key = f"mcp:idem:{target_id}:{idempotency_key}"
         try:
-            # 1차 조회
             existing_handle = await self.tunnel.get(redis_key)
             if existing_handle:
                 return str(existing_handle), False
                 
-            # 캐시 미스 시 새로운 핸들 생성
             entropy = uuid.uuid4().hex[:12]
             new_handle = f"txn_{int(time.time())}_{entropy}"
             
-            # 원자적 기록 시도 (Check-Then-Act 레이스 방어)
             is_set = await self.tunnel.set(redis_key, new_handle, ex=86400, nx=True)
-            
             if is_set:
                 return new_handle, True
             else:
@@ -203,7 +180,6 @@ class IdempotencyMapper:
             log.critical(f"Tunnel Idempotency Check Failed: {e}")
             raise RuntimeError("Distributed state storage unavailable")
 
-
 class NonceReplayProtector:
     def __init__(self, tunnel: UniversalFacade):
         self.tunnel = tunnel
@@ -215,10 +191,6 @@ class NonceReplayProtector:
         except Exception as e:
             log.critical(f"Tunnel Nonce Verification Failed: {e}")
             return False
-
-# ==========================================
-# WASM/FFI Sanitization (xphi.kernel)
-# ==========================================
 
 class GatewayAdapter:
     """
