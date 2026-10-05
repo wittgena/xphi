@@ -1,6 +1,4 @@
 # xphi.arch.model.surge.disc
-## @lineage: arch.model.surge.disc
-## @lineage: arch.xor.surge.disc
 import inspect
 import logging
 import threading
