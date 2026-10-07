@@ -121,7 +121,6 @@ def redact_url_params(url: str) -> str:
         else:
             redacted_params[param_name] = values
 
-    # doseq=True tells urlencode to unpack the value lists correctly.
     redacted_query = urlencode(redacted_params, doseq=True)
     return urlunparse(parsed._replace(query=redacted_query))
 
@@ -153,10 +152,8 @@ def sanitize_payload(obj: Any) -> Any:
         return [sanitize_payload(item) for item in obj]
 
     if isinstance(obj, str):
-        # 1. URL 쿼리 파라미터 우선 처리
         if "?" in obj:
             obj = redact_url_params(obj)
-        # 2. 통합 정규식 마스킹 처리
         return redact_string(obj)
 
     return obj

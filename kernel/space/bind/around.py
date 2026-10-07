@@ -15,7 +15,7 @@ log = logging.getLogger("around")
 CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
 PTH_FILENAME = "xphi.pth"
-CORES = ["fiber", "theoria", "xphi"]
+CORES = ["fiber", "xphi"]
 
 ## Default minimum skeleton to prevent resolver crashes if bound.json doesn't exist
 DEFAULT_BOUND_SKELETON = {
@@ -73,7 +73,6 @@ DEFAULT_BOUND_SKELETON = {
     "quarantine": ["venv", "env", "node_modules", "dev", "ex", "tests"]
 }
 
-
 def ignore_hidden(dir, files):
     """@helper: Exclude hidden files and directories from the copy target."""
     return [f for f in files if f.startswith('.')]
@@ -98,12 +97,8 @@ def resolve_workspace_root() -> Path:
     # Fallback to current working directory if core marker is not found
     return Path.cwd()
 
-
 def replicate_and_relaunch(workspace_root: Path, anchor_dir: Path) -> None:
-    """
-    @flow: Replicate the script to the root anchor directory and relaunch (DEV Mode Only).
-    @desc: Resolves the hardcoded 'meta' dependency. Copies the logic into the workspace 'anchor' dynamically.
-    """
+    """@flow: Replicate the script to the root anchor directory and relaunch (DEV Mode Only)"""
     if os.getenv("PYTH_REPLICATED") == "1":
         return
 
@@ -131,7 +126,6 @@ def discover_repos(base_dir: Path, max_depth: int = 1) -> list[Path]:
     """@flow: Scan surrounding directories to discover local Git repositories (DEV Mode)."""
     found = []
     exclude = {'.git', 'node_modules', 'venv', '__pycache__', 'build', '.idea', '.vscode'}
-    
     def _scan(current: Path, depth: int):
         if depth > max_depth:
             return
@@ -139,7 +133,6 @@ def discover_repos(base_dir: Path, max_depth: int = 1) -> list[Path]:
             for child in current.iterdir():
                 if child.is_dir() and child.name not in exclude:
                     if (child / '.git').exists() or (child / 'pyproject.toml').exists():
-                    # if (child / '.git').exists():
                         found.append(child)
                     else:
                         _scan(child, depth + 1)
@@ -276,11 +269,9 @@ if __name__ == "__main__":
         ANCHOR_DIR = WORKSPACE_ROOT / "anchor"
         
         replicate_and_relaunch(WORKSPACE_ROOT, ANCHOR_DIR)
-        
         found_repos = project_dev_mode(WORKSPACE_ROOT, ANCHOR_DIR)
         if found_repos:
             verify_projection(found_repos, WORKSPACE_ROOT)
-            
     else:
         # Installed package user environment workflow
         USER_ROOT = Path.cwd()
