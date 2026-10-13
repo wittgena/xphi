@@ -14,9 +14,9 @@ from xphi.arch.model.surge.model import DynamicSurgeModel
 from xphi.kernel.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("adapter.transaction")
+log = get_emitter("adapter.settlement")
 
-# --- AP2 Protocol Models ---
+# AP2 Protocol Models
 class Ap2MandateConstraints(DynamicSurgeModel):
     max_spend_usdc: str
     expiration_ts: int
@@ -37,7 +37,7 @@ class Ap2MandateResult(DynamicSurgeModel):
     mandate: Ap2MandatePayload
     authorization: Ap2Authorization
 
-# --- X402 Invoice & Receipt Models ---
+# X402 Invoice & Receipt Models
 class X402Invoice(DynamicSurgeModel):
     status: str
     x_payment_protocol: str
@@ -55,7 +55,7 @@ class X402SettlementReceipt(DynamicSurgeModel):
     payer_wallet: str
     settled_at: int
 
-# --- Internal Transaction Models ---
+# Internal Transaction Models
 class TransactionReceipt(DynamicSurgeModel):
     job_id: str
     topos_id: str

@@ -307,8 +307,6 @@ class PtaAdapter:
                 produced_sum += output.amount
                 
         total_balance = oracle_sum - spent_sum + produced_sum
-        
-        # 💡 [디버깅] 잔고 계산의 세부 내역 완벽 해부
         log.debug(
             f"[PtaAdapter:{self._inst_id}] 📊 Balance Breakdown: "
             f"Oracle({oracle_sum}) - SpentLocal({spent_sum}) + ProducedLocal({produced_sum}) = FINAL({total_balance})"
