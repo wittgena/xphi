@@ -150,15 +150,9 @@ class SurfaceEmitter:
 def get_emitter(name: str, phase: Optional[str] = None, boundary: Optional[str] = None, mode: str = "NORMAL") -> SurfaceEmitter:
     return SurfaceEmitter(name, phase, boundary, mode=mode)
 
-
-"""@legacy.compat: Native Python logging fallback setup"""
-# [수정] 혼란을 야기하는 전역 DEBUG = True 하드코딩 제거 (환경변수로 통일)
 DEBUG = _GLOBAL_MIN_LEVEL == "DEBUG"
 
 class SurfacePlaneHandler(logging.Handler):
-    """
-    @desc: Intercepts standard logging.Logger records and securely routes them to the new event pipeline (SurfacePlane)
-    """
     def emit(self, record):
         try:
             level_map = {
