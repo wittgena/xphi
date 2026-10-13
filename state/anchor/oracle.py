@@ -14,9 +14,10 @@ ANCHOR_DB_PATH = resolve_path("adb")
 class AnchorOracle:
     def __init__(self, broker: DphiBroker, path: str = ANCHOR_DB_PATH):
         self.broker = broker
+        self.path = str(path)
         ro_opt = Options()
         try:
-            self.db = Rdict(str(path), ro_opt, access_type=AccessType.read_only())
+            self.db = Rdict(self.path, ro_opt, access_type=AccessType.read_only())
             log.info("[AnchorOracle] Mounted Anchor DB in Read-Only mode. Canonical WASM Broker attached.")
         except Exception as e:
             log.error(f"[AnchorOracle] Failed to mount ledger DB: {e}")
@@ -31,6 +32,65 @@ class AnchorOracle:
         if key in self.db:
             return json.loads(self.db[key].decode('utf-8'))
         return None
+
+    # =====================================================================
+    # 💡 [신규 추가] UTXO 상태 수화 (State Hydration & Balance Query)
+    # =====================================================================
+
+    async def get_unspent_outputs(self, owner: str, asset_type: str = "fuel") -> List[Dict[str, Any]]:
+        """
+        @desc: RocksDB에서 특정 소유자(owner)의 아직 소모되지 않은(Unspent) UTXO 목록을 스캔하여 반환합니다.
+               이는 PtaAdapter나 TenantEco가 결제 청사진(Coin Selection)을 짤 때 사용됩니다.
+        """
+        # Prefix 규칙: utxo:{owner}:{asset_type}:
+        prefix = f"utxo:{owner}:{asset_type}:".encode('utf-8')
+        unspent_outputs = []
+        
+        try:
+            # RocksDB의 Prefix Iteration을 통해 해당 테넌트의 자산만 O(K) 속도로 빠르게 스캔
+            iterator = self.db.iter()
+            iterator.seek(prefix)
+            
+            while iterator.valid():
+                key_bytes = iterator.key()
+                if not key_bytes.startswith(prefix):
+                    break
+                    
+                output_data = json.loads(iterator.value().decode('utf-8'))
+                
+                # 키 구조 파싱: utxo:{owner}:{asset_type}:{tx_hash}:{idx}
+                key_str = key_bytes.decode('utf-8')
+                key_parts = key_str.split(':')
+                
+                if len(key_parts) >= 5:
+                    tx_hash = key_parts[3]
+                    output_idx = int(key_parts[4])
+                    
+                    unspent_outputs.append({
+                        "pointer": {"tx_hash": tx_hash, "output_index": output_idx},
+                        "output": output_data
+                    })
+                
+                iterator.next()
+                
+        except Exception as e:
+            log.error(f"[AnchorOracle] Failed to scan UTXOs for owner '{owner}': {e}", exc_info=True)
+            
+        return unspent_outputs
+
+    async def get_balance(self, owner: str, asset_type: str = "fuel") -> int:
+        """
+        @desc: 오라클이 직접 DB를 스캔하여 확정된 물리적 잔고(Confirmed Balance)를 계산하여 반환합니다.
+        """
+        outputs = await self.get_unspent_outputs(owner, asset_type)
+        confirmed_balance = sum(item["output"].get("amount", 0) for item in outputs)
+        
+        log.debug(f"[AnchorOracle] Confirmed balance for {owner[:12]}... -> {confirmed_balance} {asset_type}")
+        return confirmed_balance
+
+    # =====================================================================
+    # 기존 원장 무결성 검증 (Nexus Observe & Lineage)
+    # =====================================================================
 
     async def observe_nexus(self, epoch_hash: str) -> Dict[str, Any]:
         snapshot = self._get_raw_object("commit", epoch_hash)
