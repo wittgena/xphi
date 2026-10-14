@@ -128,39 +128,32 @@ def _track_io_usage(name: str, target_path: Path):
 @lru_cache(maxsize=32)
 def resolve_path(name: str, start: Path | None = None) -> Path:
     """@flow: Resolve logical name -> physical topological path."""
-    ## @phase: Context alignment
     effective_start = start.resolve() if start else Path.cwd().resolve()
     self_root = find_current_self(effective_start)
     anchor_dir = get_anchor_dir(self_root)
     
     clean_name = _clean_subpath(self_root.name, name)
+    log.debug(f"[RESOLVER] self_root: {self_root}, anchor_dir: {anchor_dir}, clean_name: {clean_name}")
     
-    # USER 모드(Docker)에서는 우연히 존재하는 가짜 빈 폴더에 속지 않도록 DEV 모드일 때만 숏컷 허용
     if self_root != Path.home():
         direct_candidate = (self_root / clean_name).resolve()
         if direct_candidate.exists() and direct_candidate.is_dir():
+            log.debug(f"[RESOLVER] -> Matched direct_candidate: {direct_candidate}")
             return direct_candidate
 
-    ## @phase: Path mapping & Substitution
     bound = load_bound(self_root)
     paths = bound.get("paths", {})
-    
-    # around 토폴로지(site-packages 절대 경로 맵) 로드
     around_topology = bound.get("around", {})
-    
     if name in paths:
         raw_mapped = paths[name]
+        log.debug(f"[RESOLVER] raw_mapped for '{name}': {raw_mapped}")
+
         substitutions = {"self": self_root, "anchor": anchor_dir}
-        
-        ## @merge: Substitution syntax resolution
         for prefix_key, rel_path in bound.get("substitution", {}).items():
             safe_rel_path = rel_path.lstrip("/") if isinstance(rel_path, str) else str(rel_path)
             base_module = safe_rel_path.split("/")[0] # 예: "xphi", "anchor", "fiber"
             
-            # 1. USER 모드 코어 패키지 (fiber, xphi 등 - site-packages 절대 경로 매핑)
             if base_module in around_topology:
-                
-                # --- [CORE FIX] 동적 패키지 경로 추적 (Dynamic Core Resolution) ---
                 if self_root == Path.home(): 
                     try:
                         import importlib.util
@@ -173,40 +166,32 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
                         base_abs_path = Path(around_topology[base_module]["path"])
                 else:
                     base_abs_path = Path(around_topology[base_module]["path"])
-                # ------------------------------------------------------------------
 
                 sub_path_parts = safe_rel_path.split("/")[1:]
                 sub_path = "/".join(sub_path_parts) if sub_path_parts else ""
                 substitutions[prefix_key] = (base_abs_path / sub_path).resolve()
-            
-            # 2. 앵커 데이터 경로 (USER 모드의 .anchor 이름 변경 규칙 적용)
             elif base_module == "anchor":
                 sub_path_parts = safe_rel_path.split("/")[1:]
                 sub_path = "/".join(sub_path_parts) if sub_path_parts else ""
                 substitutions[prefix_key] = (anchor_dir / sub_path).resolve()
-                
-            # 3. 기타 런타임 데이터 및 DEV 모드 (self_root 기준 상대 매핑)
             else:
                 substitutions[prefix_key] = (self_root / safe_rel_path).resolve()
         
-        ## @match: Pattern :prefix:/sub_path
         match = re.match(r"^:([^:]+):(?:/(.*))?$", raw_mapped)
         if match:
             prefix = match.group(1)
             sub_path = match.group(2) or ""
+            log.debug(f"[RESOLVER] Regex match -> prefix: '{prefix}', sub_path: '{sub_path}'")
+
             if prefix in substitutions:
                 target_path = (substitutions[prefix] / sub_path).resolve()
             else:
                 raise RuntimeError(f"Unknown substitution prefix ':{prefix}:' in paths mapping '{name}: {raw_mapped}'")
         else:
-            # 💡 [CORE FIX 2] 콜론이 없는 일반 매핑 처리 (Core Repo 실체 바인딩)
             mapped_subpath = _clean_subpath(self_root.name, raw_mapped)
             base_module = mapped_subpath.split("/")[0]
-            
-            # 물리적으로 존재하는 코어 Repo일 경우 무조건 around 토폴로지를 신뢰함
             if base_module in around_topology:
                 if self_root == Path.home(): 
-                    # USER 모드: 메모리 상의 실제 site-packages 절대 경로 확정
                     try:
                         import importlib.util
                         spec = importlib.util.find_spec(base_module)
@@ -217,22 +202,18 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
                     except ImportError:
                         base_abs_path = Path(around_topology[base_module]["path"])
                 else:
-                    # DEV 모드: bound.json에 기록된 로컬 소스 디렉터리 경로 사용
                     base_abs_path = Path(around_topology[base_module]["path"])
                 
-                # Repo 루트 경로 + 나머지 하위 경로 결합
                 sub_path_parts = mapped_subpath.split("/")[1:]
                 sub_path_str = "/".join(sub_path_parts) if sub_path_parts else ""
                 target_path = (base_abs_path / sub_path_str).resolve()
                 
             else:
-                # 코어 Repo가 아닌 일반 파일/폴더는 기존처럼 self_root 기준 상대 경로
                 target_path = (self_root / mapped_subpath).resolve()
     else:
-        ## @fallback: Isolate unbound paths into anchor namespace
+        log.debug(f"[RESOLVER] Fallback to anchor_dir: {target_path}")
         target_path = (anchor_dir / clean_name).resolve()
 
-    # 안전장치: site-packages(소스 코드) 내부 경로를 반환할 때는 mkdir을 강제로 실행하지 않음
     if not any(part in ["site-packages", "dist-packages"] for part in target_path.parts):
         target_path.mkdir(parents=True, exist_ok=True)
         
