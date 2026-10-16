@@ -1,5 +1,4 @@
 # xphi.state.phase.network.bootstrap
-## @lineage: fiber.phase.cli.network
 import os
 import time
 import uuid
