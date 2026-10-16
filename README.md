@@ -1,6 +1,4 @@
-# xphi.README
-@lineage: XPHI
-
+# README
 @desc: Core Infrastructure Kernel
 
 XPHI is a deterministic core kernel and distributed state management engine. While Fiber handles external LLM integrations and gateway proxies, XPHI ensures infrastructure stability through hardware-level WASM isolation, FSM-based state control, and comprehensive observability.
