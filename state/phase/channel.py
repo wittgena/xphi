@@ -2,7 +2,6 @@
 import json
 import uuid
 import asyncio
-import logging
 from typing import Any, List, Optional, Dict
 
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
@@ -10,6 +9,7 @@ from xphi.watcher.plane.emitter import get_emitter, flow_scope
 pipeline_log = get_emitter("channel.pipeline")
 codec_log = get_emitter("channel.codec")
 bridge_log = get_emitter("rpc.bridge")
+
 
 class ChannelContext:
     """핸들러 간의 이벤트 라우팅 및 전역 상태(AttributeMap) 공유"""
@@ -32,7 +32,7 @@ class ChannelContext:
     async def fire_channel_read(self, msg: Any):
         await self.pipeline._process_read(msg, self.index + 1)
 
-    async def fire_write(self, msg: Any) -> asyncio.Future:
+    async def fire_write(self, msg: Any) -> Any:
         return await self.pipeline._process_write(msg, self.index - 1)
 
     async def fire_exception_caught(self, exc: Exception):
@@ -52,8 +52,8 @@ class DuplexChannel:
     async def channel_read(self, ctx: ChannelContext, msg: Any): 
         await ctx.fire_channel_read(msg)
         
-    async def write(self, ctx: ChannelContext, msg: Any): 
-        await ctx.fire_write(msg)
+    async def write(self, ctx: ChannelContext, msg: Any) -> Any: 
+        return await ctx.fire_write(msg)
         
     async def exception_caught(self, ctx: ChannelContext, exc: Exception): 
         await ctx.fire_exception_caught(exc)
@@ -90,16 +90,23 @@ class ChannelPipeline:
         if index < len(self.handlers):
             await self.handlers[index].channel_inactive(ChannelContext(self, index))
 
+    async def fire_channel_read(self, msg: Any):
+        """외부 Transport(Socket 등)에서 파이프라인으로 데이터를 주입하는 진입점"""
+        self._pending_tasks += 1
+        if self._pending_tasks >= self.HIGH_WATERMARK and self.transport:
+            self.transport.pause_reading()
+        await self._process_read(msg, 0)
+
     async def _process_read(self, msg: Any, index: int = 0):
         if index < len(self.handlers):
             await self.handlers[index].channel_read(ChannelContext(self, index), msg)
             
-        if index == len(self.handlers) - 1:
+        if index == len(self.handlers) - 1 and self._pending_tasks > 0:
             self._pending_tasks -= 1
             if self._pending_tasks == self.LOW_WATERMARK and self.transport:
                 self.transport.resume_reading()
 
-    async def _process_write(self, msg: Any, index: int) -> asyncio.Future:
+    async def _process_write(self, msg: Any, index: int) -> Any:
         if index >= 0:
             return await self.handlers[index].write(ChannelContext(self, index), msg)
         else:
@@ -115,21 +122,24 @@ class ChannelPipeline:
                 future.set_exception(e)
             return future
 
+    async def fire_exception_caught(self, exc: Exception):
+        await self._process_exception(exc, 0)
+
     async def _process_exception(self, exc: Exception, index: int = 0):
         if index < len(self.handlers):
             await self.handlers[index].exception_caught(ChannelContext(self, index), exc)
         else:
             pipeline_log.error(f"[Pipeline] Unhandled Exception: {exc}")
 
+    async def fire_user_event_triggered(self, evt: Any):
+        await self._process_user_event(evt, 0)
+
     async def _process_user_event(self, evt: Any, index: int = 0):
         if index < len(self.handlers):
             await self.handlers[index].user_event_triggered(ChannelContext(self, index), evt)
 
 
-# =====================================================================
-# 2. Codec Classes (Serialization & Utilities)
-# =====================================================================
-
+"""Codec Classes (Serialization & Utilities)"""
 class JsonMessageCodec(DuplexChannel):
     """Raw TCP Bytes(\n 구분) <-> JSON Dictionary 양방향 직렬화/역직렬화"""
     def __init__(self):
@@ -141,6 +151,8 @@ class JsonMessageCodec(DuplexChannel):
             while b'\n' in self._buffer:
                 frame, _, remainder = self._buffer.partition(b'\n')
                 self._buffer = bytearray(remainder)
+                if not frame.strip():
+                    continue
                 try:
                     parsed = json.loads(frame.decode('utf-8'))
                     await ctx.fire_channel_read(parsed)
@@ -149,29 +161,25 @@ class JsonMessageCodec(DuplexChannel):
         else:
             await ctx.fire_channel_read(msg)
 
-    async def write(self, ctx: ChannelContext, msg: Any):
+    async def write(self, ctx: ChannelContext, msg: Any) -> Any:
         if isinstance(msg, dict):
             encoded = (json.dumps(msg) + '\n').encode('utf-8')
-            await ctx.fire_write(encoded)
-        else:
-            await ctx.fire_write(msg)
+            return await ctx.fire_write(encoded)
+        return await ctx.fire_write(msg)
 
 
 class XelogUniversalTracer(DuplexChannel):
-    """모든 트래픽을 관측하는 로깅 미들웨어 (형식 무관)"""
+    """모든 트래픽을 관측하는 로깅 미들웨어"""
     async def channel_read(self, ctx: ChannelContext, msg: Any):
         codec_log.trace(f"[RX_DUMP] {msg}")
         await ctx.fire_channel_read(msg)
 
-    async def write(self, ctx: ChannelContext, msg: Any):
+    async def write(self, ctx: ChannelContext, msg: Any) -> Any:
         codec_log.trace(f"[TX_DUMP] {msg}")
-        await ctx.fire_write(msg)
+        return await ctx.fire_write(msg)
 
 
-# =====================================================================
-# 3. Bridge Classes (RPC & Flow Propagation)
-# =====================================================================
-
+"""Bridge Classes (RPC & Flow Propagation)"""
 class FlowPropagator(DuplexChannel):
     def __init__(self, client_id: str = "SERVER_SIDE"):
         self.client_id = client_id
@@ -191,24 +199,32 @@ class FlowPropagator(DuplexChannel):
         with flow_scope(flow_id=flow_id, phase="NET_RX", client_id=self.client_id):
             await ctx.fire_channel_read(msg)
 
-    async def write(self, ctx: ChannelContext, msg: Any):
+    async def write(self, ctx: ChannelContext, msg: Any) -> Any:
         flow_id = ctx.get_attr("flow_id", "UNKNOWN_FLOW")
         ## 송신 이벤트를 flow_scope로 래핑하여 Transport로 전달
         with flow_scope(flow_id=flow_id, phase="NET_TX", client_id=self.client_id):
-            await ctx.fire_write(msg)
+            return await ctx.fire_write(msg)
 
 
 class RpcBridge(DuplexChannel):
     def __init__(self):
-        self.pending_requests = {}
+        self.pending_requests: Dict[str, asyncio.Future] = {}
         self._seq = 0
-        self.ctx = None  # 파이프라인이 연결되면 활성화됨
+        self.ctx: Optional[ChannelContext] = None  # 파이프라인이 연결되면 활성화됨
 
     async def channel_active(self, ctx: ChannelContext):
         self.ctx = ctx
         await ctx.fire_channel_active()
 
-    async def request(self, payload: dict, timeout: float = 60.0) -> dict:
+    async def channel_inactive(self, ctx: ChannelContext):
+        """채널 종료 시 대기 중인 모든 Future를 안전하게 취소/예외 처리하여 무한 대기 방지"""
+        for req_id, fut in list(self.pending_requests.items()):
+            if not fut.done():
+                fut.set_exception(ConnectionError(f"Channel closed while waiting for {req_id}"))
+        self.pending_requests.clear()
+        await ctx.fire_channel_inactive()
+
+    async def request(self, payload: dict, timeout: float = 60.0) -> Any:
         if not self.ctx:
             raise ConnectionError("Pipeline is not active yet.")
             
@@ -220,30 +236,41 @@ class RpcBridge(DuplexChannel):
         self.pending_requests[req_id] = fut
         self.ctx.set_attr("current_req_id", req_id)
         
-        write_future = await self.ctx.fire_write(payload)
-        if isinstance(write_future, asyncio.Future) and write_future.exception():
+        try:
+            write_future = await self.ctx.fire_write(payload)
+            if isinstance(write_future, asyncio.Future) and write_future.done() and write_future.exception():
+                raise write_future.exception()
+            return await asyncio.wait_for(fut, timeout=timeout)
+        except Exception:
+            # FuelBreaker 등에서 직접 raise 되거나 TimeoutError 발생 시 pending_requests 메모리 누수 방지
             self.pending_requests.pop(req_id, None)
-            raise write_future.exception()
-            
-        return await asyncio.wait_for(fut, timeout=timeout)
+            if self.ctx.get_attr("current_req_id") == req_id:
+                self.ctx.set_attr("current_req_id", None)
+            raise
 
     async def channel_read(self, ctx: ChannelContext, msg: Any):
         req_id = ctx.get_attr("current_req_id")
         if req_id and req_id in self.pending_requests:
-            self.pending_requests.pop(req_id).set_result(msg)
-            ctx.set_attr("current_req_id", None)  # 처리 후 초기화
+            fut = self.pending_requests.pop(req_id)
+            if not fut.done():
+                fut.set_result(msg)
+            ctx.set_attr("current_req_id", None)
             return
         elif isinstance(msg, dict) and "_req_id" in msg:
             fallback_req_id = msg["_req_id"]
             if fallback_req_id in self.pending_requests:
-                self.pending_requests.pop(fallback_req_id).set_result(msg)
+                fut = self.pending_requests.pop(fallback_req_id)
+                if not fut.done():
+                    fut.set_result(msg)
                 return
         await ctx.fire_channel_read(msg)
     
     async def exception_caught(self, ctx: ChannelContext, exc: Exception):
         req_id = ctx.get_attr("current_req_id")
         if req_id and req_id in self.pending_requests:
-            self.pending_requests.pop(req_id).set_exception(exc)
+            fut = self.pending_requests.pop(req_id)
+            if not fut.done():
+                fut.set_exception(exc)
             ctx.set_attr("current_req_id", None)
             bridge_log.debug(f"[RpcBridge] Propagated Exception to Request {req_id}: {exc}")
             return
