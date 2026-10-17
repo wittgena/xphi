@@ -9,10 +9,10 @@ from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
 from rocksdict import Rdict, Options, AccessType
 
-from xphi.kernel.space.tunnel.factory import TunnelFactory
-from xphi.kernel.space.bind.resolver import resolve_path
+from xphi.node.space.tunnel.factory import TunnelFactory
+from xphi.node.space.bind.resolver import resolve_path
 
-from xphi.kernel.wasm.broker import DphiBroker  
+from xphi.node.wasm.broker import DphiBroker  
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
 

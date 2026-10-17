@@ -1,7 +1,4 @@
 # xphi.state.phase.executor.base
-## @lineage: xphi.state.runtime.executor.base
-## @lineage: xphi.kernel.phase.runtime.executor.base
-## @lineage: xphi.arch.contract.executor
 from __future__ import annotations
 import asyncio
 from abc import ABC, abstractmethod

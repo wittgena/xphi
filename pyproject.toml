@@ -14,10 +14,10 @@ dependencies = [
 ]
 
 [project.scripts]
-anchor-bind = "xphi.kernel.space.bind.around:run_around"
+anchor-bind = "xphi.node.space.bind.around:run_around"
 
 [tool.hatch.build.targets.wheel.force-include]
 "arch" = "xphi/arch"
-"kernel" = "xphi/kernel"
+"node" = "xphi/node"
 "state" = "xphi/state"
 "watcher" = "xphi/watcher"

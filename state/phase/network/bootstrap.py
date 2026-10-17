@@ -1,5 +1,4 @@
 # xphi.state.phase.network.bootstrap
-## @lineage: fiber.phase.cli.network
 import os
 import time
 import uuid
@@ -15,8 +14,8 @@ from xphi.arch.bound.xor.parser.ruleset.engine import StreamTaggingParser, Audit
 from xphi.arch.contract.space.state import Contract, CoherenceState
 from xphi.arch.dev.tracer.base import SystemBound, log_streamer
 from xphi.arch.contract.config import env
-from xphi.kernel.space.tunnel.surface import EchoListener, SurfaceClient
-from xphi.kernel.space.bind.resolver import resolve_path
+from xphi.node.space.tunnel.surface import EchoListener, SurfaceClient
+from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
 
 log_flow = get_emitter("phase.network")

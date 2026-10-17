@@ -10,7 +10,7 @@ class ClientMandateRequest(BaseModel):
     signature: str = Field(..., description="Agent의 프라이빗 키로 서명된 무결성 증명")
 
 class CapabilityReceiptResponse(BaseModel):
-    receipt_id: str = Field(..., description="발급된 X402 영수증 해시 (Capability Token)")
+    receipt_id: str = Field(..., description="발급된 Fuel 영수증 해시 (Capability Token)")
     status: str = Field(..., description="ACTIVE 또는 REJECTED")
     budget_usdc: str = Field(..., description="승인된 롤업 내부 예산")
     issued_at: str = Field(..., description="발급 시간 (ISO-8601)")
@@ -22,15 +22,6 @@ class HandshakeIntent(BaseModel):
     payload: Any
     max_fuel: int = Field(..., description="최대 허용 CPU 사이클 (가스 리밋)")
     signature: str
-
-# class AuditReceipt(BaseModel):
-#     receipt_id: str
-#     receipt_type: str
-#     status: str
-#     fuel_consumed: int
-#     metered_cost_usd: float
-#     state_root: str
-#     audit_trail: List[str]
 
 class AuditReceipt(BaseModel):
     # 검증 필수 필드 (Mandatory)
@@ -112,36 +103,6 @@ class LogstEvent(BaseModel):
     message: str | None = Field(default=None, description="Log message content")
     trace_id: str | None = Field(default=None, description="Trace identifier")
     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
-
-# class LogstUsage(BaseModel):
-#     prompt_tokens: int = 0
-#     completion_tokens: int = 0
-#     total_tokens: int = 0
-
-# class LogstResponseBody(BaseModel):
-#     usage: LogstUsage | None = None
-#     model_config: ClassVar[ConfigDict] = ConfigDict(extra="allow")
-
-# class LogstRequest(BaseModel):
-#     time: str
-#     uri: str
-#     verb: str
-#     api_version: str | None = None
-#     ip_address: str | None = None
-#     headers: dict[str, str] | None = None
-#     body: Any = None
-
-# class LogstResponse(BaseModel):
-#     time: str
-#     status: int
-#     body: LogstResponseBody | None = None
-
-# class LogstEventPayload(BaseModel):
-#     request: LogstRequest
-#     response: LogstResponse
-#     user_id: str | None = None
-#     company_id: str | None = None
-#     metadata: dict[str, Any] | None = None
 
 class KeyValue(BaseModel):
     key: str

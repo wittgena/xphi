@@ -1,9 +1,4 @@
 # xphi.arch.contract.workflow
-## @lineage: xphi.kernel.space.topos.workflow
-## @lineage: kernel.space.topos.workflow
-"""
-@desc: Metaclass-driven state machine that dynamically routes strongly-typed messages through defined topological steps
-"""
 import asyncio
 import inspect
 import sys
@@ -12,7 +7,7 @@ import types
 from functools import wraps
 
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.kernel.node.gan import GanNode, Message
+from xphi.node.gan import GanNode, Message
 
 log = get_emitter("topos.workflow")
 

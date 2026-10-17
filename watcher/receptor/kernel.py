@@ -73,20 +73,20 @@ def build_system_topos() -> List[TopologicalStructure]:
     
     arch = []
     with suppress(ImportError): import xphi.arch.model.sensor as m; arch.append(m.__name__)
-    with suppress(ImportError): import xphi.kernel.space.tunnel.surface as m; arch.append(m.__name__)
-    with suppress(ImportError): import xphi.kernel.space.tunnel.factory as m; arch.append(m.__name__)
+    with suppress(ImportError): import xphi.node.space.tunnel.surface as m; arch.append(m.__name__)
+    with suppress(ImportError): import xphi.node.space.tunnel.factory as m; arch.append(m.__name__)
     if arch: structures.append(TopologicalStructure(name="arch.topos", members=arch))
 
     phase = []
-    with suppress(ImportError): import xphi.kernel.space.bind.resolver as m; phase.append(m.__name__)
+    with suppress(ImportError): import xphi.node.space.bind.resolver as m; phase.append(m.__name__)
     with suppress(ImportError): import xphi.watcher.receptor.bootstrap as m; phase.append(m.__name__)
     with suppress(ImportError): import xphi.watcher.receptor.kernel as m; phase.append(m.__name__)
     if phase: structures.append(TopologicalStructure(name="phase.runtime", members=phase))
 
     watcher = []
-    with suppress(ImportError): import xphi.kernel.resonance as m; watcher.append(m.__name__)
+    with suppress(ImportError): import xphi.node.resonance as m; watcher.append(m.__name__)
     with suppress(ImportError): import xphi.state.anchor.consensus as m; watcher.append(m.__name__)
-    with suppress(ImportError): import xphi.kernel.singularity as m; watcher.append(m.__name__)
+    with suppress(ImportError): import xphi.node.singularity as m; watcher.append(m.__name__)
     if watcher: structures.append(TopologicalStructure(name="watcher.kernel", members=watcher))
 
     return structures

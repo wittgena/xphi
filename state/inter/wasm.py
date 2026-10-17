@@ -13,9 +13,9 @@ except ImportError:
     wasmtime = None
 
 from xphi.arch.contract.interpreter import ExecutionError, ProtocolError, ExecutionResult
-from xphi.kernel.space.bind.resolver import resolve_path
+from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.kernel.wasm.quota import WasmQuotaManager, QuotaPolicy
+from xphi.node.wasm.quota import WasmQuotaManager, QuotaPolicy
 
 TIME_ROOT = resolve_path("time")
 
@@ -36,11 +36,11 @@ def get_cached_module(wasm_path: str, quota_manager: WasmQuotaManager):
             _GLOBAL_ENGINE = wasmtime.Engine(config)
             
         if wasm_path not in _GLOBAL_MODULE_CACHE:
-            log.info(f"⚙️ [AOT Compile] Compiling {Path(wasm_path).name} (Only once per process)...")
+            log.info(f"[AOT Compile] Compiling {Path(wasm_path).name} (Only once per process)...")
             if not os.path.exists(wasm_path):
                 raise FileNotFoundError(f"WASM Artifact not found: {wasm_path}")
             _GLOBAL_MODULE_CACHE[wasm_path] = wasmtime.Module.from_file(_GLOBAL_ENGINE, wasm_path)
-            log.info(f"✅ [AOT Compile] {Path(wasm_path).name} cached successfully.")
+            log.info(f"[AOT Compile] {Path(wasm_path).name} cached successfully.")
             
         return _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE[wasm_path]
 

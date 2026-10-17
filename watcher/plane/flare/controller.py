@@ -11,7 +11,7 @@ import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional, Type, Tuple, List
 
-from xphi.kernel.space.bind.resolver import resolve_path
+from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.arch.dev.tracer.base import BaseStreamAuditor, SystemBound, log_streamer
 

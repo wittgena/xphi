@@ -11,7 +11,7 @@ from typing import Dict, Any, List, Optional, Annotated, Tuple, Protocol
 from datetime import UTC, datetime
 
 from pydantic import Field
-from xphi.kernel.space.bind.resolver import resolve_identity
+from xphi.node.space.bind.resolver import resolve_identity
 
 uuid = _std_uuid
 
