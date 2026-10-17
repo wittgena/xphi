@@ -12,8 +12,8 @@ except ImportError:
     wasmtime = None
 
 from xphi.arch.contract.interpreter import ExecutionError, ExecutionResult
-from xphi.kernel.space.bind.resolver import resolve_path
-from xphi.kernel.wasm.quota import WasmQuotaManager, QuotaPolicy, Tier
+from xphi.node.space.bind.resolver import resolve_path
+from xphi.node.wasm.quota import WasmQuotaManager, QuotaPolicy, Tier
 
 from xphi.state.inter.wasm import WasmInterpreter
 from xphi.watcher.plane.emitter import get_emitter

@@ -20,7 +20,7 @@ class PhaseReactor:
 
         worker_idx = int(os.environ.get("XPHI_WORKER_IDX", os.getpid()))
         if sys.platform == 'darwin':
-            log.info("[Reactor] ⚡ macOS detected. Native CPU Affinity pinning is bypassed (OS constraint).")
+            log.info("[Reactor] macOS detected. Native CPU Affinity pinning is bypassed (OS constraint).")
             cls._pinned_core = f"Virtual-{worker_idx}"
         else:
             if hasattr(os, 'sched_setaffinity') and hasattr(os, 'sched_getaffinity'):
@@ -30,33 +30,30 @@ class PhaseReactor:
                         target_core = available_cores[worker_idx % len(available_cores)]
                         os.sched_setaffinity(0, {target_core})
                         cls._pinned_core = target_core
-                        log.info(f"[Reactor] ⚡ CPU Affinity Pinned to Core: {target_core} (Idx: {worker_idx})")
+                        log.info(f"[Reactor] CPU Affinity Pinned to Core: {target_core} (Idx: {worker_idx})")
                 except Exception as e:
-                    log.warning(f"[Reactor] ⚠️ Failed to pin CPU: {e}")
+                    log.warning(f"[Reactor] Failed to pin CPU: {e}")
 
         if sys.platform not in ('win32', 'cygwin', 'cli'):
             try:
                 import uvloop
                 asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-                log.info("[Reactor] 🚀 UVLoop (epoll) Policy injected.")
+                log.info("[Reactor] UVLoop (epoll) Policy injected.")
             except ImportError:
-                log.warning("[Reactor] ⚠️ UVLoop unavailable. Using standard asyncio.")
+                log.warning("[Reactor] UVLoop unavailable. Using standard asyncio.")
                 
         cls._policy_applied = True
 
     @classmethod
     def _global_exception_handler(cls, loop: asyncio.AbstractEventLoop, context: dict) -> None:
-        # 1. 기본 메시지 추출
         msg = context.get("message", "Unhandled exception in event loop")
         exc = context.get("exception")
 
-        # 2. 메타데이터 안전 추출 (가독성을 위한 포맷팅)
         meta = {}
         for k, v in context.items():
             if k in ("message", "exception"):
                 continue
             
-            # Task 식별자 추출
             if k == "task":
                 if hasattr(v, "get_name"):
                     meta[k] = f"Task({v.get_name()})"
@@ -123,7 +120,7 @@ class PhaseReactor:
         try:
             done, pending = await asyncio.wait([main_task, shutdown_waiter], return_when=asyncio.FIRST_COMPLETED)
             if shutdown_waiter in done:
-                log.info("\n[Reactor] 🛑 OS Signal received. Initiating graceful shutdown...")
+                log.info("\n[Reactor] OS Signal received. Initiating graceful shutdown...")
                 main_task.cancel()
                 try:
                     await asyncio.wait_for(main_task, timeout=shutdown_timeout)
@@ -133,19 +130,18 @@ class PhaseReactor:
                     pass
             else:
                 shutdown_waiter.cancel()
-
         except asyncio.CancelledError:
-            log.warning("\n[Reactor] 🛑 Reactor itself was cancelled. Cascading shutdown...")
+            log.warning("\n[Reactor] Reactor itself was cancelled. Cascading shutdown...")
             main_task.cancel()
         finally:
             if teardown_hook:
-                log.info("[Reactor] 🧹 Executing user-defined teardown hook...")
+                log.info("[Reactor] Executing user-defined teardown hook...")
                 try:
                     await teardown_hook()
                 except Exception as e:
                     pass
 
-            log.info("[Reactor] 🏁 Lifecycle terminated cleanly.")
+            log.info("[Reactor] Lifecycle terminated cleanly.")
 
     @classmethod
     def ignite(

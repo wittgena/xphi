@@ -11,13 +11,13 @@ from pathlib import Path
 from typing import List, Dict, Any, Callable
 from dataclasses import asdict
 
-from xphi.kernel.space.tunnel.factory import TunnelFactory
+from xphi.node.space.tunnel.factory import TunnelFactory
 from xphi.state.phase.executor.base import BaseExecutor
 from xphi.arch.contract.registry.unified import registry
 from xphi.arch.bound.event.next import next_id
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier
-from xphi.kernel.space.bind.resolver import find_current_self
-from xphi.kernel.ops.daemon.bootstrap import TOPIC_BUS_STREAM
+from xphi.node.space.bind.resolver import find_current_self
+from xphi.node.ops.daemon.bootstrap import TOPIC_BUS_STREAM
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("flow.executor")
@@ -162,7 +162,7 @@ def dispatch_flow_cli(command_name: str, entry_func: Callable, file_path: str):
 
     bound_args, remain = parse_local(sys.argv[1:])
     
-    from xphi.kernel.space.bind.resolver import get_invoker
+    from xphi.node.space.bind.resolver import get_invoker
     invoker, command = get_invoker(Path(file_path))
     
     payload = { 

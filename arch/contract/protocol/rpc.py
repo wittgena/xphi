@@ -4,7 +4,7 @@ import time
 import uuid
 from typing import Dict, Any
 
-from xphi.kernel.wasm.broker import DphiBroker
+from xphi.node.wasm.broker import DphiBroker
 
 class WorkerContext:
     def __init__(

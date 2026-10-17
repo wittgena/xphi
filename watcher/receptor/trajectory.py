@@ -11,8 +11,8 @@ from dataclasses import dataclass, asdict
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.bound.adapter.dynamics import AtorAdapter, NodeState, KernelDelta
-from xphi.kernel.wasm.broker import DphiBroker
-from xphi.kernel.wasm.method import DphiMethod
+from xphi.node.wasm.broker import DphiBroker
+from xphi.node.wasm.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter
 
 # =========================================================================

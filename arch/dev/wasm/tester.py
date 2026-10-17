@@ -1,5 +1,4 @@
 # xphi.arch.dev.wasm.tester
-## @lineage: xphi.arch.wasm.tester
 import sys
 import json
 import asyncio
@@ -7,11 +6,11 @@ from typing import Tuple, Dict, Type, Any
 
 from xphi.arch.dev.wasm.auditor import CanonicalProofAuditor
 
-from xphi.kernel.space.tunnel.factory import TunnelFactory
-from xphi.kernel.space.bind.resolver import resolve_path
-from xphi.kernel.ops.task.supervisor import TaskSupervisor
-from xphi.kernel.ops.task.wasm import TaskWasm
-from xphi.kernel.wasm.broker import DphiBroker
+from xphi.node.space.tunnel.factory import TunnelFactory
+from xphi.node.space.bind.resolver import resolve_path
+from xphi.node.ops.task.supervisor import TaskSupervisor
+from xphi.node.ops.task.wasm import TaskWasm
+from xphi.node.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("wasm.tester")

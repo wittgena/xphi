@@ -9,7 +9,7 @@ from dataclasses import replace, asdict
 from typing import Dict, List, Protocol, Optional
 from pathlib import Path
 from xphi.arch.bound.event.next import LogEvent
-from xphi.kernel.space.bind.resolver import resolve_path
+from xphi.node.space.bind.resolver import resolve_path
 from xphi.arch.bound.event.next import EventObserver
 
 class ConsoleSurface(EventObserver):

@@ -9,14 +9,13 @@ from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 from cryptography.exceptions import InvalidSignature
 
-from xphi.kernel.space.sandbox.config import fuel_config
+from xphi.node.space.sandbox.config import fuel_config
 from xphi.arch.model.surge.model import DynamicSurgeModel
-from xphi.kernel.wasm.quota import Tier
+from xphi.node.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.settlement")
 
-# AP2 Protocol Models
 class Ap2MandateConstraints(DynamicSurgeModel):
     max_spend_usdc: str
     expiration_ts: int
@@ -37,16 +36,15 @@ class Ap2MandateResult(DynamicSurgeModel):
     mandate: Ap2MandatePayload
     authorization: Ap2Authorization
 
-# X402 Invoice & Receipt Models
-class X402Invoice(DynamicSurgeModel):
+class PaymentInvoice(DynamicSurgeModel):
     status: str
-    x_payment_protocol: str
+    payment_protocol: str
     pay_to: str
     amount_usdc: str
     resource_id: str
     timestamp: int
 
-class X402SettlementReceipt(DynamicSurgeModel):
+class SettlementReceipt(DynamicSurgeModel):
     receipt_id: str
     receipt_type: str
     tx_hash: str
@@ -122,17 +120,17 @@ class MandateAdapter:
             return False
 
     @classmethod
-    def issue_deferred_receipt(cls, mandate: Ap2MandateResult) -> X402SettlementReceipt:
+    def issue_deferred_receipt(cls, mandate: Ap2MandateResult) -> SettlementReceipt:
         amount = mandate.mandate.constraints.max_spend_usdc
         payer = mandate.mandate.requester_id
         ts = int(time.time() * 1000)
         
         pseudo_hash = f"0x_offchain_{hashlib.sha256(mandate.authorization.signature.encode()).hexdigest()[:16]}"
-        return X402SettlementReceipt(
+        return SettlementReceipt(
             receipt_id=f"cap_{pseudo_hash[12:24]}",
             receipt_type="DEFERRED_ALLOWANCE",
             tx_hash=pseudo_hash,
-            network="x402/dvm-rollup-offchain",
+            network="xphi/rollup-offchain",
             amount_usdc=amount,
             payer_wallet=payer,
             settled_at=ts
@@ -144,7 +142,7 @@ class MandateAdapter:
         agent_wallet_address: str, 
         accrued_amount_usdc: str,
         clearing_wallet_adapter: Any
-    ) -> X402SettlementReceipt:
+    ) -> SettlementReceipt:
         if clearing_wallet_adapter and not getattr(clearing_wallet_adapter, "simulate", True):
             tx_hash = await clearing_wallet_adapter.transfer_from(
                 from_address=agent_wallet_address,
@@ -155,11 +153,11 @@ class MandateAdapter:
             mock_tx_seed = f"pull_{agent_wallet_address}_{accrued_amount_usdc}_{time.time()}".encode('utf-8')
             tx_hash = f"0x{hashlib.sha256(mock_tx_seed).hexdigest()}"
 
-        return X402SettlementReceipt(
+        return SettlementReceipt(
             receipt_id=f"rcpt_pull_{tx_hash[2:14]}",
             receipt_type="ONCHAIN_PULL",
             tx_hash=tx_hash,
-            network="x402/base-sepolia",
+            network="base-sepolia",
             amount_usdc=accrued_amount_usdc,
             payer_wallet=agent_wallet_address,
             settled_at=int(time.time() * 1000)
@@ -167,10 +165,10 @@ class MandateAdapter:
 
     """기존 레거시 (즉시 능동 결제)"""
     @classmethod
-    def build_x402_invoice(cls, payee_address: str, amount_usdc: str, resource_id: str) -> X402Invoice:
-        return X402Invoice(
+    def build_payment_invoice(cls, payee_address: str, amount_usdc: str, resource_id: str) -> PaymentInvoice:
+        return PaymentInvoice(
             status="HTTP_402_PAYMENT_REQUIRED",
-            x_payment_protocol="x402/base-sepolia",
+            payment_protocol="base-sepolia",
             pay_to=payee_address,
             amount_usdc=amount_usdc,
             resource_id=resource_id,
@@ -180,10 +178,10 @@ class MandateAdapter:
     @classmethod
     async def process_instant_settlement(
         cls, 
-        invoice: X402Invoice, 
+        invoice: PaymentInvoice, 
         agent_wallet_address: str,
         wallet_adapter: Any = None
-    ) -> X402SettlementReceipt:
+    ) -> SettlementReceipt:
         tx_hash = ""
         if wallet_adapter and not getattr(wallet_adapter, "simulate", True):
             tx_hash = await wallet_adapter.transfer(
@@ -195,11 +193,11 @@ class MandateAdapter:
             mock_tx_seed = f"push_{invoice.pay_to}_{invoice.amount_usdc}_{time.time()}".encode('utf-8')
             tx_hash = f"0x{hashlib.sha256(mock_tx_seed).hexdigest()}"
 
-        return X402SettlementReceipt(
+        return SettlementReceipt(
             receipt_id=f"rcpt_push_{tx_hash[2:14]}",
             receipt_type="INSTANT_PUSH",
             tx_hash=tx_hash,
-            network=invoice.x_payment_protocol,
+            network=invoice.payment_protocol,
             amount_usdc=invoice.amount_usdc,
             payer_wallet=agent_wallet_address,
             settled_at=int(time.time() * 1000)
@@ -210,14 +208,14 @@ class MandateAdapter:
         cls, 
         base_cached_states: Dict[str, Any], 
         mandate: Optional[Ap2MandateResult] = None, 
-        receipt: Optional[X402SettlementReceipt] = None
+        receipt: Optional[SettlementReceipt] = None
     ) -> Dict[str, Any]:
         updated_state = dict(base_cached_states) if base_cached_states else {}
         if mandate is not None:
             updated_state["ap2_mandate"] = mandate.model_dump(exclude_none=True)
 
         if receipt is not None:
-            updated_state["x402_settlement_receipt"] = receipt.model_dump(exclude_none=True)
+            updated_state["settlement_receipt"] = receipt.model_dump(exclude_none=True)
             
         return updated_state
 

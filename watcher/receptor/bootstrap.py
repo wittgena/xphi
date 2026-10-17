@@ -12,11 +12,11 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from xphi.arch.contract.discovery import discover_modules
-from xphi.kernel.space.tunnel.factory import UniversalFacade
+from xphi.node.space.tunnel.factory import UniversalFacade
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
 from xphi.arch.bound.event.next import next_id
 
-from xphi.kernel.space.bind.resolver import find_current_self
+from xphi.node.space.bind.resolver import find_current_self
 from xphi.watcher.plane.sink import TunnelSink 
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.receptor.kernel import ReceptorKernel, build_system_topos

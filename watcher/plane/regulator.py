@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Any
 from pathlib import Path
 
 from xphi.arch.bound.event.next import LogEvent, next_phase_id, EventObserver
-from xphi.kernel.space.bind.resolver import resolve_path
+from xphi.node.space.bind.resolver import resolve_path
 
 from xphi.watcher.observer.metric.trajectory import Point, WindowedTrajectory, DefaultBoundLensStrategy
 from xphi.watcher.plane.surface.tunnel import TunnelSurface

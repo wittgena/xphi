@@ -7,7 +7,7 @@ import asyncio
 from pathlib import Path
 from typing import List, Dict, Optional
 
-from xphi.kernel.space.bind.resolver import resolve_path
+from xphi.node.space.bind.resolver import resolve_path
 from xphi.arch.dev.tracer.base import BaseTracer
 from xphi.watcher.plane.emitter import get_emitter
 

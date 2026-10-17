@@ -1,4 +1,5 @@
-# xphi.state.phase.network.transport
+# xphi.state.phase.network.transport_old
+## @lineage: xphi.state.phase.network.transport
 import json
 import asyncio
 from pathlib import Path
@@ -7,7 +8,7 @@ import httpx
 
 from xphi.state.phase.network.bootstrap import WorkerRuntimeBootstrap
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.kernel.space.tunnel.surface import EchoListener, SurfaceClient
+from xphi.node.space.tunnel.surface import EchoListener, SurfaceClient
 
 log = get_emitter("network.transport")
 

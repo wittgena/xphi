@@ -15,10 +15,10 @@ from xphi.arch.bound.event.next import next_id, LogEvent
 from xphi.arch.contract.registry.unified import registry
 from xphi.state.phase.executor.base import BaseExecutor
 
-from xphi.kernel.space.tunnel.factory import TunnelFactory
-from xphi.kernel.space.bind.resolver import get_invoker
-from xphi.kernel.ops.task.event import TaskSummaryEvent, TaskDetailRecord
-from xphi.kernel.ops.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
+from xphi.node.space.tunnel.factory import TunnelFactory
+from xphi.node.space.bind.resolver import get_invoker
+from xphi.node.ops.task.event import TaskSummaryEvent, TaskDetailRecord
+from xphi.node.ops.daemon.bootstrap import TOPIC_BUS_STREAM, KEY_HEARTBEAT_PATTERN
 
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.watcher.plane.regulator import console_surface

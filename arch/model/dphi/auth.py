@@ -6,7 +6,7 @@ from typing import Optional
 class DphiKey(str, Enum):
     """Pipeline 및 Metadata에 주입될 DPHI 도메인의 Key 상수 모음"""
     KERNEL_AUTH = "kernel_auth"
-    X402_RECEIPT = "x402_receipt"
+    FUEL_RECEIPT = "fuel_receipt"
     CLIENT_HOST = "client_host"
     FUEL_BUDGET = "fuel_budget"
     FUEL_CONSUMED = "fuel_consumed"
