@@ -24,7 +24,7 @@ log_contract = get_emitter("stream.contract")
 KEY_STATE_PIDS = "system:xphi:pids"
 PROCESS_NAME = "xphi-dev-node"
 
-XPHI_BASE = env.XPHI_BASE
+XPHI_BASE = env.FIBER_GATEWAY_URL
 REDIS_HOST = env.REDIS_HOST
 REDIS_PORT = env.REDIS_PORT
 
