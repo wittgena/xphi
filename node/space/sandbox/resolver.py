@@ -7,7 +7,7 @@ from enum import Enum
 from dataclasses import dataclass, asdict, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol, Union
 
-from xphi.arch.contract.space.state import Contract, CoherenceState
+from xphi.state.topos.state import Contract, CoherenceState
 from xphi.arch.bound.event.next import next_id, generate_parity_triplet, parse_phase_id
 from xphi.node.wasm.broker import DphiBroker, DphiMethod
 from xphi.node.wasm.quota import QuotaPolicy, Tier

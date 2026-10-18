@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from xphi.arch.bound.xor.parser.ruleset.engine import StreamTaggingParser, AuditRulesetParser, CompiledEngine
-from xphi.arch.contract.space.state import Contract, CoherenceState
+from xphi.state.topos.state import Contract, CoherenceState
 from xphi.arch.dev.tracer.base import SystemBound, log_streamer
 from xphi.arch.contract.config import env
 from xphi.node.space.tunnel.surface import EchoListener, SurfaceClient

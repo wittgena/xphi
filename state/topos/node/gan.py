@@ -1,4 +1,4 @@
-# xphi.node.gan
+# xphi.state.topos.node.gan
 """
 @desc: Foundational Actor model defining structural topology, message bubbling, and deterministic lifecycle management
 """

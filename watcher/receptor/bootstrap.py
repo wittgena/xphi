@@ -11,7 +11,7 @@ from dataclasses import asdict
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from xphi.arch.contract.discovery import discover_modules
+from xphi.arch.contract.registry.discovery import discover_modules
 from xphi.node.space.tunnel.factory import UniversalFacade
 from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
 from xphi.arch.bound.event.next import next_id
