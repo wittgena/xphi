@@ -1,24 +1,24 @@
-# xphi.arch.model.dphi.auth
+# xphi.arch.model.auth
 from enum import Enum
 from pydantic import BaseModel, Field
 from typing import Optional
 
-class DphiKey(str, Enum):
-    """Pipeline 및 Metadata에 주입될 DPHI 도메인의 Key 상수 모음"""
-    KERNEL_AUTH = "kernel_auth"
+class BrokerKey(str, Enum):
+    """Pipeline 및 Metadata에 주입될 Brker Key 상수 모음"""
+    NODE_AUTH = "node_auth"
     FUEL_RECEIPT = "fuel_receipt"
     CLIENT_HOST = "client_host"
     FUEL_BUDGET = "fuel_budget"
     FUEL_CONSUMED = "fuel_consumed"
     AUDIT_HASH = "audit_hash"
 
-class DphiAction(str, Enum):
+class BrokerAction(str, Enum):
     """Broker Intent Action 상수"""
     LLM_COMPUTE = "LLM_COMPUTE"
     LLM_EMBEDDING = "LLM_EMBEDDING"
 
-class KernelAuthPayload(BaseModel):
-    """Broker에서 반환되는 Kernel Auth 데이터 규격"""
+class NodeAuthPayload(BaseModel):
+    """Broker에서 반환되는 Node Auth 데이터 규격"""
     tenant_id: str = Field(default="anonymous", description="부서, 프로젝트 또는 사용자 식별자")
     fuel_budget: float = Field(default=float('inf'), description="할당된 최대 토큰/연료")
     audit_hash: Optional[str] = Field(default=None, description="영수증 봉합을 위한 해시")

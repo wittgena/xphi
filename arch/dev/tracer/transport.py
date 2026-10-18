@@ -15,7 +15,7 @@ log = get_emitter("edge.tracer")
 @dataclass
 class E2EConfig:
     host: str = "localhost"
-    port: int = 8000
+    port: int = 8356
     protocol: str = "http"
     
     @property

@@ -1,4 +1,5 @@
-# xphi.arch.model.edge.receipt
+# xphi.arch.model.schema.audit
+## @lineage: xphi.arch.model.edge.receipt
 from typing import Any, ClassVar, List, Optional, Dict
 from pydantic import BaseModel, ConfigDict, Field
 

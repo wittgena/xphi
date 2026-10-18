@@ -12,11 +12,15 @@ def _get_int(key: str, default: str) -> int:
         return int(dynamic_config.get(key))
     return int(os.getenv(key, default))
 
-XPHI_BASE = _get_string("XPHI_BASE", "http://localhost:8000")
+## GATEWAY
+DEFAULT_GATEWAY_PORT = 8356
+FIBER_GATEWAY_URL = _get_string("FIBER_GATEWAY_URL", f"http://localhost:{DEFAULT_GATEWAY_PORT}")
+
 LOG_LEVEL = _get_string("LOG_LEVEL", "INFO")
 USER_AGENT = _get_string("XPHI_USER_AGENT", "xphi-agent/1.0.1")
 
 RPC_QUEUE_TOPIC = os.getenv("RPC_QUEUE_TOPIC", "internal.rpc.queue")
+PUBSUB_CHANNEL = _get_string("PUBSUB_CHANNEL", "audit_channel")
 
 """Cryptography & KMS"""
 DPHI_ENV = _get_string("DPHI_ENV", "prod")
@@ -25,6 +29,7 @@ AIRGAP_MODE = _get_string("AIRGAP_MODE", "0")
 """Infrastructure & Tunnel"""
 REDIS_HOST = _get_string("XPHI_REDIS_HOST", _get_string("REDIS_HOST", "localhost"))
 REDIS_PORT = _get_int("XPHI_REDIS_PORT", _get_int("REDIS_PORT", "6379"))
+REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
 
 MQ_ENGINE = _get_string("MQ_ENGINE", "redis")
 MQ_HOST = _get_string("MQ_HOST", REDIS_HOST)

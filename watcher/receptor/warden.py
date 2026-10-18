@@ -11,7 +11,7 @@ from pydantic import SecretStr
 
 from xphi.arch.contract.config import env
 from xphi.arch.bound.xor.secret.cipher import Cipher
-from xphi.arch.model.edge.receipt import AuditLogResponse
+from xphi.arch.model.schema.audit import AuditLogResponse
 from xphi.state.anchor.gateway import StoreGateway
 from xphi.watcher.plane.emitter import get_emitter
 
@@ -218,8 +218,8 @@ class SecretAuditor:
         self.sensitive_keys = {"email", "ip_address", "password", "token", "secret"}
 
     async def append_to_ledger_and_prove(self, event: Dict[str, Any], needs_proof: bool = False) -> AuditLogResponse:
-        """Normalizes (hashes) the event, encrypts sensitive data, and routes it to the WASM Kernel Ledger."""
-        log.info("[ToposLedger] Processing Pangea audit log append request...")
+        """Normalizes (hashes) the event, encrypts sensitive data, and routes it to Ledger."""
+        log.info("[SecretAuditor] Processing Pangea audit log append request...")
         
         sanitized_event = await asyncio.to_thread(self._encrypt_sensitive_data, event)
         event_hash = await asyncio.to_thread(self._generate_deterministic_hash, sanitized_event)

@@ -1,4 +1,4 @@
-# xphi.arch.contract.discovery
+# xphi.arch.contract.registry.discovery
 import sys
 import importlib
 import importlib.util
@@ -9,7 +9,7 @@ from pathlib import Path
 from xphi.node.space.bind.resolver import load_bound, find_current_self
 from xphi.watcher.plane.emitter import get_emitter
 
-log = get_emitter("contract.discovery")
+log = get_emitter("contract.registry.discovery")
 _TRACEBACK_PRINTED = False
 
 _SCANNED_DIRS = set()

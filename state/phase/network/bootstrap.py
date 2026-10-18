@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from xphi.arch.bound.xor.parser.ruleset.engine import StreamTaggingParser, AuditRulesetParser, CompiledEngine
-from xphi.arch.contract.space.state import Contract, CoherenceState
+from xphi.state.topos.state import Contract, CoherenceState
 from xphi.arch.dev.tracer.base import SystemBound, log_streamer
 from xphi.arch.contract.config import env
 from xphi.node.space.tunnel.surface import EchoListener, SurfaceClient
@@ -24,7 +24,7 @@ log_contract = get_emitter("stream.contract")
 KEY_STATE_PIDS = "system:xphi:pids"
 PROCESS_NAME = "xphi-dev-node"
 
-XPHI_BASE = env.XPHI_BASE
+XPHI_BASE = env.FIBER_GATEWAY_URL
 REDIS_HOST = env.REDIS_HOST
 REDIS_PORT = env.REDIS_PORT
 

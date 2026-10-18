@@ -1,4 +1,5 @@
-# xphi.node.fsm.epoch
+# xphi.state.topos.transition
+## @lineage: xphi.node.fsm.epoch
 import asyncio
 import json
 import time
@@ -10,8 +11,8 @@ from xphi.arch.bound.event.next import next_id
 from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.bound.adapter.settlement import ClearingAdapter, TransactionReceipt
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.arch.contract.flow import PhaseFlow, FlowState
-from xphi.node.gan import Message, GanNode
+from xphi.state.topos.flow import PhaseFlow, FlowState
+from xphi.state.topos.node.gan import Message, GanNode
 from xphi.node.wasm.broker import DphiBroker
 from xphi.node.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter

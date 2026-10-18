@@ -64,7 +64,7 @@ spec:
   selector:
     app: fiber-gateway
   ports:
-    - port: 8000
+    - port: 8356
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -94,7 +94,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8356
           initialDelaySeconds: 3
           periodSeconds: 5
         volumeMounts:

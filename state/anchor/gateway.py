@@ -6,7 +6,7 @@ import re
 from collections import defaultdict
 from typing import Any, Dict, Optional
 
-from xphi.arch.model.edge.stream import LogicStream as IngressLogicStream
+from xphi.arch.model.schema.stream import LogicStream as IngressLogicStream
 from xphi.state.anchor.consensus import PhaseStore, LogicStream as KernelLogicStream, SealedKernel, AnchorRole
 from xphi.watcher.plane.emitter import get_emitter
 
