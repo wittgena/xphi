@@ -5,7 +5,7 @@ import asyncio
 from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
 
-from xphi.node.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.pta import SignStateAdapter
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter

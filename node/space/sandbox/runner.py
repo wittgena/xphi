@@ -12,10 +12,10 @@ from cryptography.hazmat.primitives import serialization
 
 from xphi.state.topos.state import Contract, CoherenceState
 from xphi.node.space.sandbox.resolver import SandboxExecutor, TaskContext, EffectResolver
-from xphi.node.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.state.anchor.consensus import PhaseStore, PhaseCommit
-from xphi.node.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("space.runner")

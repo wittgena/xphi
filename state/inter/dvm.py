@@ -13,7 +13,7 @@ except ImportError:
 
 from xphi.arch.contract.interpreter import ExecutionError, ExecutionResult
 from xphi.node.space.bind.resolver import resolve_path
-from xphi.node.wasm.quota import WasmQuotaManager, QuotaPolicy, Tier
+from xphi.node.runtime.wasm.quota import WasmQuotaManager, QuotaPolicy, Tier
 
 from xphi.state.inter.wasm import WasmInterpreter
 from xphi.watcher.plane.emitter import get_emitter

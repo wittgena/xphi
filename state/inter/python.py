@@ -17,7 +17,7 @@ from contextlib import suppress
 from xphi.arch.contract.interpreter import PRIMITIVE_TYPES, ExecutionError, ProtocolError, ExecutionResult, JsonRpcMessage, JsonRpcErrorCode
 from xphi.node.space.bind.resolver import find_current_self, resolve_path
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.node.wasm.quota import QuotaPolicy, Tier
+from xphi.node.runtime.wasm.quota import QuotaPolicy, Tier
 
 log = get_emitter("inter.python", phase="SYSTEM")
 TIME_ROOT = resolve_path("time")

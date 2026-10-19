@@ -8,9 +8,9 @@ from dataclasses import dataclass, asdict, field
 from typing import Any, Dict, AsyncGenerator, Optional, Protocol, Union
 
 from xphi.state.topos.state import Contract, CoherenceState
-from xphi.arch.bound.event.next import next_id, generate_parity_triplet, parse_phase_id
-from xphi.node.wasm.broker import DphiBroker, DphiMethod
-from xphi.node.wasm.quota import QuotaPolicy, Tier
+from xphi.arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
+from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
+from xphi.node.runtime.wasm.quota import QuotaPolicy, Tier
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.node.space.sandbox.config import fuel_config, tier_config
 from xphi.watcher.plane.emitter import get_emitter

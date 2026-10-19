@@ -10,7 +10,7 @@ from contextlib import suppress
 from xphi.state.inter.wasm import WasmInterpreter
 from xphi.state.inter.python import PythonInterpreter
 from xphi.state.inter.dvm import DvmInterpreter
-from xphi.node.wasm.quota import QuotaPolicy
+from xphi.node.runtime.wasm.quota import QuotaPolicy
 
 class ExecutionStrategy:
     """Class-based Execution Strategy for isolated sandboxing and execution"""

@@ -11,8 +11,8 @@ from contextlib import suppress
 from xphi.node.ops.daemon.base import AbstractDaemon
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
-from xphi.node.wasm.quota import QuotaPolicy
-from xphi.node.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.quota import QuotaPolicy
+from xphi.node.runtime.wasm.method import DphiMethod
 from xphi.node.ops.task.strategy import ExecutionStrategy
 
 TIME_ROOT = resolve_path("time")

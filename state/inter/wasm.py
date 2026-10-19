@@ -15,7 +15,7 @@ except ImportError:
 from xphi.arch.contract.interpreter import ExecutionError, ProtocolError, ExecutionResult
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.node.wasm.quota import WasmQuotaManager, QuotaPolicy
+from xphi.node.runtime.wasm.quota import WasmQuotaManager, QuotaPolicy
 
 TIME_ROOT = resolve_path("time")
 

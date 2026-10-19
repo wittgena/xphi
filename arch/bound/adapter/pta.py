@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives import serialization
 
 from xphi.state.anchor.consensus import PhaseStore, LogicStream
 from xphi.state.anchor.oracle import AnchorOracle
-from xphi.node.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.arch.bound.adapter.state import StateAdapter
 

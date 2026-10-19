@@ -13,8 +13,8 @@ from watchdog.events import FileSystemEventHandler
 
 from xphi.arch.contract.registry.discovery import discover_modules
 from xphi.node.space.tunnel.factory import UniversalFacade
-from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
-from xphi.arch.bound.event.next import next_id
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.contract.event.next import next_id
 
 from xphi.node.space.bind.resolver import find_current_self
 from xphi.watcher.plane.sink import TunnelSink 

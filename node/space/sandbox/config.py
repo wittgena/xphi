@@ -2,7 +2,7 @@
 from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Dict
-from xphi.node.wasm.quota import Tier
+from xphi.node.runtime.wasm.quota import Tier
 
 class TierPolicySettings(BaseSettings):
     fuel_to_seconds_ratio: int = 100_000_000

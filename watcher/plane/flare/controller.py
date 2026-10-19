@@ -13,7 +13,7 @@ from typing import Dict, Any, Optional, Type, Tuple, List
 
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
-from xphi.arch.dev.tracer.base import BaseStreamAuditor, SystemBound, log_streamer
+from xphi.watcher.plane.tracer.base import BaseStreamAuditor, SystemBound, log_streamer
 
 TIME_ROOT = resolve_path("time")
 EDGE_WORKSPACE_ROOT = resolve_path("flaretime")

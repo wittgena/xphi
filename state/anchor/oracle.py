@@ -5,7 +5,7 @@ from rocksdict import Rdict, Options, AccessType
 
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.node.wasm.broker import DphiBroker, DphiMethod
+from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
 from xphi.arch.bound.adapter.state import StateAdapter
 
 log = get_emitter("anchor.oracle", phase="KERNEL")
