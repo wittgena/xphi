@@ -1,4 +1,5 @@
-# README
+# xphi.README
+@lineage: README
 
 XPHI is distributed state management engine. While Fiber handles external LLM integrations and gateway proxies, XPHI ensures infrastructure stability through hardware-level WASM isolation, FSM-based state control, and comprehensive observability.
 

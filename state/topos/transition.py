@@ -1,5 +1,4 @@
 # xphi.state.topos.transition
-## @lineage: xphi.node.fsm.epoch
 import asyncio
 import json
 import time
@@ -11,8 +10,6 @@ from xphi.arch.contract.event.next import next_id
 from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.bound.adapter.settlement import ClearingAdapter, TransactionReceipt
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.state.topos.flow import PhaseFlow, FlowState
-from xphi.state.topos.node.gan import Message, GanNode
 from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.node.runtime.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
@@ -21,16 +18,14 @@ from xphi.node.runtime.wasm.gateway import GatewayWasm
 epoch_log = get_emitter("fsm.epoch")
 
 class EdgeFlow(Enum):
-    # JSON 통신 안정성을 위해 직렬화 값을 100% 대문자 영문으로 정렬
     ZERO = "ZERO"
     COLLAPSED = "COLLAPSED"
     COHERENT = "COHERENT"
     FRAGMENTED = "FRAGMENTED"
-    ANCHOR = "ANCHOR"  # Dominium -> Anchor 통일
+    ANCHOR = "ANCHOR"
 
     @property
     def symbol(self) -> str:
-        """콘솔 출력 및 로깅의 미적 요소(Topology Aesthetic) 유지를 위한 시각 기호"""
         mapping = {
             "ZERO": "0",
             "COLLAPSED": "Φ⁻",
@@ -39,6 +34,7 @@ class EdgeFlow(Enum):
             "ANCHOR": "Ψᴰ"
         }
         return mapping[self.value]
+
 
 class FlowTransition:
     """WASM 게이트웨이(FSM)와 통신하여 토폴로지 전이 상태 및 비용 정산 Anchor 도달을 추적하는 셸(Shell)"""
@@ -61,7 +57,6 @@ class FlowTransition:
         self.future = asyncio.Future()
 
     def record(self, message: str, state_change: Optional[EdgeFlow] = None) -> None:
-        # 로그에는 기호(symbol)를 함께 기록하여 추적성 확보
         prev_sym = self.edge.symbol
         log_entry = {"event": message, "previous_state": prev_sym}
         if state_change:
@@ -70,8 +65,6 @@ class FlowTransition:
         self.memory.append(log_entry)
 
     def _apply_event(self, event: dict) -> None:
-        """이벤트를 WASM FSM으로 전송하고 반환된 상태와 커맨드를 처리합니다."""
-        # 1. 현재 상태 DTO화 (영문 값으로 직렬화)
         fsm_state = {
             "origin": self.origin,
             "edge": self.edge.value,
@@ -80,25 +73,19 @@ class FlowTransition:
             "anchored_target": self.anchored_target
         }
         
-        # 2. WASM 실행
         receipt = self.gateway.execute_flow_transition_fsm(fsm_state, event)
         if not receipt.get("success"):
             epoch_log.error(f"FSM Gateway Execution Failed: {receipt.get('revert_reason')}")
             raise RuntimeError(f"FSM Panic: {receipt.get('revert_reason')}")
             
-        # 3. WASM이 결정한 상태(Next State) 동기화
         next_state = receipt.get("next_fsm_state", {})
         self.edge = EdgeFlow(next_state.get("edge", self.edge.value))
         self.anchored_target = next_state.get("anchored_target")
-        
-        # 4. WASM이 지시한 사이드 이펙트(Command) 수행
         if "command" in receipt and receipt["command"]:
             self._handle_command(receipt["command"])
 
     def _handle_command(self, cmd: dict) -> None:
         ctype = cmd.get("command_type")
-        
-        # ResolveDominiumCmd -> ResolveAnchorCmd 정렬
         if ctype == "ResolveAnchorCmd":
             if self.future and not self.future.done():
                 self.future.set_result(cmd.get("success", True))
@@ -117,9 +104,6 @@ class FlowTransition:
             reason = cmd.get("reason", "Invalid FSM Transition")
             raise PermissionError(f"FSM Halted: {reason}")
 
-    # ----------------------------------------------------
-    # 💡 Public APIs (Trigger Events)
-    # ----------------------------------------------------
     def bind(self, target_phase: EdgeFlow) -> None:
         self._apply_event({
             "event_type": "Bind", 
@@ -137,7 +121,6 @@ class FlowTransition:
         self.record(f"Threshold test: λ({lmbda}) vs τ({tau})", state_change=self.edge)
         return is_coherent
 
-    # reach_dominium -> reach_anchor 정렬
     def reach_anchor(self, resource_address: str) -> None:
         self._apply_event({
             "event_type": "ReachAnchor", 
@@ -161,7 +144,7 @@ class FlowTransition:
             success = await asyncio.wait_for(self.future, timeout=timeout)
             trace = "\n".join([f"[{m.get('new_state', m.get('previous_state', '0'))}] {m['event']}" for m in self.memory])
             if not success:
-                trace += "\n[⚠️️ SYSTEM COLLAPSED] Execution fractured before reaching anchor."
+                trace += "\n[⚠ SYSTEM COLLAPSED] Execution fractured before reaching anchor."
             return trace
         except asyncio.TimeoutError:
             self.fracture_topology(lmbda=0.0, tau=1.0, force_collapse=True)
@@ -172,9 +155,10 @@ class FlowTransition:
             epoch_log.error(f"[{self.origin}] Fatal anomaly detected: {e}")
             return f"Execution failed: {e}"
 
+
 @dataclass
 class TopologyResidue:
-    edge_state: str  # 내부값 보존
+    edge_state: str
     trajectory_trace: str
     receipt: Optional[TransactionReceipt]
 
@@ -193,7 +177,6 @@ class TransitionManager:
         self.transition.record(message)
 
     async def settle(self, broker: DphiBroker, cost: float, fuel_consumed: int) -> TopologyResidue:
-        """Anchor 비용 정산을 수행하고 TopologyResidue를 반환합니다."""
         entangled_state = {
             "parity": {"topos_id": f"task_{self.transition.id}", "phase_id": 0, "nexus_id": 0},
             "repos": {}
@@ -218,10 +201,7 @@ class TransitionManager:
             tier=Tier.STANDARD.value
         )
         epoch_log.info(f"[{self.origin_name}] 🧾 Transaction Receipt Issued: {receipt.job_id}")
-        
-        # reach_dominium -> reach_anchor 정렬
         self.transition.reach_anchor(resource_address=f"urn:surgent:resource:resolved_task_{self.transition.id}")
-        
         residue = TopologyResidue(
             edge_state=self.transition.edge.value,
             trajectory_trace=str(self.transition.edge.symbol),
@@ -234,7 +214,6 @@ class TransitionManager:
         return self.transition
 
     def _print_verification_report(self, residue: TopologyResidue) -> None:
-        # 로깅 시 기호(Symbol) 복원하여 출력
         visual_symbol = EdgeFlow(residue.edge_state).symbol if residue.edge_state in [e.value for e in EdgeFlow] else residue.edge_state
         
         epoch_log.info("\n" + "="*60)
@@ -270,73 +249,3 @@ class EpochSealer:
             signers=[pubkey], signatures=[signature_hex], threshold=1, allowed_signers=[pubkey]
         )
         return StateAdapter.to_canonical_bytes(seal_payload_dict).decode('utf-8')
-
-
-# ==========================================
-# 4. Routing & Boundary Management
-# ==========================================
-class _LocalBoundary:
-    """기존의 파편화된 Bound 및 LocalBound 클래스를 하나로 통합한 내부 라우터"""
-    def __init__(self, local_registry: Dict[str, Any], broker: Any):
-        self.registry = local_registry
-        self.broker = broker
-
-    async def _execute_atomic_transition(self, target_id: str, flow: PhaseFlow, ctx: FlowState) -> bool:
-        payload = {
-            "intent_action": f"trans_{flow.id[:8]}",
-            "intent_payload": {"target": target_id, "manifold_keys": list(flow.payload.keys())},
-            "evolution_ctx": {"phase_root": ctx.state.get("phase_root", {}), "external_rules": ctx.state.get("external_rules", [])}
-        }
-        try:
-            res = json.loads(await self.broker.execute("execute_transition", payload))
-            if not res.get("is_authorized"):
-                return False
-            if res.get("final_root"): 
-                ctx.state["phase_root"] = res["final_root"]
-            if res.get("all_residues"): 
-                ctx.state.setdefault("residues", []).extend(res["all_residues"])
-            return True
-        except Exception:
-            return False
-
-    async def emit(self, target_id: str, flow: PhaseFlow, ctx: FlowState) -> bool:
-        if not await self._execute_atomic_transition(target_id, flow, ctx): 
-            return False
-        
-        target_node = self.registry.get(target_id)
-        if not target_node: 
-            return False
-
-        if isinstance(target_node, GanNode):
-            target_node.post_message(Message("flow_ingress", flow_id=flow.id, payload={"flow": flow, "ctx": ctx}))
-        elif hasattr(target_node, "run"):
-            asyncio.create_task(self._legacy_run(target_node, flow, ctx))
-        return True
-
-    async def _legacy_run(self, target_node: Any, flow: PhaseFlow, ctx: FlowState):
-        for next_node_id, next_ctx in await target_node.run(flow, ctx.state.get("operator"), ctx):
-            if next_node_id != "END": 
-                await self.emit(next_node_id, flow, next_ctx)
-
-
-class EpochFolder:
-    def __init__(self, broker: Any, redis_pool: Optional[Any] = None):
-        self.local_registry = {}
-        self.broker = broker
-        self.local_bound = _LocalBoundary(self.local_registry, broker)
-        
-        if redis_pool:
-            epoch_log.warning("[EpochFolder] Remote redis_pool routing is deprecated. Forcing LocalBoundary.")
-
-    def fold(self, active_nodes: Dict[str, Any], topology_spec: Dict[str, Any]) -> Dict[str, Any]:
-        self.local_registry.update(active_nodes)
-        
-        for node_id, spec in topology_spec.items():
-            if source_node := self.local_registry.get(node_id):
-                if not hasattr(source_node, "boundaries"): 
-                    source_node.boundaries = {}
-                
-                for target_id in spec.get("edges", []):
-                    source_node.boundaries[target_id] = self.local_bound
-                    
-        return self.local_registry
