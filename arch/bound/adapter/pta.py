@@ -200,11 +200,6 @@ class PtaTransaction:
             "timestamp_ms": self.timestamp_ms
         }
 
-
-# ==========================================
-# 3. Main Adapter 
-# ==========================================
-
 class PtaAdapter:
     """PTA 모델 기반의 오프체인 마이크로 빌링 및 상태 병합 어댑터"""
     def __init__(self, broker: DphiBroker):

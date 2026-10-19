@@ -1,4 +1,5 @@
-# xphi.arch.bound.client.constants
+# xphi.arch.contract.config.constants
+## @lineage: xphi.arch.bound.client.constants
 import os
 import sys
 from typing import List, Literal, Optional

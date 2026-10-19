@@ -211,8 +211,8 @@ def resolve_path(name: str, start: Path | None = None) -> Path:
             else:
                 target_path = (self_root / mapped_subpath).resolve()
     else:
-        log.debug(f"[RESOLVER] Fallback to anchor_dir: {target_path}")
         target_path = (anchor_dir / clean_name).resolve()
+        log.debug(f"[RESOLVER] Fallback to anchor_dir: {target_path}")
 
     if not any(part in ["site-packages", "dist-packages"] for part in target_path.parts):
         target_path.mkdir(parents=True, exist_ok=True)
