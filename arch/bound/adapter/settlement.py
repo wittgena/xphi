@@ -11,7 +11,7 @@ from cryptography.exceptions import InvalidSignature
 
 from xphi.node.space.sandbox.config import fuel_config
 from xphi.arch.model.surge.model import DynamicSurgeModel
-from xphi.node.wasm.quota import Tier
+from xphi.node.runtime.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("adapter.settlement")

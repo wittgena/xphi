@@ -8,9 +8,9 @@ from typing import (
     Optional, FrozenSet, Union
 )
 
-from xphi.arch.bound.event.psi import PsiCarrier, PhaseField
+from xphi.arch.contract.event.psi import PsiCarrier, PhaseField
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.node.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.method import DphiMethod
 
 log = get_emitter("contract.interpreter")
 

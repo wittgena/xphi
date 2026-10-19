@@ -9,9 +9,9 @@ from contextlib import suppress
 from types import SimpleNamespace
 
 from xphi.node.space.tunnel.factory import UniversalFacade
-from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
-from xphi.arch.bound.event.bus import AsyncEventBus
-from xphi.arch.bound.event.next import next_id
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.contract.event.bus import AsyncEventBus
+from xphi.arch.contract.event.next import next_id
 from xphi.arch.contract.registry.unified import registry
 
 from xphi.node.ops.daemon.base import AbstractDaemon
@@ -198,7 +198,6 @@ class DynamicsDaemon(AbstractDaemon):
             return
 
         try:
-            # [FIX] return_exceptions=True 적용하여 하나의 센서가 죽어도 전체 데몬이 죽지 않도록 방어
             results = await asyncio.gather(*tasks, return_exceptions=True)
             for result in results:
                 if isinstance(result, Exception):

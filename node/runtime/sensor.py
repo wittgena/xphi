@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Set, List, Optional
 
 from xphi.node.space.tunnel.factory import UniversalFacade
-from xphi.arch.bound.event.psi import PsiType
+from xphi.arch.contract.event.psi import PsiType
 from xphi.node.space.bind.resolver import find_current_self, resolve_path, resolve_pattern
 from xphi.watcher.plane.emitter import get_emitter
 

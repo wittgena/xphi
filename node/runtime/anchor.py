@@ -9,9 +9,9 @@ from typing import List, Dict, Any, Optional
 
 from xphi.arch.contract.interpreter import NodeInterpreter, AnchorFlow
 from xphi.node.space.tunnel.factory import UniversalFacade, TunnelFactory
-from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier
-from xphi.arch.bound.event.bus import TunnelEventBus
-from xphi.arch.bound.event.next import next_id
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.contract.event.bus import TunnelEventBus
+from xphi.arch.contract.event.next import next_id
 from xphi.arch.contract.interface import IPhaseAtor, IPhaseField, IEventBus
 from xphi.arch.contract.registry.unified import registry
 
@@ -21,7 +21,7 @@ from xphi.node.runtime.sensor import SurfaceSensor, SurfaceActuator
 from xphi.node.runtime.context import RuntimeContext
 from xphi.node.ops.task.supervisor import TaskSupervisor, Dispatcher
 from xphi.node.ops.daemon.bootstrap import mount_master_layer, EventBusDaemon
-from xphi.node.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import DphiBroker
 
 from xphi.watcher.plane.sink import TunnelSink
 from xphi.watcher.plane.emitter import get_emitter

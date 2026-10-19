@@ -4,10 +4,10 @@ import json
 import asyncio
 from typing import Optional
 
-from xphi.arch.bound.event.next import EventObserver
-from xphi.arch.bound.event.next import LogEvent
-from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier, CarrierType
-from xphi.arch.bound.event.bus import AsyncEventBus
+from xphi.arch.contract.event.next import EventObserver
+from xphi.arch.contract.event.next import LogEvent
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier, CarrierType
+from xphi.arch.contract.event.bus import AsyncEventBus
 from xphi.arch.contract.registry.unified import registry
 
 from xphi.state.phase.executor.base import BaseExecutor
@@ -20,7 +20,7 @@ from xphi.state.anchor.gateway import GatewayPolicy
 
 from xphi.node.runtime.anchor import RuntimeAnchor
 from xphi.node.space.tunnel.factory import TunnelFactory
-from xphi.node.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import DphiBroker
 
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.plane.regulator import default_plane

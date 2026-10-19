@@ -14,9 +14,9 @@ from typing import List, Dict, Optional, Any, Callable
 from dataclasses import asdict
 import redis.asyncio as redis_async
 
-from xphi.arch.bound.event.next import next_id, next_phase_id, parse_id, parse_phase_id, LogEvent
-from xphi.arch.bound.event.psi import PsiEvent, PsiCarrier
-from xphi.arch.bound.event.bus import AsyncEventBus
+from xphi.arch.contract.event.next import next_id, next_phase_id, parse_id, parse_phase_id, LogEvent
+from xphi.arch.contract.event.psi import PsiEvent, PsiCarrier
+from xphi.arch.contract.event.bus import AsyncEventBus
 from xphi.arch.contract.registry.unified import registry
 
 from xphi.node.space.tunnel.factory import TunnelFactory
