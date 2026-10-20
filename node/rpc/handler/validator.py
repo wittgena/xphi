@@ -263,14 +263,20 @@ class ValidatorService:
             log.error(f"DB Initialization failed: {e}")
 
     async def handle_attestation(self, params: dict, ctx=None) -> dict:
-        """Internal RPC Bus를 통해 Deploy 에이전트의 서명 요청을 처리합니다."""
+        """Internal RPC Bus를 통해 Deploy 에이전트 및 PreflightGuard의 서명 요청을 처리합니다."""
         user_id = params.get("user_id")
         otp_code = params.get("otp_code")
         payload_hash_hex = params.get("payload_hash", "")
+        # 기본값은 무조건 True (명시적으로 False가 전달된 경우에만 버튼 단독 승인 허용)
+        require_totp = params.get("require_totp", True)
 
-        log.info(f"Verification requested by {user_id} for hash [{payload_hash_hex[:8]}...]")
+        log.info(
+            f"Verification requested by {user_id} for hash [{payload_hash_hex[:8]}...] "
+            f"(Mode: {'TOTP' if require_totp else 'BUTTON'})"
+        )
 
         try:
+            # 1. 등록된 관리자인지 DB 확인 (TOTP / Button 공통 필수)
             row = self.conn.execute(
                 "SELECT salt, nonce, ciphertext FROM admin_users WHERE user_id = ?", (user_id,)
             ).fetchone()
@@ -278,17 +284,53 @@ class ValidatorService:
                 log.warning(f"Validation failed: Unregistered Admin ({user_id})")
                 return {"error": True, "code": -32000, "message": f"Unregistered Admin: {user_id}"}
 
+            # 2. AES-GCM 복호화로 DB 레코드 위변조 여부 및 Cipher Key 정합성 검증 (공통 필수)
             vault = AdminSecretVault(self.master_passphrase)
             secret = vault.decrypt(*row)
-            
-            if not TotpValidator(secret).verify(otp_code):
-                log.warning(f"Validation failed: Invalid TOTP for {user_id}")
-                return {"error": True, "code": -32000, "message": "Invalid or Expired TOTP."}
-                
+
+            # 3. TOTP 모드(기본값)일 때만 6자리 번호 검증 수행
+            if require_totp:
+                if not otp_code or not TotpValidator(secret).verify(otp_code):
+                    log.warning(f"Validation failed: Invalid TOTP for {user_id}")
+                    return {"error": True, "code": -32000, "message": "Invalid or Expired TOTP."}
+
         except Exception as e:
             log.error(f"Cryptography/DB error: {e}")
             return {"error": True, "code": -500, "message": "Internal Crypto Error."}
 
+        # 4. Ed25519 서명 발급 (동일)
         signature = self.signing_key.sign(bytes.fromhex(payload_hash_hex))
-        log.info(f"OTP Validated. Attestation Signature issued for {user_id}.")
+        mode_label = "OTP Validated" if require_totp else "Button Approval Validated"
+        log.info(f"{mode_label}. Attestation Signature issued for {user_id}.")
         return {"success": True, "signature": signature.hex()}
+
+    # async def handle_attestation(self, params: dict, ctx=None) -> dict:
+    #     """Internal RPC Bus를 통해 Deploy 에이전트의 서명 요청을 처리합니다."""
+    #     user_id = params.get("user_id")
+    #     otp_code = params.get("otp_code")
+    #     payload_hash_hex = params.get("payload_hash", "")
+
+    #     log.info(f"Verification requested by {user_id} for hash [{payload_hash_hex[:8]}...]")
+
+    #     try:
+    #         row = self.conn.execute(
+    #             "SELECT salt, nonce, ciphertext FROM admin_users WHERE user_id = ?", (user_id,)
+    #         ).fetchone()
+    #         if not row:
+    #             log.warning(f"Validation failed: Unregistered Admin ({user_id})")
+    #             return {"error": True, "code": -32000, "message": f"Unregistered Admin: {user_id}"}
+
+    #         vault = AdminSecretVault(self.master_passphrase)
+    #         secret = vault.decrypt(*row)
+            
+    #         if not TotpValidator(secret).verify(otp_code):
+    #             log.warning(f"Validation failed: Invalid TOTP for {user_id}")
+    #             return {"error": True, "code": -32000, "message": "Invalid or Expired TOTP."}
+                
+    #     except Exception as e:
+    #         log.error(f"Cryptography/DB error: {e}")
+    #         return {"error": True, "code": -500, "message": "Internal Crypto Error."}
+
+    #     signature = self.signing_key.sign(bytes.fromhex(payload_hash_hex))
+    #     log.info(f"OTP Validated. Attestation Signature issued for {user_id}.")
+    #     return {"success": True, "signature": signature.hex()}
