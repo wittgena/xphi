@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, Tuple
 from pydantic import BaseModel, Field, ValidationError
 
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.asymmetric import ed25519
@@ -213,49 +213,29 @@ class TotpValidator:
 
 class ValidatorService:
     def __init__(self):
-        # 1. 서명 키 로드: 명시적 환경변수가 없으면 NodeSigner의 공통 Ed25519 키쌍을 결정론적으로 공유
         self.signing_key, self.pubkey_hex, raw_seed_bytes = self._load_signing_identity()
-
-        # 2. 마스터 패스프레이즈 로드: 환경변수 노출 없이 local_cipher.key 및 노드 키로부터 단방향 도메인 분리 유도
         self.master_passphrase = self._derive_zero_exposure_passphrase(raw_seed_bytes)
 
-        db_path = os.environ.get(
-            "DPHI_AUDIT_DB_PATH",
-            os.path.join(str(resolve_path("sign")), "deploy_audit.sqlite")
-        )
+        db_path = os.path.join(str(resolve_path("sign")), "deploy_audit.sqlite")
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.conn = sqlite3.connect(db_path, timeout=10.0, check_same_thread=False)
         self._ensure_table_exists()
 
     def _load_signing_identity(self) -> Tuple[ed25519.Ed25519PrivateKey, str, bytes]:
         """
-        1순위: DPHI_VALIDATOR_PRIVATE_KEY 환경변수
-        2순위: NodeSigner 싱글톤의 32-byte raw seed (외부 데몬/테스트/샌드박스 간 자동 일치 보장)
+        NodeSigner 싱글톤(~/.ssh/id_ed25519)의 32-byte raw seed를 로드하여
+        데몬, CLI, E2E 테스트 간 100% 동일한 서명 신원을 보장합니다.
         """
-        vault_key_hex = os.environ.get("DPHI_VALIDATOR_PRIVATE_KEY")
-        if vault_key_hex:
-            raw_seed = bytes.fromhex(vault_key_hex.strip())
-            priv_key = ed25519.Ed25519PrivateKey.from_private_bytes(raw_seed)
-            pub_hex = priv_key.public_key().public_bytes(
-                serialization.Encoding.Raw, serialization.PublicFormat.Raw
-            ).hex()
-            return priv_key, pub_hex, raw_seed
-
         node_signer = NodeSigner.get_instance()
-        raw_seed = bytes(node_signer.signing_key)  # nacl.signing.SigningKey returns 32-byte seed
+        raw_seed = bytes(node_signer.signing_key)
         priv_key = ed25519.Ed25519PrivateKey.from_private_bytes(raw_seed)
         return priv_key, node_signer.pubkey_hex, raw_seed
 
     def _derive_zero_exposure_passphrase(self, fallback_seed: bytes) -> str:
         """
-        환경변수(DPHI_MASTER_PASSPHRASE)가 없을 경우,
         디스크의 영속 시크릿(local_cipher.key) 또는 NodeSigner 시드를 IKM으로 삼아
         HMAC-SHA256 도메인 분리(Domain Separation) 파생 패스프레이즈를 결정론적으로 생성합니다.
         """
-        explicit_pass = os.environ.get("DPHI_MASTER_PASSPHRASE")
-        if explicit_pass:
-            return explicit_pass
-
         local_key_path = Path(str(resolve_path("sign"))) / "local_cipher.key"
         ikm = fallback_seed
 
@@ -267,7 +247,6 @@ class ValidatorService:
             except Exception as e:
                 log.debug(f"[Validator] Fallback to node seed for passphrase derivation: {e}")
 
-        # 도메인 분리 컨텍스트: 원본 local_cipher.key가 메모리나 하위 계층에 노출되지 않도록 단방향 파생
         domain_context = f"dphi:domain:admin_secret_vault:v1:{self.pubkey_hex}".encode("utf-8")
         return hmac.new(ikm, domain_context, hashlib.sha256).hexdigest()
 
