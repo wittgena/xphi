@@ -41,7 +41,3 @@ STATE_STORE_URL = _get_string("STATE_STORE_URL", _default_state_url)
 ## COMPAT & VCR
 FIBER_COMPAT_RULES_PATH = _get_string("FIBER_COMPAT_RULES_PATH", "")
 VCR_INCLUDE_RAW = _get_string("VCR_INCLUDE_RAW", "false")
-
-## FINOPS & SECURITY (Ed25519 Hex 포맷 기준, 비워두면 로컬 NodeSigner 키 자동 사용)
-FINOPS_JWT_PRIVATE_KEY = _get_string("FINOPS_JWT_PRIVATE_KEY", "")
-FINOPS_JWT_PUBLIC_KEY = _get_string("FINOPS_JWT_PUBLIC_KEY", "")
