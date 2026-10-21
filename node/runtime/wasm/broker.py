@@ -1,5 +1,5 @@
 # xphi.node.runtime.wasm.broker
-## @lineage: xphi.node.wasm.broker
+import os
 import time
 import json
 import uuid
@@ -42,6 +42,16 @@ class ResultKey:
     METRICS = "metrics"
 
 class DphiBroker:
+    _shared_instance: Optional["DphiBroker"] = None
+
+    @classmethod
+    def get_shared(cls, **kwargs) -> "DphiBroker":
+        if cls._shared_instance is None:
+            if "timeout" not in kwargs:
+                kwargs["timeout"] = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
+            cls._shared_instance = cls(**kwargs)
+        return cls._shared_instance
+
     def __init__(
         self, 
         request_stream: str = BrokerChannel.EXECUTE_STREAM, 
@@ -62,21 +72,19 @@ class DphiBroker:
         
         self._listener_task: Optional[asyncio.Task] = None
         self._listener_client = None
-        
-        # 💡 [핵심 픽스] 구독(Subscribe) 완료 시점을 메인 로직에 알려주기 위한 이벤트 객체
         self._listener_ready = asyncio.Event()
 
     async def _ensure_listener_started(self):
-        # 1. Self-Healing: 기존 태스크가 에러 등으로 종료(Done)되었으면 강제 초기화
+        # Self-Healing: 기존 태스크가 에러 등으로 종료(Done)되었으면 강제 초기화
         if self._listener_task is not None and self._listener_task.done():
             self._listener_task = None
             self._listener_ready.clear()
 
-        # 2. 백그라운드 리스너 태스크 실행
+        # 백그라운드 리스너 태스크 실행
         if self._listener_task is None:
             self._listener_task = asyncio.create_task(self._listen_responses())
 
-        # 3. 💡 [핵심 픽스] 리스너가 Redis 채널 구독을 완벽히 마칠 때까지 대기
+        # 리스너가 Redis 채널 구독을 완벽히 마칠 때까지 대기
         try:
             # Redis 지연으로 인한 영구 데드락 방지 (최대 5초 대기)
             await asyncio.wait_for(self._listener_ready.wait(), timeout=5.0)
@@ -92,13 +100,8 @@ class DphiBroker:
         try:
             self._listener_client = await self.tunnel_factory.get_isolated()
             pubsub = self._listener_client.pubsub()
-            
-            # 여기서 실제 네트워크 I/O 발생 -> 구독 완료를 보장
             await pubsub.subscribe(self.response_channel)
-            
-            # 💡 [핵심 픽스] 구독이 완전히 끝났음을 메인 쓰레드에 통보
             self._listener_ready.set()
-            
             async for msg in pubsub.listen():
                 if msg and msg["type"] == "message":
                     try:
@@ -118,9 +121,7 @@ class DphiBroker:
         except Exception as e:
             log.error(f"[Broker] Listener crashed unexpectedly: {e}")
         finally:
-            # 💡 [핵심 픽스] 연결 종료 시 상태 초기화 -> 다음 요청 시 우아하게 재연결 유도
             self._listener_ready.clear()
-            
             with suppress(Exception):
                 await pubsub.unsubscribe(self.response_channel)
                 await pubsub.close()
@@ -273,6 +274,8 @@ class DphiBroker:
             task.cancel()
             with suppress(asyncio.CancelledError):
                 await task
+        if DphiBroker._shared_instance is self:
+            DphiBroker._shared_instance = None
 
     def __del__(self):
         task = getattr(self, '_listener_task', None)

@@ -84,6 +84,7 @@ class PhaseStore:
         try:
             self.db = Rdict(str(target_path), opt)
             self.role = AnchorRole.SEALER
+            self.broker = DphiBroker.get_shared()
             self.relay = MempoolRelay(self)
             self.relay.start_sealer_consumer()
             log.info(f"[Ledger] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
@@ -91,7 +92,7 @@ class PhaseStore:
             error_msg = str(e).lower()
             if "lock" in error_msg or "temporarily unavailable" in error_msg:
                 self.role = AnchorRole.PROPOSER
-                self.wasm = None 
+                self.broker = None 
                 self.db = Rdict(str(target_path), Options(), access_type=AccessType.read_only())
                 self.relay = MempoolRelay(self)
                 log.info(f"[Ledger] Lock held by another node. Operating as {self.role.value} (Read-Only/Proposer).")
@@ -180,7 +181,7 @@ class PhaseStore:
             }
         }
 
-        wasm_res = await self.wasm.invoke("execute_transition", json.dumps(transition_payload))
+        wasm_res = await self.broker.invoke("execute_transition", json.dumps(transition_payload))
         if not wasm_res.success:
             log.error(f"[Ledger:WASM] FATAL: Kernel panicked or rejected execution. {wasm_res.error}")
             return None
