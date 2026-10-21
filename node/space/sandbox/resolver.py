@@ -200,29 +200,22 @@ class SandboxExecutor:
             )
 
             canonical_bytes = StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8')
-            
-            # 🚨 [LOG INJECTION: 직렬화된 데이터 덤프 및 크기 확인]
             log.error(f"[DEBUG-TRACE: 1] ➔ 브로커로 진입 직전. Payload Size: {len(canonical_bytes)} bytes")
             log.error(f"[DEBUG-TRACE: 1] ➔ Canonical Payload Dump: {canonical_bytes[:500]} ... (truncated)")
             
             try:
-                # 🚨 [LOG INJECTION: 실제 대기 시간 측정]
                 invoke_start_time = time.time()
-                
                 exec_result = await asyncio.wait_for(
                     self.broker.invoke(
                         target_func=DphiMethod.EXECUTE_TRANSITION, 
                         payload=canonical_bytes,
                         tier=context.tier 
                     ),
-                    timeout=11.0 # 10초 타임아웃 후 1초 여유 마진
+                    timeout=11.0
                 )
-                
                 invoke_elapsed = time.time() - invoke_start_time
                 log.error(f"[DEBUG-TRACE: 2] 🟢 브로커 응답 수신 완료! 소요시간: {invoke_elapsed:.3f}초 | success: {exec_result.success}")
-                
             except asyncio.TimeoutError:
-                # 🚨 [LOG INJECTION: 타임아웃 확정 지점]
                 log.error(f"[DEBUG-TRACE: 3] 🛑 브로커 11초 타임아웃 발생! (ToposID: {context.topos_id})")
                 yield Contract(
                     id=next_id(), topos_id=context.topos_id, phase_id=context.phase_id, nexus_id=context.nexus_id,
@@ -231,7 +224,7 @@ class SandboxExecutor:
                 )
                 break
             except Exception as e:
-                log.error(f"[DEBUG-TRACE: 4] 💥 브로커 호출 중 예외 발생: {str(e)}", exc_info=True)
+                log.error(f"[DEBUG-TRACE: 4] 브로커 호출 중 예외 발생: {str(e)}", exc_info=True)
                 yield Contract(
                     id=next_id(), topos_id=context.topos_id, phase_id=context.phase_id, nexus_id=context.nexus_id,
                     kind="divergence", source=SOURCE_NAME, state=CoherenceState.FRAGMENTED,

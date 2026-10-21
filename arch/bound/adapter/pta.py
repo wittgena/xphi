@@ -357,16 +357,6 @@ class PtaAdapter:
                 
         return available_inputs
 
-    async def verify_and_collapse_receipt(self, tx_hash: str) -> Dict[str, Any]:
-        try:
-            commit_hash = self._resolve_commit_hash(tx_hash)
-            log.info(f"[PtaAdapter:{self._inst_id}] Requesting Oracle collapse for PTA Tx: {tx_hash[:8]} (Commit: {commit_hash[:8]})...")
-            collapsed_state = await self.oracle.observe_nexus(commit_hash)
-            return collapsed_state
-        except Exception as e:
-            log.error(f"[PtaAdapter:{self._inst_id}] Receipt collapse failed: {e}")
-            raise
-
     async def verify_lineage(self, tx_hash: str, depth: int = 5) -> bool:
         try:
             commit_hash = self._resolve_commit_hash(tx_hash)

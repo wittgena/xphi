@@ -1,5 +1,4 @@
 # xphi.arch.bound.wasm.builder
-## @lineage: xphi.arch.dev.wasm.builder
 import os
 import shutil
 import json
@@ -66,7 +65,8 @@ class WasmBuilder(BaseTracer):
         )
         
         if code != 0:
-            self.build_error = f"Schema Binary Failed (Exit code: {code})"
+            err_msg = err.strip() if err else (out.strip() if out else "No error output captured")
+            self.build_error = f"Schema Binary Failed (Exit code: {code})\n{err_msg}"
             self.log.error(f"[ERROR] {self.build_error}")
             return False
 
