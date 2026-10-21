@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
 from xphi.arch.contract.protocol.rpc import WorkerContext, _build_error
-from xphi.arch.contract.config.env import DPHI_ENV
+from xphi.arch.contract.config.env import XPHI_ENV
 from xphi.arch.bound.adapter.settlement import MandateAdapter, Ap2MandateResult, SettlementReceipt
 from xphi.arch.bound.adapter.pta import NodeSigner
 
@@ -125,10 +125,10 @@ async def handle_fuel_receipt_validate(params: dict, ctx: WorkerContext) -> dict
         log.info(f"[Billing] Legacy validation call (no target_server_id). Applying Genesis Floor: ${required_fee:.4f}")
 
     # E2E Testing Fast-Path
-    is_test_env = DPHI_ENV in ("test", "e2e", "local")
+    is_test_env = XPHI_ENV in ("test", "e2e", "local")
     if is_test_env and isinstance(receipt_data, str):
         if receipt_data == "valid_receipt":
-            log.warning(f"[SECURITY] Mock E2E receipt used. Environment: {DPHI_ENV}")
+            log.warning(f"[SECURITY] Mock E2E receipt used. Environment: {XPHI_ENV}")
             return {"status": "VALIDATED", "clearance": "GRANTED", "type": "MOCK_E2E", "fee_deducted": required_fee}
         elif receipt_data == "invalid_receipt":
             return _build_error(402, f"Payment Required: Insufficient balance. Required: ${required_fee:.4f}")

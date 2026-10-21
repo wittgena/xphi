@@ -23,7 +23,7 @@ RPC_QUEUE_TOPIC = os.getenv("RPC_QUEUE_TOPIC", "internal.rpc.queue")
 PUBSUB_CHANNEL = _get_string("PUBSUB_CHANNEL", "audit_channel")
 
 """Cryptography & KMS"""
-DPHI_ENV = _get_string("DPHI_ENV", "prod")
+XPHI_ENV = _get_string("XPHI_ENV", "local")
 AIRGAP_MODE = _get_string("AIRGAP_MODE", "0")
 
 """Infrastructure & Tunnel"""

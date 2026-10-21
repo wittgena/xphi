@@ -158,14 +158,14 @@ async def main_async():
 
     wasm_timeout = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
     log.info(f"[Boot] Provisioning Shared WASM Broker (Timeout: {wasm_timeout}s)...")
-    shared_broker = DphiBroker(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
+    shared_broker = DphiBroker.get_shared(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
 
     log.info("[Boot] Initializing PhaseStore and injecting Shared Broker...")
-    ledger = PhaseStore()
+    store = PhaseStore()
     
-    if hasattr(ledger, 'role') and ledger.role == AnchorRole.SEALER:
-        ledger.wasm = shared_broker
-        log.info("[Boot] Shared Broker injected into PhaseStore successfully.")
+    # if hasattr(store, 'role') and store.role == AnchorRole.SEALER:
+    #     store.wasm = shared_broker
+    #     log.info("[Boot] Shared Broker injected into PhaseStore successfully.")
 
     log.info("[Boot] Igniting Embedded Phase Runtime Node...")
     completion_signal = asyncio.Event()
@@ -196,6 +196,13 @@ async def teardown():
         log.info("[Boot] PhaseStore lock safely released.")
     except Exception as e:
         log.warning(f"[Boot] Error while releasing PhaseStore lock: {e}")
+
+    if DphiBroker._shared_instance is not None:
+        try:
+            await DphiBroker._shared_instance.close()
+            log.info("[Boot] Shared WASM Broker closed cleanly.")
+        except Exception as e:
+            log.warning(f"[Boot] Error while closing Shared WASM Broker: {e}")
         
     await TunnelFactory.close_all()
     log.info("[Boot] Resource cleanup complete.")

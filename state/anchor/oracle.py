@@ -14,8 +14,8 @@ ANCHOR_DB_PATH = resolve_path("adb")
 
 
 class AnchorOracle:
-    def __init__(self, broker: DphiBroker, path: str = ANCHOR_DB_PATH):
-        self.broker = broker
+    def __init__(self, broker: Optional[DphiBroker] = None, path: str = ANCHOR_DB_PATH):
+        self.broker = broker or DphiBroker.get_shared()
         self.path = str(path)
         try:
             self.store = PhaseStore(self.path)
