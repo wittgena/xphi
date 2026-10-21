@@ -6,11 +6,11 @@ from enum import Enum
 from typing import Any, Dict, Optional, List
 from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
-from rocksdict import Rdict, Options, AccessType
 
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.node.runtime.wasm.broker import DphiBroker  
 from xphi.arch.bound.adapter.state import StateAdapter
+from xphi.state.anchor.driver import AnchorDriverFactory
 from xphi.state.anchor.mempool import MempoolRelay
 from xphi.watcher.plane.emitter import get_emitter
 
@@ -78,26 +78,18 @@ class PhaseStore:
 
     def _initialize_consensus_node(self, target_path: str):
         """Proof of Lock: Determines LEADER/FOLLOWER role and binds system handlers."""
-        opt = Options()
-        opt.create_if_missing(True)
-        
-        try:
-            self.db = Rdict(str(target_path), opt)
+        self.db = AnchorDriverFactory.mount(str(target_path))
+        if self.db.is_sealer:
             self.role = AnchorRole.SEALER
             self.broker = DphiBroker.get_shared()
             self.relay = MempoolRelay(self)
             self.relay.start_sealer_consumer()
             log.info(f"[Ledger] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
-        except Exception as e:
-            error_msg = str(e).lower()
-            if "lock" in error_msg or "temporarily unavailable" in error_msg:
-                self.role = AnchorRole.PROPOSER
-                self.broker = None 
-                self.db = Rdict(str(target_path), Options(), access_type=AccessType.read_only())
-                self.relay = MempoolRelay(self)
-                log.info(f"[Ledger] Lock held by another node. Operating as {self.role.value} (Read-Only/Proposer).")
-            else:
-                raise 
+        else:
+            self.role = AnchorRole.PROPOSER
+            self.broker = None 
+            self.relay = MempoolRelay(self)
+            log.info(f"[Ledger] Lock held by another node. Operating as {self.role.value} (Read-Only/Proposer).")
 
     def _handle_warden_anomaly(self, action: str, details: str) -> None:
         blob = ToposBlob(
@@ -166,46 +158,10 @@ class PhaseStore:
         self.relay.ensure_sealer_consumer()
 
         parent_hash = self.get_head_hash(stream.id) or "genesis"
-        transition_payload = {
-            "intent_action": stream.action,
-            "intent_payload": stream.payload,
-            "evolution_ctx": {
-                "phase_root": {
-                    "name": f"root_{stream.id}",
-                    "kind": "CORE",
-                    "content": json.dumps(stream.metadata),
-                    "ref_target": parent_hash,
-                    "children": {}
-                },
-                "external_rules": [] 
-            }
-        }
+        final_root = stream.payload 
+        tension_at_seal = 0.0
 
-        wasm_res = await self.broker.invoke("execute_transition", json.dumps(transition_payload))
-        if not wasm_res.success:
-            log.error(f"[Ledger:WASM] FATAL: Kernel panicked or rejected execution. {wasm_res.error}")
-            return None
-
-        trans_result = json.loads(wasm_res.output)
-        if not trans_result.get("is_authorized", False):
-            err_msg = trans_result.get("error_msg", "Spatial Fence Denied")
-            log.warning(f"[Ledger:WASM] REJECTED: {err_msg}")
-            self.save_transition(
-                ToposBlob("wasm.reject", "logic.stream", "fragmented", 1.0, err_msg)
-            )
-            return None
-
-        final_root = trans_result.get("final_root")
-        all_residues = trans_result.get("all_residues", [])
-        tension_at_seal = len(all_residues) * 0.1 
-
-        blob_hashes = [
-            self.save_transition(
-                ToposBlob("wasm.mutation", "logic.loop", "sealed.kernel", tension_at_seal, f"[{r['kind']}] {r['msg']}")
-            )
-            for r in all_residues
-        ]
-
+        blob_hashes = [self.save_transition(ToposBlob(stream.action, "logic.stream", "sealed.kernel", 0.0, f"[TRANSITION] {stream.id}"))]
         commit = PhaseCommit(
             stream_id=stream.id,
             executable_payload=final_root,
@@ -216,7 +172,7 @@ class PhaseStore:
 
         signature = self._save_kernel_unsafe(commit)
         self.update_head(stream.id, signature)
-        log.info(f"[Ledger:LEADER] Epoch Sealed by WASM. Stream: {stream.id} | Commit: {signature[:8]}")
+        log.info(f"[Ledger:LEADER] Epoch Sealed. Stream: {stream.id} | Commit: {signature[:8]}")
 
         return SealedKernel(
             kernel_id=f"ker_{stream.id}",
@@ -226,6 +182,73 @@ class PhaseStore:
             signature=signature
         )
 
+    # async def propose_and_seal(self, stream: LogicStream) -> Optional[SealedKernel]:
+    #     if self.role == AnchorRole.PROPOSER:
+    #         return await self.relay.propose_stream_async(stream)
+
+    #     self.relay.ensure_sealer_consumer()
+
+    #     parent_hash = self.get_head_hash(stream.id) or "genesis"
+    #     transition_payload = {
+    #         "intent_action": stream.action,
+    #         "intent_payload": stream.payload,
+    #         "evolution_ctx": {
+    #             "phase_root": {
+    #                 "name": f"root_{stream.id}",
+    #                 "kind": "CORE",
+    #                 "content": json.dumps(stream.metadata),
+    #                 "ref_target": parent_hash,
+    #                 "children": {}
+    #             },
+    #             "external_rules": [] 
+    #         }
+    #     }
+
+    #     wasm_res = await self.broker.invoke("execute_transition", json.dumps(transition_payload))
+    #     if not wasm_res.success:
+    #         log.error(f"[Ledger:WASM] FATAL: Kernel panicked or rejected execution. {wasm_res.error}")
+    #         return None
+
+    #     trans_result = json.loads(wasm_res.output)
+    #     if not trans_result.get("is_authorized", False):
+    #         err_msg = trans_result.get("error_msg", "Spatial Fence Denied")
+    #         log.warning(f"[Ledger:WASM] REJECTED: {err_msg}")
+    #         self.save_transition(
+    #             ToposBlob("wasm.reject", "logic.stream", "fragmented", 1.0, err_msg)
+    #         )
+    #         return None
+
+    #     final_root = trans_result.get("final_root")
+    #     all_residues = trans_result.get("all_residues", [])
+    #     tension_at_seal = len(all_residues) * 0.1 
+
+    #     blob_hashes = [
+    #         self.save_transition(
+    #             ToposBlob("wasm.mutation", "logic.loop", "sealed.kernel", tension_at_seal, f"[{r['kind']}] {r['msg']}")
+    #         )
+    #         for r in all_residues
+    #     ]
+
+    #     commit = PhaseCommit(
+    #         stream_id=stream.id,
+    #         executable_payload=final_root,
+    #         tension_at_seal=tension_at_seal,
+    #         blob_hashes=blob_hashes,
+    #         parent_hash=parent_hash
+    #     )
+
+    #     signature = self._save_kernel_unsafe(commit)
+    #     self.update_head(stream.id, signature)
+    #     log.info(f"[Ledger:LEADER] Epoch Sealed by WASM. Stream: {stream.id} | Commit: {signature[:8]}")
+
+    #     return SealedKernel(
+    #         kernel_id=f"ker_{stream.id}",
+    #         stream_id=stream.id,
+    #         executable_payload=final_root,
+    #         tension_at_seal=tension_at_seal,
+    #         signature=signature
+    #     )
+
     def close(self):
         if hasattr(self, 'relay') and self.relay is not None:
             self.relay.stop_sealer_consumer()
@@ -233,3 +256,4 @@ class PhaseStore:
             self.db.close()
             role_msg = self.role.value if hasattr(self, 'role') else "UNKNOWN"
             log.info(f"[KernelStore] Ledger DB closed cleanly. ({role_msg})")
+        PhaseStore._instance = None

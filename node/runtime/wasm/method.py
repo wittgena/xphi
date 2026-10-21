@@ -11,7 +11,6 @@ class DphiMethod(str, Enum):
     GENERATE_TOPOS_ID = "generate_topos_id"
     GENERATE_PHASE_ID = "generate_phase_id"
     INIT_EPOCH = "init_epoch"
-    PROCESS_EVOLUTION = "process_evolution"
     PROCESS_TOPOS_TICK = "process_topos_tick"
     INSCRIBE_ACTOR = "inscribe_actor"
     SEAL_EPOCH = "seal_epoch"

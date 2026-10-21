@@ -163,10 +163,6 @@ async def main_async():
     log.info("[Boot] Initializing PhaseStore and injecting Shared Broker...")
     store = PhaseStore()
     
-    # if hasattr(store, 'role') and store.role == AnchorRole.SEALER:
-    #     store.wasm = shared_broker
-    #     log.info("[Boot] Shared Broker injected into PhaseStore successfully.")
-
     log.info("[Boot] Igniting Embedded Phase Runtime Node...")
     completion_signal = asyncio.Event()
     executor = RoutingExecutor(completion_signal)

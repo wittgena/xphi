@@ -1,7 +1,6 @@
 # xphi.state.anchor.oracle
 import json
 from typing import Any, Dict, Optional, List
-from rocksdict import Rdict, Options, AccessType
 
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
@@ -34,12 +33,7 @@ class AnchorOracle:
         if getattr(self.store, "role", None) != AnchorRole.PROPOSER:
             return
         try:
-            if hasattr(self.db, "try_catch_up_with_primary"):
-                self.db.try_catch_up_with_primary()
-            else:
-                self.store.db.close()
-                self.store.db = Rdict(self.path, Options(), access_type=AccessType.read_only())
-                self.db = self.store.db
+            self.db.try_catch_up_with_primary()
         except Exception as e:
             log.debug(f"[AnchorOracle] Read-only view sync skipped: {e}")
 
@@ -160,53 +154,6 @@ class AnchorOracle:
         
         log.debug(f"[AnchorOracle] Confirmed balance for {owner[:12]}... -> {confirmed_balance} {asset_type}")
         return confirmed_balance
-
-    async def observe_nexus(self, epoch_hash: str) -> Dict[str, Any]:
-        snapshot = self._get_raw_object("commit", epoch_hash)
-        if not snapshot:
-            raise ValueError(f"Epoch not found in Anchor Store: {epoch_hash}")
-
-        entangled_state = snapshot.get("entangled_state", {})
-        if not entangled_state.get("has_contention", False):
-            return {"epoch_hash": epoch_hash, "resolved_state": snapshot, "is_collapsed": False}
-
-        raw_phase_root = snapshot.get("phase_root")
-        if raw_phase_root:
-            phase_root = StateAdapter.build_core_node(
-                name=raw_phase_root.get("name", "root"), 
-                content=raw_phase_root.get("content", ""), 
-                children=raw_phase_root.get("children")
-            )
-        else:
-            phase_root = StateAdapter.build_core_node("root", snapshot.get("parent_hash", "genesis"))
-
-        evo_ctx = StateAdapter.build_evolution_context(phase_root=phase_root)
-        transition_payload = StateAdapter.build_transition_payload(
-            intent_action="COLLAPSE_ENTANGLEMENT",
-            intent_payload=entangled_state,
-            evolution_ctx=evo_ctx
-        )
-
-        canonical_payload = StateAdapter.to_canonical_bytes(transition_payload).decode('utf-8')
-        log.info(f"[AnchorOracle] Injecting canonical entanglement into WASM for collapse. Epoch: {epoch_hash[:8]}")
-        exec_result = await self.broker.invoke(
-            target_func=DphiMethod.EXECUTE_TRANSITION,
-            payload=canonical_payload,
-            tier="KERNEL"
-        )
-
-        if not exec_result.success:
-            log.error(f"[AnchorOracle] WASM Collapse Failed: {exec_result.error.msg}")
-            raise RuntimeError(f"WASM State Transition Failed: {exec_result.error.msg}")
-
-        collapsed_state = json.loads(exec_result.output)
-        return {
-            "epoch_hash": epoch_hash,
-            "parent_hash": snapshot.get("parent_hash"),
-            "resolved_state": collapsed_state.get("final_root"),
-            "residues": collapsed_state.get("all_residues", []),
-            "is_collapsed": True
-        }
 
     async def verify_kernel_lineage(self, start_commit_hash: str, depth: int = 5) -> Dict[str, Any]:
         """StateAdapter를 통해 ParityTriplet을 조립하여 WASM 엔진에서 무결성을 검증합니다."""
