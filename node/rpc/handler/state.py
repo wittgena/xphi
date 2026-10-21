@@ -2,20 +2,30 @@
 import json
 import time
 import uuid
-from typing import Dict, Any
-from pydantic import ValidationError
+from typing import Dict, Any, List, Optional
+from pydantic import BaseModel, ValidationError
 
 from xphi.arch.model.schema.audit import PhaseStoreAppendRecord
-from xphi.arch.bound.adapter.pta import PtaTransaction, PtaInput, PtaPointer, create_state_anchor
+from xphi.arch.bound.adapter.pta import PtaTransaction, PtaInput, PtaPointer, create_mcp_state_anchor
 from xphi.arch.contract.protocol.rpc import WorkerContext, _build_error
 
 from xphi.node.rpc.schema.receipt import EdgeState, AnchorProposalRequest, IntentValidationRequest, ExecuteComputeRequest
 from xphi.node.space.tunnel.factory import TunnelFactory
 from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
-from xphi.state.anchor.nexus import AnchorProposal, StreamAppendRequest
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("rpc.handler")
+
+class PIIEventSchema(BaseModel):
+    action: str
+    user_id: str
+    pii_data: Optional[Dict[str, Any]] = None
+    details: str
+
+class StreamAppendRequest(BaseModel):
+    stream_name: str
+    events: List[PIIEventSchema]
+    verbose: bool = False
 
 """State Transition & Gateway Handlers"""
 async def handle_mcp_state_query(params: dict, ctx: WorkerContext) -> dict:
@@ -23,30 +33,56 @@ async def handle_mcp_state_query(params: dict, ctx: WorkerContext) -> dict:
     if not handle_id: return _build_error(422, "Missing handle_id")
     
     expected_owner = f"mcp_bridge_{handle_id}"
+    
+    # 1. 인메모리(_unfold_pool)에 대기 중인 미확정 상태가 있는지 우선 확인
     for key, output in ctx.pta_adapter._unfold_pool.items():
         if output.owner == expected_owner and output.asset_type == "mcp_state_anchor":
             status = getattr(output, "phase_status", "UNKNOWN")
             payload = getattr(output, "executable_payload", {})
             
-            tx_hash = key.split(":")[0]
-            snapshot = ctx.pta_adapter.oracle._get_raw_object("commit", tx_hash)
+            commit_hash = ctx.pta_adapter.ledger.get_head_hash(expected_owner) or key.split(":")[0]
+            snapshot = ctx.pta_adapter.oracle._get_raw_object("commit", commit_hash)
             meta = snapshot.get("metadata", {}) if snapshot else {}
             
             return {
                 "exists": True, "status": status, "error_detail": meta.get("error_detail", ""),
                 "executable_payload": payload, "action": meta.get("action", "")
             }
+
+    # 2. DB(commit:)에 Seal 완료된 미소비 상태 앵커 조회 (재부팅 후에도 정상 복구)
+    unspent = await ctx.pta_adapter.oracle.get_unspent_outputs(expected_owner, "mcp_state_anchor")
+    for item in reversed(unspent):
+        ptr_key = f"{item['pointer']['tx_hash']}:{item['pointer']['output_index']}"
+        if ptr_key not in ctx.pta_adapter._spent_mempool:
+            out = item["output"]
+            commit_hash = ctx.pta_adapter.ledger.get_head_hash(expected_owner)
+            snapshot = ctx.pta_adapter.oracle._get_raw_object("commit", commit_hash) if commit_hash else None
+            tx_data = ctx.pta_adapter.oracle._extract_tx_from_commit(snapshot) if snapshot else None
+            meta = tx_data.get("metadata", {}) if tx_data else {}
+            
+            return {
+                "exists": True,
+                "status": out.get("phase_status", "UNKNOWN"),
+                "error_detail": meta.get("error_detail", ""),
+                "executable_payload": out.get("executable_payload", {}),
+                "action": meta.get("action", "")
+            }
+
     return {"exists": False}
+
 
 async def handle_mcp_state_pending_seal(params: dict, ctx: WorkerContext) -> dict:
     handle_id = params.get("handle_id")
+    if not handle_id: return _build_error(422, "Missing handle_id")
     payload = params.get("payload", {})
     target_server_id = params.get("target_server_id")
 
-    initial_phase = create_state_anchor(handle_id=handle_id, status="PENDING", payload=payload)
+    stream_id = f"mcp_bridge_{handle_id}"
+    initial_phase = create_mcp_state_anchor(handle_id=handle_id, status="PENDING", payload=payload)
     tx = PtaTransaction(inputs=[], outputs=[initial_phase], metadata={"target": target_server_id, "action": "dphi.transition.pending"})
-    await ctx.pta_adapter.execute_transaction(tx)
+    await ctx.pta_adapter.execute_transaction(tx, stream_id=stream_id)
     return {"success": True, "handle_id": handle_id}
+
 
 async def handle_mcp_state_resolve(params: dict, ctx: WorkerContext) -> dict:
     handle_id = params.get("handle_id")
@@ -56,23 +92,24 @@ async def handle_mcp_state_resolve(params: dict, ctx: WorkerContext) -> dict:
 
     if not handle_id or not status: return _build_error(422, "Missing handle_id or status")
     expected_owner = f"mcp_bridge_{handle_id}"
-    prev_pointer_key = next((key for key, output in ctx.pta_adapter._unfold_pool.items() 
-                             if output.owner == expected_owner and output.asset_type == "mcp_state_anchor"), None)
+    
+    # DB(Oracle) 및 인메모리(_unfold_pool) 통합 미소비 Input 조회
+    available = await ctx.pta_adapter.get_available_inputs(expected_owner, "mcp_state_anchor")
+    inputs = [
+        PtaInput(pointer=item["pointer"], signature="internal_bridge_signature_bypass")
+        for item in available
+    ]
 
-    inputs = []
-    if prev_pointer_key:
-        tx_hash, idx = prev_pointer_key.split(":")
-        inputs.append(PtaInput(pointer=PtaPointer(tx_hash=tx_hash, output_index=int(idx)), signature="internal_bridge_signature_bypass"))
-
-    next_phase = create_state_anchor(handle_id=handle_id, status=status, payload=executable_payload)
+    next_phase = create_mcp_state_anchor(handle_id=handle_id, status=status, payload=executable_payload)
     tx = PtaTransaction(inputs=inputs, outputs=[next_phase], metadata={"error_detail": error_detail, "resolved_at": int(time.time() * 1000)})
-    await ctx.pta_adapter.execute_transaction(tx)
+    await ctx.pta_adapter.execute_transaction(tx, stream_id=expected_owner)
 
     tunnel = await TunnelFactory.get_default()
     reply_channel = f"mcp.intent.reply.{handle_id}"
     await tunnel.publish(reply_channel, json.dumps({"status": status, "executable_payload": executable_payload, "error_detail": error_detail}))
     
     return {"success": True, "status": status}
+
 
 """Infrastructure & Consensus"""
 async def handle_phase_store_stream_append(params: dict, ctx: WorkerContext) -> dict:
@@ -96,19 +133,6 @@ async def handle_phase_store_stream_append(params: dict, ctx: WorkerContext) -> 
                 
         return {"request_id": request_id, "status": "success", "result": {"hash": event_hash, "membership_proof": merkle_proof}}
 
-async def handle_phase_store_anchor_seal(params: dict, ctx: WorkerContext) -> dict:
-    try: req = AnchorProposalRequest(**params)
-    except ValidationError as e: return _build_error(422, f"Payload Error: {e.errors()}")
-
-    proposal = AnchorProposal(
-        receptor_id=req.receptor_id, proposed_parity=req.proposed_parity.model_dump(),
-        parent_nexus_id=req.parent_nexus_id, self_parent_state=req.self_parent_state,
-        repos=req.repos, signers=req.signers, signatures=req.signatures, timestamp=req.timestamp
-    )
-    result = await ctx.nexus.anchor_state(proposal)
-    
-    if not result.is_sealed: return _build_error(409, f"Consensus Failed: {result.rupture_reason}")
-    return {"status": EdgeState.SEALED_AND_COMMITTED, "nexus_id": result.nexus_id, "commit_hash": result.commit_hash, "receipt": result.receipt.__dict__ if hasattr(result.receipt, "__dict__") else dict(result.receipt)}
 
 async def handle_phase_store_receipt_verify(params: dict, ctx: WorkerContext) -> dict:
     state_root, receipt_id = params.get("state_root"), params.get("receipt_id")
@@ -127,9 +151,10 @@ async def handle_phase_store_receipt_verify(params: dict, ctx: WorkerContext) ->
     
     return {"status": "SUCCESS", "is_valid": is_valid, "message": "Receipt verified via PhaseStore/Oracle" if is_valid else "verification failed (Tampered or Orphaned)"}
 
+
 async def handle_compute_intent_validate(params: dict, ctx: WorkerContext) -> dict:
     try: req = IntentValidationRequest(**params)
-    except ValidationError as e: return _build_error(422, f"Payload Error: {e.errors()}")
+    except ValidationError as e: return _build_error(401, f"Payload Error: {e.errors()}")
 
     if not req.requester_id or not req.action: return _build_error(401, "Missing Critical Boundaries (Agent ID or Action)")
     if req.max_fuel_budget and req.max_fuel_budget > 10_000_000: return _build_error(401, "Topological Fuel Limit Exceeded (> 10M)")

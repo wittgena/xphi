@@ -14,7 +14,7 @@ from xphi.state.topos.state import Contract, CoherenceState
 from xphi.node.space.sandbox.resolver import SandboxExecutor, TaskContext, EffectResolver
 from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.state.anchor.consensus import PhaseStore, PhaseCommit
+from xphi.state.anchor.store import PhaseStore, PhaseCommit
 from xphi.node.runtime.wasm.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter
 

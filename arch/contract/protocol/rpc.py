@@ -8,12 +8,14 @@ from xphi.node.runtime.wasm.broker import DphiBroker
 
 class WorkerContext:
     def __init__(
-        self, broker: DphiBroker, store: Any, nexus: Any, exchange_adapter: Any,
+        self, broker: DphiBroker, store: Any,
+        # nexus: Any, 
+        exchange_adapter: Any,
         pta_adapter: Any, policy_engine: Any, profile_service: Any, phase_store: Any = None 
     ):
         self.broker = broker
         self.store = store
-        self.nexus = nexus
+        # self.nexus = nexus
         self.exchange_adapter = exchange_adapter
         self.pta_adapter = pta_adapter
         self.policy_engine = policy_engine

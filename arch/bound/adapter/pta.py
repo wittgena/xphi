@@ -2,27 +2,25 @@
 import os
 import json
 import time
-import uuid
 import hashlib
-import base64
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Set
 from dataclasses import dataclass, field, asdict
 
 import nacl.signing
 import nacl.encoding
 import nacl.exceptions
 import cryptography.exceptions
-from cryptography.hazmat.primitives.asymmetric import ed25519
 from cryptography.hazmat.primitives import serialization
 
-from xphi.state.anchor.consensus import PhaseStore, LogicStream
+from xphi.state.anchor.store import PhaseStore, LogicStream
 from xphi.state.anchor.oracle import AnchorOracle
 from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.arch.bound.adapter.state import StateAdapter
 
 log = get_emitter("adapter.pta", phase="KERNEL")
+
 
 class NodeSigner:
     """Singleton identity manager responsible for hierarchical key loading and deterministic cryptographic signature generation for the node"""
@@ -45,7 +43,7 @@ class NodeSigner:
         if env_seed and len(env_seed) == 64:
             return nacl.signing.SigningKey(env_seed, encoder=nacl.encoding.HexEncoder)
 
-        ssh_key_path = Path.home() / ".ssh" / "id_ed25519"
+        ssh_key_path = Path.home() / ".ssh" / "fiber_ed25519"
         if ssh_key_path.exists():
             try:
                 with open(ssh_key_path, "rb") as key_file:
@@ -103,10 +101,6 @@ class SignStateAdapter:
         return NodeSigner.get_instance().pubkey_hex
 
 
-# ==========================================
-# 2. PTA Models & Helper Functions
-# ==========================================
-
 def compute_merkle_root(tx_hashes: List[str]) -> str:
     if not tx_hashes:
         return ""
@@ -157,12 +151,12 @@ class PhaseAnchorOutput(PtaOutput):
         self.asset_type = "mcp_state_anchor"
 
 
-def create_state_anchor(handle_id: str, status: str, payload: Dict[str, Any] = None) -> PhaseAnchorOutput:
+def create_mcp_state_anchor(handle_id: str, status: str, payload: Optional[Dict[str, Any]] = None) -> PhaseAnchorOutput:
     if payload is None:
         payload = {}
         
     return PhaseAnchorOutput(
-        amount=0,                              
+        amount=0,                               
         owner=f"mcp_bridge_{handle_id}",       
         handle_id=handle_id,
         phase_status=status.upper(),
@@ -200,20 +194,24 @@ class PtaTransaction:
             "timestamp_ms": self.timestamp_ms
         }
 
+
 class PtaAdapter:
-    """PTA 모델 기반의 오프체인 마이크로 빌링 및 상태 병합 어댑터"""
+    _shared_unfold_pool: Dict[str, PtaOutput] = {}
+    _shared_spent_mempool: Set[str] = set()
+    _shared_tx_commit_map: Dict[str, str] = {}
+
     def __init__(self, broker: DphiBroker):
         self.broker = broker
         self.ledger = PhaseStore()
         self.oracle = AnchorOracle(broker=broker)
         
-        self._unfold_pool: Dict[str, PtaOutput] = {}
-        self._spent_mempool: set = set()
+        self._unfold_pool = PtaAdapter._shared_unfold_pool
+        self._spent_mempool = PtaAdapter._shared_spent_mempool
+        self._tx_commit_map = PtaAdapter._shared_tx_commit_map
         self._inst_id = hex(id(self))[-6:].upper()
         log.debug(f"[PtaAdapter:{self._inst_id}] 🟢 Initialized new adapter instance.")
 
     def _verify_ed25519_signature(self, payload: str, signature_hex: str, owner_address: str) -> bool:
-        """어댑터 레벨에서 발생하는 실제 연산 로드 (타원곡선 암호학 검증)"""
         try:
             payload_dict = {"payload": payload}
             canonical_bytes = StateAdapter.to_canonical_bytes(payload_dict)
@@ -235,7 +233,25 @@ class PtaAdapter:
             log.error(f"[PtaAdapter:{self._inst_id}] Signature verification crashed: {e}")
             return False
 
-    async def execute_transaction(self, tx: PtaTransaction) -> str:
+    def _resolve_commit_hash(self, tx_hash: str) -> str:
+        """tx_hash로부터 매핑된 실제 DB commit 해시(signature)를 역참조합니다."""
+        if tx_hash in self._tx_commit_map:
+            return self._tx_commit_map[tx_hash]
+
+        stream_id = f"pta_tx_{tx_hash[:8]}"
+        head_hash = self.ledger.get_head_hash(stream_id)
+        if head_hash:
+            self._tx_commit_map[tx_hash] = head_hash
+            return head_hash
+
+        scanned_hash = self.oracle.find_commit_hash_by_tx(tx_hash)
+        if scanned_hash:
+            self._tx_commit_map[tx_hash] = scanned_hash
+            return scanned_hash
+
+        return tx_hash
+
+    async def execute_transaction(self, tx: PtaTransaction, stream_id: Optional[str] = None) -> str:
         log.debug(f"[PtaAdapter:{self._inst_id}] ⚡ Executing Tx: {tx.tx_hash[:8]} (Inputs: {len(tx.inputs)}, Outputs: {len(tx.outputs)})")
         
         for idx, current_input in enumerate(tx.inputs):
@@ -249,9 +265,9 @@ class PtaAdapter:
                 if not is_valid:
                     raise PermissionError(f"Cryptographic Auth Failed for input index {idx}")
 
-        stream_id = f"pta_tx_{tx.tx_hash[:8]}"
+        target_stream_id = stream_id if stream_id is not None else f"pta_tx_{tx.tx_hash[:8]}"
         stream = LogicStream(
-            id=stream_id,
+            id=target_stream_id,
             action="PTA_STATE_TRANSITION",
             payload=tx.to_dict(),
             metadata=tx.metadata
@@ -275,9 +291,10 @@ class PtaAdapter:
             
         if sealed_kernel:
             receipt_signature = sealed_kernel.signature
+            self._tx_commit_map[tx.tx_hash] = receipt_signature
             log.info(f"[PtaAdapter:{self._inst_id}] Tx Sealed. Receipt: {receipt_signature[:8]}... | Hash: {tx.tx_hash[:8]}")
         else:
-            log.debug(f"[PtaAdapter:{self._inst_id}] Tx Queued in Mempool. Stream: {stream_id}")
+            log.debug(f"[PtaAdapter:{self._inst_id}] Tx Queued in Mempool. Stream: {target_stream_id}")
             
         return tx.tx_hash
 
@@ -289,16 +306,19 @@ class PtaAdapter:
         oracle_sum = 0
         spent_sum = 0
         produced_sum = 0
+        confirmed_pointers = set()
         
         for item in confirmed_outputs:
             amount = item['output'].get('amount', 0)
             oracle_sum += amount
             pointer_key = f"{item['pointer']['tx_hash']}:{item['pointer']['output_index']}"
+            confirmed_pointers.add(pointer_key)
+            self._unfold_pool.pop(pointer_key, None)
             if pointer_key in self._spent_mempool:
                 spent_sum += amount
                 
-        for pointer_key, output in self._unfold_pool.items():
-            if output.owner == owner_address and output.asset_type == asset_type:
+        for pointer_key, output in list(self._unfold_pool.items()):
+            if pointer_key not in confirmed_pointers and output.owner == owner_address and output.asset_type == asset_type:
                 produced_sum += output.amount
                 
         total_balance = oracle_sum - spent_sum + produced_sum
@@ -311,29 +331,37 @@ class PtaAdapter:
     async def get_available_inputs(self, owner_address: str, asset_type: str = "fuel") -> List[Dict]:
         confirmed_outputs = await self.oracle.get_unspent_outputs(owner_address, asset_type)
         available_inputs = []
+        confirmed_pointers = set()
         
         for item in confirmed_outputs:
             pointer_key = f"{item['pointer']['tx_hash']}:{item['pointer']['output_index']}"
+            confirmed_pointers.add(pointer_key)
+            self._unfold_pool.pop(pointer_key, None)
             if pointer_key not in self._spent_mempool:
                 available_inputs.append({
                     "pointer": PtaPointer(tx_hash=item['pointer']['tx_hash'], output_index=item['pointer']['output_index']),
-                    "amount": item['output'].get('amount', 0)
+                    "amount": item['output'].get('amount', 0),
+                    "output": item['output'],
+                    "metadata": item.get("metadata", {})
                 })
                 
-        for pointer_key, output in self._unfold_pool.items():
-            if output.owner == owner_address and output.asset_type == asset_type:
+        for pointer_key, output in list(self._unfold_pool.items()):
+            if pointer_key not in confirmed_pointers and output.owner == owner_address and output.asset_type == asset_type:
                 tx_hash, idx = pointer_key.split(":")
                 available_inputs.append({
                     "pointer": PtaPointer(tx_hash=tx_hash, output_index=int(idx)),
-                    "amount": output.amount
+                    "amount": output.amount,
+                    "output": asdict(output),
+                    "metadata": {}
                 })
                 
         return available_inputs
 
     async def verify_and_collapse_receipt(self, tx_hash: str) -> Dict[str, Any]:
         try:
-            log.info(f"[PtaAdapter:{self._inst_id}] Requesting Oracle collapse for PTA Tx: {tx_hash[:8]}...")
-            collapsed_state = await self.oracle.observe_nexus(tx_hash)
+            commit_hash = self._resolve_commit_hash(tx_hash)
+            log.info(f"[PtaAdapter:{self._inst_id}] Requesting Oracle collapse for PTA Tx: {tx_hash[:8]} (Commit: {commit_hash[:8]})...")
+            collapsed_state = await self.oracle.observe_nexus(commit_hash)
             return collapsed_state
         except Exception as e:
             log.error(f"[PtaAdapter:{self._inst_id}] Receipt collapse failed: {e}")
@@ -341,7 +369,8 @@ class PtaAdapter:
 
     async def verify_lineage(self, tx_hash: str, depth: int = 5) -> bool:
         try:
-            res = await self.oracle.verify_kernel_lineage(tx_hash, depth)
+            commit_hash = self._resolve_commit_hash(tx_hash)
+            res = await self.oracle.verify_kernel_lineage(commit_hash, depth)
             is_valid = res.get("is_valid", False)
             if not is_valid:
                 log.warning(f"[PtaAdapter:{self._inst_id}] PTA Lineage verification failed for {tx_hash[:8]}")

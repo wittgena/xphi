@@ -222,20 +222,12 @@ class ValidatorService:
         self._ensure_table_exists()
 
     def _load_signing_identity(self) -> Tuple[ed25519.Ed25519PrivateKey, str, bytes]:
-        """
-        NodeSigner 싱글톤(~/.ssh/id_ed25519)의 32-byte raw seed를 로드하여
-        데몬, CLI, E2E 테스트 간 100% 동일한 서명 신원을 보장합니다.
-        """
         node_signer = NodeSigner.get_instance()
         raw_seed = bytes(node_signer.signing_key)
         priv_key = ed25519.Ed25519PrivateKey.from_private_bytes(raw_seed)
         return priv_key, node_signer.pubkey_hex, raw_seed
 
     def _derive_zero_exposure_passphrase(self, fallback_seed: bytes) -> str:
-        """
-        디스크의 영속 시크릿(local_cipher.key) 또는 NodeSigner 시드를 IKM으로 삼아
-        HMAC-SHA256 도메인 분리(Domain Separation) 파생 패스프레이즈를 결정론적으로 생성합니다.
-        """
         local_key_path = Path(str(resolve_path("sign"))) / "local_cipher.key"
         ikm = fallback_seed
 
@@ -267,7 +259,6 @@ class ValidatorService:
         user_id = params.get("user_id")
         otp_code = params.get("otp_code")
         payload_hash_hex = params.get("payload_hash", "")
-        # 기본값은 무조건 True (명시적으로 False가 전달된 경우에만 버튼 단독 승인 허용)
         require_totp = params.get("require_totp", True)
 
         log.info(

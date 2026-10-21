@@ -5,7 +5,7 @@ from typing import Dict, Callable, Optional
 from xphi.node.rpc.method import RpcMethod
 from xphi.node.rpc.handler.state import (
     handle_phase_store_stream_append,
-    handle_phase_store_anchor_seal,
+    # handle_phase_store_anchor_seal,
     handle_phase_store_receipt_verify,
     handle_mcp_state_query,
     handle_mcp_state_pending_seal,
@@ -28,7 +28,7 @@ def build_internal_rpc_registry(validator_service: Optional[ValidatorService] = 
     registry = {
         RpcMethod.PHASE_STORE_STREAM_APPEND: handle_phase_store_stream_append,
         RpcMethod.PHASE_STORE_RECEIPT_VERIFY: handle_phase_store_receipt_verify,
-        RpcMethod.PHASE_STORE_ANCHOR_SEAL: handle_phase_store_anchor_seal,
+        # RpcMethod.PHASE_STORE_ANCHOR_SEAL: handle_phase_store_anchor_seal,
         
         RpcMethod.MCP_STATE_QUERY: handle_mcp_state_query,
         RpcMethod.MCP_STATE_PENDING_SEAL: handle_mcp_state_pending_seal,
