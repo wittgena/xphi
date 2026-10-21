@@ -6,7 +6,7 @@ class RpcMethod(str, Enum):
     # phase store & State
     PHASE_STORE_STREAM_APPEND = "phase.store.stream.append"
     PHASE_STORE_RECEIPT_VERIFY = "phase.store.receipt.verify"
-    PHASE_STORE_ANCHOR_SEAL = "phase.store.anchor.seal"
+    # PHASE_STORE_ANCHOR_SEAL = "phase.store.anchor.seal"
     
     # MCP Gateway Delegation
     MCP_STATE_QUERY = "mcp.state.query"

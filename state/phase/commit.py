@@ -4,14 +4,15 @@ import time
 import asyncio
 from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
+from dataclasses import asdict
 
 from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.pta import SignStateAdapter
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.state.anchor.consensus import PhaseStore, ToposBlob
+from xphi.state.anchor.store import PhaseStore, ToposBlob, PhaseCommit, AnchorRole
 
-log = get_emitter("kernel.protocol", phase="KERNEL")
+log = get_emitter("phase.commit", phase="COMMIT")
 
 class Attractor:
     """@role: execution unit + lineage inscription node"""
@@ -53,7 +54,6 @@ class Attractor:
                 details=json_payload
             )
             self.store.save_transition(blob)
-            self.store.update_head(self.name, new_commit_id)
 
         tag_info = f" | Tag: {tag}" if tag else ""
         print(f"  └─ [{self.name}] Inscribed. Nexus: {nexus_id} | State: {new_commit_id[:7]}{tag_info}")
@@ -86,11 +86,11 @@ class EpochManager(Attractor):
             if repo_name in snapshot.get("cached_states", {}):
                 return snapshot["cached_states"][repo_name]
         
-        # [수정 1] 하드코딩된 "0000000" 대신 WASM/PTA 표준 초기값인 "genesis" 반환
-        return "genesis"
+        return self.store.get_head_hash(repo_name) or "genesis"
 
     def project(self, states: Dict[str, str]) -> Dict[str, str]:
         return states
+
 
 async def anchor_commit(
     repos: List[Attractor], 
@@ -154,10 +154,11 @@ async def anchor_commit(
             if name not in current_aligned_states and name != anchor.name:
                 cached_states[name] = last_hash
 
+    anchor_parent_state = anchor.resolve(anchor.name)
     anchor_commit_dict = StateAdapter.build_anchor_commit(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
-        parent_commit_id=anchor.resolve(anchor.name),
+        parent_commit_id=anchor_parent_state,
         repos=current_aligned_states,
         cached_states=cached_states
     )
@@ -167,7 +168,7 @@ async def anchor_commit(
     seal_payload = StateAdapter.build_seal_epoch_payload(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
-        self_parent_state=anchor.resolve(anchor.name),
+        self_parent_state=anchor_parent_state,
         repos=current_aligned_states,
         cached_states=cached_states,
         timestamp=float(current_ts),
@@ -190,12 +191,9 @@ async def anchor_commit(
         sealed_data = json.loads(seal_res.output)
         kernel_commit_data = sealed_data.get("kernel_commit")
         
-        # [수정 2] 다음 번 커밋 시 resolve()가 읽을 수 있도록 Anchor(self) 해시를 히스토리 페이로드에 명시적으로 주입
         if "anchor_result" in sealed_data:
             seal_payload["repos"][anchor.name] = sealed_data["anchor_result"]["commit_hash"]
 
-        # [수정 3] 에러(PermissionError 등) 발생 시 데이터 유실을 막기 위해 
-        # 물리적 렛저(seal_system_epoch) 접근 전에 히스토리를 메모리에서 디스크로 선제적 저장
         full_history = history + [seal_payload]
         try:
             if hasattr(anchor.store, 'db') and anchor.store.db is not None:
@@ -203,10 +201,9 @@ async def anchor_commit(
         except Exception as e:
             log.warning(f"Failed to update legacy registry: {e}")
         
-        from xphi.state.anchor.consensus import PhaseCommit, AnchorRole
-        from dataclasses import asdict
-        
         commit_obj = PhaseCommit(**kernel_commit_data)
+        if not commit_obj.parent_hash:
+            commit_obj.parent_hash = anchor.store.get_head_hash("global_era_anchor") or "genesis"
         
         if hasattr(anchor.store, 'role') and anchor.store.role == AnchorRole.PROPOSER:
             log.warning("[Protocol] Node is FOLLOWER. Proposing Epoch Seal to Mempool instead of direct disk write.")
@@ -219,7 +216,7 @@ async def anchor_commit(
                     threshold=1
                 )
                 
-                anchor.store.update_head("global_era_anchor", sealed_data["anchor_result"]["commit_hash"])
+                anchor.store.update_head("global_era_anchor", commit_hash)
                 for repo_name, repo_hash in current_aligned_states.items():
                     anchor.store.update_head(repo_name, repo_hash)
                     

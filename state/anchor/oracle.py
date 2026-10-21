@@ -7,90 +7,159 @@ from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
 from xphi.arch.bound.adapter.state import StateAdapter
+from xphi.state.anchor.store import PhaseStore, AnchorRole
 
-log = get_emitter("anchor.oracle", phase="KERNEL")
+log = get_emitter("anchor.oracle", phase="ANCHOR")
 ANCHOR_DB_PATH = resolve_path("adb")
+
 
 class AnchorOracle:
     def __init__(self, broker: DphiBroker, path: str = ANCHOR_DB_PATH):
         self.broker = broker
         self.path = str(path)
-        ro_opt = Options()
         try:
-            self.db = Rdict(self.path, ro_opt, access_type=AccessType.read_only())
-            log.info("[AnchorOracle] Mounted Anchor DB in Read-Only mode. Canonical WASM Broker attached.")
+            self.store = PhaseStore(self.path)
+            self.db = self.store.db
+            log.info("[AnchorOracle] Mounted Anchor DB via PhaseStore. Canonical WASM Broker attached.")
         except Exception as e:
             log.error(f"[AnchorOracle] Failed to mount ledger DB: {e}")
             raise
 
     def close(self):
-        if hasattr(self, 'db') and self.db is not None:
-            self.db.close()
+        # DB 핸들의 생명주기는 PhaseStore 싱글톤에서 일괄 관리함
+        pass
+
+    def _sync_readonly_view(self) -> None:
+        """PROPOSER(Read-Only) 모드일 때 SEALER가 디스크에 기록한 최신 변경분을 동기화합니다."""
+        if getattr(self.store, "role", None) != AnchorRole.PROPOSER:
+            return
+        try:
+            if hasattr(self.db, "try_catch_up_with_primary"):
+                self.db.try_catch_up_with_primary()
+            else:
+                self.store.db.close()
+                self.store.db = Rdict(self.path, Options(), access_type=AccessType.read_only())
+                self.db = self.store.db
+        except Exception as e:
+            log.debug(f"[AnchorOracle] Read-only view sync skipped: {e}")
 
     def _get_raw_object(self, obj_type: str, obj_hash: str) -> Optional[Dict[str, Any]]:
+        if not obj_hash:
+            return None
+        self._sync_readonly_view()
         key = f"{obj_type}:{obj_hash}".encode('utf-8')
         if key in self.db:
             return json.loads(self.db[key].decode('utf-8'))
         return None
 
-    # =====================================================================
-    # 💡 [신규 추가] UTXO 상태 수화 (State Hydration & Balance Query)
-    # =====================================================================
+    @staticmethod
+    def _extract_tx_from_commit(commit_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """PhaseCommit의 executable_payload 내부에서 PTA 트랜잭션 딕셔너리(tx_hash, inputs, outputs)를 추출합니다."""
+        if not isinstance(commit_data, dict):
+            return None
+        payload = commit_data.get("executable_payload")
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except Exception:
+                return None
+        if not isinstance(payload, dict):
+            return None
 
-    async def get_unspent_outputs(self, owner: str, asset_type: str = "fuel") -> List[Dict[str, Any]]:
-        """
-        @desc: RocksDB에서 특정 소유자(owner)의 아직 소모되지 않은(Unspent) UTXO 목록을 스캔하여 반환합니다.
-               이는 PtaAdapter나 TenantEco가 결제 청사진(Coin Selection)을 짤 때 사용됩니다.
-        """
-        # Prefix 규칙: utxo:{owner}:{asset_type}:
-        prefix = f"utxo:{owner}:{asset_type}:".encode('utf-8')
-        unspent_outputs = []
-        
+        if "tx_hash" in payload and "outputs" in payload:
+            return payload
+
+        for key in ("intent_payload", "tx", "content"):
+            sub = payload.get(key)
+            if isinstance(sub, str):
+                try:
+                    sub = json.loads(sub)
+                except Exception:
+                    continue
+            if isinstance(sub, dict) and "tx_hash" in sub and "outputs" in sub:
+                return sub
+
+        return None
+
+    def find_commit_hash_by_tx(self, target_tx_hash: str) -> Optional[str]:
+        """특정 tx_hash를 담고 있는 PhaseCommit의 해시(signature)를 commit: 스캔으로 역추적합니다."""
+        self._sync_readonly_view()
+        prefix = b"commit:"
         try:
-            # RocksDB의 Prefix Iteration을 통해 해당 테넌트의 자산만 O(K) 속도로 빠르게 스캔
             iterator = self.db.iter()
             iterator.seek(prefix)
-            
+            while iterator.valid():
+                key_bytes = iterator.key()
+                if not key_bytes.startswith(prefix):
+                    break
+                commit_data = json.loads(iterator.value().decode('utf-8'))
+                tx_data = self._extract_tx_from_commit(commit_data)
+                if tx_data and tx_data.get("tx_hash") == target_tx_hash:
+                    return key_bytes.decode('utf-8').split(":", 1)[1]
+                iterator.next()
+        except Exception as e:
+            log.debug(f"[AnchorOracle] Commit lookup by tx_hash failed: {e}")
+        return None
+
+    async def get_unspent_outputs(self, owner: str, asset_type: str = "fuel") -> List[Dict[str, Any]]:
+        self._sync_readonly_view()
+        prefix = b"commit:"
+        spent_pointers = set()
+        candidate_outputs: Dict[str, Dict[str, Any]] = {}
+        
+        try:
+            iterator = self.db.iter()
+            iterator.seek(prefix)
             while iterator.valid():
                 key_bytes = iterator.key()
                 if not key_bytes.startswith(prefix):
                     break
                     
-                output_data = json.loads(iterator.value().decode('utf-8'))
+                commit_hash = key_bytes.decode('utf-8').split(":", 1)[1]
+                commit_data = json.loads(iterator.value().decode('utf-8'))
+                tx_data = self._extract_tx_from_commit(commit_data)
                 
-                # 키 구조 파싱: utxo:{owner}:{asset_type}:{tx_hash}:{idx}
-                key_str = key_bytes.decode('utf-8')
-                key_parts = key_str.split(':')
-                
-                if len(key_parts) >= 5:
-                    tx_hash = key_parts[3]
-                    output_idx = int(key_parts[4])
+                if tx_data:
+                    tx_hash = tx_data.get("tx_hash", "")
+                    tx_meta = tx_data.get("metadata", {})
                     
-                    unspent_outputs.append({
-                        "pointer": {"tx_hash": tx_hash, "output_index": output_idx},
-                        "output": output_data
-                    })
+                    # 1. 트랜잭션 Input에 기록된 소비(Spent) 포인터 수집
+                    for inp in tx_data.get("inputs", []):
+                        ptr = inp.get("pointer")
+                        if isinstance(ptr, str):
+                            spent_pointers.add(ptr)
+                        elif isinstance(ptr, dict):
+                            spent_pointers.add(f"{ptr.get('tx_hash')}:{ptr.get('output_index')}")
+                            
+                    # 2. 요청된 owner 및 asset_type에 해당하는 Output 후보 수집
+                    for idx, out in enumerate(tx_data.get("outputs", [])):
+                        if out.get("owner") == owner and out.get("asset_type") == asset_type:
+                            ptr_str = f"{tx_hash}:{idx}"
+                            candidate_outputs[ptr_str] = {
+                                "pointer": {"tx_hash": tx_hash, "output_index": idx},
+                                "output": out,
+                                "metadata": tx_meta,
+                                "commit_hash": commit_hash
+                            }
                 
                 iterator.next()
                 
         except Exception as e:
-            log.error(f"[AnchorOracle] Failed to scan UTXOs for owner '{owner}': {e}", exc_info=True)
-            
-        return unspent_outputs
+            log.error(f"[AnchorOracle] Failed to scan commits for owner '{owner}': {e}", exc_info=True)
+            return []
+
+        # 3. 전체 생성된 Output 중 어떤 트랜잭션의 Input으로도 소비되지 않은 항목만 반환
+        return [
+            item for ptr_str, item in candidate_outputs.items()
+            if ptr_str not in spent_pointers
+        ]
 
     async def get_balance(self, owner: str, asset_type: str = "fuel") -> int:
-        """
-        @desc: 오라클이 직접 DB를 스캔하여 확정된 물리적 잔고(Confirmed Balance)를 계산하여 반환합니다.
-        """
         outputs = await self.get_unspent_outputs(owner, asset_type)
         confirmed_balance = sum(item["output"].get("amount", 0) for item in outputs)
         
         log.debug(f"[AnchorOracle] Confirmed balance for {owner[:12]}... -> {confirmed_balance} {asset_type}")
         return confirmed_balance
-
-    # =====================================================================
-    # 기존 원장 무결성 검증 (Nexus Observe & Lineage)
-    # =====================================================================
 
     async def observe_nexus(self, epoch_hash: str) -> Dict[str, Any]:
         snapshot = self._get_raw_object("commit", epoch_hash)

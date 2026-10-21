@@ -20,9 +20,6 @@ from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.model.schema.audit import LogstEvent
 from xphi.arch.model.schema.stream import LogicStream, StreamMetadata, StreamIdentity, LogicPayload, ActionIntent, ProtocolSource
 
-from xphi.state.anchor.gateway import StoreGateway
-from xphi.state.anchor.nexus import NexusAnchor
-
 from xphi.node.rpc.registry import build_internal_rpc_registry
 from xphi.node.rpc.handler.validator import ValidatorService
 from xphi.node.ops.daemon.base import AbstractDaemon
@@ -80,8 +77,7 @@ class IngressPolicyEngine:
         )
 
 class LogStreamStore:
-    def __init__(self, gateway: StoreGateway = None, storage_endpoint: str = "http://internal-store:8356"):
-        self.gateway = gateway or StoreGateway()
+    def __init__(self, storage_endpoint: str = "http://internal-store:8356"):
         self.storage_endpoint = storage_endpoint
         self._client = httpx.AsyncClient(base_url=self.storage_endpoint, timeout=5.0)
 
@@ -136,14 +132,6 @@ class LogStreamStore:
             )
         )
 
-        is_authorized = await self.gateway.authorize_ingress(logic_stream)
-
-        if not is_authorized:
-            msg = f"Unauthorized bulk insert attempt to stream '{stream_name}' blocked by Kernel Store."
-            log.warning(f"[LogStore] BLOCKED: {msg}")
-            AuditWarden.record_anomaly(action="logstream.kernel_block", details=msg)
-            return False
-
         if tension_score > 10.0:
             msg = f"High structural tension ({tension_score}) accepted by kernel in stream '{stream_name}'."
             log.error(f"[LogStore] TENSION ALERT: {msg}")
@@ -184,7 +172,7 @@ class RpcWorkerDaemon(AbstractDaemon):
         broker = getattr(self.app_ctx, "broker", None) or DphiBroker()
         store = getattr(self.app_ctx, "store", None) or LogStreamStore()
         
-        nexus = NexusAnchor(broker=broker, consensus_threshold=1, allowed_committee=[])
+        # nexus = NexusAnchor(broker=broker, consensus_threshold=1, allowed_committee=[])
         node_pubkey = NodeSigner.get_instance().pubkey_hex if hasattr(NodeSigner, 'get_instance') else "mock_pubkey"
         exchange_adapter = ClearingAdapter(clearing_house_pub_key=node_pubkey)
         pta_adapter = PtaAdapter(broker=broker)
@@ -196,7 +184,7 @@ class RpcWorkerDaemon(AbstractDaemon):
         self.worker_ctx = WorkerContext(
             broker=broker,
             store=store,
-            nexus=nexus,
+            # nexus=nexus,
             exchange_adapter=exchange_adapter,
             pta_adapter=pta_adapter,
             policy_engine=policy_engine,
@@ -259,9 +247,8 @@ class RpcWorkerDaemon(AbstractDaemon):
                 return
 
             try:
-                # [개선 1] orjson.loads 적용: C 레벨 역직렬화로 성능 최적화 및 str 호환
                 payload = orjson.loads(payload_raw)
-            except orjson.JSONDecodeError as e:  # 예외 클래스 교체
+            except orjson.JSONDecodeError as e:
                 log.error(f"[{self.name}] Invalid JSON payload. Discarding msg {message_id}: {e}")
                 AuditWarden.record_anomaly(action="rpc.invalid_payload", details=str(payload_raw))
                 await self.tunnel.stream_ack(self.topic, self.group, message_id)
@@ -285,8 +272,6 @@ class RpcWorkerDaemon(AbstractDaemon):
                 
             if reply_to:
                 try:
-                    # [개선 2] 응답(Reply) 전송 시에도 orjson.dumps 적용
-                    # 클라이언트 측 시스템 호환을 위한 decode('utf-8') 및 안전장치(OPT_NON_STR_KEYS) 옵션 포함
                     reply_payload = orjson.dumps({
                         "id": request_id,
                         "result": response if not response.get("error") else None,

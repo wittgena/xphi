@@ -12,7 +12,6 @@ from pydantic import SecretStr
 from xphi.arch.contract.config import env
 from xphi.arch.xor.secret.cipher import Cipher
 from xphi.arch.model.schema.audit import AuditLogResponse
-from xphi.state.anchor.gateway import StoreGateway
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("receptor.warden", phase="KERNEL")
@@ -99,10 +98,6 @@ class AuditWarden:
 
     @classmethod
     def record_anomaly(cls, action: str, details: str) -> None:
-        """
-        @desc: Public entry point to log OOB Telemetry.
-               Emits the anomaly to the registered handler (e.g., SecretAuditor) if present.
-        """
         if cls._anomaly_handler:
             try:
                 cls._anomaly_handler(action, details)
@@ -212,9 +207,8 @@ class AuditWarden:
 
 
 class SecretAuditor:
-    def __init__(self, cipher: Cipher, gateway: StoreGateway = None):
+    def __init__(self, cipher: Cipher):
         self.cipher = cipher
-        self.gateway = gateway or StoreGateway()
         self.sensitive_keys = {"email", "ip_address", "password", "token", "secret"}
 
     async def append_to_ledger_and_prove(self, event: Dict[str, Any], needs_proof: bool = False) -> AuditLogResponse:
@@ -223,26 +217,6 @@ class SecretAuditor:
         
         sanitized_event = await asyncio.to_thread(self._encrypt_sensitive_data, event)
         event_hash = await asyncio.to_thread(self._generate_deterministic_hash, sanitized_event)
-        
-        is_authorized = await self.gateway.authorize(
-            action_id=f"audit_{event_hash[:8]}",
-            action="AUDIT_LOG_APPEND",
-            payload=sanitized_event,
-            metadata={"needs_proof": needs_proof}
-        )
-
-        if not is_authorized:
-            error_msg = f"Audit event {event_hash[:8]} rejected by WASM Spatial Fence."
-            log.error(f"[ToposLedger] BLOCKED: {error_msg}")
-            AuditWarden.record_anomaly(action="audit.ledger.kernel_block", details=error_msg)
-            
-            return AuditLogResponse(
-                event_id=event_hash,
-                status="denied",
-                membership_proof=None,
-                signature=None
-            )
-
         merkle_proof = None
         if needs_proof:
             merkle_proof = f"proof_merkle_{event_hash}_{hashlib.md5(event_hash.encode()).hexdigest()}"

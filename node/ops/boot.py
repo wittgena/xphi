@@ -15,8 +15,7 @@ from xphi.state.phase.executor.cont import SwarmExecutor
 from xphi.state.phase.executor.flow import FlowExecutor
 from xphi.state.phase.reactor import PhaseReactor
 
-from xphi.state.anchor.consensus import PhaseStore, AnchorRole
-from xphi.state.anchor.gateway import GatewayPolicy 
+from xphi.state.anchor.store import PhaseStore, AnchorRole
 
 from xphi.node.runtime.anchor import RuntimeAnchor
 from xphi.node.space.tunnel.factory import TunnelFactory
@@ -129,30 +128,7 @@ async def main_async():
     
     bridge_watcher = PhaseSignal(event_bus=system_bus)
     default_plane.attach(bridge_watcher)
-    log.info("[Boot] Injecting Gateway Security Policies...")
-    try:
-        env_costs_str = os.getenv("GATEWAY_ACTION_COSTS", "{}")
-        env_costs = json.loads(env_costs_str)
-        env_trusted_str = os.getenv("GATEWAY_TRUSTED_ACTIONS", "")
-        if env_trusted_str:
-            env_trusted = {a.strip() for a in env_trusted_str.split(",") if a.strip()}
-        else:
-            env_trusted = {"LOGSTREAM_BULK_INSERT", "SECURITY_TENSION_ALERT", "AUDIT_LOG_APPEND"}
-            
-        capacity = int(os.getenv("GATEWAY_RATE_CAPACITY", "100"))
-        refill = float(os.getenv("GATEWAY_RATE_REFILL", "5.0"))
-        
-        GatewayPolicy.configure(
-            action_costs=env_costs,
-            trusted_actions=env_trusted,
-            capacity=capacity,
-            refill=refill
-        )
-        log.info(f"[Boot] Gateway Policies applied: capacity={capacity}, refill={refill}, trusted_actions={len(env_trusted)}")
-    except Exception as e:
-        log.error(f"[Boot] Failed to inject Gateway policies. Using safe defaults. Error: {e}")
-    
-    log.info("[Boot] Igniting Physical Membrane Receptor...")
+
     tunnel = await TunnelFactory.get_default()
     receptor_task = asyncio.create_task(receptor_bootstrap(tunnel))
     _background_tasks.add(receptor_task)
