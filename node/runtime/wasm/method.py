@@ -14,8 +14,6 @@ class DphiMethod(str, Enum):
     PROCESS_TOPOS_TICK = "process_topos_tick"
     INSCRIBE_ACTOR = "inscribe_actor"
     SEAL_EPOCH = "seal_epoch"
-    VERIFY_BUILD_LINEAGE = "verify_build_lineage"
     VERIFY_PARITY = "verify_parity"
     EXECUTE_TRANSITION = "execute_transition"
-    CONFIGURE_TOPOLOGY = "configure_topology"
     PROCESS_FIELD_DYNAMICS = "process_field_dynamics"

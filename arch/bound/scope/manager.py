@@ -233,6 +233,6 @@ async def managed_scope(**surface_kwargs):
             raise
         finally:
             log.info("[managed_scope] Triggering safe teardown sequence for infrastructure resources.")
-            await astncio.sleep(0.1)
+            await asyncio.sleep(0.1)
             await manager.down()
             log.info("[+] Context Manager closed safely.")

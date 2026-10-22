@@ -13,16 +13,6 @@ class StateAdapter:
         if val is not None and not (0 <= val <= 4294967295):
             raise ValueError(f"[FFI Type Error] '{name}' must be a uint32, got {val}")
 
-    @staticmethod
-    def build_configure_topology_payload(manifold_id: int, vertex_id: int) -> dict:
-        """@target: Rust `ConfigureTopologyPayload`"""
-        StateAdapter._assert_uint32(manifold_id, "manifold_id")
-        StateAdapter._assert_uint32(vertex_id, "vertex_id")
-        return {
-            "manifold_id": manifold_id,
-            "vertex_id": vertex_id
-        }
-
     """Parity & Context Builders"""
     @staticmethod
     def build_topos_context(timestamp: int, injected_anchor: int = None, injected_tick: int = None) -> dict:
