@@ -99,8 +99,8 @@ class TelemetryEngine:
         self, 
         window: float = 2.0, 
         resolution_bins: int = 10,
-        burst_density_threshold: float = 3.0,
-        burst_accel_threshold: float = 1.5
+        burst_density_threshold: float = 5.0,
+        burst_accel_threshold: float = 3.0
     ):
         self.meter = PressureMeter(window=window)
         self.projector = MeterProjector(bins=resolution_bins)
@@ -139,8 +139,8 @@ class TelemetryEngine:
 default_telemetry = TelemetryEngine(
     window=2.0, 
     resolution_bins=10,
-    burst_density_threshold=3.0,
-    burst_accel_threshold=1.5
+    burst_density_threshold=5.0,
+    burst_accel_threshold=3.0
 )
 
 
@@ -152,7 +152,7 @@ class PlaneRegulator:
     """@desc: Event backpressure regulator and telemetry/phase orchestrator."""
     PRIORITY_LEVELS = {"CRIT", "SIGNAL"}
 
-    def __init__(self, threshold: float = 5.0, telemetry_engine=None):
+    def __init__(self, threshold: float = 10.0, telemetry_engine=None):
         # Uses the default_telemetry defined above if none provided
         self.telemetry = telemetry_engine or default_telemetry
         self.threshold = threshold
