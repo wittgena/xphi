@@ -79,7 +79,7 @@ async def handle_mcp_state_pending_seal(params: dict, ctx: WorkerContext) -> dic
 
     stream_id = f"mcp_bridge_{handle_id}"
     initial_phase = create_mcp_state_anchor(handle_id=handle_id, status="PENDING", payload=payload)
-    tx = PtaTransaction(inputs=[], outputs=[initial_phase], metadata={"target": target_server_id, "action": "dphi.transition.pending"})
+    tx = PtaTransaction(inputs=[], outputs=[initial_phase], metadata={"target": target_server_id, "action": "transition.pending"})
     await ctx.pta_adapter.execute_transaction(tx, stream_id=stream_id)
     return {"success": True, "handle_id": handle_id}
 
