@@ -1,14 +1,18 @@
 # xphi.arch.contract.protocol.worker
 import sys
 import json
+import inspect
 import logging
 import asyncio
 import contextvars
 from typing import Dict, Any, Optional
 
+from xphi.arch.contract.protocol.binder import ToolBinderMixin, ToolError
+
 _REAL_STDOUT = sys.stdout
 sys.stdout = sys.stderr
 current_request_id = contextvars.ContextVar("current_request_id", default="SYSTEM")
+
 
 class JsonStderrFormatter(logging.Formatter):
     """표준 에러(stderr)로 나가는 로그를 JSON으로 구조화하는 포매터"""
@@ -25,6 +29,7 @@ class JsonStderrFormatter(logging.Formatter):
 
         return json.dumps(log_record)
 
+
 def _setup_json_logger(agent_name: str) -> logging.Logger:
     logger = logging.getLogger(agent_name)
     logger.setLevel(logging.INFO)
@@ -35,13 +40,14 @@ def _setup_json_logger(agent_name: str) -> logging.Logger:
         logger.propagate = False
     return logger
 
-class WorkerProtocol:
-    """@desc: 레거시(동기식) 워커를 위한 베이스 클래스 - 순차적 처리 및 YIELD 시 Blocking 발생"""
+
+class WorkerProtocol(ToolBinderMixin):
+    """@desc: 레거시(동기식) 워커를 위한 베이스 클래스 - 순차적 처리 및 자동 툴 바인딩 지원"""
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
         self.log = _setup_json_logger(self.agent_name)
+        self._init_tool_binder()
 
-    """Single Point of Egress"""
     def _emit_rpc_message(self, message: Dict[str, Any]):
         message["jsonrpc"] = "2.0"
         try:
@@ -50,10 +56,9 @@ class WorkerProtocol:
             _REAL_STDOUT.flush()
         except TypeError as e:
             self.log.error(f"Payload Serialization Failed: {e}")
-            if "error" not in message: 
+            if "error" not in message:
                 self.send_error(message.get("id"), -32603, "Internal Serialization Error")
 
-    """표준 JSON-RPC Message Builders"""
     def send_response(self, req_id: Any, result: Any):
         self._emit_rpc_message({"id": req_id, "result": result})
 
@@ -92,7 +97,7 @@ class WorkerProtocol:
 
         token = current_request_id.set(req_id)
         self.log.info(f"Incoming RPC payload recognized. Method: {method}")
-        
+
         try:
             if method == "initialize":
                 self.send_response(req_id, {"protocolVersion": "2026-09-04", "capabilities": {}})
@@ -100,8 +105,8 @@ class WorkerProtocol:
                 self.handle_tools_list(req_id)
             elif method == "tools/call":
                 tool_name = params.get("name")
-                arguments = params.get("arguments", {})
-                meta = params.get("_meta", {})
+                arguments = params.get("arguments", {}) or {}
+                meta = params.get("_meta", {}) or {}
                 self.handle_tools_call(req_id, tool_name, arguments, meta)
             else:
                 self.send_error(req_id, -32601, f"Unknown method: {method}")
@@ -109,19 +114,34 @@ class WorkerProtocol:
             self.log.error(f"Execution Fault in '{method}': {e}", exc_info=True)
             self.send_error(req_id, -32000, str(e))
         finally:
-            # 컨텍스트 복원
             current_request_id.reset(token)
 
-    """Abstract Handlers"""
+    """Default Auto-Bound Handlers (서브클래스에서 오버라이드하지 않으면 자동 작동)"""
     def handle_tools_list(self, req_id: Any):
-        self.send_response(req_id, {"tools": []})
+        self.send_response(req_id, {"tools": self._tool_schemas})
 
     def handle_tools_call(self, req_id: Any, tool_name: str, arguments: Dict[str, Any], meta: Dict[str, Any]):
-        self.send_error(req_id, -32601, f"Tool '{tool_name}' not implemented")
+        func = self._bound_tools.get(tool_name)
+        if not func:
+            self.send_error(req_id, -32601, f"Unknown tool: {tool_name}")
+            return
+
+        try:
+            kwargs = self._prepare_call_kwargs(func, arguments, meta)
+            result = func(**kwargs)
+            self.send_response(req_id, self._wrap_mcp_result(result, is_error=False))
+        except ToolError as te:
+            self.send_response(req_id, self._wrap_mcp_result(str(te), is_error=True))
+        except (ValueError, TypeError, KeyError) as pe:
+            self.log.warning(f"Invalid Parameters for {tool_name}: {pe}")
+            self.send_error(req_id, -32602, f"Invalid params: {str(pe)}")
+        except Exception as e:
+            self.log.error(f"Tool Execution Error in '{tool_name}': {e}", exc_info=True)
+            self.send_error(req_id, -32000, str(e))
 
 
-class AsyncWorkerProtocol:
-    """@desc: 모던(비동기) 워커를 위한 베이스 클래스 - 코루틴 라우팅 및 Non-blocking I/O 지원"""
+class AsyncWorkerProtocol(ToolBinderMixin):
+    """@desc: 모던(비동기) 워커를 위한 베이스 클래스 - 코루틴 라우팅, Non-blocking I/O 및 자동 툴 바인딩 지원"""
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
         self.log = _setup_json_logger(self.agent_name)
@@ -129,9 +149,9 @@ class AsyncWorkerProtocol:
         self._stdout_lock = asyncio.Lock()
         self._reader: Optional[asyncio.StreamReader] = None
         self._writer: Optional[asyncio.StreamWriter] = None
+        self._init_tool_binder()
 
     async def _initialize_streams(self):
-        """파이썬 표준 STDIN/STDOUT을 비동기 스트림으로 래핑합니다."""
         loop = asyncio.get_running_loop()
         self._reader = asyncio.StreamReader()
         protocol = asyncio.StreamReaderProtocol(self._reader)
@@ -140,7 +160,6 @@ class AsyncWorkerProtocol:
         w_transport, w_protocol = await loop.connect_write_pipe(asyncio.streams.FlowControlMixin, _REAL_STDOUT)
         self._writer = asyncio.StreamWriter(w_transport, w_protocol, self._reader, loop)
 
-    """Single Point of Egress (Async)"""
     async def _emit_rpc_message_async(self, message: Dict[str, Any]):
         message["jsonrpc"] = "2.0"
         try:
@@ -150,10 +169,9 @@ class AsyncWorkerProtocol:
                 await self._writer.drain()
         except TypeError as e:
             self.log.error(f"Payload Serialization Failed: {e}")
-            if "error" not in message: 
+            if "error" not in message:
                 await self.send_error(message.get("id"), -32603, "Internal Serialization Error")
 
-    """표준 JSON-RPC Message Builders (Async)"""
     async def send_response(self, req_id: Any, result: Any):
         await self._emit_rpc_message_async({"id": req_id, "result": result})
 
@@ -170,14 +188,13 @@ class AsyncWorkerProtocol:
         await self._emit_rpc_message_async(msg)
 
     async def serve_forever_async(self):
-        """코루틴 기반 무한 입력 대기 루프"""
         await self._initialize_streams()
         self.log.info(f"Async Agent '{self.agent_name}' Ignited. Listening on async stdin...")
 
         while True:
             try:
                 line_bytes = await self._reader.readline()
-                if not line_bytes: # EOF
+                if not line_bytes:
                     break
 
                 line = line_bytes.decode('utf-8').strip()
@@ -195,13 +212,13 @@ class AsyncWorkerProtocol:
         req_id = req.get("id")
         method = req.get("method")
         params = req.get("params", {})
-        action = req.get("action") 
+        action = req.get("action")
 
         token = current_request_id.set(req_id)
         self.log.info(f"Incoming RPC payload recognized. Action/Method: {action or method}")
         try:
             if action == "RESUME":
-                self.log.info(f"Initiating RESUME sequence for parked intent.")
+                self.log.info("Initiating RESUME sequence for parked intent.")
                 await self.handle_resume(req_id, req)
                 return
 
@@ -211,8 +228,8 @@ class AsyncWorkerProtocol:
                 await self.handle_tools_list(req_id)
             elif method == "tools/call":
                 tool_name = params.get("name")
-                arguments = params.get("arguments", {})
-                meta = params.get("_meta", {})
+                arguments = params.get("arguments", {}) or {}
+                meta = params.get("_meta", {}) or {}
                 await self.handle_tools_call(req_id, tool_name, arguments, meta)
             else:
                 await self.send_error(req_id, -32601, f"Unknown method: {method}")
@@ -222,12 +239,30 @@ class AsyncWorkerProtocol:
         finally:
             current_request_id.reset(token)
 
-    """Abstract Async Handlers"""
+    """Default Auto-Bound Async Handlers"""
     async def handle_tools_list(self, req_id: Any):
-        await self.send_response(req_id, {"tools": []})
+        await self.send_response(req_id, {"tools": self._tool_schemas})
 
     async def handle_tools_call(self, req_id: Any, tool_name: str, arguments: Dict[str, Any], meta: Dict[str, Any]):
-        await self.send_error(req_id, -32601, f"Tool '{tool_name}' not implemented")
+        func = self._bound_tools.get(tool_name)
+        if not func:
+            await self.send_error(req_id, -32601, f"Method not found: Unknown tool '{tool_name}'")
+            return
+
+        try:
+            kwargs = self._prepare_call_kwargs(func, arguments, meta)
+            result = func(**kwargs)
+            if inspect.isawaitable(result):
+                result = await result
+            await self.send_response(req_id, self._wrap_mcp_result(result, is_error=False))
+        except ToolError as te:
+            await self.send_response(req_id, self._wrap_mcp_result(str(te), is_error=True))
+        except (ValueError, TypeError, KeyError) as pe:
+            self.log.warning(f"Invalid Parameters for {tool_name}: {pe}")
+            await self.send_error(req_id, -32602, f"Invalid params: {str(pe)}")
+        except Exception as e:
+            self.log.error(f"Async Tool Execution Error in '{tool_name}': {e}", exc_info=True)
+            await self.send_error(req_id, -32000, str(e))
 
     async def handle_resume(self, req_id: Any, payload: Dict[str, Any]):
         self.log.warning(f"RESUME payload received for {req_id}, but handle_resume is not implemented.")
