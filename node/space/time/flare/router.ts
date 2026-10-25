@@ -1,7 +1,6 @@
 // xphi.node.space.time.flare.router.ts
 import phaseModule from "./phase.wasm";
 import dvmModule from "./dvm.wasm";
-import cw20Module from "./cw20_base.wasm";
 
 interface Env {
     PYTHON_ENGINE: Fetcher; // Service Binding to Python Worker
@@ -10,7 +9,6 @@ interface Env {
 function readCString(memory: WebAssembly.Memory, ptr: number): string {
     const memView = new Uint8Array(memory.buffer);
     let endPtr = ptr;
-    // [Security] Prevent Out-of-Bounds (Infinite Loop) due to missing Null Terminator
     while (endPtr < memView.length && memView[endPtr] !== 0) {
         endPtr++;
     }
@@ -21,19 +19,16 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
     console.log(`[WASM] ⚙️ Initializing WASM module for target: ${vmTarget}`); 
     let targetModule = dvmModule;
     if (vmTarget === "PHASE") targetModule = phaseModule;
-    if (vmTarget === "COSMWASM_EXTERNAL") targetModule = cw20Module;
 
     const instance = await WebAssembly.instantiate(targetModule, { env: { invoke_native_vm: () => 0 } });
     const exports: any = instance.exports;
     const memory = exports.memory as WebAssembly.Memory;
 
     // [WASM ABI] Serialize JSON payload to string
-    // 여기서 인자로 받은 payload 객체가 문자열로 직렬화됩니다.
     const payloadStr = JSON.stringify(payload || {});
     
     // [ABI Format] DVM requires Null-Terminator, PHASE relies on explicit length
     const payloadBytes = new TextEncoder().encode(vmTarget === "PHASE" ? payloadStr : payloadStr + '\0');
-    
     console.log(`[WASM] 📦 Payload size: ${payloadBytes.length} bytes`); 
     
     const codePtr = exports.alloc(payloadBytes.length);
@@ -42,9 +37,7 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
 
     try {
         if (vmTarget === "PHASE") {
-            // =========================================================
             // [PHASE ABI] invoke_wasm(ptr: u32, len: u32) -> u64 (ptr | len)
-            // =========================================================
             if (typeof exports.invoke_wasm !== "function") {
                 throw new Error("WASM Trap: phase.wasm does not export 'invoke_wasm'");
             }
@@ -52,22 +45,22 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
             console.log(`[WASM] 🚀 Calling invoke_wasm(ptr: ${codePtr}, len:${payloadBytes.length})`); 
             const t0 = Date.now(); 
             
-            // 1. Invoke WASM function (Returns 64-bit integer)
+            // Invoke WASM function (Returns 64-bit integer)
             const resPacked = BigInt(exports.invoke_wasm(codePtr, payloadBytes.length));
             console.log(`[WASM] ⏱️ invoke_wasm returned in ${Date.now() - t0}ms. Packed res:${resPacked}`); 
             
-            // 2. Decode Upper 32-bit (Pointer) and Lower 32-bit (Length)
+            // Decode Upper 32-bit (Pointer) and Lower 32-bit (Length)
             const resPtr = Number(resPacked >> 32n);
             const resLen = Number(resPacked & 0xFFFFFFFFn);
             console.log(`[WASM] 🔍 Decoded resPtr: ${resPtr}, resLen:${resLen}`); 
             
             if (resPtr === 0) throw new Error("WASM Execution Trap: Returned Null Pointer from PHASE");
 
-            // 3. Read exact length from memory
+            // Read exact length from memory
             const memView = new Uint8Array(memory.buffer);
             const resultStr = new TextDecoder().decode(memView.subarray(resPtr, resPtr + resLen));
             
-            // 4. Deallocate memory
+            // Deallocate memory
             if (exports.dealloc) {
                 console.log(`[WASM] 🧹 Deallocating output memory (ptr: ${resPtr}, len:${resLen})`); 
                 exports.dealloc(resPtr, resLen);
@@ -75,9 +68,7 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
             return resultStr;
 
         } else {
-            // =========================================================
-            // [DVM / COSMWASM ABI] execute_router(ptr: u32) -> u32 (null-terminated)
-            // =========================================================
+            // [DVM ABI] execute_router(ptr: u32) -> u32 (null-terminated)
             if (typeof exports.execute_router !== "function") {
                 throw new Error(`WASM Trap: ${vmTarget} does not export 'execute_router'`);
             }
@@ -113,10 +104,9 @@ export default {
             
             console.log(`[Router] 📥 Received Request ID: ${reqId} | Target:${vmTarget}`); 
 
-            // 1. Handle WASM natively
-            if (vmTarget === "DVM" || vmTarget === "PHASE" || vmTarget === "COSMWASM_EXTERNAL") {
+            // Handle WASM natively
+            if (vmTarget === "DVM" || vmTarget === "PHASE") {
                 let resultStr = "";
-                
                 try {
                     // [Core] Pass-through payload without modification (Already formatted by tunnel.flare)
                     resultStr = await executePureWasm(vmTarget, input.params?.payload);
@@ -183,9 +173,7 @@ export default {
                 }
             }
 
-            // =========================================================================
-            // 2. Transformed: Proxy to Python Engine + WASM Hashing Coordinator
-            // =========================================================================
+            // Transformed: Proxy to Python Engine + WASM Hashing Coordinator
             if (input.method === "execute" || vmTarget === "PYTHON" || input.params?.method_func === "execute_code") {
                 console.log(`[Router] 🐍 Proxying Request ID: ${reqId} to PYTHON_ENGINE...`);
                 const tProxyStart = Date.now();
@@ -196,10 +184,8 @@ export default {
                     headers: { "Content-Type": "application/json" }
                 });
                 
-                // 1) Python Engine으로 실행 요청 및 응답 가로채기
                 const pythonResponse = await env.PYTHON_ENGINE.fetch(proxyRequest);
                 console.log(`[Router] ✅ PYTHON_ENGINE responded for ID: ${reqId} in${Date.now() - tProxyStart}ms | HTTP ${pythonResponse.status}`);
-                
                 const responseText = await pythonResponse.text();
                 let pyParsed: any = {};
                 try {
@@ -208,13 +194,13 @@ export default {
                     console.error(`[Router] ⚠️ Failed to parse Python response for ID: ${reqId}`);
                 }
 
-                // 2) 성공(result) 또는 에러(error) Payload에서 Metrics 데이터 추출
+                // 성공(result) 또는 에러(error) Payload에서 Metrics 데이터 추출
                 const action = input.params?.method_func || input.method || "execute_code";
                 const metrics = pyParsed.result?.metrics || pyParsed.error?.data?.metrics || {
                     fuel_consumed: 1, mem_usage_bytes: 1024, tier: "EDGE_UNKNOWN"
                 };
 
-                // 3) phase.wasm의 compute_root_fingerprint 메서드를 위한 페이로드 포맷팅
+                // phase.wasm의 compute_root_fingerprint 메서드를 위한 페이로드 포맷팅
                 const canonicalRecord = {
                     action: action,
                     tier: metrics.tier,
@@ -260,7 +246,6 @@ export default {
                 error: { message: `Method or Target not supported: ${vmTarget}` },
                 id: input.id 
             }), { status: 400, headers: { "Content-Type": "application/json" } });
-
         } catch (e: any) {
             console.error(`[Router] 🚨 Internal Router Fault:`, e);
             return new Response(JSON.stringify({ 

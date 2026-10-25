@@ -45,43 +45,6 @@ class DvmAdapter:
             "code": code_hex
         }
 
-    """CosmWasm 통제 구역: JSON Schema 페이로드 생성"""
-    @staticmethod
-    def build_cw20_transfer_payload(
-        target_wasm_file: str,
-        sender_address: str, 
-        recipient_address: str, 
-        amount: int,
-        cycle: int,
-        current_balance: int
-    ) -> Dict[str, Any]:
-        """CosmWasm (CW20) 특화 JSON 메시지를 DVM 엔진 표준으로 포장"""
-        cw20_balance_key = f"balance_{sender_address}"
-        return {
-            "vm_target": "COSMWASM_EXTERNAL",
-            "target_wasm_file": target_wasm_file,
-            "env": {
-                "block": {
-                    "height": 1000 + cycle,
-                    "time": str(int(time.time() * 1_000_000_000)), # 나노초 규격
-                    "chain_id": "akash-local"
-                }
-            },
-            "info": {
-                "sender": sender_address, 
-                "funds": []
-            },
-            "msg": {
-                "transfer": {
-                    "recipient": recipient_address, 
-                    "amount": str(amount)
-                }
-            },
-            "state_snapshot": {
-                cw20_balance_key: json.dumps(current_balance)
-            }
-        }
-    
     @staticmethod
     def build_dvm_payload(
         target_address: str, 

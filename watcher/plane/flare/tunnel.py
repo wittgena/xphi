@@ -98,8 +98,6 @@ class _MockStateStore:
                 vm_tgt = "PHASE"
             elif wasm_path == "dvm.wasm" or method_func == DphiMethod.EXECUTE_DVM.value:
                 vm_tgt = "DVM"
-            elif wasm_path: 
-                vm_tgt = "COSMWASM_EXTERNAL"
             else:
                 vm_tgt = "PYTHON"
 

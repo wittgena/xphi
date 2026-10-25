@@ -71,7 +71,7 @@ class ExecutionStrategy:
             return
         target_addr = context.get("contract_address", "Unknown")
         changed_accounts = len(state_diff)
-        log.info(f"💾 [Host Commit] 상태 변경분 마스터 DB 반영 완료 (요청자: {target_addr}, 대상: {changed_accounts}개 계정)")
+        log.info(f"[Host Commit] 상태 변경분 마스터 DB 반영 완료 (요청자: {target_addr}, 대상: {changed_accounts}개 계정)")
 
     def run_dvm_sandbox(self, target_path: Path, job_policy: QuotaPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
         try:
@@ -81,51 +81,7 @@ class ExecutionStrategy:
                     safe_dict = json.loads(safe_payload)
             
             vm_target = safe_dict.get("vm_target", "EVM")
-
-            # =========================================================================
-            # [핵심 수정] 외부 CosmWasm 샌드박스 실행을 통합된 WasmInterpreter로 교체
-            # =========================================================================
-            if vm_target == "COSMWASM_EXTERNAL":
-                target_wasm_file = safe_dict.get("target_wasm_file", "cw20_base.wasm")
-                log.info(f"[{job_id[:8]}] 🔓 Entering Pure CosmWasm Jail: {target_wasm_file} (Tier: {job_policy.tier.value})")
-                
-                # WasmInterpreter를 abi="cosmwasm" 모드로 호출합니다.
-                with WasmInterpreter(
-                    wasm_module_path=target_wasm_file, 
-                    policy=job_policy, 
-                    abi="cosmwasm", 
-                    initial_state=safe_dict.get("state_snapshot", {})
-                ) as cosm_sandbox:
-                    
-                    res = cosm_sandbox.invoke_cosmwasm(
-                        env_data=safe_dict.get("env", {}),
-                        info_data=safe_dict.get("info", {}),
-                        msg_data=safe_dict.get("msg", {})
-                    )
-                    
-                    # WasmInterpreter의 get_metrics() 활용
-                    metrics = cosm_sandbox.get_metrics() 
-                    if not metrics:
-                        metrics = {"gas_used": 0}
-                    
-                    if res.success:
-                        with suppress(Exception):
-                            out_dict = json.loads(res.output)
-                            state_diff = out_dict.get("state_diff", {})
-                            if state_diff:
-                                self._commit_state_diff_to_master(context, state_diff, log)
-                                
-                    log.info(f"[{job_id[:8]}] 📊 CosmWasm Sandbox Metrics: {metrics}")
-                    return {
-                        "success": res.success, "output": res.output,
-                        "error": str(res.error) if not res.success else "", "metrics": metrics
-                    }
-
-            # =========================================================================
-            # 기존 DVM 멀티 라우터 실행은 변경 없이 유지
-            # =========================================================================
-            log.info(f"[{job_id[:8]}] 🔓 Entering Stateless Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value}, Target: {vm_target})")
-            
+            log.info(f"[{job_id[:8]}] Entering Stateless Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value}, Target: {vm_target})")
             with DvmInterpreter(wasm_module_name=target_path.name, policy=job_policy) as dvm_sandbox:
                 result = dvm_sandbox.execute(
                     vm_target=vm_target,
@@ -136,7 +92,6 @@ class ExecutionStrategy:
                 )
                 
                 metrics = dvm_sandbox.get_metrics()
-                
                 if result.success:
                     with suppress(Exception):
                         out_dict = json.loads(result.output)
@@ -146,7 +101,7 @@ class ExecutionStrategy:
                         if state_diff:
                             self._commit_state_diff_to_master(context, state_diff, log)
                         
-                log.info(f"[{job_id[:8]}] 📊 VM Sandbox Metrics: {metrics}")
+                log.info(f"[{job_id[:8]}] VM Sandbox Metrics: {metrics}")
                 return {
                     "success": result.success, "output": result.output, 
                     "error": str(result.error) if not result.success else "", "metrics": metrics
@@ -169,7 +124,7 @@ class ExecutionStrategy:
                 py_sandbox = self.py_pool.get(timeout=4.5)
                 t_wait_ms = (time.perf_counter() - t0) * 1000
             except queue.Empty:
-                log.warning(f"[{job_id[:8]}] 🚫 Python Worker pool exhausted. Applying Backpressure.")
+                log.warning(f"[{job_id[:8]}] Python Worker pool exhausted. Applying Backpressure.")
                 return {"success": False, "output": "", "error": "SYSTEM_OVERLOADED (Backpressure applied). Please try again."}
                 
             if hasattr(py_sandbox, 'apply_policy'):
@@ -182,7 +137,7 @@ class ExecutionStrategy:
                 code_to_run = safe_payload.get("code", safe_payload.get("data", ""))
                 variables = safe_payload.get("variables", {})
 
-            log.info(f"[{job_id[:8]}] 🔓 Entering Python Legacy Jail (Tier: {job_policy.tier.value}, Cached: True)")
+            log.info(f"[{job_id[:8]}] Entering Python Legacy Jail (Tier: {job_policy.tier.value}, Cached: True)")
             
             t_exec_start = time.perf_counter()
             result = py_sandbox.execute(code=code_to_run, variables=variables, callables={}, context=context)
@@ -196,8 +151,8 @@ class ExecutionStrategy:
             }
             
             total_ms = t_wait_ms + t_exec_ms
-            log.info(f"[{job_id[:8]}] ⏱️ [Perf] ⚡(Cached) Wait: {t_wait_ms:.2f}ms | Exec: {t_exec_ms:.2f}ms | Total: {total_ms:.2f}ms")
-            log.info(f"[{job_id[:8]}] 📊 Sandbox Metrics: {metrics}")
+            log.info(f"[{job_id[:8]}] [Perf] ⚡(Cached) Wait: {t_wait_ms:.2f}ms | Exec: {t_exec_ms:.2f}ms | Total: {total_ms:.2f}ms")
+            log.info(f"[{job_id[:8]}] Sandbox Metrics: {metrics}")
             
             return {
                 "success": result.success, "output": result.output,
