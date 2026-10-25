@@ -94,9 +94,7 @@ class DvmInterpreter:
             linker = wasmtime.Linker(self.engine)
             linker.define_wasi()
 
-            # ==================================================================
-            # [Host Escape Hatch: Cross-VM Bridge]
-            # ==================================================================
+            # Host Escape Hatch: Cross-VM Bridge
             def invoke_native_vm_callback(input_ptr: int) -> int:
                 chunk_size = 256
                 result_bytes = bytearray()
@@ -136,35 +134,6 @@ class DvmInterpreter:
                                 }
                             else:
                                 native_result = {"success": False, "revert_reason": f"XPHI Kernel Panic: {res.error}"}
-
-                    elif vm_target == "COSMWASM_EXTERNAL":
-                        log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> External CosmWasm")
-                        wasm_file = payload.get("wasm_file", "unknown.wasm")
-                        env_data = payload.get("env", {})
-                        info_data = payload.get("info", {})
-                        msg_data = payload.get("msg", {})
-                        state_snapshot = payload.get("state_snapshot") or {}
-                        
-                        try:
-                            # [핵심 변경점] 통합된 WasmInterpreter를 abi="cosmwasm" 파라미터와 함께 호출합니다.
-                            with WasmInterpreter(
-                                wasm_module_path=wasm_file, 
-                                policy=self.policy, 
-                                abi="cosmwasm", 
-                                initial_state=state_snapshot
-                            ) as cosm_sandbox:
-                                res = cosm_sandbox.invoke_cosmwasm(env_data, info_data, msg_data)
-                                
-                                if res.success:
-                                    native_result = json.loads(res.output)
-                                else:
-                                    native_result = {"success": False, "revert_reason": str(res.error)}
-                        except Exception as e:
-                            native_result = {"success": False, "revert_reason": f"CosmWasm Host Crash: {str(e)}"}
-                            
-                    else:
-                        raise ValueError(f"Unknown Native VM Target: {vm_target}")
-
                 except Exception as e:
                     log.error(f"Cross-VM Execution Failed: {e}", exc_info=True)
                     native_result = {"success": False, "revert_reason": f"Host Bridge Error: {str(e)}"}
@@ -244,7 +213,7 @@ class DvmInterpreter:
             if block_context:
                 inner_payload["block_context"] = block_context
 
-        elif vm_target.upper() == "COSMWASM_INTERNAL":
+        elif vm_target.upper() == "COSMWASM":
             inner_payload = {
                 "contract_address": target_address,
                 "sender": context.get("caller") or context.get("caller_address"),
