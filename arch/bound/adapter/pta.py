@@ -21,7 +21,6 @@ from xphi.arch.bound.adapter.state import StateAdapter
 
 log = get_emitter("adapter.pta", phase="KERNEL")
 
-
 class NodeSigner:
     """Singleton identity manager responsible for hierarchical key loading and deterministic cryptographic signature generation for the node"""
     _instance = None
@@ -156,7 +155,7 @@ def create_mcp_state_anchor(handle_id: str, status: str, payload: Optional[Dict[
         payload = {}
         
     return PhaseAnchorOutput(
-        amount=0,                               
+        amount=0,                                
         owner=f"mcp_bridge_{handle_id}",       
         handle_id=handle_id,
         phase_status=status.upper(),
@@ -233,13 +232,13 @@ class PtaAdapter:
             log.error(f"[PtaAdapter:{self._inst_id}] Signature verification crashed: {e}")
             return False
 
-    def _resolve_commit_hash(self, tx_hash: str) -> str:
+    def _resolve_commit_hash(self, tx_hash: str, stream_id: Optional[str] = None) -> str:
         """tx_hash로부터 매핑된 실제 DB commit 해시(signature)를 역참조합니다."""
         if tx_hash in self._tx_commit_map:
             return self._tx_commit_map[tx_hash]
 
-        stream_id = f"pta_tx_{tx_hash[:8]}"
-        head_hash = self.ledger.get_head_hash(stream_id)
+        target_stream_id = stream_id if stream_id is not None else f"pta_tx_{tx_hash[:8]}"
+        head_hash = self.ledger.get_head_hash(target_stream_id)
         if head_hash:
             self._tx_commit_map[tx_hash] = head_hash
             return head_hash
@@ -265,6 +264,12 @@ class PtaAdapter:
                 if not is_valid:
                     raise PermissionError(f"Cryptographic Auth Failed for input index {idx}")
 
+        # [선형 소비 보장] 경쟁 시 최초 1개만 통과시키고 나머지는 Double Spend로 즉시 폐기하기 위해
+        # await 진입 전에 input 포인터를 _spent_mempool에 선점 등록
+        spent_keys = [current_input.pointer.to_key() for current_input in tx.inputs]
+        for pointer_key in spent_keys:
+            self._spent_mempool.add(pointer_key)
+
         target_stream_id = stream_id if stream_id is not None else f"pta_tx_{tx.tx_hash[:8]}"
         stream = LogicStream(
             id=target_stream_id,
@@ -273,28 +278,34 @@ class PtaAdapter:
             metadata=tx.metadata
         )
         
-        sealed_kernel = await self.ledger.propose_and_seal(stream)
-        spent_keys = []
-        for current_input in tx.inputs:
-            pointer_key = current_input.pointer.to_key()
-            self._unfold_pool.pop(pointer_key, None)
-            self._spent_mempool.add(pointer_key)
-            spent_keys.append(pointer_key)
-            
-        produced_keys = []
-        for idx, output in enumerate(tx.outputs):
-            new_pointer_key = f"{tx.tx_hash}:{idx}"
-            self._unfold_pool[new_pointer_key] = output
-            produced_keys.append(f"{new_pointer_key}({output.amount})")
-            
-        log.debug(f"[PtaAdapter:{self._inst_id}] 🔒 Mempool Update -> SPENT: {spent_keys} | PRODUCED: {produced_keys}")
-            
+        try:
+            sealed_kernel = await self.ledger.propose_and_seal(stream)
+        except Exception:
+            for pointer_key in spent_keys:
+                self._spent_mempool.discard(pointer_key)
+            raise
+
         if sealed_kernel:
+            for pointer_key in spent_keys:
+                self._unfold_pool.pop(pointer_key, None)
+                
+            produced_keys = []
+            for idx, output in enumerate(tx.outputs):
+                new_pointer_key = f"{tx.tx_hash}:{idx}"
+                self._unfold_pool[new_pointer_key] = output
+                produced_keys.append(f"{new_pointer_key}({output.amount})")
+                
             receipt_signature = sealed_kernel.signature
             self._tx_commit_map[tx.tx_hash] = receipt_signature
+            log.debug(f"[PtaAdapter:{self._inst_id}] 🔒 Mempool Update -> SPENT: {spent_keys} | PRODUCED: {produced_keys}")
             log.info(f"[PtaAdapter:{self._inst_id}] Tx Sealed. Receipt: {receipt_signature[:8]}... | Hash: {tx.tx_hash[:8]}")
         else:
-            log.debug(f"[PtaAdapter:{self._inst_id}] Tx Queued in Mempool. Stream: {target_stream_id}")
+            for pointer_key in spent_keys:
+                self._spent_mempool.discard(pointer_key)
+            log.warning(
+                f"[PtaAdapter:{self._inst_id}] ⚠️ Tx Unsealed (Relay Timeout or Rejected). "
+                f"Skipped local mempool mutation. Stream: {target_stream_id} | Hash: {tx.tx_hash[:8]}"
+            )
             
         return tx.tx_hash
 

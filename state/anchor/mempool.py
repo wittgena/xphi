@@ -231,7 +231,7 @@ class MempoolRelay:
                 await self._send_ack_async(async_tunnel, req_id, {"status": "OK"})
 
             elif stream_name == self.stream_logic:
-                if getattr(self.store, "wasm", None) is None:
+                if getattr(self.store, "broker", None) is None:
                     await self._send_ack_async(async_tunnel, req_id, {"status": "NO_WASM"})
                 else:
                     raw_payload = fields.get("payload", "{}")
