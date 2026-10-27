@@ -91,13 +91,13 @@ class _MockStateStore:
             dynamic_timeout = httpx.Timeout(requested_timeout + 3.0, connect=5.0)
             dphi_kernel_methods = {
                 m.value for m in DphiMethod 
-                if m.value not in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_DVM.value)
+                if m.value not in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_FSM.value)
             }
 
             if wasm_path == "phase.wasm" or method_func in dphi_kernel_methods:
                 vm_tgt = "PHASE"
-            elif wasm_path == "dvm.wasm" or method_func == DphiMethod.EXECUTE_DVM.value:
-                vm_tgt = "DVM"
+            elif wasm_path == "fsm.wasm" or method_func == DphiMethod.EXECUTE_FSM.value:
+                vm_tgt = "FSM"
             else:
                 vm_tgt = "PYTHON"
 

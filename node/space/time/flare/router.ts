@@ -1,6 +1,6 @@
 // xphi.node.space.time.flare.router.ts
 import phaseModule from "./phase.wasm";
-import dvmModule from "./dvm.wasm";
+import fsmModule from "./fsm.wasm";
 
 interface Env {
     PYTHON_ENGINE: Fetcher; // Service Binding to Python Worker
@@ -17,7 +17,7 @@ function readCString(memory: WebAssembly.Memory, ptr: number): string {
 
 async function executePureWasm(vmTarget: string, payload: any): Promise {
     console.log(`[WASM] ⚙️ Initializing WASM module for target: ${vmTarget}`); 
-    let targetModule = dvmModule;
+    let targetModule = fsmModule;
     if (vmTarget === "PHASE") targetModule = phaseModule;
 
     const instance = await WebAssembly.instantiate(targetModule, { env: { invoke_native_vm: () => 0 } });

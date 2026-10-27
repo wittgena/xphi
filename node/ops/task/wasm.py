@@ -186,7 +186,7 @@ class TaskWasm(AbstractDaemon):
         target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE.value)
 
         try:
-            if target_func in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_DVM.value):
+            if target_func in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_FSM.value):
                 response_data = await asyncio.to_thread(self._execute_heavy_sandbox, payload, interp_instance)
             else:
                 response_data = self._execute_fast_wasm(payload, interp_instance)
@@ -258,7 +258,7 @@ class TaskWasm(AbstractDaemon):
                 return {"success": False, "output": "", "error": error_msg}
 
             safe_payload = exec_data
-            if target_func == DphiMethod.EXECUTE_DVM.value:
-                return self.strategy.run_dvm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
+            if target_func == DphiMethod.EXECUTE_FSM.value:
+                return self.strategy.run_fsm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
             else:
                 return self.strategy.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)

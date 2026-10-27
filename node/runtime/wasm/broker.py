@@ -246,9 +246,9 @@ class DphiBroker:
         
         target_wasm = None
         if isinstance(code, dict):
-            method_func = DphiMethod.EXECUTE_DVM.value
+            method_func = DphiMethod.EXECUTE_FSM.value
             payload_data = code  
-            target_wasm = "dvm.wasm"
+            target_wasm = "fsm.wasm"
         else:
             method_func = DphiMethod.EXECUTE_CODE.value
             payload_data = {

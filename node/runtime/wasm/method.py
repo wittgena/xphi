@@ -1,10 +1,9 @@
 # xphi.node.runtime.wasm.method
-## @lineage: xphi.node.wasm.method
 from enum import Enum
 
 class DphiMethod(str, Enum):
     EXECUTE_CODE = "execute_code"
-    EXECUTE_DVM = "execute_dvm"
+    EXECUTE_FSM = "execute_fsm"
     COMPUTE_ROOT_FINGERPRINT = "compute_root_fingerprint"
     EVALUATE_TENSION = "evaluate_tension"
     GENERATE_PROOF = "generate_proof"

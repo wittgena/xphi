@@ -9,7 +9,7 @@ from contextlib import suppress
 
 from xphi.state.inter.wasm import WasmInterpreter
 from xphi.state.inter.python import PythonInterpreter
-from xphi.state.inter.dvm import DvmInterpreter
+from xphi.state.inter.fsm import FSMInterpreter
 from xphi.node.runtime.wasm.quota import QuotaPolicy
 
 class ExecutionStrategy:
@@ -66,24 +66,24 @@ class ExecutionStrategy:
             
         return False
 
-    def _commit_state_diff_to_master(self, context: dict, state_diff: dict, log):
+    def _commit_state_diff_to_master(self, context: dict, state_diff: dict, log, default_target: str = "root"):
+        """Commit FSM state diffs (branches or cursors) to the master ledger."""
         if not state_diff:
             return
-        target_addr = context.get("contract_address", "Unknown")
-        changed_accounts = len(state_diff)
-        log.info(f"[Host Commit] 상태 변경분 마스터 DB 반영 완료 (요청자: {target_addr}, 대상: {changed_accounts}개 계정)")
+        target_stream = context.get("stream_id") or context.get("target_address") or default_target
+        log.info(f"[Host Commit] Committed {len(state_diff)} state diff(s) to master ledger (target: {target_stream})")
 
-    def run_dvm_sandbox(self, target_path: Path, job_policy: QuotaPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
+    def run_fsm_sandbox(self, target_path: Path, job_policy: QuotaPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
         try:
             safe_dict = safe_payload if isinstance(safe_payload, dict) else {}
             if isinstance(safe_payload, str):
                 with suppress(Exception):
                     safe_dict = json.loads(safe_payload)
             
-            vm_target = safe_dict.get("vm_target", "EVM")
+            vm_target = safe_dict.get("vm_target", "FSM_STEP")
             log.info(f"[{job_id[:8]}] Entering Stateless Multi-VM Jail: {target_path.name} (Tier: {job_policy.tier.value}, Target: {vm_target})")
-            with DvmInterpreter(wasm_module_name=target_path.name, policy=job_policy) as dvm_sandbox:
-                result = dvm_sandbox.execute(
+            with FSMInterpreter(wasm_module_name=target_path.name, policy=job_policy) as fsm_inter:
+                result = fsm_inter.execute(
                     vm_target=vm_target,
                     target_address=safe_dict.get("target_address", ""),
                     calldata=safe_dict.get("calldata", ""),
@@ -91,22 +91,21 @@ class ExecutionStrategy:
                     context=context
                 )
                 
-                metrics = dvm_sandbox.get_metrics()
+                metrics = fsm_inter.get_metrics()
                 if result.success:
                     with suppress(Exception):
                         out_dict = json.loads(result.output)
                         metrics["gas_used"] = out_dict.get("gas_used", 0)
-                        
                         state_diff = out_dict.get("state_diff", {})
                         if state_diff:
-                            self._commit_state_diff_to_master(context, state_diff, log)
+                            target_addr = safe_dict.get("target_address", "root")
+                            self._commit_state_diff_to_master(context, state_diff, log, default_target=target_addr)
                         
                 log.info(f"[{job_id[:8]}] VM Sandbox Metrics: {metrics}")
                 return {
                     "success": result.success, "output": result.output, 
                     "error": str(result.error) if not result.success else "", "metrics": metrics
                 }
-                
         except Exception as e:
             log.error(f"[{job_id[:8]}] Sandbox Execution crashed: {e}", exc_info=True)
             return {"success": False, "output": "", "error": f"Execution Error: {e}"}
