@@ -1,8 +1,8 @@
 # xphi.arch.bound.wasm.tester
-## @lineage: xphi.arch.dev.wasm.tester
 import sys
 import json
 import asyncio
+from pathlib import Path
 from typing import Tuple, Dict, Type, Any
 
 from xphi.arch.bound.wasm.auditor import CanonicalProofAuditor
@@ -10,16 +10,27 @@ from xphi.arch.bound.wasm.auditor import CanonicalProofAuditor
 from xphi.node.space.tunnel.factory import TunnelFactory
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.node.ops.task.supervisor import TaskSupervisor
-from xphi.node.ops.task.wasm import TaskWasm
+from xphi.node.ops.task.wasm import TaskWasm, DEFAULT_WASM_PATH
 from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("wasm.tester")
 
+
 class WasmTester:
-    def __init__(self, wasm_module_path: str, sandbox_root: str, suites: Dict[str, Type] = None):
+    def __init__(
+        self,
+        wasm_module_path: str,
+        sandbox_root: str,
+        suites: Dict[str, Type] = None,
+        kernel_wasm_path: str = DEFAULT_WASM_PATH,
+    ):
+        # 1. 테스트 대상 WASM 아티팩트 (예: phase.wasm 또는 fsm.wasm)
         self.wasm_module_path = wasm_module_path
         self.sandbox_root = sandbox_root
+        # 2. compute_root_fingerprint 등 시스템 원장 증명을 전담할 커널 WASM (항상 phase.wasm)
+        self.kernel_wasm_path = str(Path(sandbox_root) / kernel_wasm_path)
+        
         self.rupture_confirmed = False
         self.last_error_context = ""
         self.auditors = [] 
@@ -59,7 +70,8 @@ class WasmTester:
         return total_fails
 
     async def execute(self) -> Tuple[bool, str]:
-        log.info("\n--- [START] Orchestrating Distributed WASM Environment (Delegated) ---")
+        target_name = Path(self.wasm_module_path).name
+        log.info(f"\n--- [START] Orchestrating Distributed WASM Environment (Target: {target_name}) ---")
         supervisor = None
         tunnel = None
         proof_auditor = CanonicalProofAuditor()
@@ -71,10 +83,12 @@ class WasmTester:
             log.info("[SYSTEM] Initializing TaskSupervisor and WasmTaskerDaemon...")
             supervisor = TaskSupervisor(source="WasmTester")
             
+            # TaskWasm의 기본 Fast-WASM 풀(_wasm_pool)은 항상 커널(phase.wasm)을 마운트하도록 유지합니다.
+            # (fsm.wasm은 broker.execute(dict) 시 payload['wasm_path']를 통해 Heavy Sandbox 경로로 격리 실행됨)
             tasker_daemon = TaskWasm(
                 tunnel=tunnel, 
                 supervisor=supervisor, 
-                default_wasm_path=self.wasm_module_path
+                default_wasm_path=self.kernel_wasm_path
             )
             
             test_stream = "wasm:execute:stream:tester_isolated"
@@ -118,7 +132,7 @@ class WasmTester:
                         err_msg = f"Test suites failed with {total_fails} total errors. Likely Semantic Hang, Trap, or Signature Mismatch."
                         return False, err_msg
                     
-                    log.info("\n[SYSTEM] Generating Canonical Proof for entire test run...")
+                    log.info("\n[SYSTEM] Generating Canonical Proof via Phase Kernel (phase.wasm)...")
                     canonical_payload = proof_auditor.generate_payload()
                     
                     if not canonical_payload or canonical_payload == "[]":
@@ -127,7 +141,12 @@ class WasmTester:
                         return False, err_msg
                     
                     try:
-                        proof_res = await broker.invoke("compute_root_fingerprint", canonical_payload)
+                        # compute_root_fingerprint는 오직 phase.wasm 커널에서만 단일 책임으로 수행
+                        proof_res = await broker.invoke(
+                            "compute_root_fingerprint",
+                            canonical_payload,
+                            wasm_path=self.kernel_wasm_path,
+                        )
                         if getattr(proof_res, 'success', False):
                             self.test_execution_hash = json.loads(proof_res.output).get("fingerprint")
                             log.info(f"[Ledger] Test Execution Proof successfully sealed! Hash: {self.test_execution_hash}")

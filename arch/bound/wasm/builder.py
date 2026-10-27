@@ -23,7 +23,7 @@ WASM_PROJECTS = [
         "env": {"RUSTFLAGS": "-C target-feature=+simd128 -C opt-level=3"}
     },
     {
-        "name": "dvm",
+        "name": "fsm",
         "env": {"RUSTFLAGS": "-C opt-level=3"}
     },
     {
@@ -34,7 +34,7 @@ WASM_PROJECTS = [
 
 
 class WasmBuilder(BaseTracer):
-    """WASM 컴파일 (phase, DVM, Gateway) 및 Rust-Driven JSON 스키마 자동 추출 페이즈"""
+    """WASM 컴파일 (phase, fsm, Gateway) 및 Rust-Driven JSON 스키마 자동 추출 페이즈"""
     
     def __init__(self, timeout: int = 120, target_projects: Optional[List[str]] = None):
         super().__init__(tracer_name="wasm.builder", timeout=timeout)

@@ -82,7 +82,7 @@ class FlareController:
         self.gateway_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(edge_root / "router.ts", self.gateway_dir / "index.ts")
         
-        wasm_targets = ["gateway.wasm", "phase.wasm", "dvm.wasm"]
+        wasm_targets = ["gateway.wasm", "phase.wasm", "fsm.wasm"]
         for wasm in wasm_targets:
             if (time_root / wasm).exists():
                 shutil.copy2(time_root / wasm, self.gateway_dir / wasm)

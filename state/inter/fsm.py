@@ -1,4 +1,4 @@
-# xphi.state.inter.dvm
+# xphi.state.inter.fsm
 import json
 import threading
 import os
@@ -19,7 +19,7 @@ from xphi.state.inter.wasm import WasmInterpreter
 from xphi.watcher.plane.emitter import get_emitter
 
 TIME_ROOT = resolve_path("time")
-log = get_emitter("inter.dvm", phase="SYSTEM")
+log = get_emitter("inter.fsm", phase="SYSTEM")
 
 _GLOBAL_ENGINE = None
 _GLOBAL_MODULE_CACHE = {}
@@ -45,12 +45,10 @@ def get_cached_module(wasm_path: str, quota_manager: WasmQuotaManager):
         return _GLOBAL_ENGINE, _GLOBAL_MODULE_CACHE[wasm_path]
 
 
-# ============================================================================
-
-class DvmInterpreter:
+class FSMInterpreter:
     def __init__(
         self,
-        wasm_module_name: str = "dvm.wasm",
+        wasm_module_name: str = "fsm.wasm",
         policy: Optional[QuotaPolicy] = None,
     ) -> None:
         if wasmtime is None:
@@ -58,7 +56,6 @@ class DvmInterpreter:
             
         self.wasm_module_path = str(Path(TIME_ROOT) / wasm_module_name)
         self.policy = policy or QuotaPolicy.standard()
-        
         self._execution_count = 0
 
         # Wasmtime Core
@@ -72,13 +69,13 @@ class DvmInterpreter:
         self._wasm_alloc = None
         self._wasm_dealloc = None
         self._wasm_execute_router = None
-        self.cg = WasmQuotaManager(policy_name=f"multi-vm-worker-{id(self)}", policy=self.policy)
+        self.cg = WasmQuotaManager(policy_name=f"fsm-vm-worker-{id(self)}", policy=self.policy)
         
         self._ensure_engine_started()
 
     def _ensure_engine_started(self) -> None:
         if self.instance is not None:
-             return
+            return
              
         try:
             self.engine, self.module = get_cached_module(self.wasm_module_path, self.cg)
@@ -94,28 +91,17 @@ class DvmInterpreter:
             linker = wasmtime.Linker(self.engine)
             linker.define_wasi()
 
-            # Host Escape Hatch: Cross-VM Bridge
+            # Host Escape Hatch: Cross-VM Bridge (fsm.wasm -> phase.wasm)
             def invoke_native_vm_callback(input_ptr: int) -> int:
-                chunk_size = 256
-                result_bytes = bytearray()
-                curr_ptr = input_ptr
-                while True:
-                    chunk = self.memory.read(self.store, curr_ptr, curr_ptr + chunk_size)
-                    null_idx = chunk.find(b'\x00')
-                    if null_idx != -1:
-                        result_bytes.extend(chunk[:null_idx])
-                        break
-                    result_bytes.extend(chunk)
-                    curr_ptr += chunk_size
-                    
+                result_bytes = self._read_c_string(input_ptr)
                 json_str = result_bytes.decode('utf-8')
+                native_result = {"success": False, "revert_reason": "Unknown Host Bridge Target"}
                 
                 try:
                     payload = json.loads(json_str)
                     vm_target = payload.get("vm_target", "UNKNOWN").upper()
-                    
                     if vm_target == "PHASE":
-                        log.info("[Host Bridge] Cross-VM Call: dvm.wasm -> phase.wasm")
+                        log.info("[Host Bridge] Cross-VM Call: fsm.wasm -> phase.wasm")
                         dphi_method = payload.get("method", "evaluate_tension")
                         dphi_context = payload.get("context", {"injected_anchor": 1, "injected_tick": 0})
                         dphi_payload = payload.get("payload", {})
@@ -128,8 +114,8 @@ class DvmInterpreter:
                                 residue = json.loads(res.output)
                                 native_result = {
                                     "success": residue.get("success", False),
-                                    "gas_used": 5000,
-                                    "output": residue.get("data", "0x"),
+                                    "gas_used": int(residue.get("gas_used", 0)),
+                                    "output": residue.get("data", "{}"),
                                     "revert_reason": residue.get("error")
                                 }
                             else:
@@ -155,149 +141,141 @@ class DvmInterpreter:
             self._wasm_execute_router = exports.get("execute_router")
             
             if not all([self._wasm_alloc, self._wasm_dealloc, self._wasm_execute_router]):
-                raise ExecutionError("dvm.wasm missing required exports: 'alloc', 'dealloc', or 'execute_router'")
+                raise ExecutionError("fsm.wasm missing required exports: 'alloc', 'dealloc', or 'execute_router'")
         except Exception as e:
-            raise ExecutionError(f"Failed to initialize dvm.wasm engine: {e}")
+            raise ExecutionError(f"Failed to initialize fsm.wasm engine: {e}")
+
+    def _read_c_string(self, ptr: int, chunk_size: int = 256) -> bytearray:
+        result_bytes = bytearray()
+        curr_ptr = ptr
+        while True:
+            chunk = self.memory.read(self.store, curr_ptr, curr_ptr + chunk_size)
+            null_idx = chunk.find(b'\x00')
+            if null_idx != -1:
+                result_bytes.extend(chunk[:null_idx])
+                break
+            result_bytes.extend(chunk)
+            curr_ptr += chunk_size
+        return result_bytes
+
+    @staticmethod
+    def _resolve_fsm_target(vm_target: str, calldata: Any) -> str:
+        target = (vm_target or "").upper()
+        if target in ("FSM_COMPILE", "FSM_STEP", "FSM_SANDBOX", "HOST_BRIDGE"):
+            return target
+        if target == "COMPILE":
+            return "FSM_COMPILE"
+        if target == "STEP":
+            return "FSM_STEP"
+        if isinstance(calldata, dict):
+            if "_m" in calldata and "g" in calldata:
+                return "FSM_COMPILE"
+            if "op" in calldata and "curr_node" in calldata:
+                return "FSM_STEP"
+        return "FSM_STEP"
 
     def execute(
         self,
         vm_target: str,
         target_address: str,
-        calldata: str,
+        calldata: Union[Dict[str, Any], str],
         state_snapshot: Union[Dict[str, Any], str],
         context: Union[Dict[str, Any], str, None] = None
     ) -> ExecutionResult:
+        """strategy.py의 run_fsm_sandbox 호출 시그니처와 100% 동일한 엔트리포인트"""
         self._execution_count += 1
         
-        # 0. Type Sanitization
-        if isinstance(state_snapshot, str):
-            try:
-                state_snapshot = json.loads(state_snapshot)
-            except Exception:
-                state_snapshot = {}
-        state_snapshot = state_snapshot or {}
-
-        if isinstance(context, str):
-            try:
-                context = json.loads(context)
-            except Exception:
-                context = {}
-        context = context or {}
-
-        gas_limit = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else 30_000_000
-
-        # 1. VM Target 에 따른 페이로드 조립 분기
-        if vm_target.upper() == "EVM":
-            caller = context.get("caller") or context.get("caller_address")
-            value = str(context.get("value", "0"))
-            block_info = context.get("block", {})
-            block_context = None
-            if block_info:
-                block_context = {
-                    "timestamp": int(block_info.get("timestamp", 0)),
-                    "block_number": int(block_info.get("block_number", 0)),
-                    "coinbase": block_info.get("coinbase"),
-                    "chain_id": int(block_info.get("chain_id", 1)) if block_info.get("chain_id") else None
-                }
-
-            inner_payload = {
-                "target_address": target_address,
-                "calldata": calldata,
-                "gas_limit": gas_limit,
-                "state_snapshot": state_snapshot
-            }
-            if caller:
-                inner_payload["caller_address"] = caller
-            if value and value != "0":
-                inner_payload["value"] = value
-            if block_context:
-                inner_payload["block_context"] = block_context
-
-        elif vm_target.upper() == "COSMWASM":
-            inner_payload = {
-                "contract_address": target_address,
-                "sender": context.get("caller") or context.get("caller_address"),
-                "msg": calldata,
-                "state_snapshot": state_snapshot
-            }
+        # 0. Type Sanitization (str -> dict 자동 변환)
+        if isinstance(calldata, str) and calldata.strip():
             with suppress(Exception):
-                if isinstance(inner_payload["msg"], str):
-                    inner_payload["msg"] = json.loads(inner_payload["msg"])
-        else:
-            return ExecutionResult(success=False, error=ExecutionError(f"Unsupported VM Target: {vm_target}"))
+                calldata = json.loads(calldata)
+        calldata = calldata if isinstance(calldata, dict) else {}
 
-        # 2. 통합 라우팅 페이로드(Unified Input) 패키징
+        if isinstance(state_snapshot, str) and state_snapshot.strip():
+            with suppress(Exception):
+                state_snapshot = json.loads(state_snapshot)
+        state_snapshot = state_snapshot if isinstance(state_snapshot, dict) else {}
+
+        if isinstance(context, str) and context.strip():
+            with suppress(Exception):
+                context = json.loads(context)
+        context = context if isinstance(context, dict) else {}
+
+        # 1. Fuel (gas_limit) 결정: context["fuel"]이 있으면 최우선 적용, 없으면 QuotaPolicy 기본값 사용
+        default_quota = self.policy.cpu_fuel_quota if self.policy.tier == Tier.STANDARD else 30_000_000
+        fuel_limit = int(context.get("fuel", calldata.get("fuel", default_quota)))
+
+        # 2. Rust 라우터 타겟 결정 ("EVM" 기본값 유입 시에도 안전하게 FSM 타겟으로 변환)
+        resolved_target = self._resolve_fsm_target(vm_target, calldata)
+
+        inner_payload = {
+            "target_address": target_address or context.get("stream_id", "root"),
+            "calldata": calldata,
+            "gas_limit": fuel_limit,
+            "state_snapshot": state_snapshot,
+        }
+
         unified_input = {
-            "vm_target": vm_target.upper(),
-            "payload": inner_payload
+            "vm_target": resolved_target,
+            "payload": inner_payload,
         }
         
-        log.info(f"[dvm.wasm] Routing TX to {vm_target.upper()} on {target_address} (Gas Limit: {gas_limit})")
-        log.info(f"🔥 [DEBUG FFI PAYLOAD] Unified Input to Rust:\n{json.dumps(unified_input, indent=2)}")
+        log.info(f"[fsm.wasm] Routing {resolved_target} on '{target_address}' (Fuel Limit: {fuel_limit})")
         
         try:
             self._ensure_engine_started()
             
-            # 3. Rust CStr 포맷: JSON 문자열 끝에 널 바이트('\x00') 추가
             payload_bytes = json.dumps(unified_input).encode('utf-8') + b'\x00'
             req_len = len(payload_bytes)
             
-            # 4. WASM Memory 에 할당 후 기록
             code_ptr = self._wasm_alloc(self.store, req_len)
             self.memory.write(self.store, payload_bytes, code_ptr)
+            res_ptr = 0
+            res_len = 0
             
             try:
-                # 5. 라우터 실행
                 res_ptr = self._wasm_execute_router(self.store, code_ptr)
-                
                 if res_ptr == 0:
                     raise ExecutionError("WASM Execution returned null pointer.")
                     
-                # 6. WASM 메모리에서 결과 읽어오기 (C-String Read)
-                chunk_size = 256
-                result_bytes = bytearray()
-                curr_ptr = res_ptr
-                
-                while True:
-                    chunk = self.memory.read(self.store, curr_ptr, curr_ptr + chunk_size)
-                    null_idx = chunk.find(b'\x00')
-                    if null_idx != -1:
-                        result_bytes.extend(chunk[:null_idx])
-                        break
-                    result_bytes.extend(chunk)
-                    curr_ptr += chunk_size
-                    
+                result_bytes = self._read_c_string(res_ptr)
+                res_len = len(result_bytes) + 1
                 result_str = result_bytes.decode('utf-8')
                 
             finally:
-                # 7. 파이썬이 할당했던 입력 메모리 공간 해제
-                if code_ptr is not None:
+                if code_ptr:
                     self._wasm_dealloc(self.store, code_ptr, req_len)
+                if res_ptr and res_len > 0:
+                    with suppress(Exception):
+                        self._wasm_dealloc(self.store, res_ptr, res_len)
                     
-            # 8. 결과 파싱 및 표준화
             result_data = json.loads(result_str)
-            success = result_data.get("success", False)
-            gas_used = str(result_data.get("gas_used", 0))
-            output_hex = result_data.get("output", "0x")
+            success = bool(result_data.get("success", False))
+            gas_used = int(result_data.get("gas_used", 0))  # strategy.py 호환을 위해 int 유지
+            output_data = result_data.get("output", "{}")
             revert_reason = result_data.get("revert_reason")
             
-            logs = result_data.get("logs", [])
-            state_diff = result_data.get("state_diff", {})
-            state_root = result_data.get("state_root", "0x00...00")
-
             response_payload = {
                 "success": success,
                 "gas_used": gas_used,
-                "state_root": state_root,
-                "output": output_hex,
-                "logs": logs,
-                "state_diff": state_diff,
-                "revert_reason": revert_reason
+                "state_root": result_data.get("state_root", "0x0"),
+                "output": output_data,
+                "logs": result_data.get("logs", []),
+                "state_diff": result_data.get("state_diff", {}),
+                "revert_reason": revert_reason,
             }
-            return ExecutionResult(success=success, output=json.dumps(response_payload))
+            
+            if success:
+                return ExecutionResult(success=True, output=json.dumps(response_payload))
+            else:
+                return ExecutionResult(
+                    success=False,
+                    output=json.dumps(response_payload),
+                    error=ExecutionError(revert_reason or "FSM Execution Reverted"),
+                )
             
         except Exception as e:
-            return ExecutionResult(success=False, error=ExecutionError(f"dvm Fatal: {str(e)}"))
+            return ExecutionResult(success=False, error=ExecutionError(f"fsm Fatal: {str(e)}"))
 
     def get_metrics(self) -> dict:
         if not self.store or not self.memory:
@@ -315,7 +293,7 @@ class DvmInterpreter:
         self._wasm_dealloc = None
         self._wasm_execute_router = None
 
-    def __enter__(self) -> "DvmInterpreter":
+    def __enter__(self) -> "FSMInterpreter":
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
