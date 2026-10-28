@@ -200,7 +200,7 @@ export default {
                     fuel_consumed: 1, mem_usage_bytes: 1024, tier: "EDGE_UNKNOWN"
                 };
 
-                // phase.wasm의 compute_root_fingerprint 메서드를 위한 페이로드 포맷팅
+                // phase.wasm의 compute_fingerprint 메서드를 위한 페이로드 포맷팅
                 const canonicalRecord = {
                     action: action,
                     tier: metrics.tier,
@@ -209,7 +209,7 @@ export default {
                 };
                 
                 const hashPayload = {
-                    method: "compute_root_fingerprint",
+                    method: "compute_fingerprint",
                     context: { timestamp: Date.now() },
                     payload: [canonicalRecord]
                 };

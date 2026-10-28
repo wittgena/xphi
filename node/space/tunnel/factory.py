@@ -82,7 +82,7 @@ class UniversalFacade:
             if isinstance(raw_payload, dict) and "_wasm_envelope" in raw_payload:
                 data_str = raw_payload.get("data")
                 if data_str:
-                    res = await self.wasm_broker.invoke("compute_root_fingerprint", data_str)
+                    res = await self.wasm_broker.invoke("compute_fingerprint", data_str)
                     if res.success:
                         log.info(f"🧾 [Audit] Message {message_id} proven. Fingerprint: {res.output}")
                     else:

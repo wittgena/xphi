@@ -28,7 +28,6 @@ class WasmTester:
         # 1. 테스트 대상 WASM 아티팩트 (예: phase.wasm 또는 fsm.wasm)
         self.wasm_module_path = wasm_module_path
         self.sandbox_root = sandbox_root
-        # 2. compute_root_fingerprint 등 시스템 원장 증명을 전담할 커널 WASM (항상 phase.wasm)
         self.kernel_wasm_path = str(Path(sandbox_root) / kernel_wasm_path)
         
         self.rupture_confirmed = False
@@ -141,9 +140,8 @@ class WasmTester:
                         return False, err_msg
                     
                     try:
-                        # compute_root_fingerprint는 오직 phase.wasm 커널에서만 단일 책임으로 수행
                         proof_res = await broker.invoke(
-                            "compute_root_fingerprint",
+                            "compute_fingerprint",
                             canonical_payload,
                             wasm_path=self.kernel_wasm_path,
                         )

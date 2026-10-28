@@ -242,7 +242,6 @@ class RpcBridge(DuplexChannel):
                 raise write_future.exception()
             return await asyncio.wait_for(fut, timeout=timeout)
         except Exception:
-            # FuelBreaker 등에서 직접 raise 되거나 TimeoutError 발생 시 pending_requests 메모리 누수 방지
             self.pending_requests.pop(req_id, None)
             if self.ctx.get_attr("current_req_id") == req_id:
                 self.ctx.set_attr("current_req_id", None)
