@@ -1,16 +1,13 @@
 # xphi.state.phase.network.bootstrap
-import os
 import time
 import uuid
 import asyncio
-import urllib.parse
 import orjson
-import traceback
-from typing import Optional, Dict, Any, AsyncGenerator, List, Union
+from typing import Optional, Dict, Any, AsyncGenerator, List, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from xphi.arch.xor.parser.ruleset.engine import StreamTaggingParser, AuditRulesetParser, CompiledEngine
+from xphi.arch.xor.parser.ruleset.engine import StreamTaggingParser
 from xphi.state.topos.state import Contract, CoherenceState
 from xphi.watcher.plane.tracer.base import SystemBound, log_streamer
 from xphi.arch.contract.config import env
@@ -36,25 +33,20 @@ DEFAULT_WORKER_RULESET = {
         {
             "tag": "worker-ready",
             "keywords": [
-                {"AND": ["Netty started", "port"]},         
-                {"AND": ["Started", "seconds", "JVM"]}      
-            ]
+                {"AND": ["Netty started", "port"]},
+                {"AND": ["Started", "seconds", "JVM"]},
+            ],
         },
         {
             "tag": "worker-fatal",
             "keywords": [
-                {"AND": ["io.netty.util.internal.OutOfDirectMemoryError", "failed to allocate"]}, 
-                {"AND": ["reactor.blockhound.BlockingOperationError", "Blocking call!"]} 
-            ]
-        }
+                {"AND": ["io.netty.util.internal.OutOfDirectMemoryError", "failed to allocate"]},
+                {"AND": ["reactor.blockhound.BlockingOperationError", "Blocking call!"]},
+            ],
+        },
     ]
 }
 
-GLOBAL_AUDIT_RULESET = {
-    "global_config": {
-        "inspection_level": "structural"
-    }
-}
 
 @dataclass
 class TaskContext:
@@ -63,6 +55,7 @@ class TaskContext:
     task_type: str = "default"
     task_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
 
+
 @dataclass
 class SearchResult:
     score: float
@@ -70,8 +63,15 @@ class SearchResult:
     section: str
     file: str
 
+
 class WorkerRuntimeBootstrap:
-    def __init__(self, bin_root: Path, mq_surface: Optional[EchoListener] = None, ruleset: Optional[dict] = None, executable_pattern: str = "phix-*.jar"):
+    def __init__(
+        self,
+        bin_root: Path,
+        mq_surface: Optional[EchoListener] = None,
+        ruleset: Optional[dict] = None,
+        executable_pattern: str = "phix-*.jar",
+    ):
         self.bin_root = bin_root
         self.mq_surface = mq_surface
         self.process_name = PROCESS_NAME
@@ -87,17 +87,20 @@ class WorkerRuntimeBootstrap:
     def _resolve_executable(self) -> str:
         bins = sorted(self.bin_root.glob(self.executable_pattern))
         if not bins:
-            raise RuntimeError(f"Worker execution core matching {self.executable_pattern} is missing from the binary root.")
+            raise RuntimeError(
+                f"Worker execution core matching {self.executable_pattern} is missing from the binary root."
+            )
         return str(bins[-1])
 
     @log_streamer([
         "bash", "-c",
-        "exec -a {process_name} java -Dreaper.tag={process_name} -jar {executable_path}"
+        "exec -a {process_name} java -Dreaper.tag={process_name} -jar {executable_path}",
     ])
     async def _stream_and_sense(self, line: str):
         """Worker stdout을 스트리밍하며 컴파일된 엔진을 통해 라이프사이클 이벤트를 라우팅합니다."""
-        if not line: return
-        
+        if not line:
+            return
+
         matched_tags = self.rule_engine.execute(line)
         if "worker-ready" in matched_tags and not self.ready_event.is_set():
             log_flow.info("[WorkerNode] 🟢 Worker Readiness condition met. Engine is active.")
@@ -112,7 +115,7 @@ class WorkerRuntimeBootstrap:
         await asyncio.sleep(0.1)
         if not self.boundary.process_pool:
             raise RuntimeError("Failed to inject Worker into SystemBound process pool.")
-        
+
         pid = self.boundary.process_pool[-1].pid
         try:
             if self.mq_surface:
@@ -131,8 +134,13 @@ class WorkerRuntimeBootstrap:
     def shutdown(self):
         self.boundary.collapse()
 
+
 class FlowExecutor:
-    def __init__(self, surface_client: Optional[SurfaceClient] = None, audit_engine: Optional[CompiledEngine] = None):
+    def __init__(
+        self,
+        surface_client: Optional[SurfaceClient] = None,
+        payload_sanitizer: Optional[Callable[[Any], Any]] = None,
+    ):
         if surface_client:
             self.surface = surface_client
         else:
@@ -142,10 +150,9 @@ class FlowExecutor:
                 mq_surface=mq_surface,
                 source_name=SOURCE_NAME,
                 fallback_url=XPHI_BASE,
-                path_prefix=""
+                path_prefix="",
             )
-            
-        self.audit_engine = audit_engine or AuditRulesetParser().parse_ruleset(GLOBAL_AUDIT_RULESET)
+        self._sanitize = payload_sanitizer
 
     async def execute_stream(self, context: TaskContext) -> AsyncGenerator[Dict[str, Any], None]:
         """실제 정의된 Task만 처리하는 간결한 라우터"""
@@ -154,13 +161,13 @@ class FlowExecutor:
         if context.task_type == "ledger_push":
             topic = context.payload.get("topic")
             raw_data = context.payload.get("data")
-            raw_bytes: bytes = orjson.dumps(raw_data)
-            safe_bytes: bytes = self.audit_engine.execute(raw_bytes)
+            clean_data = self._sanitize(raw_data) if self._sanitize is not None else raw_data
+            safe_bytes: bytes = orjson.dumps(clean_data)
             try:
                 async for chunk in self.surface.request(query_path=f"/ledger/{topic}", data=safe_bytes, method="POST"):
                     yield {"status": "processing", "data": chunk}
-                    
-                log_flow.debug(f"[{context.task_id}] Anchored {len(safe_bytes)} bytes (Audit passed) to {topic}")
+
+                log_flow.debug(f"[{context.task_id}] Anchored {len(safe_bytes)} bytes to {topic}")
                 yield {"status": "success"}
             except Exception as e:
                 log_flow.error(f"[{context.task_id}] Store push failed: {e}")
@@ -178,9 +185,8 @@ class EmitTool:
         raise NotImplementedError
 
 class WasmIOEmitter(EmitTool):
-    """@desc: WASM Kernel에서 발생하는 상태 전이 및 I/O Side-effect를 캡처하여 방출"""
     name = "wasm_emitter"
-    
+
     def __init__(self, broker_client=None):
         self.broker = broker_client
 
@@ -197,12 +203,12 @@ class WasmIOEmitter(EmitTool):
                         "logical_name": f"tx_wasm_{int(time.time()*1000)}",
                         "target_topic": target_topic,
                         "location": "wasm_kernel",
-                        "actor": "LLM_IO"
-                    }
+                        "actor": "LLM_IO",
+                    },
                 )
         except asyncio.CancelledError:
             log_contract.info(f"[{self.name}] Tension stream subscription cleanly cancelled.")
-            raise  
+            raise
         except Exception as e:
             log_contract.error(f"[{self.name}] Tension threshold not met (λ < τ): {e}")
             yield Contract(
@@ -212,8 +218,8 @@ class WasmIOEmitter(EmitTool):
                 payload={
                     "error_msg": str(e),
                     "target_topic": target_topic,
-                    "location": "unknown"
-                }
+                    "location": "unknown",
+                },
             )
 
 class StoreEventEmitter(EmitTool):
@@ -231,8 +237,8 @@ class StoreEventEmitter(EmitTool):
                     "logical_name": f"event_{int(time.time()*1000)}",
                     "target_topic": target_topic,
                     "location": "system_bus",
-                    "sig_req": True
-                }
+                    "sig_req": True,
+                },
             )
         except asyncio.CancelledError:
             log_contract.info(f"[{self.name}] Store event monitor cleanly cancelled.")
@@ -247,7 +253,7 @@ class StreamProxyRunner:
 
     async def run_stream(self, target_topic: str) -> AsyncGenerator[Contract, None]:
         queue: asyncio.Queue[Optional[Contract]] = asyncio.Queue()
-        
+
         async def worker(tool: EmitTool):
             try:
                 async for contract in tool.stream_emit(target_topic):

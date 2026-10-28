@@ -1,5 +1,4 @@
 # xphi.arch.contract.protocol.executor
-## @lineage: fiber.dev.ex.agent.protocol.executor
 from __future__ import annotations
 
 import os
@@ -18,8 +17,6 @@ from typing import Any, Final, Protocol, runtime_checkable, TypeVar, Generic
 
 import anyio
 from anyio.from_thread import start_blocking_portal
-
-from xphi.arch.xor.secret.redact import redact_string
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter(__name__)
@@ -70,7 +67,6 @@ def execute_command(
     else:
         cmd_to_run, use_shell, cmd_str = cmd, False, " ".join(shlex.quote(c) for c in cmd)
 
-    log.info("$ %s", redact_string(cmd_str))
     proc = subprocess.Popen(
         cmd_to_run, cwd=cwd, env=sanitized_env(env),
         stdout=subprocess.PIPE, stderr=subprocess.PIPE,
