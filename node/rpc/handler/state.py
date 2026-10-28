@@ -110,30 +110,6 @@ async def handle_mcp_state_resolve(params: dict, ctx: WorkerContext) -> dict:
     
     return {"success": True, "status": status}
 
-
-"""Infrastructure & Consensus"""
-async def handle_phase_store_stream_append(params: dict, ctx: WorkerContext) -> dict:
-    try: req = StreamAppendRequest(**params)
-    except ValidationError as e: return _build_error(422, f"Payload Error: {e.errors()}")
-
-    request_id = f"store_{uuid.uuid4().hex[:8]}"
-    with flow_scope(phase="STORE_STREAM_APPEND", bound="rpc.handler", req_id=request_id):
-        events_dicts = [e.model_dump(exclude_none=True) for e in req.events]
-        is_authorized = await ctx.store.bulk_append(stream_name=req.stream_name, events=events_dicts)
-        if not is_authorized: return _build_error(403, "PhaseStore Blocked Stream Append")
-            
-        payload_to_hash = PhaseStoreAppendRecord(stream_name=req.stream_name, timestamp=int(time.time() * 1000), events=events_dicts).model_dump(exclude_none=True)
-        fp_res = await ctx.broker.invoke(DphiMethod.COMPUTE_ROOT_FINGERPRINT, payload_to_hash)
-        if not fp_res.success: return _build_error(500, f"WASM Fingerprint Failed: {fp_res.error}")
-        event_hash = json.loads(fp_res.output)["fingerprint"]
-        merkle_proof = None
-        if req.verbose:
-            proof_res = await ctx.broker.invoke(DphiMethod.GENERATE_PROOF, payload_to_hash)
-            if proof_res.success: merkle_proof = json.loads(proof_res.output).get("current_hash")
-                
-        return {"request_id": request_id, "status": "success", "result": {"hash": event_hash, "membership_proof": merkle_proof}}
-
-
 async def handle_phase_store_receipt_verify(params: dict, ctx: WorkerContext) -> dict:
     state_root, receipt_id = params.get("state_root"), params.get("receipt_id")
     if not state_root or not receipt_id: return _build_error(422, "Payload Format Error: Missing 'state_root' or 'receipt_id' in receipt")

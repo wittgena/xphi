@@ -164,15 +164,12 @@ class DynamicalTensionObserver:
         self.broker = broker
         self.policy = policy
         
-        # 텐션 붕괴 감지를 위한 FitzHugh-Nagumo 신경망 발화 커널 사용
         self.kernel_type = "kernel.fitzhugh"
         self.params = {"global_coupling": 0.8, "a": 0.7, "b": 0.8, "fh_epsilon": 0.08}
 
     async def evaluate_tension_async(
         self, current_states: Dict[str, float], dt: float = 0.1
     ) -> tuple[TensionPhase, float, bool]:
-        
-        # 1. 펀딩비 원시 데이터를 Phase/Omega를 갖춘 NodeState 객체로 변환
         node_states: Dict[str, NodeState] = {}
         for arn, rate in current_states.items():
             node_states[arn] = AtorAdapter.build_node_state(
@@ -181,16 +178,12 @@ class DynamicalTensionObserver:
                 state="NORMAL", 
                 tension=0.0
             )
-
-        # 2. WASM 연산을 위한 Payload 구성
         payload = AtorAdapter.Dynamics.build_dynamics_ffi_payload(
             states=node_states, 
             kernel_type=self.kernel_type, 
             params=self.params, 
             dt=dt
         )
-        
-        # 3. 비동기 DphiBroker 호출 (SYSTEM 티어로 초고속 최우선 처리)
         res = await self.broker.invoke(
             method=DphiMethod.PROCESS_FIELD_DYNAMICS, 
             payload=json.dumps(payload), 
@@ -200,13 +193,10 @@ class DynamicalTensionObserver:
         if not res.success:
             return TensionPhase.NORMAL, 0.0, False
 
-        # 4. WASM 커널 결과(KernelDelta) 파싱 및 시스템 상태 평가
         deltas: Dict[str, KernelDelta] = AtorAdapter.Dynamics.parse_dynamics_result(json.loads(res.output))
-        
         max_tension = max([d.target_tension for d in deltas.values()] + [0.0])
         is_spiking = any([d.is_spiking for d in deltas.values() if d.is_spiking is not None])
         
-        # 5. 상태 페이즈 맵핑
         if is_spiking or max_tension >= self.policy.tension_rupture_threshold:
             return TensionPhase.RUPTURE, max_tension, True
         elif max_tension >= self.policy.tension_preheat_threshold:
@@ -214,16 +204,7 @@ class DynamicalTensionObserver:
             
         return TensionPhase.NORMAL, max_tension, False
 
-
-# =========================================================================
-# 4. ORCHESTRATION ENGINES
-# =========================================================================
-
 class ProvableTrajectoryEngine:
-    """
-    @desc: Evaluates multi-source inputs, monitors non-linear structural tension, 
-           and guarantees deterministic outputs suitable for cryptographic sealing.
-    """
     def __init__(self, broker: DphiBroker):
         self.comparator = FundingRateComparator()
         self.tension_observer = DynamicalTensionObserver(broker, RiskPolicy())
@@ -238,14 +219,9 @@ class ProvableTrajectoryEngine:
             target_arns[1]: {"rate": -0.05, "time": fetch_time}
         }
         
-        # 1. Compute Base Spread & Intent
         snapshot, intent = self.comparator.evaluate(symbol, mock_observations)
-        
-        # 2. Evaluate Dynamical Tension via WASM (Async)
         raw_states_for_observer = {arn: data["rate"] for arn, data in mock_observations.items()}
         tension_phase, sys_tension, is_spiking = await self.tension_observer.evaluate_tension_async(raw_states_for_observer)
-        
-        # 3. Assemble integrated Trajectory Dynamics
         dynamics = TrajectoryDynamics(
             velocity=0.001, 
             system_tension=sys_tension,

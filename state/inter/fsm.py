@@ -102,7 +102,7 @@ class FSMInterpreter:
                     vm_target = payload.get("vm_target", "UNKNOWN").upper()
                     if vm_target == "PHASE":
                         log.info("[Host Bridge] Cross-VM Call: fsm.wasm -> phase.wasm")
-                        dphi_method = payload.get("method", "evaluate_tension")
+                        dphi_method = payload.get("method", "process_field_dynamics")
                         dphi_context = payload.get("context", {"injected_anchor": 1, "injected_tick": 0})
                         dphi_payload = payload.get("payload", {})
                         
