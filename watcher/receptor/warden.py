@@ -212,7 +212,7 @@ class SecretAuditor:
         self.sensitive_keys = {"email", "ip_address", "password", "token", "secret"}
 
     async def append_to_ledger_and_prove(self, event: Dict[str, Any], needs_proof: bool = False) -> AuditLogResponse:
-        """Normalizes (hashes) the event, encrypts sensitive data, and routes it to Ledger."""
+        """Normalizes (hashes) the event, encrypts sensitive data, and routes it to AnchorStore."""
         log.info("[SecretAuditor] Processing Pangea audit log append request...")
         
         sanitized_event = await asyncio.to_thread(self._encrypt_sensitive_data, event)

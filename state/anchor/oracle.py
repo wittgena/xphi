@@ -6,7 +6,7 @@ from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.state.anchor.store import PhaseStore, AnchorRole
+from xphi.state.anchor.store import AnchorStore, AnchorRole
 
 log = get_emitter("anchor.oracle", phase="ANCHOR")
 ANCHOR_DB_PATH = resolve_path("adb")
@@ -17,15 +17,15 @@ class AnchorOracle:
         self.broker = broker or DphiBroker.get_shared()
         self.path = str(path)
         try:
-            self.store = PhaseStore(self.path)
+            self.store = AnchorStore(self.path)
             self.db = self.store.db
-            log.info("[AnchorOracle] Mounted Anchor DB via PhaseStore. Canonical WASM Broker attached.")
+            log.info("[AnchorOracle] Mounted Anchor DB via AnchorStore. Canonical WASM Broker attached.")
         except Exception as e:
-            log.error(f"[AnchorOracle] Failed to mount ledger DB: {e}")
+            log.error(f"[AnchorOracle] Failed to mount AnchorStore DB: {e}")
             raise
 
     def close(self):
-        # DB 핸들의 생명주기는 PhaseStore 싱글톤에서 일괄 관리함
+        # DB 핸들의 생명주기는 AnchorStore 싱글톤에서 일괄 관리함
         pass
 
     def _sync_readonly_view(self) -> None:

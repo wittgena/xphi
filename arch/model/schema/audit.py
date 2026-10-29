@@ -93,7 +93,7 @@ class KernelOtlpRecord(BaseModel):
     metrics_summary: Dict[str, Any]
     receipt_ref: Optional[str] = None
 
-class PhaseStoreAppendRecord(BaseModel):
+class StoreAppendRecord(BaseModel):
     stream_name: str
     timestamp: int
     events: List[Dict[str, Any]]

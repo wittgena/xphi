@@ -10,7 +10,7 @@ from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.pta import SignStateAdapter
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.state.anchor.store import PhaseStore, ToposBlob, PhaseCommit, AnchorRole
+from xphi.state.anchor.store import AnchorStore, ToposBlob, PhaseCommit, AnchorRole
 
 log = get_emitter("phase.commit", phase="COMMIT")
 
@@ -20,7 +20,7 @@ class Attractor:
         self.name = name
         self.path = Path(path).expanduser().resolve()
         self.runner = runner
-        self.store = PhaseStore()
+        self.store = AnchorStore()
 
     def inscribe(
         self, 

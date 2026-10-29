@@ -15,7 +15,7 @@ from xphi.state.phase.executor.cont import SwarmExecutor
 from xphi.state.phase.executor.flow import FlowExecutor
 from xphi.state.phase.reactor import PhaseReactor
 
-from xphi.state.anchor.store import PhaseStore, AnchorRole
+from xphi.state.anchor.store import AnchorStore, AnchorRole
 
 from xphi.node.runtime.anchor import RuntimeAnchor
 from xphi.node.space.tunnel.factory import TunnelFactory
@@ -160,8 +160,8 @@ async def main_async():
     log.info(f"[Boot] Provisioning Shared WASM Broker (Timeout: {wasm_timeout}s)...")
     shared_broker = DphiBroker.get_shared(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
 
-    log.info("[Boot] Initializing PhaseStore and injecting Shared Broker...")
-    store = PhaseStore()
+    log.info("[Boot] Initializing AnchorStore and injecting Shared Broker...")
+    store = AnchorStore()
     
     log.info("[Boot] Igniting Embedded Phase Runtime Node...")
     completion_signal = asyncio.Event()
@@ -188,10 +188,10 @@ async def teardown():
             task.cancel()
 
     try:
-        PhaseStore().close()
-        log.info("[Boot] PhaseStore lock safely released.")
+        AnchorStore().close()
+        log.info("[Boot] AnchorStore lock safely released.")
     except Exception as e:
-        log.warning(f"[Boot] Error while releasing PhaseStore lock: {e}")
+        log.warning(f"[Boot] Error while releasing AnchorStore lock: {e}")
 
     if DphiBroker._shared_instance is not None:
         try:

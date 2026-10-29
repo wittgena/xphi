@@ -14,7 +14,7 @@ from xphi.state.topos.state import Contract, CoherenceState
 from xphi.node.space.sandbox.resolver import SandboxExecutor, TaskContext, EffectResolver
 from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.state.anchor.store import PhaseStore, PhaseCommit
+from xphi.state.anchor.store import AnchorStore, PhaseCommit
 from xphi.node.runtime.wasm.method import DphiMethod
 from xphi.watcher.plane.emitter import get_emitter
 
@@ -202,7 +202,7 @@ class RecoveryRunner(RuntimeRunner):
                 encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw
             ).hex() for k in self.auditor_keys
         ]
-        self.store = PhaseStore()
+        self.store = AnchorStore()
 
     def _sign_multisig(self, signers: list, commit_dict: dict) -> list:
         canonical_bytes = StateAdapter.to_canonical_bytes(commit_dict)
@@ -293,7 +293,7 @@ class RecoveryRunner(RuntimeRunner):
                         threshold=2
                     )
                     self.store.update_head("global_era_anchor", commit_hash)
-                    log.info(f"  └─ [PHYSICAL SEAL SUCCESS] Ledger Head updated: {commit_hash[:8]}")
+                    log.info(f"  └─ [PHYSICAL SEAL SUCCESS] AnchorStore Head updated: {commit_hash[:8]}")
                 except Exception as e:
                     log.critical(f"  └─ [FATAL] WASM validated, but physical seal to DB failed: {e}")
                 break

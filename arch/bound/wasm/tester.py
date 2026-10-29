@@ -135,7 +135,7 @@ class WasmTester:
                     canonical_payload = proof_auditor.generate_payload()
                     
                     if not canonical_payload or canonical_payload == "[]":
-                        err_msg = "[Ledger] Canonical payload is empty. Structural projection failed."
+                        err_msg = "[AnchorStore] Canonical payload is empty. Structural projection failed."
                         log.error(err_msg)
                         return False, err_msg
                     
@@ -147,12 +147,12 @@ class WasmTester:
                         )
                         if getattr(proof_res, 'success', False):
                             self.test_execution_hash = json.loads(proof_res.output).get("fingerprint")
-                            log.info(f"[Ledger] Test Execution Proof successfully sealed! Hash: {self.test_execution_hash}")
+                            log.info(f"[AnchorStore] Test Execution Proof successfully sealed! Hash: {self.test_execution_hash}")
                         else:
                             error_msg = getattr(proof_res.error, 'message', 'Unknown Error') if hasattr(proof_res, 'error') else 'Unknown Error'
-                            log.error(f"[Ledger] Failed to seal test execution: {error_msg}")
+                            log.error(f"[AnchorStore] Failed to seal test execution: {error_msg}")
                     except Exception as proof_err:
-                        log.error(f"[Ledger] Exception during proof generation: {proof_err}")
+                        log.error(f"[AnchorStore] Exception during proof generation: {proof_err}")
                         
                     return True, ""
                     

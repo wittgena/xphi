@@ -1,6 +1,6 @@
 # xphi.state.anchor.key
 """
-@desc: Centralized Key Management for PhaseStore, Oracle, PTA, and Mempool.
+@desc: Centralized Key Management for AnchorStore, Oracle, PTA, and Mempool.
 @rule: 
 - 계층/뎁스 구분자(Namespace Separator)로는 반드시 콜론(`:`)을 사용
 - 단일 개념 내의 단어 연결(Word Separator)에는 언더스코어(`_`)를 사용

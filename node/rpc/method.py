@@ -3,8 +3,8 @@ from enum import Enum
 from typing import Dict, Callable, Optional
 
 class RpcMethod(str, Enum):
-    # phase store & State
-    PHASE_STORE_RECEIPT_VERIFY = "phase.store.receipt.verify"
+    # store & State
+    ANCHOR_STORE_RECEIPT_VERIFY = "anchor.store.receipt.verify"
     
     # MCP Gateway Delegation
     MCP_STATE_QUERY = "mcp.state.query"

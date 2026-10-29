@@ -1,6 +1,6 @@
 # xphi.state.anchor.driver
 """
-Pluggable storage driver interface for the Anchor Ledger.
+Pluggable storage driver interface for the AnchorStore.
 Target Expansion Backends: 
 - TiKV (Distributed RocksDB/Raft KV)
 - FoundationDB (Ordered transactional KV)
@@ -87,7 +87,7 @@ class AbstractAnchorDriver(ABC):
             return ns, ident
         return "default", decoded
 
-    # --- Dict & Cursor compatibility mappings for PhaseStore and AnchorOracle ---
+    # --- Dict & Cursor compatibility mappings for AnchorStore and AnchorOracle ---
     def __contains__(self, key: bytes) -> bool:
         return self.get(key) is not None
 

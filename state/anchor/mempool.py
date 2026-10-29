@@ -12,7 +12,7 @@ from xphi.watcher.plane.emitter import get_emitter
 from xphi.state.anchor.key import KeyGen
 
 if TYPE_CHECKING:
-    from xphi.state.anchor.store import PhaseStore, LogicStream, SealedKernel
+    from xphi.state.anchor.store import AnchorStore, LogicStream, SealedKernel
 
 log = get_emitter("anchor.mempool", phase="KERNEL")
 
@@ -21,7 +21,7 @@ class MempoolRelay:
     """PROPOSER와 SEALER 간의 분산 Mempool 스트림 중계 및 ACK 동기화 전담 모듈"""
     CONSUMER_GROUP = "anchor_sealer_group"
 
-    def __init__(self, store: "PhaseStore", ack_timeout: float = 4.0):
+    def __init__(self, store: "AnchorStore", ack_timeout: float = 4.0):
         self.store = store
         self.ack_timeout = ack_timeout
         self.consumer_name = f"sealer_{os.getpid()}_{uuid.uuid4().hex[:6]}"

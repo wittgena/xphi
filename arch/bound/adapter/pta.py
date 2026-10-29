@@ -13,7 +13,7 @@ import nacl.exceptions
 import cryptography.exceptions
 from cryptography.hazmat.primitives import serialization
 
-from xphi.state.anchor.store import PhaseStore, LogicStream
+from xphi.state.anchor.store import AnchorStore, LogicStream
 from xphi.state.anchor.oracle import AnchorOracle
 from xphi.node.runtime.wasm.broker import DphiBroker
 from xphi.watcher.plane.emitter import get_emitter
@@ -201,7 +201,7 @@ class PtaAdapter:
 
     def __init__(self, broker: DphiBroker):
         self.broker = broker
-        self.ledger = PhaseStore()
+        self.ledger = AnchorStore()
         self.oracle = AnchorOracle(broker=broker)
         
         self._unfold_pool = PtaAdapter._shared_unfold_pool
