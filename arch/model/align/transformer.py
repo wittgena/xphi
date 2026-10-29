@@ -7,7 +7,7 @@ import libcst as cst
 from typing import List, Tuple, Dict, Any, Callable
 from pathlib import Path
 
-from xphi.arch.align.model.aligner import PhaseAligner, AlignRecord
+from xphi.arch.model.align.aligner import PhaseAligner, AlignRecord
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 def node_to_str(node: cst.CSTNode) -> str:

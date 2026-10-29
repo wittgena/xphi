@@ -1,6 +1,7 @@
 # xphi.node.space.bind.around
 import os
 import sys
+import copy
 import shutil
 import json
 import site
@@ -15,6 +16,7 @@ log = logging.getLogger("around")
 CURRENT_SCRIPT = Path(__file__).absolute()
 CURRENT_DIR = CURRENT_SCRIPT.parent
 PTH_FILENAME = "xphi.pth"
+BOUND = "bound.json"
 CORES = ["fiber", "xphi"]
 
 ## Default minimum skeleton to prevent resolver crashes if bound.json doesn't exist
@@ -73,9 +75,11 @@ DEFAULT_BOUND_SKELETON = {
     "quarantine": ["venv", "env", "node_modules", "dev", "ex", "tests"]
 }
 
+
 def ignore_hidden(dir, files):
     """@helper: Exclude hidden files and directories from the copy target."""
     return [f for f in files if f.startswith('.')]
+
 
 def determine_execution_mode() -> str:
     """
@@ -96,6 +100,7 @@ def resolve_workspace_root() -> Path:
     
     # Fallback to current working directory if core marker is not found
     return Path.cwd()
+
 
 def replicate_and_relaunch(workspace_root: Path, anchor_dir: Path) -> None:
     """@flow: Replicate the script to the root anchor directory and relaunch (DEV Mode Only)"""
@@ -157,22 +162,28 @@ def discover_user_repos() -> list[Path]:
 def update_bound_config(anchor_dir: Path, repos: list[Path]) -> None:
     """
     @task: Update the bound.json file dynamically.
-    @desc: Creates a default skeleton if missing, and updates the 'around' topology with privilege info.
+    @desc: Ensures skeleton integrity (self-healing) and updates the 'around' topology with privilege info.
     """
-    bound_path = anchor_dir / "bound.json"
+    bound_path = anchor_dir / BOUND
     anchor_dir.mkdir(parents=True, exist_ok=True)
     
-    config = {}
+    # Start with a clean deep copy of the default skeleton to guarantee all required keys ('adb', etc.) exist
+    config = copy.deepcopy(DEFAULT_BOUND_SKELETON)
+
     if bound_path.exists():
         try:
             with open(bound_path, 'r', encoding='utf-8') as f:
-                config = json.load(f)
+                existing = json.load(f)
+            if isinstance(existing, dict):
+                for k, v in existing.items():
+                    if isinstance(v, dict) and isinstance(config.get(k), dict):
+                        config[k].update(v)
+                    else:
+                        config[k] = v
         except json.JSONDecodeError:
             log.warning(f"[Warning] Failed to parse {bound_path}, overwriting with default skeleton.")
-            config = DEFAULT_BOUND_SKELETON.copy()
     else:
-        log.info("[Phase: Sync] bound.json not found. Bootstrapping with default skeleton.")
-        config = DEFAULT_BOUND_SKELETON.copy()
+        log.info(f"[Phase: Sync] {BOUND} not found. Bootstrapping with default skeleton.")
 
     new_around_map = {}
     for p in repos:
@@ -193,7 +204,7 @@ def update_bound_config(anchor_dir: Path, repos: list[Path]) -> None:
             json.dump(config, f, indent=2, ensure_ascii=False)
         log.info(f"[Phase: Sync] Updated 'around' topology (Dict Mode) in: {bound_path}")
     except Exception as e:
-        log.warning(f"[Warning] Failed to update bound.json: {e}")
+        log.warning(f"[Warning] Failed to update {BOUND}: {e}")
 
 
 def project_dev_mode(workspace_root: Path, anchor_dir: Path) -> list[Path]:
@@ -227,9 +238,12 @@ def project_dev_mode(workspace_root: Path, anchor_dir: Path) -> list[Path]:
     return repos
 
 
-def project_user_mode(anchor_dir: Path) -> list[Path]:
+def project_user_mode(anchor_dir: Path | None = None) -> list[Path]:
     """@install: Discover installed packages and setup user-local workspace (USER Mode)."""
-    log.info(f"[Phase: Discovery] Resolving installed packages (USER Mode)")
+    if anchor_dir is None:
+        anchor_dir = Path.home() / ".anchor"
+
+    log.info("[Phase: Discovery] Resolving installed packages (USER Mode)")
     repos = discover_user_repos()
     
     if not repos:
@@ -259,7 +273,6 @@ for p in sys.path:
 """
     subprocess.run([sys.executable, "-c", script], check=True)
 
-
 if __name__ == "__main__":
     MODE = determine_execution_mode()
     
@@ -273,8 +286,8 @@ if __name__ == "__main__":
         if found_repos:
             verify_projection(found_repos, WORKSPACE_ROOT)
     else:
-        # Installed package user environment workflow
-        USER_ROOT = Path.cwd()
+        # Installed package user environment workflow (Always lock to ~/.anchor)
+        USER_ROOT = Path.home()
         ANCHOR_DIR = USER_ROOT / ".anchor"
         
         found_repos = project_user_mode(ANCHOR_DIR)
