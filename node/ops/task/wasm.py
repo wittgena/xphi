@@ -12,7 +12,7 @@ from xphi.node.ops.daemon.base import AbstractDaemon
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 from xphi.node.runtime.wasm.quota import QuotaPolicy
-from xphi.node.runtime.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.method import WasmMethod
 from xphi.node.ops.task.strategy import ExecutionStrategy
 
 TIME_ROOT = resolve_path("time")
@@ -183,10 +183,10 @@ class TaskWasm(AbstractDaemon):
     async def _process_and_reply(self, payload: dict, message_id: str, interp_instance):
         response_channel = payload.get("response_channel")
         job_id = payload.get("job_id", "unknown")
-        target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE.value)
+        target_func = payload.get("target_func", WasmMethod.EXECUTE_CODE.value)
 
         try:
-            if target_func in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_FSM.value):
+            if target_func in (WasmMethod.EXECUTE_CODE.value, WasmMethod.EXECUTE_FSM.value):
                 response_data = await asyncio.to_thread(self._execute_heavy_sandbox, payload, interp_instance)
             else:
                 response_data = self._execute_fast_wasm(payload, interp_instance)
@@ -238,7 +238,7 @@ class TaskWasm(AbstractDaemon):
 
     def _execute_heavy_sandbox(self, payload: dict, interp_instance) -> dict:
         job_id = payload.get("job_id", "unknown")
-        target_func = payload.get("target_func", DphiMethod.EXECUTE_CODE.value)
+        target_func = payload.get("target_func", WasmMethod.EXECUTE_CODE.value)
         wasm_path = payload.get("wasm_path", self.default_wasm_path)
         tier_str = payload.get("tier", self.default_tier)
         job_policy = self._get_policy_from_tier(tier_str)
@@ -258,7 +258,7 @@ class TaskWasm(AbstractDaemon):
                 return {"success": False, "output": "", "error": error_msg}
 
             safe_payload = exec_data
-            if target_func == DphiMethod.EXECUTE_FSM.value:
+            if target_func == WasmMethod.EXECUTE_FSM.value:
                 return self.strategy.run_fsm_sandbox(target_path, job_policy, safe_payload, context, job_id, self.log)
             else:
                 return self.strategy.run_python_sandbox(job_policy, safe_payload, context, job_id, self.log)

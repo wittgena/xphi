@@ -24,57 +24,12 @@ from xphi.node.rpc.registry import build_internal_rpc_registry
 from xphi.node.rpc.handler.validator import ValidatorService
 from xphi.node.ops.daemon.base import AbstractDaemon
 from xphi.node.space.tunnel.factory import TunnelFactory
-from xphi.node.space.sandbox.resolver import BenchProfile
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 
 from xphi.watcher.receptor.warden import AuditWarden
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("daemon.rpc")
-
-@dataclass
-class IngressContext:
-    topo_id: int
-    press_limit: int
-    is_ruptured: bool
-    reason: str = ""
-
-class ToposSequencer:
-    async def get_next_sequence(self, client_id: str) -> int:
-        ts = int(time.time() * 1000)
-        hash_val = int(hashlib.sha256(client_id.encode()).hexdigest()[:8], 16)
-        return (ts % 100000000) + (hash_val % 1000)
-
-class FuelAllocator:
-    async def calculate_press_limit(self, client_id: str, action_type: str) -> int:
-        seed_str = f"{client_id}:{action_type}"
-        base_press = int(hashlib.md5(seed_str.encode()).hexdigest()[:4], 16) % 90
-        return max(10, base_press)
-
-class HealthMonitor:
-    async def is_ruptured(self) -> tuple[bool, str]:
-        if random.random() < 0.01:
-            return True, "Byzantine divergence detected in consensus layer."
-        return False, ""
-
-class IngressPolicyEngine:
-    """Facade for managing incoming request limits, sequences, and node health."""
-    def __init__(self, sequencer: ToposSequencer, allocator: FuelAllocator, monitor: HealthMonitor):
-        self.sequencer = sequencer
-        self.allocator = allocator
-        self.monitor = monitor
-
-    async def resolve_context(self, client_id: str, action: str) -> IngressContext:
-        ruptured, reason = await self.monitor.is_ruptured()
-        topo_id = await self.sequencer.get_next_sequence(client_id)
-        press_limit = await self.allocator.calculate_press_limit(client_id, action)
-
-        return IngressContext(
-            topo_id=topo_id,
-            press_limit=press_limit,
-            is_ruptured=ruptured,
-            reason=reason
-        )
 
 class LogStreamStore:
     def __init__(self, storage_endpoint: str = "http://internal-store:8356"):
@@ -169,26 +124,17 @@ class RpcWorkerDaemon(AbstractDaemon):
     async def _init_context(self):
         log.info(f"[{self.name}] Initializing Headless Worker Dependencies...")
         
-        broker = getattr(self.app_ctx, "broker", None) or DphiBroker()
+        broker = getattr(self.app_ctx, "broker", None) or WasmBroker()
         store = getattr(self.app_ctx, "store", None) or LogStreamStore()
         
-        # nexus = NexusAnchor(broker=broker, consensus_threshold=1, allowed_committee=[])
         node_pubkey = NodeSigner.get_instance().pubkey_hex if hasattr(NodeSigner, 'get_instance') else "mock_pubkey"
         exchange_adapter = ClearingAdapter(clearing_house_pub_key=node_pubkey)
         pta_adapter = PtaAdapter(broker=broker)
-        
-        policy_engine = IngressPolicyEngine(
-            sequencer=ToposSequencer(), allocator=FuelAllocator(), monitor=HealthMonitor()
-        )
-        profile_service = BenchProfile(broker=broker)
         self.worker_ctx = WorkerContext(
             broker=broker,
             store=store,
-            # nexus=nexus,
             exchange_adapter=exchange_adapter,
-            pta_adapter=pta_adapter,
-            policy_engine=policy_engine,
-            profile_service=profile_service
+            pta_adapter=pta_adapter
         )
 
         prod_validator = ValidatorService()

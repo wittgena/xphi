@@ -82,10 +82,6 @@ def ignore_hidden(dir, files):
 
 
 def determine_execution_mode() -> str:
-    """
-    @helper: Determine if the script is running from source (DEV) or as an installed package (USER).
-    @desc: Checks if the script resides inside 'site-packages' or 'dist-packages'.
-    """
     if any(part in ["site-packages", "dist-packages"] for part in CURRENT_SCRIPT.parts):
         return "USER"
     return "DEV"

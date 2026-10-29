@@ -8,7 +8,7 @@ from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
 
 from xphi.node.space.bind.resolver import resolve_path
-from xphi.node.runtime.wasm.broker import DphiBroker  
+from xphi.node.runtime.wasm.broker import WasmBroker  
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.state.anchor.driver import AnchorDriverFactory
 from xphi.state.anchor.mempool import MempoolRelay
@@ -22,11 +22,9 @@ class AnchorRole(Enum):
     SEALER = "SEALER"        # Acquired physical lock; can invoke WASM and seal states
     PROPOSER = "PROPOSER"    # Read-Only mode
 
-
 def deterministic_hash(data: Dict[str, Any]) -> str:
     canonical_bytes = StateAdapter.to_canonical_bytes(data)
     return hashlib.sha256(canonical_bytes).hexdigest()
-
 
 class LogicStream(BaseModel):
     """Ψ_open - The external request flowing into the system."""
@@ -34,7 +32,6 @@ class LogicStream(BaseModel):
     action: str = "default_action"
     payload: Any  
     metadata: Dict[str, Any] = Field(default_factory=dict)
-
 
 @dataclass
 class ToposBlob:
@@ -46,7 +43,6 @@ class ToposBlob:
     details: str
     timestamp: float = field(default_factory=time.time)
 
-
 @dataclass
 class PhaseCommit:
     """Sealed kernel snapshot verified by Phase or Multi Signature"""
@@ -57,7 +53,6 @@ class PhaseCommit:
     parent_hash: Optional[str] = None
     sealed_at: float = field(default_factory=time.time)
 
-
 class SealedKernel(BaseModel):
     """Ω_knot - The mathematically invariant, executable closed boundary."""
     kernel_id: str
@@ -66,13 +61,12 @@ class SealedKernel(BaseModel):
     tension_at_seal: float
     signature: str 
 
-
-class PhaseStore:
+class AnchorStore:
     _instance = None
 
     def __new__(cls, path=ANCHOR_DB_PATH):
         if cls._instance is None:
-            cls._instance = super(PhaseStore, cls).__new__(cls)
+            cls._instance = super(AnchorStore, cls).__new__(cls)
             cls._instance._initialize_consensus_node(path)
         return cls._instance
 
@@ -81,15 +75,15 @@ class PhaseStore:
         self.db = AnchorDriverFactory.mount(str(target_path))
         if self.db.is_sealer:
             self.role = AnchorRole.SEALER
-            self.broker = DphiBroker.get_shared()
+            self.broker = WasmBroker.get_shared()
             self.relay = MempoolRelay(self)
             self.relay.start_sealer_consumer()
-            log.info(f"[Ledger] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
+            log.info(f"[AnchorStore] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")
         else:
             self.role = AnchorRole.PROPOSER
             self.broker = None 
             self.relay = MempoolRelay(self)
-            log.info(f"[Ledger] Lock held by another node. Operating as {self.role.value} (Read-Only/Proposer).")
+            log.info(f"[AnchorStore] Lock held by another node. Operating as {self.role.value} (Read-Only/Proposer).")
 
     def _handle_warden_anomaly(self, action: str, details: str) -> None:
         blob = ToposBlob(
@@ -172,7 +166,7 @@ class PhaseStore:
 
         signature = self._save_kernel_unsafe(commit)
         self.update_head(stream.id, signature)
-        log.info(f"[Ledger:LEADER] Epoch Sealed. Stream: {stream.id} | Commit: {signature[:8]}")
+        log.info(f"[AnchorStore:LEADER] Epoch Sealed. Stream: {stream.id} | Commit: {signature[:8]}")
 
         return SealedKernel(
             kernel_id=f"ker_{stream.id}",
@@ -182,78 +176,11 @@ class PhaseStore:
             signature=signature
         )
 
-    # async def propose_and_seal(self, stream: LogicStream) -> Optional[SealedKernel]:
-    #     if self.role == AnchorRole.PROPOSER:
-    #         return await self.relay.propose_stream_async(stream)
-
-    #     self.relay.ensure_sealer_consumer()
-
-    #     parent_hash = self.get_head_hash(stream.id) or "genesis"
-    #     transition_payload = {
-    #         "intent_action": stream.action,
-    #         "intent_payload": stream.payload,
-    #         "evolution_ctx": {
-    #             "phase_root": {
-    #                 "name": f"root_{stream.id}",
-    #                 "kind": "CORE",
-    #                 "content": json.dumps(stream.metadata),
-    #                 "ref_target": parent_hash,
-    #                 "children": {}
-    #             },
-    #             "external_rules": [] 
-    #         }
-    #     }
-
-    #     wasm_res = await self.broker.invoke("execute_transition", json.dumps(transition_payload))
-    #     if not wasm_res.success:
-    #         log.error(f"[Ledger:WASM] FATAL: Kernel panicked or rejected execution. {wasm_res.error}")
-    #         return None
-
-    #     trans_result = json.loads(wasm_res.output)
-    #     if not trans_result.get("is_authorized", False):
-    #         err_msg = trans_result.get("error_msg", "Spatial Fence Denied")
-    #         log.warning(f"[Ledger:WASM] REJECTED: {err_msg}")
-    #         self.save_transition(
-    #             ToposBlob("wasm.reject", "logic.stream", "fragmented", 1.0, err_msg)
-    #         )
-    #         return None
-
-    #     final_root = trans_result.get("final_root")
-    #     all_residues = trans_result.get("all_residues", [])
-    #     tension_at_seal = len(all_residues) * 0.1 
-
-    #     blob_hashes = [
-    #         self.save_transition(
-    #             ToposBlob("wasm.mutation", "logic.loop", "sealed.kernel", tension_at_seal, f"[{r['kind']}] {r['msg']}")
-    #         )
-    #         for r in all_residues
-    #     ]
-
-    #     commit = PhaseCommit(
-    #         stream_id=stream.id,
-    #         executable_payload=final_root,
-    #         tension_at_seal=tension_at_seal,
-    #         blob_hashes=blob_hashes,
-    #         parent_hash=parent_hash
-    #     )
-
-    #     signature = self._save_kernel_unsafe(commit)
-    #     self.update_head(stream.id, signature)
-    #     log.info(f"[Ledger:LEADER] Epoch Sealed by WASM. Stream: {stream.id} | Commit: {signature[:8]}")
-
-    #     return SealedKernel(
-    #         kernel_id=f"ker_{stream.id}",
-    #         stream_id=stream.id,
-    #         executable_payload=final_root,
-    #         tension_at_seal=tension_at_seal,
-    #         signature=signature
-    #     )
-
     def close(self):
         if hasattr(self, 'relay') and self.relay is not None:
             self.relay.stop_sealer_consumer()
         if hasattr(self, 'db') and self.db is not None:
             self.db.close()
             role_msg = self.role.value if hasattr(self, 'role') else "UNKNOWN"
-            log.info(f"[KernelStore] Ledger DB closed cleanly. ({role_msg})")
-        PhaseStore._instance = None
+            log.info(f"[AnchorStore] DB closed cleanly. ({role_msg})")
+        AnchorStore._instance = None

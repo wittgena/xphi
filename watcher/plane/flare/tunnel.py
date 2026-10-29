@@ -7,12 +7,12 @@ from typing import Optional, Any, List, Tuple
 
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.arch.contract.config.tunnel import BackendProtocol, resolve_default_config, parse_connection_urls
-from xphi.node.runtime.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.method import WasmMethod
 
 log = get_emitter("tunnel.flare")
 
 class PayloadKey:
-    """Matches dphi.broker.PayloadKey to minimize dependencies"""
+    """Matches broker.PayloadKey to minimize dependencies"""
     JOB_ID = "job_id"
     METHOD_FUNC = "target_func" 
     PAYLOAD = "payload"
@@ -86,17 +86,16 @@ class _MockStateStore:
             base_payload = payload.get(PayloadKey.PAYLOAD, {})
             context = payload.get(PayloadKey.CONTEXT, {})
 
-            # [Dynamic Timeout] Worker Limit 회피 및 Fast-Fail 복구
             requested_timeout = float(context.get("timeout", 15.0))
             dynamic_timeout = httpx.Timeout(requested_timeout + 3.0, connect=5.0)
-            dphi_kernel_methods = {
-                m.value for m in DphiMethod 
-                if m.value not in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_FSM.value)
+            methods = {
+                m.value for m in WasmMethod 
+                if m.value not in (WasmMethod.EXECUTE_CODE.value, WasmMethod.EXECUTE_FSM.value)
             }
 
-            if wasm_path == "phase.wasm" or method_func in dphi_kernel_methods:
+            if wasm_path == "phase.wasm" or method_func in methods:
                 vm_tgt = "PHASE"
-            elif wasm_path == "fsm.wasm" or method_func == DphiMethod.EXECUTE_FSM.value:
+            elif wasm_path == "fsm.wasm" or method_func == WasmMethod.EXECUTE_FSM.value:
                 vm_tgt = "FSM"
             else:
                 vm_tgt = "PYTHON"

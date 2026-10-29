@@ -3,8 +3,8 @@ from enum import Enum
 from typing import Dict, Callable, Optional
 
 class RpcMethod(str, Enum):
-    # phase store & State
-    PHASE_STORE_RECEIPT_VERIFY = "phase.store.receipt.verify"
+    # store & State
+    ANCHOR_STORE_RECEIPT_VERIFY = "anchor.store.receipt.verify"
     
     # MCP Gateway Delegation
     MCP_STATE_QUERY = "mcp.state.query"
@@ -16,10 +16,6 @@ class RpcMethod(str, Enum):
     EXCHANGE_INVOICE_ISSUE = "exchange.invoice.issue"
     EXCHANGE_GET_BALANCE = "exchange.get.balance"
     EXCHANGE_FUEL_CONSUME = "exchange.fuel.consume"
-
-    # Compute & Execution
-    COMPUTE_INTENT_ESTIMATE = "compute.intent.estimate"
-    COMPUTE_PROFILE_EXECUTE = "compute.profile.execute"
 
     # Validation & Execution
     VALIDATE_FUEL_RECEIPT = "validate.fuel.receipt"

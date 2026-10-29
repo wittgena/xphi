@@ -8,7 +8,7 @@ from pathlib import Path
 
 from xphi.arch.contract.registry.unified import contract
 from xphi.node.space.bind.resolver import find_current_self
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.state.phase.commit import anchor_commit, Attractor, EpochManager
 from xphi.state.phase.executor.flow import dispatch_flow_cli
 from xphi.watcher.plane.emitter import get_emitter
@@ -124,7 +124,7 @@ class Commiter:
             for path in found_paths if path.resolve() != self.root.resolve()
         ]
         anchor = EpochManager(name="self", path=str(self.root), runner=self.runner)
-        broker = DphiBroker()
+        broker = WasmBroker()
         
         yield FlowEvent("PROTOCOL", f"Initiating async protocol for {len(nodes)} nodes under anchor: {anchor.name}")
         await self.protocol(repos=nodes, anchor=anchor, broker=broker, apply=self.apply, **self.protocol_kwargs)

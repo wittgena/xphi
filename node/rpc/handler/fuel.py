@@ -13,7 +13,7 @@ from xphi.arch.bound.adapter.pta import (
     PtaOutput,
     SignStateAdapter
 )
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.state.anchor.key import KeyGen
 from xphi.watcher.plane.emitter import get_emitter
 
@@ -99,7 +99,7 @@ async def execute_direct_fuel_consume(
     consumed_fuel: int, 
     trace_id: str,
     pta_adapter: Optional[PtaAdapter] = None,
-    broker: Optional[DphiBroker] = None
+    broker: Optional[WasmBroker] = None
 ) -> None:
     if consumed_fuel <= 0 or tenant_id in ("anonymous", "internal_system", "unknown"):
         return
@@ -107,7 +107,7 @@ async def execute_direct_fuel_consume(
     owns_broker = False
     if pta_adapter is None:
         if broker is None:
-            broker = DphiBroker(timeout=5.0)
+            broker = WasmBroker(timeout=5.0)
             owns_broker = True
         pta_adapter = PtaAdapter(broker=broker)
     

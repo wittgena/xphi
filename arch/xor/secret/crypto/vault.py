@@ -1,5 +1,4 @@
 # xphi.arch.xor.secret.crypto.vault
-## @lineage: xphi.arch.bound.xor.secret.crypto.vault
 import os
 import json
 import hashlib
@@ -22,13 +21,8 @@ class CryptoVault:
     def public_keys(self) -> List[str]:
         raise NotImplementedError
 
-
 class SovereignVault(CryptoVault):
-    """
-    [Production] 클라우드 의존성 제로(0). 
-    노드의 로컬 디스크에 암호화되어 저장된 키를 메모리에 복호화하여 유지하는 순수 독립 볼트.
-    """
-    def __init__(self, keystore_path: str = ".dphi/keystore.json"):
+    def __init__(self, keystore_path: str = ".anchor/keystore.json"):
         self.keystore_path = keystore_path
         self._unlocked_keys: List[ed25519.Ed25519PrivateKey] = []
         self._is_unlocked = False
@@ -43,7 +37,6 @@ class SovereignVault(CryptoVault):
         return kdf.derive(passphrase.encode())
 
     def initialize_genesis_keys(self, passphrase: str, size: int = 3):
-        """초기 노드 구동 시 로컬에 암호화된 Keystore 생성"""
         if os.path.exists(self.keystore_path):
             raise FileExistsError("Keystore already exists. Cannot overwrite genesis keys.")
 

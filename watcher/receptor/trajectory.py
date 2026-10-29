@@ -11,8 +11,8 @@ from dataclasses import dataclass, asdict
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.bound.adapter.dynamics import AtorAdapter, NodeState, KernelDelta
-from xphi.node.runtime.wasm.broker import DphiBroker
-from xphi.node.runtime.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.broker import WasmBroker
+from xphi.node.runtime.wasm.method import WasmMethod
 from xphi.watcher.plane.emitter import get_emitter
 
 # =========================================================================
@@ -160,7 +160,7 @@ class DynamicalTensionObserver:
     Rust 기반 topos.dynamics (FitzHugh-Nagumo 등) 커널을 Broker를 통해 호출하여
     비선형 시장 스트레스(Spiking 및 시스템 텐션)를 추적하는 비동기 관찰기.
     """
-    def __init__(self, broker: DphiBroker, policy: RiskPolicy):
+    def __init__(self, broker: WasmBroker, policy: RiskPolicy):
         self.broker = broker
         self.policy = policy
         
@@ -185,7 +185,7 @@ class DynamicalTensionObserver:
             dt=dt
         )
         res = await self.broker.invoke(
-            method=DphiMethod.PROCESS_FIELD_DYNAMICS, 
+            method=WasmMethod.PROCESS_FIELD_DYNAMICS, 
             payload=json.dumps(payload), 
             tier="SYSTEM"
         )
@@ -205,7 +205,7 @@ class DynamicalTensionObserver:
         return TensionPhase.NORMAL, max_tension, False
 
 class ProvableTrajectoryEngine:
-    def __init__(self, broker: DphiBroker):
+    def __init__(self, broker: WasmBroker):
         self.comparator = FundingRateComparator()
         self.tension_observer = DynamicalTensionObserver(broker, RiskPolicy())
 
@@ -244,7 +244,7 @@ class TrajectoryOracleReceptor:
     @desc: Acts as the terminal boundary that physically signs the evaluated data, 
            transitioning it from local state to a globally verifiable proof.
     """
-    def __init__(self, broker: DphiBroker, signer: Optional[NodeSigner] = None, logger: Optional[Any] = None):
+    def __init__(self, broker: WasmBroker, signer: Optional[NodeSigner] = None, logger: Optional[Any] = None):
         self.signer = signer or NodeSigner.get_instance()
         self.log = logger or get_emitter("exchange.trajectory")
         self.engine = ProvableTrajectoryEngine(broker)

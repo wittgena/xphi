@@ -13,9 +13,9 @@ import nacl.exceptions
 import cryptography.exceptions
 from cryptography.hazmat.primitives import serialization
 
-from xphi.state.anchor.store import PhaseStore, LogicStream
+from xphi.state.anchor.store import AnchorStore, LogicStream
 from xphi.state.anchor.oracle import AnchorOracle
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.arch.bound.adapter.state import StateAdapter
 
@@ -199,9 +199,9 @@ class PtaAdapter:
     _shared_spent_mempool: Set[str] = set()
     _shared_tx_commit_map: Dict[str, str] = {}
 
-    def __init__(self, broker: DphiBroker):
+    def __init__(self, broker: WasmBroker):
         self.broker = broker
-        self.ledger = PhaseStore()
+        self.ledger = AnchorStore()
         self.oracle = AnchorOracle(broker=broker)
         
         self._unfold_pool = PtaAdapter._shared_unfold_pool

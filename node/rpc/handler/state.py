@@ -5,13 +5,13 @@ import uuid
 from typing import Dict, Any, List, Optional
 from pydantic import BaseModel, ValidationError
 
-from xphi.arch.model.schema.audit import PhaseStoreAppendRecord
+from xphi.arch.model.schema.audit import StoreAppendRecord
 from xphi.arch.bound.adapter.pta import PtaTransaction, PtaInput, PtaPointer, create_mcp_state_anchor
 from xphi.arch.contract.protocol.rpc import WorkerContext, _build_error
 
 from xphi.node.rpc.schema.receipt import EdgeState, AnchorProposalRequest, IntentValidationRequest, ExecuteComputeRequest
 from xphi.node.space.tunnel.factory import TunnelFactory
-from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
+from xphi.node.runtime.wasm.broker import WasmBroker, WasmMethod
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("rpc.handler")
@@ -33,8 +33,6 @@ async def handle_mcp_state_query(params: dict, ctx: WorkerContext) -> dict:
     if not handle_id: return _build_error(422, "Missing handle_id")
     
     expected_owner = f"mcp_bridge_{handle_id}"
-    
-    # 1. 인메모리(_unfold_pool)에 대기 중인 미확정 상태가 있는지 우선 확인
     for key, output in ctx.pta_adapter._unfold_pool.items():
         if output.owner == expected_owner and output.asset_type == "mcp_state_anchor":
             status = getattr(output, "phase_status", "UNKNOWN")
@@ -49,7 +47,7 @@ async def handle_mcp_state_query(params: dict, ctx: WorkerContext) -> dict:
                 "executable_payload": payload, "action": meta.get("action", "")
             }
 
-    # 2. DB(commit:)에 Seal 완료된 미소비 상태 앵커 조회 (재부팅 후에도 정상 복구)
+    # DB(commit:)에 Seal 완료된 미소비 상태 앵커 조회 (재부팅 후에도 정상 복구)
     unspent = await ctx.pta_adapter.oracle.get_unspent_outputs(expected_owner, "mcp_state_anchor")
     for item in reversed(unspent):
         ptr_key = f"{item['pointer']['tx_hash']}:{item['pointer']['output_index']}"
@@ -92,8 +90,6 @@ async def handle_mcp_state_resolve(params: dict, ctx: WorkerContext) -> dict:
 
     if not handle_id or not status: return _build_error(422, "Missing handle_id or status")
     expected_owner = f"mcp_bridge_{handle_id}"
-    
-    # DB(Oracle) 및 인메모리(_unfold_pool) 통합 미소비 Input 조회
     available = await ctx.pta_adapter.get_available_inputs(expected_owner, "mcp_state_anchor")
     inputs = [
         PtaInput(pointer=item["pointer"], signature="internal_bridge_signature_bypass")
@@ -110,7 +106,7 @@ async def handle_mcp_state_resolve(params: dict, ctx: WorkerContext) -> dict:
     
     return {"success": True, "status": status}
 
-async def handle_phase_store_receipt_verify(params: dict, ctx: WorkerContext) -> dict:
+async def handle_anchor_store_receipt_verify(params: dict, ctx: WorkerContext) -> dict:
     state_root, receipt_id = params.get("state_root"), params.get("receipt_id")
     if not state_root or not receipt_id: return _build_error(422, "Payload Format Error: Missing 'state_root' or 'receipt_id' in receipt")
 
@@ -125,7 +121,7 @@ async def handle_phase_store_receipt_verify(params: dict, ctx: WorkerContext) ->
         log.error(f"Receipt verification process crashed: {str(e)}")
         return _build_error(500, f"Verification execution failed: {str(e)}")
     
-    return {"status": "SUCCESS", "is_valid": is_valid, "message": "Receipt verified via PhaseStore/Oracle" if is_valid else "verification failed (Tampered or Orphaned)"}
+    return {"status": "SUCCESS", "is_valid": is_valid, "message": "Receipt verified via AnchorStore/Oracle" if is_valid else "verification failed (Tampered or Orphaned)"}
 
 
 async def handle_compute_intent_validate(params: dict, ctx: WorkerContext) -> dict:

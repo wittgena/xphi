@@ -47,7 +47,7 @@ class StateAdapter:
             "nexus_id": nexus_id
         }
 
-    """Ledger Struct Builders For Canonical Hashing"""
+    """AnchorStore Struct Builders For Canonical Hashing"""
     @staticmethod
     def build_repo_commit(nexus_id: int, parent_nexus_id: int, parent_commit_id: str) -> dict:
         """@target: Rust `RepoCommit` struct"""

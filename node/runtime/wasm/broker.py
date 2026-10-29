@@ -10,7 +10,7 @@ from contextlib import suppress
 
 from xphi.node.space.tunnel.factory import TunnelFactory
 from xphi.arch.contract.interpreter import ExecutionResult, ExecutionError
-from xphi.node.runtime.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.method import WasmMethod
 from xphi.watcher.plane.emitter import get_emitter, _flow_context
 
 log = get_emitter("wasm.broker")
@@ -41,11 +41,11 @@ class ResultKey:
     ERROR = "error"
     METRICS = "metrics"
 
-class DphiBroker:
-    _shared_instance: Optional["DphiBroker"] = None
+class WasmBroker:
+    _shared_instance: Optional["WasmBroker"] = None
 
     @classmethod
-    def get_shared(cls, **kwargs) -> "DphiBroker":
+    def get_shared(cls, **kwargs) -> "WasmBroker":
         if cls._shared_instance is None:
             if "timeout" not in kwargs:
                 kwargs["timeout"] = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
@@ -211,7 +211,7 @@ class DphiBroker:
 
     async def invoke(
         self, 
-        target_func: Union[str, DphiMethod], 
+        target_func: Union[str, WasmMethod], 
         payload: str, 
         wasm_path: Optional[str] = None, 
         tier: Optional[str] = None,
@@ -246,11 +246,11 @@ class DphiBroker:
         
         target_wasm = None
         if isinstance(code, dict):
-            method_func = DphiMethod.EXECUTE_FSM.value
+            method_func = WasmMethod.EXECUTE_FSM.value
             payload_data = code  
             target_wasm = "fsm.wasm"
         else:
-            method_func = DphiMethod.EXECUTE_CODE.value
+            method_func = WasmMethod.EXECUTE_CODE.value
             payload_data = {
                 PayloadKey.CODE: code, 
                 PayloadKey.VARS: variables or {}
@@ -274,8 +274,8 @@ class DphiBroker:
             task.cancel()
             with suppress(asyncio.CancelledError):
                 await task
-        if DphiBroker._shared_instance is self:
-            DphiBroker._shared_instance = None
+        if WasmBroker._shared_instance is self:
+            WasmBroker._shared_instance = None
 
     def __del__(self):
         task = getattr(self, '_listener_task', None)
