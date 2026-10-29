@@ -60,14 +60,18 @@ class FlowExecutor(BaseExecutor):
             self.log.error(f"[Isolated] Cannot resolve command from payload or tag. Task ID: {task_id}")
             return []
 
-        ## Resolve target module metadata from unified registry
+        ## Resolve target module metadata from unified registry (with safe invoker fallback)
         task_info_list = registry.registered_cli_tasks.get(command)
-        if not task_info_list:
-            self.log.error(f"[Isolated] No registered task found for command: {command}")
-            return []
-
-        task_info = task_info_list[0]
-        module_fqn = task_info.get("module_fqn")
+        if task_info_list:
+            module_fqn = task_info_list[0].get("module_fqn")
+        else:
+            invoker_fqn = context.get("invoker", "")
+            if isinstance(invoker_fqn, str) and invoker_fqn.startswith(("xphi.", "fiber.")):
+                module_fqn = invoker_fqn
+                self.log.info(f"[Isolated] Task '{command}' not in registry; falling back to invoker: {module_fqn}")
+            else:
+                self.log.error(f"[Isolated] No registered task found for command: {command}")
+                return []
 
         with flow_scope(flow_id=task_id, phase="SUPERVISION"):
             self.log.info(f"[Isolated] Spawning isolated worker for '{command}' (Timeout: {timeout_seconds}s)")
@@ -77,12 +81,18 @@ class FlowExecutor(BaseExecutor):
                 ## Enforce strict isolation timeout boundary
                 async with asyncio.timeout(timeout_seconds):
                     cmd = [sys.executable, "-m", module_fqn] + cli_args + ["--local"]
-                    self_root = find_current_self()
+                    
+                    req_cwd = context.get("cwd")
+                    if req_cwd and Path(req_cwd).is_dir():
+                        worker_cwd = Path(req_cwd)
+                    else:
+                        worker_cwd = find_current_self()
+
                     process = await asyncio.create_subprocess_exec(
                         *cmd,
                         stdout=asyncio.subprocess.PIPE,
                         stderr=asyncio.subprocess.STDOUT,
-                        cwd=str(self_root),
+                        cwd=str(worker_cwd),
                         env=os.environ.copy()
                     )
 
@@ -169,7 +179,8 @@ def dispatch_flow_cli(command_name: str, entry_func: Callable, file_path: str):
             "invoker": str(invoker), 
             "command": command, 
             "cli_args": remain,
-            "timeout": bound_args.timeout
+            "timeout": bound_args.timeout,
+            "cwd": str(find_current_self())
         } 
     }
 
@@ -262,7 +273,6 @@ async def _async_run_flow_proxy(command_name: str, payload: dict):
         await pubsub.close()
         if hasattr(tunnel.state_store, 'aclose'):
             await tunnel.state_store.aclose()
-
 
 def execute_flow_cli_task(command_name: str, payload: dict):
     """Triggers the remote proxy and monitors the flow stream."""

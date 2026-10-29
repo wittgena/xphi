@@ -27,8 +27,6 @@ class MqConfig:
         return f"{self.engine.value}://{self.host}:{self.port}/0"
 
 def resolve_default_config() -> MqConfig:
-    """@flow: 환경 변수에서 공통 인프라 설정을 추출 (env 모듈 사용)"""
-    # [변경됨] os.getenv 모두 제거하고 env 모듈 사용
     engine_str = env.MQ_ENGINE
     host = env.MQ_HOST
     port = env.MQ_PORT

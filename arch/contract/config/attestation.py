@@ -1,5 +1,4 @@
 # xphi.arch.contract.config.attestation
-## @lineage: fiber.infra.config.attestation
 import os
 from typing import List
 from pydantic import BaseModel, Field
@@ -7,7 +6,7 @@ from pydantic import BaseModel, Field
 class DelegationConfig(BaseModel):
     """Configuration for intent delegation to the Public Core (Origin)."""
     origin_url: str = Field(
-        default_factory=lambda: os.getenv("DPHI_ORIGIN_URL", "https://api.fiber.network")
+        default_factory=lambda: os.getenv("DPHI_ORIGIN_URL", "https://dphi.network")
     )
     allow_fallback: bool = Field(
         default_factory=lambda: str(os.getenv("ALLOW_ORIGIN_FALLBACK", "true")).lower() == "true"
