@@ -1,5 +1,4 @@
 # xphi.state.phase.executor.flow
-## @lineage: xphi.state.phase.flow.executor
 import os
 import sys
 import json

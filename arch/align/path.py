@@ -6,7 +6,7 @@ import re
 from typing import List, Dict, Any
 from pathlib import Path
 
-from xphi.arch.align.model.aligner import PhaseAligner, AlignRecord
+from xphi.arch.model.align.aligner import PhaseAligner, AlignRecord
 from xphi.arch.contract.registry.unified import contract
 from xphi.node.space.bind.resolver import find_current_self
 from xphi.state.phase.executor.cli import execute_cli_task, CliTaskAdapter, dispatch_cli, parse_local

@@ -4,7 +4,7 @@ import sys
 import argparse
 from pathlib import Path
 
-from xphi.arch.align.model.transformer import PrefixImportAligner
+from xphi.arch.model.align.transformer import PrefixImportAligner
 from xphi.arch.contract.registry.unified import contract
 from xphi.node.space.bind.resolver import find_current_self
 from xphi.state.phase.executor.cli import CliTaskAdapter, parse_local, dispatch_cli
