@@ -1,5 +1,4 @@
 # xphi.node.runtime.wasm.gateway
-## @lineage: xphi.node.wasm.gateway
 import json
 import threading
 import ctypes

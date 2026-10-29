@@ -17,10 +17,6 @@ class RpcMethod(str, Enum):
     EXCHANGE_GET_BALANCE = "exchange.get.balance"
     EXCHANGE_FUEL_CONSUME = "exchange.fuel.consume"
 
-    # Compute & Execution
-    COMPUTE_INTENT_ESTIMATE = "compute.intent.estimate"
-    COMPUTE_PROFILE_EXECUTE = "compute.profile.execute"
-
     # Validation & Execution
     VALIDATE_FUEL_RECEIPT = "validate.fuel.receipt"
     VALIDATE_COMPUTE_INTENT = "validate.compute.intent"

@@ -24,7 +24,6 @@ from xphi.node.rpc.registry import build_internal_rpc_registry
 from xphi.node.rpc.handler.validator import ValidatorService
 from xphi.node.ops.daemon.base import AbstractDaemon
 from xphi.node.space.tunnel.factory import TunnelFactory
-from xphi.node.space.sandbox.resolver import BenchProfile
 from xphi.node.runtime.wasm.broker import WasmBroker
 
 from xphi.watcher.receptor.warden import AuditWarden
@@ -131,13 +130,11 @@ class RpcWorkerDaemon(AbstractDaemon):
         node_pubkey = NodeSigner.get_instance().pubkey_hex if hasattr(NodeSigner, 'get_instance') else "mock_pubkey"
         exchange_adapter = ClearingAdapter(clearing_house_pub_key=node_pubkey)
         pta_adapter = PtaAdapter(broker=broker)
-        profile_service = BenchProfile(broker=broker)
         self.worker_ctx = WorkerContext(
             broker=broker,
             store=store,
             exchange_adapter=exchange_adapter,
-            pta_adapter=pta_adapter,
-            profile_service=profile_service
+            pta_adapter=pta_adapter
         )
 
         prod_validator = ValidatorService()

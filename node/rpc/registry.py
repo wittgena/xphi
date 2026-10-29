@@ -15,8 +15,6 @@ from xphi.node.rpc.handler.exchange import (
     handle_clearing_settlement,
     handle_invoice_issue,
     handle_get_balance,
-    handle_compute_intent_estimate,
-    handle_compute_profile_execute,
 )
 
 from xphi.node.rpc.handler.validator import handle_compute_margin_calculate, ValidatorService, handle_fuel_receipt_validate
@@ -34,9 +32,6 @@ def build_internal_rpc_registry(validator_service: Optional[ValidatorService] = 
         RpcMethod.EXCHANGE_INVOICE_ISSUE: handle_invoice_issue,
         RpcMethod.EXCHANGE_GET_BALANCE: handle_get_balance,
         RpcMethod.EXCHANGE_FUEL_CONSUME: handle_fuel_consume,
-
-        RpcMethod.COMPUTE_INTENT_ESTIMATE: handle_compute_intent_estimate,
-        RpcMethod.COMPUTE_PROFILE_EXECUTE: handle_compute_profile_execute,
 
         RpcMethod.VALIDATE_FUEL_RECEIPT: handle_fuel_receipt_validate,
         RpcMethod.VALIDATE_COMPUTE_INTENT: handle_compute_intent_validate,

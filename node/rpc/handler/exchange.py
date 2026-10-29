@@ -8,7 +8,7 @@ from xphi.arch.contract.protocol.rpc import WorkerContext, _build_error
 from xphi.arch.model.schema.audit import BilledExecutionRequest
 
 from xphi.node.rpc.schema.receipt import EdgeState, TradeIngressRequest, EpochInitPayload, ClearingReceiptRequest
-from xphi.node.space.sandbox.config import tier_config, fuel_config
+from xphi.node.ops.fuel.config import tier_config, fuel_config
 from xphi.node.runtime.wasm.broker import WasmMethod
 from xphi.node.runtime.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
@@ -51,49 +51,3 @@ async def handle_get_balance(params: dict, ctx: WorkerContext) -> dict:
     except Exception as e:
         log.error(f"PTA Balance check failed for {client_id}: {str(e)}")
         return _build_error(500, "Failed to read hot state balance.")
-
-
-async def handle_compute_intent_estimate(params: dict, ctx: WorkerContext) -> dict:
-    try: req = BilledExecutionRequest(**params)
-    except ValidationError as e: return _build_error(422, f"Payload Error: {e.errors()}")
-    client_id = params.get("client_id", getattr(req, "client_id", "anonymous_agent"))
-
-    try:
-        result = await ctx.profile_service.execute(
-            client_id=client_id, 
-            schema=req.sandbox_schema, 
-            entry=req.target_entry,
-            depth=req.context_depth,
-            tier=Tier.STANDARD,
-            dry_run=True
-        )
-        if result.status != "COHERENCE":
-            log.warning(f"[Quote] Execution Divergence: {result.reason}")
-            return _build_error(422, f"Quotation Rejected: {result.reason}")
-    except Exception as e:
-        log.error(f"[Quote] Unhandled Error: {e}")
-        return _build_error(500, "Internal sandbox error")
-        
-    estimated_cost = (result.fuel_consumed / fuel_config.fuel_unit) * fuel_config.usd_per_fuel_unit
-    return {"status": "QUOTE_READY", "tier_applied": result.tier_applied, "fuel_estimated": result.fuel_consumed, "estimated_cost_usd": estimated_cost, "reason": result.reason}
-
-
-async def handle_compute_profile_execute(params: dict, ctx: WorkerContext) -> dict:
-    try: req = BilledExecutionRequest(**params)
-    except ValidationError as e: return _build_error(422, f"Payload Error: {e.errors()}")
-
-    client_id = params.get("client_id", getattr(req, "client_id", "anonymous_agent"))
-    try:
-        result = await ctx.profile_service.execute(
-            client_id=client_id, schema=req.sandbox_schema, entry=req.target_entry, 
-            depth=req.context_depth, tier=Tier.SYSTEM, dry_run=False
-        )
-        if result.status != "COHERENCE":
-            log.error(f"[Execute] Execution Failed/Diverged: {result.reason}")
-            return _build_error(422, f"Billed Execution Failed: {result.reason}")
-    except Exception as e:
-        log.error(f"[Execute] Unhandled Sandbox Error: {e}")
-        return _build_error(500, "Sandbox execution crashed unexpectedly")
-        
-    billed_cost = (result.fuel_consumed / fuel_config.fuel_unit) * fuel_config.usd_per_fuel_unit
-    return {"status": "BILLED_EXECUTION_SUCCESS", "tier_applied": result.tier_applied, "fuel_billed": result.fuel_consumed, "billed_cost_usd": billed_cost, "reason": result.reason}
