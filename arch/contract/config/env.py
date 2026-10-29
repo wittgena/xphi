@@ -29,7 +29,7 @@ AIRGAP_MODE = _get_string("AIRGAP_MODE", "0")
 """Infrastructure & Tunnel"""
 REDIS_HOST = _get_string("XPHI_REDIS_HOST", _get_string("REDIS_HOST", "localhost"))
 REDIS_PORT = _get_int("XPHI_REDIS_PORT", _get_int("REDIS_PORT", "6379"))
-REDIS_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}"
+REDIS_URL = _get_string("REDIS_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}/0")
 
 MQ_ENGINE = _get_string("MQ_ENGINE", "redis")
 MQ_HOST = _get_string("MQ_HOST", REDIS_HOST)
