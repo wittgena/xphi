@@ -12,7 +12,7 @@ from xphi.node.runtime.wasm.method import DphiMethod
 log = get_emitter("tunnel.flare")
 
 class PayloadKey:
-    """Matches dphi.broker.PayloadKey to minimize dependencies"""
+    """Matches broker.PayloadKey to minimize dependencies"""
     JOB_ID = "job_id"
     METHOD_FUNC = "target_func" 
     PAYLOAD = "payload"
@@ -86,15 +86,14 @@ class _MockStateStore:
             base_payload = payload.get(PayloadKey.PAYLOAD, {})
             context = payload.get(PayloadKey.CONTEXT, {})
 
-            # [Dynamic Timeout] Worker Limit 회피 및 Fast-Fail 복구
             requested_timeout = float(context.get("timeout", 15.0))
             dynamic_timeout = httpx.Timeout(requested_timeout + 3.0, connect=5.0)
-            dphi_kernel_methods = {
+            methods = {
                 m.value for m in DphiMethod 
                 if m.value not in (DphiMethod.EXECUTE_CODE.value, DphiMethod.EXECUTE_FSM.value)
             }
 
-            if wasm_path == "phase.wasm" or method_func in dphi_kernel_methods:
+            if wasm_path == "phase.wasm" or method_func in methods:
                 vm_tgt = "PHASE"
             elif wasm_path == "fsm.wasm" or method_func == DphiMethod.EXECUTE_FSM.value:
                 vm_tgt = "FSM"
