@@ -39,7 +39,7 @@ def _walk_and_discover(root: Path, base_fqn: str = "", apply_quarantine: bool = 
     if not root.exists():
         return
 
-    exclude_patterns = {"dev/ex", "space/time"}
+    exclude_patterns = {"dev/tester", "space/time"}
     if apply_quarantine:
         exclude_patterns.update({"venv", ".venv", "env", "node_modules"})
         try:
