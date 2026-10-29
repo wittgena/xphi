@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, List
 
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
+from xphi.node.runtime.wasm.broker import WasmBroker, WasmMethod
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.state.anchor.store import AnchorStore, AnchorRole
 
@@ -13,8 +13,8 @@ ANCHOR_DB_PATH = resolve_path("adb")
 
 
 class AnchorOracle:
-    def __init__(self, broker: Optional[DphiBroker] = None, path: str = ANCHOR_DB_PATH):
-        self.broker = broker or DphiBroker.get_shared()
+    def __init__(self, broker: Optional[WasmBroker] = None, path: str = ANCHOR_DB_PATH):
+        self.broker = broker or WasmBroker.get_shared()
         self.path = str(path)
         try:
             self.store = AnchorStore(self.path)
@@ -173,7 +173,7 @@ class AnchorOracle:
             )
             
             canonical_parity = StateAdapter.to_canonical_bytes(parity_req).decode('utf-8')
-            res = await self.broker.invoke(DphiMethod.VERIFY_PARITY, canonical_parity)
+            res = await self.broker.invoke(WasmMethod.VERIFY_PARITY, canonical_parity)
             if not res.success:
                 log.warning(f"[AnchorOracle] WASM Parity verification crashed at {current_hash[:8]}")
                 return {"is_valid": False, "rupture_hash": current_hash, "trace": chain_trace}

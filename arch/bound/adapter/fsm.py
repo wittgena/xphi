@@ -119,7 +119,6 @@ class FsmAdapter:
         state_snapshot: Optional[Dict[str, Any]] = None,
         vm_target: str = FsmTarget.STEP,
     ) -> Dict[str, Any]:
-        """DphiBroker.execute(code=...)에 그대로 전달할 최종 FSM 페이로드 조립."""
         return {
             "vm_target": vm_target,
             "target_address": target_address,

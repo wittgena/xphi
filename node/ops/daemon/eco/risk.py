@@ -15,7 +15,7 @@ from xphi.watcher.receptor.trajectory import (
 
 from xphi.arch.contract.registry.unified import contract
 from xphi.node.ops.daemon.base import AbstractDaemon
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("daemon.risk")
@@ -35,7 +35,7 @@ class RiskAssessment:
 # @phase.2: Trajectory Monitoring and Alert Subsystem
 # =========================================================================
 class _LocalBrokerAdapter:
-    def __init__(self, original_broker: DphiBroker):
+    def __init__(self, original_broker: WasmBroker):
         self._original = original_broker
 
     def __getattr__(self, name):
@@ -48,7 +48,7 @@ class _LocalBrokerAdapter:
 
 
 class DormantTrajectorySentinel:
-    def __init__(self, broker: DphiBroker):
+    def __init__(self, broker: WasmBroker):
         safe_broker = _LocalBrokerAdapter(broker)
         self.receptor = TrajectoryOracleReceptor(broker=safe_broker)
         self.alert_emitter = get_emitter("sentinel.awakening")
@@ -152,7 +152,7 @@ class ResourceVault:
         logic_hash: str,
         router: SmartExecutionRouter,
         risk_manager: DynamicRiskManager,
-        broker: DphiBroker
+        broker: WasmBroker
     ):
         self.tvl = base_capacity
         self.log = get_emitter("system.vault")
@@ -218,7 +218,7 @@ class RiskVaultDaemon(AbstractDaemon):
         
         self.broker = getattr(self.ctx, 'broker', None)
         if not self.broker:
-            raise RuntimeError("DphiBroker has not been injected into RuntimeContext.")
+            raise RuntimeError("WasmBroker has not been injected into RuntimeContext.")
             
         self.policy = RiskPolicy(
             base_friction_bps=15.0, 

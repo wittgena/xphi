@@ -8,7 +8,7 @@ from dataclasses import dataclass, field, asdict
 from pydantic import BaseModel, Field
 
 from xphi.node.space.bind.resolver import resolve_path
-from xphi.node.runtime.wasm.broker import DphiBroker  
+from xphi.node.runtime.wasm.broker import WasmBroker  
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.state.anchor.driver import AnchorDriverFactory
 from xphi.state.anchor.mempool import MempoolRelay
@@ -75,7 +75,7 @@ class AnchorStore:
         self.db = AnchorDriverFactory.mount(str(target_path))
         if self.db.is_sealer:
             self.role = AnchorRole.SEALER
-            self.broker = DphiBroker.get_shared()
+            self.broker = WasmBroker.get_shared()
             self.relay = MempoolRelay(self)
             self.relay.start_sealer_consumer()
             log.info(f"[AnchorStore] Acquired physical lock. Operating as {self.role.value}. WASM Kernel mounted.")

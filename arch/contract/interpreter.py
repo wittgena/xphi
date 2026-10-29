@@ -10,7 +10,7 @@ from typing import (
 
 from xphi.arch.contract.event.psi import PsiCarrier, PhaseField
 from xphi.watcher.plane.emitter import get_emitter
-from xphi.node.runtime.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.method import WasmMethod
 
 log = get_emitter("contract.interpreter")
 
@@ -195,7 +195,7 @@ class NodeInterpreter:
             }
         }
         result = await self.broker.invoke(
-            target_func=DphiMethod.EXECUTE_TRANSITION,
+            target_func=WasmMethod.EXECUTE_TRANSITION,
             payload=json.dumps(payload),
             context=context
         )

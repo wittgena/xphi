@@ -4,12 +4,12 @@ import time
 import uuid
 from typing import Dict, Any
 
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 
 class WorkerContext:
     def __init__(
         self, 
-        broker: DphiBroker,
+        broker: WasmBroker,
         store: Any,
         exchange_adapter: Any,
         pta_adapter: Any, 

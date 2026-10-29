@@ -25,7 +25,7 @@ from xphi.node.rpc.handler.validator import ValidatorService
 from xphi.node.ops.daemon.base import AbstractDaemon
 from xphi.node.space.tunnel.factory import TunnelFactory
 from xphi.node.space.sandbox.resolver import BenchProfile
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 
 from xphi.watcher.receptor.warden import AuditWarden
 from xphi.watcher.plane.emitter import get_emitter
@@ -125,7 +125,7 @@ class RpcWorkerDaemon(AbstractDaemon):
     async def _init_context(self):
         log.info(f"[{self.name}] Initializing Headless Worker Dependencies...")
         
-        broker = getattr(self.app_ctx, "broker", None) or DphiBroker()
+        broker = getattr(self.app_ctx, "broker", None) or WasmBroker()
         store = getattr(self.app_ctx, "store", None) or LogStreamStore()
         
         node_pubkey = NodeSigner.get_instance().pubkey_hex if hasattr(NodeSigner, 'get_instance') else "mock_pubkey"

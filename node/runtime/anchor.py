@@ -21,7 +21,7 @@ from xphi.node.runtime.sensor import SurfaceSensor, SurfaceActuator
 from xphi.node.runtime.context import RuntimeContext
 from xphi.node.ops.task.supervisor import TaskSupervisor, Dispatcher
 from xphi.node.ops.daemon.bootstrap import mount_master_layer, EventBusDaemon
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 
 from xphi.watcher.plane.sink import TunnelSink
 from xphi.watcher.plane.emitter import get_emitter
@@ -61,7 +61,7 @@ class RuntimeAnchor(IPhaseAtor):
         self.bus: Optional[TunnelEventBus] = None
         self.log = get_emitter("node.master", phase="SYSTEM")
         
-        self.broker: Optional[DphiBroker] = None
+        self.broker: Optional[WasmBroker] = None
         self.interpreter = None
         
         self.dispatcher = None
@@ -147,7 +147,7 @@ class RuntimeAnchor(IPhaseAtor):
 
         anchor = AnchorFlow.bootstrap(frozenset(all_recepts))
         if getattr(self, 'broker', None) is None:
-            self.broker = DphiBroker(tunnel_factory=TunnelFactory)
+            self.broker = WasmBroker(tunnel_factory=TunnelFactory)
         
         self.interpreter = NodeInterpreter(broker=self.broker, anchor=anchor)
         
@@ -229,17 +229,15 @@ class RuntimeAnchor(IPhaseAtor):
                     if p.is_alive():
                         p.kill() # timeout 시 강제 종료
 
-        # 2. Master 자원 정리
+        # Master 자원 정리
         await self.deregister_node()
         await self.supervisor.shutdown()
-
-        # Broker 내부의 백그라운드 리스너 리소스 누수 방지 (Graceful Close)
         if self.broker and hasattr(self.broker, 'close'):
             try:
                 await self.broker.close()
-                self.log.info("DphiBroker background loops safely closed.")
+                self.log.info("WasmBroker background loops safely closed.")
             except Exception as e:
-                self.log.warning(f"Error while closing DphiBroker: {e}")
+                self.log.warning(f"Error while closing WasmBroker: {e}")
 
         if self.actuator: await self.actuator.close()
         if self.tunnel: await self.tunnel.close()

@@ -12,10 +12,10 @@ from cryptography.hazmat.primitives import serialization
 
 from xphi.state.topos.state import Contract, CoherenceState
 from xphi.node.space.sandbox.resolver import SandboxExecutor, TaskContext, EffectResolver
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.state.anchor.store import AnchorStore, PhaseCommit
-from xphi.node.runtime.wasm.method import DphiMethod
+from xphi.node.runtime.wasm.method import WasmMethod
 from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("space.runner")
@@ -71,7 +71,7 @@ class SchemeRunner(BaseRunner):
     async def _run_case(
         self, 
         title: str, 
-        target_func: Union[str, DphiMethod, RecoveryMethod],
+        target_func: Union[str, WasmMethod, RecoveryMethod],
         payload: Any, 
         expected_success: bool, 
         expected_match: Optional[str] = None,
@@ -171,7 +171,7 @@ class WebRunner(BaseRunner):
 # =====================================================================
 
 class RuntimeRunner(ABC):
-    def __init__(self, broker: DphiBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
+    def __init__(self, broker: WasmBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
         self.broker = broker
         self.executor = SandboxExecutor(resolvers=resolvers)
         self.is_running = False
@@ -225,7 +225,7 @@ class RecoveryRunner(RuntimeRunner):
         topos_id_low32 = int(failed_contract.topos_id) & 0xFFFFFFFF if failed_contract.topos_id else None
         
         recovery_context = TaskContext(
-            task_type=DphiMethod.VERIFY_PARITY,
+            task_type=WasmMethod.VERIFY_PARITY,
             payload={
                 "topos_id_low32": topos_id_low32,
                 "nexus_id": failed_contract.nexus_id
@@ -279,7 +279,7 @@ class RecoveryRunner(RuntimeRunner):
             allowed_signers=self.auditor_pubs
         )
 
-        seal_context = TaskContext(task_type=DphiMethod.SEAL_EPOCH, payload=seal_payload, tier="SYSTEM")
+        seal_context = TaskContext(task_type=WasmMethod.SEAL_EPOCH, payload=seal_payload, tier="SYSTEM")
         
         async for seal_contract in self.executor.execute_stream(seal_context):
             if seal_contract.state == CoherenceState.COHERENT:
@@ -349,7 +349,7 @@ class SyzygyResonator(RuntimeRunner):
         )
         
         rebase_context = TaskContext(
-            task_type=DphiMethod.SEAL_EPOCH,
+            task_type=WasmMethod.SEAL_EPOCH,
             payload=seal_payload,
             tier="SYSTEM"
         )

@@ -6,7 +6,7 @@ from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
 from dataclasses import asdict
 
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.arch.bound.adapter.pta import SignStateAdapter
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
@@ -95,7 +95,7 @@ class EpochManager(Attractor):
 async def anchor_commit(
     repos: List[Attractor], 
     anchor: EpochManager, 
-    broker: DphiBroker, 
+    broker: WasmBroker, 
     message: str, 
     apply: bool = False,
     tag: Optional[str] = None

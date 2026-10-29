@@ -9,7 +9,7 @@ from typing import Any, Dict, AsyncGenerator, Optional, Protocol, Union
 
 from xphi.state.topos.state import Contract, CoherenceState
 from xphi.arch.contract.event.next import next_id, generate_parity_triplet, parse_phase_id
-from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
+from xphi.node.runtime.wasm.broker import WasmBroker, WasmMethod
 from xphi.node.runtime.wasm.quota import QuotaPolicy, Tier
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.node.space.sandbox.config import fuel_config, tier_config
@@ -75,7 +75,7 @@ class BenchResult:
     reason: Optional[str] = None
 
 class SandboxResolver(EffectResolver):
-    def __init__(self, broker: DphiBroker, profile: Optional[MetabolicProfile] = None):
+    def __init__(self, broker: WasmBroker, profile: Optional[MetabolicProfile] = None):
         self.profile = profile or MetabolicProfile()
         self.broker = broker
 
@@ -164,7 +164,7 @@ class SandboxResolver(EffectResolver):
         return result_data
 
 class SandboxExecutor:
-    def __init__(self, broker: DphiBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
+    def __init__(self, broker: WasmBroker, resolvers: Optional[Dict[str, EffectResolver]] = None):
         self.broker = broker
         self.resolvers = resolvers or {}
 
@@ -207,7 +207,7 @@ class SandboxExecutor:
                 invoke_start_time = time.time()
                 exec_result = await asyncio.wait_for(
                     self.broker.invoke(
-                        target_func=DphiMethod.EXECUTE_TRANSITION, 
+                        target_func=WasmMethod.EXECUTE_TRANSITION, 
                         payload=canonical_bytes,
                         tier=context.tier 
                     ),
@@ -331,8 +331,8 @@ class SandboxExecutor:
                 break
 
 class BenchProfile:
-    def __init__(self, broker: Optional[DphiBroker] = None):
-        self.broker = broker or DphiBroker()
+    def __init__(self, broker: Optional[WasmBroker] = None):
+        self.broker = broker or WasmBroker()
 
     def _resolve_profile(self, tier: Tier) -> MetabolicProfile:
         if tier == Tier.SYSTEM:

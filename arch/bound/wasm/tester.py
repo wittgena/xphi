@@ -11,7 +11,7 @@ from xphi.node.space.tunnel.factory import TunnelFactory
 from xphi.node.space.bind.resolver import resolve_path
 from xphi.node.ops.task.supervisor import TaskSupervisor
 from xphi.node.ops.task.wasm import TaskWasm, DEFAULT_WASM_PATH
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("wasm.tester")
@@ -51,7 +51,7 @@ class WasmTester:
         except asyncio.CancelledError:
             pass
 
-    async def _run_all_suites(self, broker: DphiBroker) -> int:
+    async def _run_all_suites(self, broker: WasmBroker) -> int:
         """@desc: Sequentially executes injected scenario suites without hardcoded dependencies"""
         total_fails = 0
         for suite_name, suite_cls in self.suites.items():
@@ -101,7 +101,7 @@ class WasmTester:
             await asyncio.sleep(1) 
             
             log.info("[SYSTEM] Initializing WasmBroker & Scenarios...")
-            broker = DphiBroker(
+            broker = WasmBroker(
                 request_stream=test_stream, 
                 timeout=5.0,
                 target_auditor=proof_auditor

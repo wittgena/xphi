@@ -19,7 +19,7 @@ from xphi.state.anchor.store import AnchorStore, AnchorRole
 
 from xphi.node.runtime.anchor import RuntimeAnchor
 from xphi.node.space.tunnel.factory import TunnelFactory
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.watcher.plane.regulator import default_plane
@@ -158,7 +158,7 @@ async def main_async():
 
     wasm_timeout = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
     log.info(f"[Boot] Provisioning Shared WASM Broker (Timeout: {wasm_timeout}s)...")
-    shared_broker = DphiBroker.get_shared(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
+    shared_broker = WasmBroker.get_shared(timeout=wasm_timeout, tunnel_factory=TunnelFactory)
 
     log.info("[Boot] Initializing AnchorStore and injecting Shared Broker...")
     store = AnchorStore()
@@ -193,9 +193,9 @@ async def teardown():
     except Exception as e:
         log.warning(f"[Boot] Error while releasing AnchorStore lock: {e}")
 
-    if DphiBroker._shared_instance is not None:
+    if WasmBroker._shared_instance is not None:
         try:
-            await DphiBroker._shared_instance.close()
+            await WasmBroker._shared_instance.close()
             log.info("[Boot] Shared WASM Broker closed cleanly.")
         except Exception as e:
             log.warning(f"[Boot] Error while closing Shared WASM Broker: {e}")

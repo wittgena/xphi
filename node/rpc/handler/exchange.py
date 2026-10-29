@@ -9,7 +9,7 @@ from xphi.arch.model.schema.audit import BilledExecutionRequest
 
 from xphi.node.rpc.schema.receipt import EdgeState, TradeIngressRequest, EpochInitPayload, ClearingReceiptRequest
 from xphi.node.space.sandbox.config import tier_config, fuel_config
-from xphi.node.runtime.wasm.broker import DphiMethod
+from xphi.node.runtime.wasm.broker import WasmMethod
 from xphi.node.runtime.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
 

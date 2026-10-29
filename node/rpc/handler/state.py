@@ -11,7 +11,7 @@ from xphi.arch.contract.protocol.rpc import WorkerContext, _build_error
 
 from xphi.node.rpc.schema.receipt import EdgeState, AnchorProposalRequest, IntentValidationRequest, ExecuteComputeRequest
 from xphi.node.space.tunnel.factory import TunnelFactory
-from xphi.node.runtime.wasm.broker import DphiBroker, DphiMethod
+from xphi.node.runtime.wasm.broker import WasmBroker, WasmMethod
 from xphi.watcher.plane.emitter import get_emitter, flow_scope
 
 log = get_emitter("rpc.handler")

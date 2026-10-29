@@ -10,7 +10,7 @@ from xphi.arch.contract.event.next import next_id
 from xphi.arch.bound.adapter.pta import NodeSigner
 from xphi.arch.bound.adapter.settlement import ClearingAdapter, TransactionReceipt
 from xphi.arch.bound.adapter.state import StateAdapter
-from xphi.node.runtime.wasm.broker import DphiBroker
+from xphi.node.runtime.wasm.broker import WasmBroker
 from xphi.node.runtime.wasm.quota import Tier
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.node.runtime.wasm.gateway import GatewayWasm 
@@ -176,7 +176,7 @@ class TransitionManager:
     def record_transition(self, message: str) -> None:
         self.transition.record(message)
 
-    async def settle(self, broker: DphiBroker, cost: float, fuel_consumed: int) -> TopologyResidue:
+    async def settle(self, broker: WasmBroker, cost: float, fuel_consumed: int) -> TopologyResidue:
         entangled_state = {
             "parity": {"topos_id": f"task_{self.transition.id}", "phase_id": 0, "nexus_id": 0},
             "repos": {}
