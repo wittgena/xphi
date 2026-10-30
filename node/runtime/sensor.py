@@ -22,7 +22,7 @@ class SurfaceSensor:
         self.prefix = "sensor:watcher"
         self.keylist = f"{self.prefix}:keylist"
         
-        self.root_dir = resolve_path("surface") / "redis"
+        self.root_dir = resolve_path("io") / "redis"
         self.pattern = resolve_pattern()
         self.regex = re.compile(self.pattern)
         self.log = get_emitter("surface.sensor", phase="SENSING")

@@ -1,5 +1,5 @@
 {
-    "location": "xphi.node.space.origin.config",
+    "location": "xphi.node.space.bind",
     "network": "xphi.origin",
     "attestation": {
         "root_pubkey": "0e184733f354a12fa283df73e08f864eb77639a65970f08dceed9c15e44fee25",
