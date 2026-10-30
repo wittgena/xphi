@@ -38,6 +38,7 @@ DEFAULT_BOUND_SKELETON = {
     "phase": "fiber/phase"
   },
   "paths": {
+    "anchor": ":anchor:",
     "abc": ":phase:/abc",
     "fiber": "fiber",
     "fixture": ":anchor:/fixture",
