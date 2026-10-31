@@ -280,44 +280,6 @@ def run_around():
     repos = discover_repos(self_root, max_depth=2)
     update_bound_config(anchor_dir, repos)
 
-def ensure_bound_initialized():
-    """
-    @flow: Lazy-initialization of topology state.
-    @route: Forks mapping logic based on DEV/USER mode detection.
-    """
-    self_root = find_current_self()
-    anchor_dir = get_anchor_dir(self_root)
-    bound_path = anchor_dir / "bound.json"
-    
-    if not bound_path.exists():
-        log.info(f"[System Bootstrap] Initializing topology state in {anchor_dir}...")
-        
-        try:
-            from anchor.bind.around import (
-                determine_execution_mode,
-                resolve_workspace_root,
-                project_dev_mode,
-                project_user_mode
-            )
-            
-            mode = determine_execution_mode()
-            
-            if mode == "DEV":
-                log.info("[System Bootstrap] DEV Mode detected. Running local workspace projection...")
-                workspace_root = resolve_workspace_root()
-                project_dev_mode(workspace_root, anchor_dir)
-            else:
-                log.info("[System Bootstrap] USER Mode detected. Running installed package projection...")
-                project_user_mode(anchor_dir)
-                
-        except ImportError as e:
-            log.warning(f"[System Bootstrap] Failed to auto-initialize topology: {e}")
-        except Exception as e:
-            log.error(f"[System Bootstrap] Unexpected error during initialization: {e}")
-
-"""@trigger: Auto-binding hook on module load"""
-# ensure_bound_initialized()
-
 def run_test():
     """@test: Verify topology resolution mechanics."""
     try:
