@@ -1,32 +1,17 @@
 # xphi.state.phase.network.bootstrap
-import time
-import uuid
 import asyncio
-import orjson
-from typing import Optional, Dict, Any, AsyncGenerator, List, Callable
-from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Optional
 
 from xphi.arch.xor.parser.ruleset.engine import StreamTaggingParser
-from xphi.state.topos.state import Contract, CoherenceState
 from xphi.watcher.plane.tracer.base import SystemBound, log_streamer
-from xphi.arch.contract.config import env
-from xphi.node.space.tunnel.surface import EchoListener, SurfaceClient
-from xphi.node.space.bind.resolver import resolve_path
+from xphi.node.space.tunnel.surface import EchoListener
 from xphi.watcher.plane.emitter import get_emitter
 
-log_flow = get_emitter("phase.network")
-log_contract = get_emitter("stream.contract")
+log_flow = get_emitter("phase.network.bootstrap")
 
 KEY_STATE_PIDS = "system:xphi:pids"
 PROCESS_NAME = "xphi-dev-node"
-
-XPHI_BASE = env.FIBER_GATEWAY_URL
-REDIS_HOST = env.REDIS_HOST
-REDIS_PORT = env.REDIS_PORT
-
-LIB_ROOT = resolve_path("lib")
-SOURCE_NAME = "flow.executor"
 
 DEFAULT_WORKER_RULESET = {
     "targets": [
@@ -35,6 +20,7 @@ DEFAULT_WORKER_RULESET = {
             "keywords": [
                 {"AND": ["Netty started", "port"]},
                 {"AND": ["Started", "seconds", "JVM"]},
+                {"AND": ["Ready on", "http"]},  # 범용 HTTP 워커 호환성 추가
             ],
         },
         {
@@ -48,23 +34,8 @@ DEFAULT_WORKER_RULESET = {
 }
 
 
-@dataclass
-class TaskContext:
-    """실행 엔진으로 전달되는 표준화된 작업 단위"""
-    payload: Dict[str, Any]
-    task_type: str = "default"
-    task_id: str = field(default_factory=lambda: str(uuid.uuid4())[:8])
-
-
-@dataclass
-class SearchResult:
-    score: float
-    block: str
-    section: str
-    file: str
-
-
 class WorkerRuntimeBootstrap:
+    """Spawns and monitors a managed local binary worker via stdout ruleset sensing."""
     def __init__(
         self,
         bin_root: Path,
@@ -88,7 +59,7 @@ class WorkerRuntimeBootstrap:
         bins = sorted(self.bin_root.glob(self.executable_pattern))
         if not bins:
             raise RuntimeError(
-                f"Worker execution core matching {self.executable_pattern} is missing from the binary root."
+                f"Worker execution core matching {self.executable_pattern} is missing from {self.bin_root}."
             )
         return str(bins[-1])
 
@@ -97,7 +68,6 @@ class WorkerRuntimeBootstrap:
         "exec -a {process_name} java -Dreaper.tag={process_name} -jar {executable_path}",
     ])
     async def _stream_and_sense(self, line: str):
-        """Worker stdout을 스트리밍하며 컴파일된 엔진을 통해 라이프사이클 이벤트를 라우팅합니다."""
         if not line:
             return
 
@@ -122,161 +92,13 @@ class WorkerRuntimeBootstrap:
                 self.mq_surface.register_state(KEY_STATE_PIDS, str(pid))
                 log_flow.info(f"[WorkerNode] Core PID {pid} anchored to State Store.")
         except Exception as e:
-            log_flow.warning(f"[WorkerNode] State anchoring failed. Engine proceeding in isolated mode: {e}")
+            log_flow.warning(f"[WorkerNode] State anchoring failed. Proceeding in isolated mode: {e}")
 
-        log_flow.info("[WorkerNode] Awaiting Worker runtime startup readiness...")
         try:
             await asyncio.wait_for(self.ready_event.wait(), timeout=15.0)
             log_flow.info("[WorkerNode] Traffic routing enabled.")
         except asyncio.TimeoutError:
-            log_flow.warning("[WorkerNode] Readiness sensor timed out, but proceeding anyway.")
+            log_flow.warning("[WorkerNode] Readiness sensor timed out, proceeding anyway.")
 
     def shutdown(self):
         self.boundary.collapse()
-
-
-class FlowExecutor:
-    def __init__(
-        self,
-        surface_client: Optional[SurfaceClient] = None,
-        payload_sanitizer: Optional[Callable[[Any], Any]] = None,
-    ):
-        if surface_client:
-            self.surface = surface_client
-        else:
-            mq_surface = EchoListener()
-            self.surface = SurfaceClient(
-                bootstrap_runtime=WorkerRuntimeBootstrap(bin_root=LIB_ROOT, mq_surface=mq_surface),
-                mq_surface=mq_surface,
-                source_name=SOURCE_NAME,
-                fallback_url=XPHI_BASE,
-                path_prefix="",
-            )
-        self._sanitize = payload_sanitizer
-
-    async def execute_stream(self, context: TaskContext) -> AsyncGenerator[Dict[str, Any], None]:
-        """실제 정의된 Task만 처리하는 간결한 라우터"""
-        log_flow.info(f"[{SOURCE_NAME}] Routing task '{context.task_type}' (ID: {context.task_id})")
-
-        if context.task_type == "ledger_push":
-            topic = context.payload.get("topic")
-            raw_data = context.payload.get("data")
-            clean_data = self._sanitize(raw_data) if self._sanitize is not None else raw_data
-            safe_bytes: bytes = orjson.dumps(clean_data)
-            try:
-                async for chunk in self.surface.request(query_path=f"/ledger/{topic}", data=safe_bytes, method="POST"):
-                    yield {"status": "processing", "data": chunk}
-
-                log_flow.debug(f"[{context.task_id}] Anchored {len(safe_bytes)} bytes to {topic}")
-                yield {"status": "success"}
-            except Exception as e:
-                log_flow.error(f"[{context.task_id}] Store push failed: {e}")
-                yield {"status": "error", "error": str(e)}
-        elif context.task_type == "verify_parity":
-            nexus_id = context.payload.get("nexus_id")
-            log_flow.debug(f"[{context.task_id}] Verifying trajectory parity for {nexus_id}")
-            yield {"status": "success", "result": {"parity_matched": True}}
-        else:
-            yield {"status": "error", "error": f"Unsupported task type: {context.task_type}"}
-
-class EmitTool:
-    name: str
-    async def stream_emit(self, target_topic: str) -> AsyncGenerator[Contract, None]:
-        raise NotImplementedError
-
-class WasmIOEmitter(EmitTool):
-    name = "wasm_emitter"
-
-    def __init__(self, broker_client=None):
-        self.broker = broker_client
-
-    async def stream_emit(self, target_topic: str) -> AsyncGenerator[Contract, None]:
-        log_contract.info(f"[{self.name}] Subscribing to WASM tension stream on topic: {target_topic}")
-        try:
-            for _ in range(3):
-                await asyncio.sleep(0.1)
-                yield Contract(
-                    kind="state_transition",
-                    source=self.name,
-                    state=CoherenceState.STREAMING,
-                    payload={
-                        "logical_name": f"tx_wasm_{int(time.time()*1000)}",
-                        "target_topic": target_topic,
-                        "location": "wasm_kernel",
-                        "actor": "LLM_IO",
-                    },
-                )
-        except asyncio.CancelledError:
-            log_contract.info(f"[{self.name}] Tension stream subscription cleanly cancelled.")
-            raise
-        except Exception as e:
-            log_contract.error(f"[{self.name}] Tension threshold not met (λ < τ): {e}")
-            yield Contract(
-                kind="unresolved_io",
-                source=self.name,
-                state=CoherenceState.FRAGMENTED,
-                payload={
-                    "error_msg": str(e),
-                    "target_topic": target_topic,
-                    "location": "unknown",
-                },
-            )
-
-class StoreEventEmitter(EmitTool):
-    name = "ledger_event"
-
-    async def stream_emit(self, target_topic: str) -> AsyncGenerator[Contract, None]:
-        log_contract.info(f"[{self.name}] Monitoring Store constraints on: {target_topic}")
-        try:
-            await asyncio.sleep(0.2)
-            yield Contract(
-                kind="consensus_event",
-                source=self.name,
-                state=CoherenceState.COHERENT,
-                payload={
-                    "logical_name": f"event_{int(time.time()*1000)}",
-                    "target_topic": target_topic,
-                    "location": "system_bus",
-                    "sig_req": True,
-                },
-            )
-        except asyncio.CancelledError:
-            log_contract.info(f"[{self.name}] Store event monitor cleanly cancelled.")
-            raise
-        except Exception as e:
-            log_contract.error(f"[{self.name}] Store event failed: {e}")
-
-
-class StreamProxyRunner:
-    def __init__(self, tools: List[EmitTool]):
-        self.tools = tools
-
-    async def run_stream(self, target_topic: str) -> AsyncGenerator[Contract, None]:
-        queue: asyncio.Queue[Optional[Contract]] = asyncio.Queue()
-
-        async def worker(tool: EmitTool):
-            try:
-                async for contract in tool.stream_emit(target_topic):
-                    await queue.put(contract)
-            except asyncio.CancelledError:
-                pass
-            except Exception as e:
-                log_contract.error(f"[multiplexer] Tool '{tool.name}' stream failed: {e}")
-            finally:
-                await queue.put(None)
-
-        tasks = [asyncio.create_task(worker(tool)) for tool in self.tools]
-        active_workers = len(tasks)
-
-        try:
-            while active_workers > 0:
-                item = await queue.get()
-                if item is None:
-                    active_workers -= 1
-                else:
-                    yield item
-        finally:
-            for task in tasks:
-                if not task.done():
-                    task.cancel()
-            await asyncio.gather(*tasks, return_exceptions=True)
