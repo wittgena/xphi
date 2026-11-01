@@ -1,5 +1,4 @@
 # xphi.arch.contract.event.next
-## @lineage: xphi.arch.bound.event.next
 import os
 import time
 import threading
@@ -78,7 +77,6 @@ def parse_id(snowflake_id: str):
         "seq": sequence
     }
 
-# 💡 [핵심 개선 1] 하위 호환성 유지 + 결정론적 시드 지원
 def uuid4(deterministic_seed: Optional[str] = None) -> _std_uuid.UUID:
     """
     - deterministic_seed 제공 시: 해당 시드를 해싱하여 결정론적 128비트 UUID 객체 반환 (VCR Replay 등)
@@ -104,7 +102,6 @@ def uuid4(deterministic_seed: Optional[str] = None) -> _std_uuid.UUID:
         # Clock backwards 등 예외 발생 시 표준 UUIDv4로 폴백
         return _std_uuid.uuid4()
 
-# 💡 [핵심 개선 2] OTLP Trace ID 생성을 위한 전용 인터페이스 신설
 def next_trace_id(deterministic_seed: Optional[str] = None) -> str:
     """
     @desc: OTLP / W3C Trace Context 규격을 완벽히 준수하는 32자리 Hex String 반환

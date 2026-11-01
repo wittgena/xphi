@@ -30,8 +30,7 @@ DEFAULT_BOUND_SKELETON = {
   },
   "substitution": {
     "io": "anchor/io",
-    "memory": "anchor/memory",
-    "workspace": "anchor/ext/workspace",
+    "workspace": "anchor/io/workspace",
     "xor": "anchor/io/xor",
     "contract": "anchor/io/contract",
     "node": "xphi/node",

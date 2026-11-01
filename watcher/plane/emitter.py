@@ -11,6 +11,9 @@ from contextlib import contextmanager
 from xphi.arch.contract.event.next import LogEvent, next_id
 from xphi.watcher.plane.regulator import default_plane
 
+for _noisy_logger in ("httpx", "httpcore", "google_genai", "google.genai", "openai", "anthropic"):
+    logging.getLogger(_noisy_logger).setLevel(logging.WARNING)
+
 _flow_context: ContextVar[Dict[str, Any]] = ContextVar("flow_context", default={})
 _event_interceptors: List[Callable[[LogEvent], None]] = []
 
@@ -39,6 +42,8 @@ def set_log_level(level: str):
     
     # 모든 기존 로거들의 핸들러 레벨도 강제 업데이트 (오버라이드 방지)
     for logger_name in logging.root.manager.loggerDict:
+        if logger_name.startswith(("httpx", "httpcore", "google", "openai", "anthropic")):
+            continue
         logger = logging.getLogger(logger_name)
         logger.setLevel(native_level)
 
