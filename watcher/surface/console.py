@@ -23,7 +23,8 @@ class ConsoleSurface(EventObserver):
         "WARN": 40,
         "ERROR": 50,
         "CRIT": 60,
-        "SIGNAL": 70
+        # "SIGNAL": 70,
+        "SIGNAL": 20,
     }
 
     def __init__(self, mode: str = "NORMAL", min_level: str = "INFO"):
@@ -33,6 +34,8 @@ class ConsoleSurface(EventObserver):
 
     def update(self, event: LogEvent):
         event_level = str(event.level or "INFO").upper()
+        if event_level == "SIGNAL":  # 터미널 출력 완전 스킵
+            return
         
         if event_level not in self.BYPASS_LEVELS:
             current_weight = self.LEVEL_WEIGHTS.get(event_level, 30)

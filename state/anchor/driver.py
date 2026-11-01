@@ -4,12 +4,28 @@ Pluggable storage driver interface for the AnchorStore.
 Target Expansion Backends: 
 - TiKV (Distributed RocksDB/Raft KV)
 - FoundationDB (Ordered transactional KV)
-- ScyllaDB/Cassandra (LSM-tree wide-column store)
+- ScyllaDB (LSM-tree wide-column store)
 """
+from __future__ import annotations
+
 import os
+import struct
 from abc import ABC, abstractmethod
-from typing import Any, Iterator, Optional, Tuple
+from typing import Any, Dict, Iterator, Optional, Tuple
 from rocksdict import Rdict, Options, AccessType
+
+_FDB_API_INITIALIZED = False
+
+
+def _strinc(prefix: bytes) -> bytes:
+    """
+    Computes the exact lexicographical exclusive upper-bound key for prefix scans
+    (Standard FoundationDB Subspace.range() algorithm).
+    """
+    stripped = prefix.rstrip(b"\xff")
+    if not stripped:
+        raise ValueError("Prefix must contain at least one byte not equal to 0xFF")
+    return stripped[:-1] + bytes([stripped[-1] + 1])
 
 
 class _GeneratorSeekIterator:
@@ -53,6 +69,7 @@ class AbstractAnchorDriver(ABC):
     Subclasses only need to implement `get`, `put`, `scan_prefix`, and `close`.
     """
     is_sealer: bool = False
+    path: str = "adb"
 
     @abstractmethod
     def get(self, key: bytes) -> Optional[bytes]:
@@ -159,6 +176,118 @@ class RocksAnchorDriver(AbstractAnchorDriver):
         if getattr(self, "_db", None) is not None:
             self._db.close()
 
+class FDBAnchorDriver(AbstractAnchorDriver):
+    """
+    FoundationDB driver implementing AbstractAnchorDriver.
+    - Connects to native FoundationDB cluster when `foundationdb` package & daemon are active.
+    - Gracefully falls back to an in-memory lexicographical FDB simulator (unless XPHI_FDB_STRICT=1)
+    """
+    def __init__(self, target_path: str, cluster_file: Optional[str] = None, timeout_ms: int = 2500):
+        global _FDB_API_INITIALIZED
+        self.path = str(target_path)
+        subspace_name = os.path.basename(self.path.rstrip("/\\")) or "adb"
+        self._prefix = f"xphi:{subspace_name}:".encode("utf-8")
+
+        self.cluster_file = cluster_file or os.getenv("FDB_CLUSTER_FILE")
+        self.timeout_ms = int(os.getenv("XPHI_FDB_TIMEOUT_MS", str(timeout_ms)))
+        self.strict_mode = os.getenv("XPHI_FDB_STRICT", "0") == "1"
+
+        self.is_sealer = True
+        self.is_native_cluster = False
+        self.last_versionstamp: bytes = b"\x00" * 10
+        self._commit_seq: int = 0
+
+        self._fdb: Any = None
+        self._db: Any = None
+        self._emulated_kv: Dict[bytes, bytes] = {}
+
+        self._init_backend()
+
+    def _init_backend(self) -> None:
+        global _FDB_API_INITIALIZED
+        try:
+            import fdb
+            if not _FDB_API_INITIALIZED:
+                fdb.api_version(730)
+                _FDB_API_INITIALIZED = True
+            self._fdb = fdb
+
+            db = fdb.open(self.cluster_file)
+            # Probe cluster liveness with a bounded timeout so missing fdbserver never hangs forever
+            tr = db.create_transaction()
+            tr.options.set_timeout(self.timeout_ms)
+            _ = tr[self._prefix + b"__health__"]
+            self._db = db
+            self.is_native_cluster = True
+        except Exception as e:
+            if self.strict_mode:
+                raise RuntimeError(f"Native FoundationDB connection failed in strict mode: {e}") from e
+            self._db = None
+            self.is_native_cluster = False
+
+    def _to_fdb_key(self, key: bytes) -> bytes:
+        return self._prefix + key
+
+    def _from_fdb_key(self, fdb_key: bytes) -> bytes:
+        return fdb_key[len(self._prefix):]
+
+    def get(self, key: bytes) -> Optional[bytes]:
+        raw_k = self._to_fdb_key(key)
+        if self.is_native_cluster and self._db is not None:
+            tr = self._db.create_transaction()
+            tr.options.set_timeout(self.timeout_ms)
+            val = tr[raw_k]
+            return bytes(val) if val.present() else None
+        return self._emulated_kv.get(raw_k)
+
+    def put(self, key: bytes, value: bytes) -> None:
+        raw_k = self._to_fdb_key(key)
+        raw_v = bytes(value)
+        if self.is_native_cluster and self._db is not None:
+            tr = self._db.create_transaction()
+            tr.options.set_timeout(self.timeout_ms)
+            tr.set(raw_k, raw_v)
+            vs_fut = tr.get_versionstamp()
+            tr.commit().wait()
+            self.last_versionstamp = bytes(vs_fut.wait())[:10].ljust(10, b"\x00")
+        else:
+            self._emulated_kv[raw_k] = raw_v
+            self._commit_seq += 1
+            self.last_versionstamp = struct.pack(">QH", self._commit_seq, 0)
+
+    def scan_prefix(self, prefix: bytes) -> Iterator[Tuple[bytes, bytes]]:
+        """Streams lexicographically ordered (key, value) pairs matching `prefix` using _strinc bounds."""
+        start_key = self._to_fdb_key(prefix)
+        end_key = _strinc(start_key)
+
+        if self.is_native_cluster and self._db is not None:
+            tr = self._db.create_transaction()
+            tr.options.set_timeout(self.timeout_ms)
+            for kv in tr.get_range(start_key, end_key):
+                yield self._from_fdb_key(bytes(kv.key)), bytes(kv.value)
+        else:
+            for k in sorted(self._emulated_kv.keys()):
+                if k >= end_key:
+                    break
+                if k >= start_key:
+                    yield self._from_fdb_key(k), self._emulated_kv[k]
+
+    def clear_subspace(self) -> None:
+        """Clears all keys under this driver's subspace prefix (used during E2E teardown)."""
+        start_key = self._prefix
+        end_key = _strinc(start_key)
+        if self.is_native_cluster and self._db is not None:
+            tr = self._db.create_transaction()
+            tr.options.set_timeout(self.timeout_ms)
+            tr.clear_range(start_key, end_key)
+            tr.commit().wait()
+        else:
+            self._emulated_kv.clear()
+
+    def close(self) -> None:
+        self._db = None
+        self._emulated_kv.clear()
+
 
 class AnchorDriverFactory:
     """Instantiates the configured storage driver based on environment settings."""
@@ -167,4 +296,6 @@ class AnchorDriverFactory:
         backend = os.getenv("XPHI_ANCHOR_DRIVER", "rocksdb").lower()
         if backend == "rocksdb":
             return RocksAnchorDriver(target_path)
+        elif backend in ("fdb", "foundationdb"):
+            return FDBAnchorDriver(target_path)
         raise ValueError(f"Unsupported anchor driver: {backend}")

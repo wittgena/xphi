@@ -1,5 +1,4 @@
 # xphi.arch.contract.registry.path
-## @lineage: arch.contract.registry.path
 import os
 import logging
 from pathlib import Path
@@ -27,7 +26,7 @@ class PathRegistry:
             bound = load_bound(self_root)
             self._aliases = bound.get("paths", {})
             self._initialized = True
-            log.info(f"[PathRegistry] Synced {len(self._aliases)} aliases.")
+            log.debug(f"[PathRegistry] Synced {len(self._aliases)} aliases.")
         except Exception as e:
             log.debug(f"[PathRegistry] Sync deferred: {e}")
 

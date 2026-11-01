@@ -69,12 +69,12 @@ class UniversalFacade:
         self.state_store = actual_redis.Redis(connection_pool=pool)
 
         if self.mq_protocol == BackendProtocol.KAFKA:
-            log.info(f"[Tunnel] Initializing Kafka Producer/Consumer at {self.mq_url}")
+            log.debug(f"[Tunnel] Initializing Kafka Producer/Consumer at {self.mq_url}")
             pass
 
     def bind_wasm_broker(self, broker):
         self.wasm_broker = broker
-        log.info("[Tunnel] WasmBroker bound to UniversalFacade for background telemetry auditing.")
+        log.debug("[Tunnel] WasmBroker bound to UniversalFacade for background telemetry auditing.")
 
     async def _audit_provenance(self, raw_payload: dict, message_id: str):
         try:
@@ -84,7 +84,7 @@ class UniversalFacade:
                 if data_str:
                     res = await self.wasm_broker.invoke("compute_fingerprint", data_str)
                     if res.success:
-                        log.info(f"🧾 [Audit] Message {message_id} proven. Fingerprint: {res.output}")
+                        log.debug(f"🧾 [Audit] Message {message_id} proven. Fingerprint: {res.output}")
                     else:
                         log.warning(f"⚠️ [Audit] Failed to prove message {message_id}: {res.error}")
         except Exception as e:
@@ -140,7 +140,7 @@ class UniversalFacadeSync:
         self.state_store = redis.Redis(connection_pool=pool)
         
         if self.mq_protocol == BackendProtocol.KAFKA:
-            log.info(f"[SyncTunnel] Initializing Sync Kafka Producer/Consumer at {self.mq_url}")
+            log.debug(f"[SyncTunnel] Initializing Sync Kafka Producer/Consumer at {self.mq_url}")
             pass
 
     def stream_produce(self, topic: str, payload: dict, maxlen: int = 100000) -> str:
@@ -192,7 +192,7 @@ class TunnelFactory:
             scheme = kwargs.pop("mq_protocol", scheme)
             
             cls._async_instance = UniversalFacade(state_url, mq_url, scheme, **kwargs)
-            log.info(f"[TunnelFactory] Provisioned Async Tunnel: {mq_url}")
+            log.debug(f"[TunnelFactory] Provisioned Async Tunnel: {mq_url}")
         return cls._async_instance
 
     @classmethod
@@ -225,7 +225,7 @@ class TunnelFactory:
             scheme = kwargs.pop("mq_protocol", scheme)
             
             cls._sync_instance = UniversalFacadeSync(state_url, mq_url, scheme, **kwargs)
-            log.info(f"[TunnelFactory] Provisioned Sync Tunnel: {mq_url}")
+            log.debug(f"[TunnelFactory] Provisioned Sync Tunnel: {mq_url}")
         return cls._sync_instance
 
     @classmethod
