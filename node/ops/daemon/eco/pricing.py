@@ -1,6 +1,4 @@
 # xphi.node.ops.daemon.eco.pricing
-## @lineage: fiber.infra.daemon.economy.pricing
-## @lineage: fiber.gateway.daemon.economy.pricing
 import asyncio
 import json
 from typing import Dict, Any
