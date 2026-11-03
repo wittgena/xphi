@@ -15,17 +15,18 @@ _TRACEBACK_PRINTED = False
 _SCANNED_DIRS = set()
 _SCANNED_MODULES = set()
 
+
 def _load_module_by_fqn(py_file: Path, base_dir: Path, base_fqn: str = "") -> None:
     try:
         rel_path = py_file.relative_to(base_dir)
         parts = list(rel_path.parts)
         parts[-1] = parts[-1][:-3]
-        
+
         fqn = f"{base_fqn}." + ".".join(parts) if base_fqn else ".".join(parts)
         if fqn and fqn not in sys.modules and fqn not in _SCANNED_MODULES:
             importlib.import_module(fqn)
             _SCANNED_MODULES.add(fqn)
-            
+
     except Exception as e:
         log.warning(f"[Discover] Failed to load {py_file}: {e}")
         global _TRACEBACK_PRINTED
@@ -60,13 +61,13 @@ def _walk_and_discover(root: Path, base_fqn: str = "", apply_quarantine: bool = 
     for dirpath, dirnames, filenames in os.walk(root):
         current_dir = Path(dirpath).resolve()
         if current_dir in _SCANNED_DIRS:
-            dirnames[:] = []  
+            dirnames[:] = []
             continue
-            
+
         _SCANNED_DIRS.add(current_dir)
         try:
             rel_dir = current_dir.relative_to(root).as_posix()
-            if rel_dir == ".": 
+            if rel_dir == ".":
                 rel_dir = ""
         except ValueError:
             rel_dir = current_dir.name
@@ -75,13 +76,13 @@ def _walk_and_discover(root: Path, base_fqn: str = "", apply_quarantine: bool = 
         for d in dirnames:
             if d.startswith((".", "__")):
                 continue
-            
+
             child_rel = f"{rel_dir}/{d}" if rel_dir else d
             if any(ex in child_rel for ex in exclude_patterns):
                 continue
-                
+
             valid_dirs.append(d)
-            
+
         dirnames[:] = valid_dirs
         for f in filenames:
             if not f.endswith(".py") or (f.startswith("_") and f != "__init__.py"):
@@ -96,7 +97,7 @@ def discover_core_package(pkg_name: str) -> None:
         spec = importlib.util.find_spec(pkg_name)
         if not spec or not spec.submodule_search_locations:
             return
-        
+
         pkg_root = Path(spec.submodule_search_locations[0]).resolve()
         log.info(f"[Discover] Core package '{pkg_name}' pinpointed at: {pkg_root}")
         _walk_and_discover(pkg_root, base_fqn=pkg_name, apply_quarantine=False)
@@ -106,9 +107,19 @@ def discover_core_package(pkg_name: str) -> None:
 
 def discover_modules(workspace_root: Path) -> None:
     log.info("\n[Discover] Initiating system-wide module discovery...")
-    
+
     discover_core_package("fiber")
     discover_core_package("xphi")
-    
+
+    resolved_root = workspace_root.resolve()
+    home_root = Path.home().resolve()
+    if resolved_root == home_root:
+        target_root = home_root / ".anchor"
+        if not target_root.exists():
+            return
+        log.info(f"[Discover] Scanning user anchor: {target_root}")
+        _walk_and_discover(target_root, base_fqn="", apply_quarantine=True)
+        return
+
     log.info(f"[Discover] Scanning workspace: {workspace_root}")
     _walk_and_discover(workspace_root, base_fqn="", apply_quarantine=True)
