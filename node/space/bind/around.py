@@ -40,7 +40,7 @@ DEFAULT_BOUND_SKELETON = {
     "anchor": ":anchor:",
     "abc": ":phase:/abc",
     "fiber": "fiber",
-    "fixture": ":anchor:/fixture",
+    "compats": ":anchor:/compats",
     "registry": ":anchor:/registry",
     "adb": ":anchor:/adb",
     "sign": ":anchor:/sign",

@@ -7,7 +7,7 @@ import logging
 from typing import Callable, Coroutine, Any, Optional
 import traceback
 
-log = logging.getLogger("kernel.reactor")
+log = logging.getLogger("phase.reactor")
 
 class PhaseReactor:
     _policy_applied = False
