@@ -1,18 +1,43 @@
 # xphi.state.phase.commit
 import json
 import time
+import hashlib
 import asyncio
 from typing import Dict, List, Optional, Callable, Any
 from pathlib import Path
 from dataclasses import asdict
 
 from xphi.node.runtime.wasm.broker import WasmBroker
+from xphi.node.space.bind.resolver import resolve_path
 from xphi.arch.bound.adapter.pta import SignStateAdapter
 from xphi.arch.bound.adapter.state import StateAdapter
 from xphi.watcher.plane.emitter import get_emitter
 from xphi.state.anchor.store import AnchorStore, ToposBlob, PhaseCommit, AnchorRole
 
 log = get_emitter("phase.commit", phase="COMMIT")
+
+WASM_LOCK_FILENAME = "wasm.lock.json"
+
+def _build_wasm_chain_state(prev_chain_hash: str, nexus_id: int, anchor_parent: str) -> tuple[str, str, Dict[str, str]]:
+    """@role: Side-effect-free WASM hash scanner & chain calculator"""
+    manifest: Dict[str, str] = {}
+    try:
+        time_dir = resolve_path("time")
+        if time_dir.exists():
+            for wf in sorted(time_dir.rglob("*.wasm")):
+                if wf.is_file():
+                    rel_key = wf.relative_to(time_dir).as_posix()
+                    manifest[rel_key] = hashlib.sha256(wf.read_bytes()).hexdigest()
+    except Exception as e:
+        log.warning(f"[Chain] Failed to scan WASM directory (fallback to empty): {e}")
+
+    canonical_manifest = json.dumps(manifest, separators=(',', ':'), sort_keys=True).encode('utf-8')
+    wasm_root = hashlib.sha256(canonical_manifest).hexdigest()
+    
+    chain_input = f"{prev_chain_hash}:{nexus_id}:{anchor_parent}:{wasm_root}".encode('utf-8')
+    chain_hash = hashlib.sha256(chain_input).hexdigest()
+    return wasm_root, chain_hash, manifest
+
 
 class Attractor:
     """@role: execution unit + lineage inscription node"""
@@ -29,9 +54,10 @@ class Attractor:
         parent_commit_id: str, 
         message: str, 
         apply: bool = False,
-        tag: Optional[str] = None
+        tag: Optional[str] = None,
+        chain_hash: Optional[str] = None,
+        wasm_root: Optional[str] = None
     ) -> str:
-        # WASM의 RepoCommit 스키마와 동일한 형태의 딕셔너리 생성
         model_dict = {
             "nexus_id": nexus_id,
             "parent_nexus_id": parent_nexus_id,
@@ -40,6 +66,10 @@ class Attractor:
         
         if tag:
             model_dict["version_tag"] = tag
+        if chain_hash:
+            model_dict["chain_hash"] = chain_hash
+        if wasm_root:
+            model_dict["wasm_root"] = wasm_root
 
         json_payload = json.dumps(model_dict, separators=(',', ':'), sort_keys=True)
         full_message = f"{message}\n\n{json_payload}"
@@ -58,7 +88,6 @@ class Attractor:
         tag_info = f" | Tag: {tag}" if tag else ""
         print(f"  └─ [{self.name}] Inscribed. Nexus: {nexus_id} | State: {new_commit_id[:7]}{tag_info}")
         return new_commit_id
-
 
 class EpochManager(Attractor):
     """@role: boundary (synchronization frame) + era manager"""
@@ -90,7 +119,6 @@ class EpochManager(Attractor):
 
     def project(self, states: Dict[str, str]) -> Dict[str, str]:
         return states
-
 
 async def anchor_commit(
     repos: List[Attractor], 
@@ -128,10 +156,34 @@ async def anchor_commit(
     nexus_id = parity.get("nexus_id")
     log.info(f"[Protocol] Nexus ID Generated: {nexus_id}")
 
-    # PHASE 2: Physical Commits (Thread Offloading)
     history = anchor.load_history()
     last_snapshot = history[-1] if history else None
     parent_nexus_id = last_snapshot.get("parity", {}).get("nexus_id", 0) if last_snapshot else 0
+    anchor_parent_state = anchor.resolve(anchor.name)
+
+    prev_chain_hash = last_snapshot.get("chain_hash", "genesis") if last_snapshot else "genesis"
+    wasm_root, chain_hash, wasm_manifest = _build_wasm_chain_state(
+        prev_chain_hash=prev_chain_hash,
+        nexus_id=nexus_id,
+        anchor_parent=anchor_parent_state
+    )
+
+    if apply and wasm_manifest:
+        try:
+            lock_payload = {
+                "nexus_id": nexus_id,
+                "parent_nexus_id": parent_nexus_id,
+                "prev_chain_hash": prev_chain_hash,
+                "chain_hash": chain_hash,
+                "wasm_root": wasm_root,
+                "artifacts": wasm_manifest,
+                "timestamp": current_ts
+            }
+            lock_path = resolve_path("time") / WASM_LOCK_FILENAME
+            lock_path.write_text(json.dumps(lock_payload, indent=2, sort_keys=True), encoding="utf-8")
+        except Exception as e:
+            log.warning(f"[Chain] Failed to write {WASM_LOCK_FILENAME}: {e}")
+
     current_aligned_states: Dict[str, str] = {}
     
     for r in repos:
@@ -143,7 +195,9 @@ async def anchor_commit(
             parent_commit_id=parent_state,
             message=message,
             apply=apply,
-            tag=tag
+            tag=tag,
+            chain_hash=chain_hash,
+            wasm_root=wasm_root
         )
         current_aligned_states[r.name] = commit_hash
 
@@ -154,7 +208,6 @@ async def anchor_commit(
             if name not in current_aligned_states and name != anchor.name:
                 cached_states[name] = last_hash
 
-    anchor_parent_state = anchor.resolve(anchor.name)
     anchor_commit_dict = StateAdapter.build_anchor_commit(
         parity=parity,
         parent_nexus_id=parent_nexus_id,
@@ -194,6 +247,8 @@ async def anchor_commit(
         if "anchor_result" in sealed_data:
             seal_payload["repos"][anchor.name] = sealed_data["anchor_result"]["commit_hash"]
 
+        seal_payload["chain_hash"] = chain_hash
+        seal_payload["wasm_root"] = wasm_root
         full_history = history + [seal_payload]
         try:
             if hasattr(anchor.store, 'db') and anchor.store.db is not None:
@@ -224,4 +279,4 @@ async def anchor_commit(
                 log.critical(f"Physical state finalization aborted due to Kernel Store privilege denial: {pe}")
                 return
 
-    log.info(f"## Era Fixed. Nexus: {nexus_id} (Aligned: {len(current_aligned_states)}, Lagged: {len(cached_states)})")
+    log.info(f"## Era Fixed. Nexus: {nexus_id} | Chain: {chain_hash[:8]} (Aligned: {len(current_aligned_states)}, Lagged: {len(cached_states)})")
