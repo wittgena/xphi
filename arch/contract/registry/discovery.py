@@ -50,9 +50,9 @@ def _walk_and_discover(root: Path, base_fqn: str = "", apply_quarantine: bool = 
                 exclude_patterns.update(bound_data["quarantine"])
         except Exception:
             pass
-        log.info(f"[Discover] 🛡️ Workspace Quarantine for {root.name}: {exclude_patterns}")
+        log.info(f"[Discover] Workspace Quarantine for {root.name}: {exclude_patterns}")
     else:
-        log.info(f"[Discover] 🛡️ Core Quarantine for {root.name}: {exclude_patterns}")
+        log.info(f"[Discover] Core Quarantine for {root.name}: {exclude_patterns}")
 
     root_path_str = str(root.resolve())
     if root_path_str not in sys.path:

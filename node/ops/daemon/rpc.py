@@ -146,7 +146,7 @@ class RpcWorkerDaemon(AbstractDaemon):
         try:
             await self._init_context()
             self.tunnel = await TunnelFactory.get_default()
-            log.info(f"[{self.name}] 🚀 Worker [{self.worker_id}] listening on topic: {self.topic}")
+            log.info(f"[{self.name}] Worker [{self.worker_id}] listening on topic: {self.topic}")
             
             while self.running:
                 try:

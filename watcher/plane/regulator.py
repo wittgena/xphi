@@ -121,9 +121,9 @@ class TelemetryEngine:
         
         is_bursting = current_density > self.burst_density_threshold and acceleration > self.burst_accel_threshold
         if is_bursting and not self._last_burst_state:
-            log.warning(f"[Telemetry] 🚨 Burst Alert Triggered on '{key}' (Acc: {acceleration:.2f}) Den: {current_density:.2f})")
+            log.warning(f"[Telemetry] Burst Alert Triggered on '{key}' (Acc: {acceleration:.2f}) Den: {current_density:.2f})")
         elif not is_bursting and self._last_burst_state:
-            log.info(f"[Telemetry] 🟢 System Stabilized on '{key}'")
+            log.info(f"[Telemetry] System Stabilized on '{key}'")
             
         self._last_burst_state = is_bursting
         

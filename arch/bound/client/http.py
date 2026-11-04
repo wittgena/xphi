@@ -158,11 +158,7 @@ class SafeHttpClient:
         headers["Host"] = host_header
         return await self._client.get(validated_url, headers=headers, **kwargs)
 
-
-# ==========================================
-# 4. First-Party Attestation Client
-# ==========================================
-
+# First-Party Attestation Client
 class ProofVerificationError(ValueError):
     pass
 
@@ -200,10 +196,9 @@ class VerifiedHttpClient:
                 raise ProofVerificationError("서명자 목록을 신뢰할 수 없습니다. (Root Key 검증 실패)")
                 
             self._trusted_signers = set(data.get("active_signers", []))
-            log.info(f"[VerifiedHttpClient] 🔐 Trusted signers cached: {len(self._trusted_signers)} node(s).")
-            
+            log.info(f"[VerifiedHttpClient] Trusted signers cached: {len(self._trusted_signers)} node(s).")
         except Exception as e:
-            log.critical(f"[VerifiedHttpClient] 🚨 Failed to bootstrap trusted signers: {e}")
+            log.critical(f"[VerifiedHttpClient] Failed to bootstrap trusted signers: {e}")
             raise
 
     def _verify_header_proof(self, response: httpx.Response) -> None:
@@ -216,7 +211,7 @@ class VerifiedHttpClient:
 
         if self._root_pubkey and self._trusted_signers:
             if signer_pubkey not in self._trusted_signers:
-                log.critical(f"[VerifiedHttpClient] 🚨 Untrusted signer detected: {signer_pubkey}")
+                log.critical(f"[VerifiedHttpClient] Untrusted signer detected: {signer_pubkey}")
                 raise ProofVerificationError("신뢰할 수 없는 서명자(MitM 의심 노드)의 응답입니다.")
 
         try:
@@ -242,7 +237,7 @@ class VerifiedHttpClient:
         )
         
         if not is_valid:
-            log.critical(f"[VerifiedHttpClient] 🚨 Signature mismatch! Path: {request_path}")
+            log.critical(f"[VerifiedHttpClient] Signature mismatch! Path: {request_path}")
             raise ProofVerificationError("서명 검증 실패: 데이터가 변조되었거나 잘못된 서명자입니다.")
 
     async def async_request_verified(self, method: str, url: str, **kwargs: Any) -> httpx.Response:

@@ -1,5 +1,4 @@
 # xphi.arch.bound.scope.local.llama
-## @lineage: fiber.phase.scope.local.llama
 import os
 import sys
 import time
@@ -40,13 +39,10 @@ class LlamaServer:
         self.server_url = SERVER_URL
         self.health_url = HEALTH_URL
         self._process = None
-        self._owns_process = False  # 자신이 띄운 프로세스인지 추적
-
-        # 1. 메인 프로세스(게이트웨이) 종료 시 무조건 하위 프로세스를 정리하도록 훅 등록
+        self._owns_process = False
         atexit.register(self.stop)
 
     def __del__(self):
-        # 2. scope.manager에서 LocalSurface 객체가 소멸(GC)될 때 자동 정리 보장
         self.stop()
 
     def is_alive(self) -> bool:
@@ -63,8 +59,7 @@ class LlamaServer:
             return
 
         log.info("[*] Starting llama-server process...")
-        
-        # 3. 파이프를 끊어(DEVNULL) OS 리소스 누수 방지
+        # 파이프를 끊어(DEVNULL) OS 리소스 누수 방지
         self._process = subprocess.Popen(
             LLAMA_SERVER_CMD,
             stdout=subprocess.DEVNULL,
@@ -72,7 +67,7 @@ class LlamaServer:
         )
         self._owns_process = True
 
-        # 4. 루프 블로킹을 최소화하기 위해 인터벌을 0.5초로 줄이고 최대 60번(30초) 대기
+        # 루프 블로킹을 최소화하기 위해 인터벌을 0.5초로 줄이고 최대 60번(30초) 대기
         for _ in range(60): 
             if self.is_alive():
                 log.info("[+] llama-server is online and ready.")
@@ -97,7 +92,7 @@ class LlamaServer:
 
     def ask(self, prompt: str, callback: callable = None, req_id: str = None) -> str:
         req_id = req_id or str(uuid4())[:8]
-        log.debug(f"[Engine-{req_id}] 🌊 ask (stream) START | model={self.model_name}")
+        log.debug(f"[Engine-{req_id}] ask (stream) START | model={self.model_name}")
         
         self.ensure_server()
         payload = {
@@ -108,7 +103,7 @@ class LlamaServer:
 
         full_text = ""
         try:
-            log.debug(f"[Engine-{req_id}] 📡 Sending Streaming POST to {self.server_url}")
+            log.debug(f"[Engine-{req_id}] Sending Streaming POST to {self.server_url}")
             with requests.post(self.server_url, json=payload, stream=True, timeout=60) as r:
                 r.raise_for_status()
                 for line in r.iter_lines():
@@ -128,15 +123,15 @@ class LlamaServer:
                         except Exception as e:
                             log.error(f"[Engine-{req_id}] SSE JSON parsing error: {e}, Payload: {content}")
                             continue
-            log.debug(f"[Engine-{req_id}] ✅ ask SUCCESS | total_length={len(full_text)}")
+            log.debug(f"[Engine-{req_id}] ask SUCCESS | total_length={len(full_text)}")
         except Exception as e:
-            log.error(f"[Engine-{req_id}] 🚨 Failed during LLM ask request: {e}", exc_info=True)
+            log.error(f"[Engine-{req_id}] Failed during LLM ask request: {e}", exc_info=True)
             
         return full_text
 
     def chat(self, system_prompt: str, user_prompt: str, timeout: int = 30, req_id: str = None) -> str:
         req_id = req_id or str(uuid4())[:8]
-        log.debug(f"[Engine-{req_id}] ⚡ chat START | timeout={timeout}s, model={self.model_name}")
+        log.debug(f"[Engine-{req_id}] chat START | timeout={timeout}s, model={self.model_name}")
         
         self.ensure_server()
         payload = {
@@ -148,18 +143,17 @@ class LlamaServer:
         }
 
         try:
-            log.debug(f"[Engine-{req_id}] 📡 Sending POST to {self.server_url}")
+            log.debug(f"[Engine-{req_id}] Sending POST to {self.server_url}")
             r = requests.post(self.server_url, json=payload, timeout=timeout)
             r.raise_for_status()
 
             data = r.json()
             content = data["choices"][0]["message"]["content"]
-            log.debug(f"[Engine-{req_id}] ✅ chat SUCCESS | response_len={len(content)}")
+            log.debug(f"[Engine-{req_id}] chat SUCCESS | response_len={len(content)}")
             return content
         except Exception as e:
-            log.error(f"[Engine-{req_id}] 🚨 chat FAILED: {e}", exc_info=True)
+            log.error(f"[Engine-{req_id}] chat FAILED: {e}", exc_info=True)
             raise e
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Local Llama Server Manager")

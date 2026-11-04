@@ -144,7 +144,7 @@ class FlowTransition:
             success = await asyncio.wait_for(self.future, timeout=timeout)
             trace = "\n".join([f"[{m.get('new_state', m.get('previous_state', '0'))}] {m['event']}" for m in self.memory])
             if not success:
-                trace += "\n[⚠ SYSTEM COLLAPSED] Execution fractured before reaching anchor."
+                trace += "\n[SYSTEM COLLAPSED] Execution fractured before reaching anchor."
             return trace
         except asyncio.TimeoutError:
             self.fracture_topology(lmbda=0.0, tau=1.0, force_collapse=True)
@@ -200,7 +200,7 @@ class TransitionManager:
             cost_metrics={"fuel_consumed": fuel_consumed, "accumulated_cost": cost},
             tier=Tier.STANDARD.value
         )
-        epoch_log.info(f"[{self.origin_name}] 🧾 Transaction Receipt Issued: {receipt.job_id}")
+        epoch_log.info(f"[{self.origin_name}] Transaction Receipt Issued: {receipt.job_id}")
         self.transition.reach_anchor(resource_address=f"urn:surgent:resource:resolved_task_{self.transition.id}")
         residue = TopologyResidue(
             edge_state=self.transition.edge.value,
@@ -217,7 +217,7 @@ class TransitionManager:
         visual_symbol = EdgeFlow(residue.edge_state).symbol if residue.edge_state in [e.value for e in EdgeFlow] else residue.edge_state
         
         epoch_log.info("\n" + "="*60)
-        epoch_log.info(f"🌌 [TOPOLOGY FINALIZED] Edge State: {visual_symbol} ({residue.edge_state})")
+        epoch_log.info(f"[TOPOLOGY FINALIZED] Edge State: {visual_symbol} ({residue.edge_state})")
         if residue.receipt:
             epoch_log.info(f"  Receipt ID (Topos): {residue.receipt.job_id}")
             epoch_log.info(f"  Fuel Burned (Compute): {residue.receipt.fuel_consumed}")

@@ -31,16 +31,10 @@ class PathRegistry:
             log.debug(f"[PathRegistry] Sync deferred: {e}")
 
     def log_access(self, alias: str, actual_path: Path):
-        """
-        [FIX] 외부에서 호출 가능한 공개 메서드.
-        기존에 누락되었던 메서드입니다.
-        """
         self.lazy_sync()
         is_managed = alias in self._aliases
-        
-        # Shadow IO 감지 시 경고 출력
         if not is_managed and not str(actual_path).startswith(("/tmp", "/dev")):
-            log.warning(f"⚠️ [ShadowIO] Unmanaged path: '{alias}' -> {actual_path}")
+            log.warning(f"[ShadowIO] Unmanaged path: '{alias}' -> {actual_path}")
 
         self._access_history.append({
             "alias": alias,

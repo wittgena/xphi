@@ -9,7 +9,7 @@ import hashlib
 import random
 import traceback
 
-print("[PythonEngine] 🚀 Pyodide Environment Initialized (Cold Boot Finished).")
+print("[PythonEngine] Pyodide Wasm Runtime Initialized (Cold Boot Complete).")
 
 """Strict Host Environment Isolation (Prevent Env Leakage)"""
 class RestrictedEnviron:
@@ -29,9 +29,7 @@ class RestrictedEnviron:
 
 os.environ = RestrictedEnviron()
 
-# =====================================================================
 # [Security 2] Virtual Time & Deterministic PRNG (Anti-Spectre & Idempotency)
-# =====================================================================
 _virtual_context = {
     "time": 0.0,
     "perf_time": 0.0,
@@ -79,9 +77,7 @@ def _apply_execution_context(ts, seed_string):
     det_hash = hashlib.sha256(actual_seed).hexdigest()
     random.seed(int(det_hash, 16))
 
-# =====================================================================
 # [Core] Cloudflare Edge Request Handler
-# =====================================================================
 async def on_fetch(request, env):
     try:
         req_text = await request.text()
@@ -89,8 +85,8 @@ async def on_fetch(request, env):
         params = input_data.get("params", {})
         request_id = input_data.get("id", "unknown")
         
-        # [LOG ADDED] Captures the exact moment the Python engine starts processing the request
-        print(f"[PythonEngine] 📥 Received Request ID: {request_id}")
+        # Captures the exact moment the Python engine starts processing the request
+        print(f"[PythonEngine] [RECV] Request ID: {request_id}")
         
         context = params.get("context", {})
         ts = context.get("timestamp", None)
@@ -115,31 +111,26 @@ async def on_fetch(request, env):
         # Separate global/local namespaces and inject external variables
         global_env = dict(variables)
         local_env = {}
-        
-        # [METRICS] 시작 가상 시간 측정
         start_perf = _virtual_context["perf_time"]
         
         try:
             # Compile first to isolate SyntaxErrors
-            print(f"[PythonEngine] ⚙️ Compiling & Executing payload for ID: {request_id}...", file=old_stdout) # [LOG ADDED]
+            print(f"[PythonEngine] [EXEC] Compiling & executing payload for ID: {request_id}...", file=old_stdout)
             compiled_code = compile(code, "", "exec")
             exec(compiled_code, global_env, local_env)
             output = buf_stdout.getvalue()
             
-            # [METRICS] 종료 가상 시간 및 환경 메모리 사이즈 측정 (Fuel 환산)
             end_perf = _virtual_context["perf_time"]
             fuel_consumed = int((end_perf - start_perf) * 1_000_000) # 마이크로초 기반 정수 Fuel
             mem_usage = sys.getsizeof(local_env)
             
-            print(f"[PythonEngine] ✅ Execution successful. Formatting Response...", file=old_stdout) # [LOG ADDED]
-            
+            print(f"[PythonEngine] [DONE] Execution succeeded for ID: {request_id}. Formatting response...", file=old_stdout)
             headers = Headers.new({"Content-Type": "application/json"}.items())
             return Response.new(
                 json.dumps({
                     "jsonrpc": "2.0", 
                     "result": {
                         "output": output,
-                        # [ADDED] router.ts가 Canonical Hash 생성을 위해 읽어들일 메트릭 데이터
                         "metrics": {
                             "fuel_consumed": fuel_consumed,
                             "mem_usage_bytes": mem_usage,
@@ -161,11 +152,10 @@ async def on_fetch(request, env):
             error_output = buf_stdout.getvalue()
             error_type = type(e).__name__
             
-            print(f"[PythonEngine] ⚠️ Execution Fault Caught: {error_type} | Formatting Error Response...", file=old_stdout) # [LOG ADDED]
+            print(f"[PythonEngine] [INTERCEPT] Sandbox boundary caught {error_type} | Formatting Fault Response...", file=old_stdout)
             
             # Replicate local Python error string formats exactly
             formatted_error_msg = f"{error_type}: {str(e)}"
-            
             headers = Headers.new({"Content-Type": "application/json"}.items())
             return Response.new(
                 json.dumps({
@@ -176,7 +166,6 @@ async def on_fetch(request, env):
                             "type": error_type,
                             "stdout": error_output,
                             "traceback": traceback.format_exc(),
-                            # [ADDED] 실패 트랜잭션도 해싱할 수 있도록 메트릭 주입
                             "metrics": {
                                 "fuel_consumed": fuel_consumed,
                                 "mem_usage_bytes": mem_usage,
@@ -192,9 +181,8 @@ async def on_fetch(request, env):
         finally:
             # Restore standard streams
             sys.stdout, sys.stderr = old_stdout, old_stderr
-            print(f"[PythonEngine] 🏁 Request ID: {request_id} execution phase finalized.") # [LOG ADDED]
-            
+            print(f"[PythonEngine] [FINALIZE] Request ID: {request_id} lifecycle completed.")
     except Exception as e:
         # Handle framework-level exceptions (e.g., JSON parsing)
-        print(f"[PythonEngine] 🚨 Framework Internal Error: {str(e)}") # [LOG ADDED]
+        print(f"[PythonEngine] Framework Internal Error: {str(e)}")
         return Response.new(json.dumps({"error": str(e)}), status=400)

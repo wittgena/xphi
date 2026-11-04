@@ -100,7 +100,7 @@ class GatewayWasm:
                 try:
                     tls.dealloc_c_string(tls.store, res_ptr)
                 except Exception as e:
-                    log.error(f"❌ [Gateway] C-String deallocation failed: {e}")
+                    log.error(f"[Gateway] C-String deallocation failed: {e}")
 
     def evaluate_intent(self, dimension: int, base_friction: float, raw_payload: str, state_vector: List[int]) -> Dict[str, Any]:
         """Routes payload to the Computing Parser."""
@@ -131,7 +131,6 @@ class GatewayWasm:
         }
         return self._safe_invoke(req_payload)
 
-    # 💡 새로 추가된 Flow Transition (Epoch) FSM 라우터
     def execute_flow_transition_fsm(self, fsm_state: Dict[str, Any], event: Dict[str, Any]) -> Dict[str, Any]:
         """Routes and evaluates the Flow Transition (Topology/Dominium) FSM state."""
         req_payload = {
@@ -143,32 +142,32 @@ class GatewayWasm:
 
     def _safe_invoke(self, payload_dict: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            # 1. Serialize payload and measure size
+            # Serialize payload and measure size
             json_str = json.dumps(payload_dict, separators=(',', ':'))
             payload_size_kb = len(json_str.encode('utf-8')) / 1024.0
             
             target_module = payload_dict.get("target_module", "unknown")
-            log.info(f"⚡ [WASM Gateway] Invoking module '{target_module}' ({payload_size_kb:.2f} KB)")
+            log.info(f"[WASM Gateway] Invoking module '{target_module}' ({payload_size_kb:.2f} KB)")
             
-            # 2. Measure execution time and invoke FFI
+            # Measure execution time and invoke FFI
             start_time = time.perf_counter()
             res_str = self.invoke_raw_ffi(json_str)
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             
-            # 3. Parse and log receipt
+            # Parse and log receipt
             receipt = json.loads(res_str)
             if receipt.get("success"):
-                log.info(f"✅ [WASM Gateway] Execution successful: '{target_module}' ({elapsed_ms:.2f} ms)")
+                log.info(f"[WASM Gateway] Execution successful: '{target_module}' ({elapsed_ms:.2f} ms)")
             else:
-                log.warning(f"⚠️ [WASM Gateway] Execution reverted: '{target_module}' (Reason: {receipt.get('revert_reason')})")
+                log.warning(f"[WASM Gateway] Execution reverted: '{target_module}' (Reason: {receipt.get('revert_reason')})")
                 
             return receipt
         except MemoryBoundaryError as mbe:
-            log.warning(f"🛡️ [Circuit Breaker Triggered] {mbe}")
+            log.warning(f"[Circuit Breaker Triggered] {mbe}")
             return {"success": False, "revert_reason": "Memory Boundary Exceeded"}
         except GatewayRuptureError as gre:
-            log.warning(f"⚠️ [Gateway Rupture] {gre}")
+            log.warning(f"[Gateway Rupture] {gre}")
             return {"success": False, "revert_reason": str(gre)}
         except Exception as e:
-            log.error(f"❌ [Gateway Fatal] {e}")
+            log.error(f"[Gateway Fatal] {e}")
             return {"success": False, "revert_reason": "Internal Execution Error"}

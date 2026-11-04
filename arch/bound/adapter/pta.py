@@ -208,7 +208,7 @@ class PtaAdapter:
         self._spent_mempool = PtaAdapter._shared_spent_mempool
         self._tx_commit_map = PtaAdapter._shared_tx_commit_map
         self._inst_id = hex(id(self))[-6:].upper()
-        log.debug(f"[PtaAdapter:{self._inst_id}] 🟢 Initialized new adapter instance.")
+        log.debug(f"[PtaAdapter:{self._inst_id}] Initialized new adapter instance.")
 
     def _verify_ed25519_signature(self, payload: str, signature_hex: str, owner_address: str) -> bool:
         try:
@@ -251,7 +251,7 @@ class PtaAdapter:
         return tx_hash
 
     async def execute_transaction(self, tx: PtaTransaction, stream_id: Optional[str] = None) -> str:
-        log.debug(f"[PtaAdapter:{self._inst_id}] ⚡ Executing Tx: {tx.tx_hash[:8]} (Inputs: {len(tx.inputs)}, Outputs: {len(tx.outputs)})")
+        log.debug(f"[PtaAdapter:{self._inst_id}] Executing Tx: {tx.tx_hash[:8]} (Inputs: {len(tx.inputs)}, Outputs: {len(tx.outputs)})")
         
         for idx, current_input in enumerate(tx.inputs):
             if current_input.owner_address:
@@ -297,20 +297,20 @@ class PtaAdapter:
                 
             receipt_signature = sealed_kernel.signature
             self._tx_commit_map[tx.tx_hash] = receipt_signature
-            log.debug(f"[PtaAdapter:{self._inst_id}] 🔒 Mempool Update -> SPENT: {spent_keys} | PRODUCED: {produced_keys}")
+            log.debug(f"[PtaAdapter:{self._inst_id}] Mempool Update -> SPENT: {spent_keys} | PRODUCED: {produced_keys}")
             log.info(f"[PtaAdapter:{self._inst_id}] Tx Sealed. Receipt: {receipt_signature[:8]}... | Hash: {tx.tx_hash[:8]}")
         else:
             for pointer_key in spent_keys:
                 self._spent_mempool.discard(pointer_key)
             log.warning(
-                f"[PtaAdapter:{self._inst_id}] ⚠️ Tx Unsealed (Relay Timeout or Rejected). "
+                f"[PtaAdapter:{self._inst_id}] Tx Unsealed (Relay Timeout or Rejected). "
                 f"Skipped local mempool mutation. Stream: {target_stream_id} | Hash: {tx.tx_hash[:8]}"
             )
             
         return tx.tx_hash
 
     async def get_balance(self, owner_address: str, asset_type: str = "fuel") -> int:
-        log.debug(f"[PtaAdapter:{self._inst_id}] 🔍 Balance query requested for '{owner_address}' ({asset_type})")
+        log.debug(f"[PtaAdapter:{self._inst_id}] Balance query requested for '{owner_address}' ({asset_type})")
         
         confirmed_outputs = await self.oracle.get_unspent_outputs(owner_address, asset_type)
         
@@ -334,7 +334,7 @@ class PtaAdapter:
                 
         total_balance = oracle_sum - spent_sum + produced_sum
         log.debug(
-            f"[PtaAdapter:{self._inst_id}] 📊 Balance Breakdown: "
+            f"[PtaAdapter:{self._inst_id}] Balance Breakdown: "
             f"Oracle({oracle_sum}) - SpentLocal({spent_sum}) + ProducedLocal({produced_sum}) = FINAL({total_balance})"
         )
         return total_balance

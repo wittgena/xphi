@@ -45,30 +45,25 @@ class TunnelInterceptor:
     def intercept(self, channel: str, raw_payload: bytes) -> bool:
         """True 반환 시 패킷 Drop, False 반환 시 Pass."""
         try:
-            # 안전한 디코딩 및 파싱 (기존의 불안정한 텍스트 슬라이싱 제거)
             payload_str = raw_payload.decode('utf-8', errors='ignore')
             data = json.loads(payload_str)
             structural_hash = data.get("hash", "")
             intent_tag = data.get("intent", "")
         except Exception as e:
-            filter_log.debug(f"[Firewall] ❌ Malformed payload on {channel} (Blocked). Error: {e}")
+            filter_log.debug(f"[Firewall] Malformed payload on {channel} (Blocked). Error: {e}")
             return True 
 
         # 서명 일치 여부 확인
         if intent_tag not in self._valid_signatures and structural_hash not in self._valid_signatures:
-            filter_log.debug(f"[Firewall] ❌ Unaligned intent '{intent_tag}' on {channel} (Blocked).")
+            filter_log.debug(f"[Firewall] Unaligned intent '{intent_tag}' on {channel} (Blocked).")
             return True 
 
         # 통과 성공
         self._processed_count += 1
         return False
 
-
-# =============================================================================
-# Layer 2: Receptor Kernel
-# =============================================================================
 def build_system_topos() -> List[TopologicalStructure]:
-    """초기 시스템 위상 구조(Topological Structures) 구성"""
+    """Topological Structures 구성"""
     structures = []
     
     arch = []
@@ -103,7 +98,7 @@ class ReceptorKernel:
         self.window_steps = window_steps
         self.structures = structures or []
         
-        # 1. 내부적으로 방화벽(Interceptor)을 캡슐화하여 소유
+        # 내부적으로 방화벽(Interceptor)을 캡슐화하여 소유
         self.firewall = TunnelInterceptor()
         
         self.kinematic_lens = DefaultBoundLensStrategy(preset_name="tail_risk")
@@ -111,7 +106,7 @@ class ReceptorKernel:
         self.trajectory_buffer: Dict[str, List[Point]] = {}
         self.last_known_values: Dict[str, float] = {}
 
-        # 2. 커널 초기화 시 방화벽에 현재 위상 서명 동기화
+        # 커널 초기화 시 방화벽에 현재 위상 서명 동기화
         self._sync_immune_memory()
 
     def attach_firewall(self, tunnel: Any):
@@ -248,7 +243,7 @@ class ReceptorKernel:
     async def watch_psi_feedback(self):
         """시스템 재진입 궤적(Ψ 피드백) 모니터링"""
         async for msg in self.sink.subscribe(CHANNEL_PSI_FEEDBACK):
-            kernel_log.debug(f"🌀 [ReceptorKernel] Re-entry Ψ′ feedback → {msg}")
+            kernel_log.debug(f"[ReceptorKernel] Re-entry Ψ′ feedback → {msg}")
 
     async def start_daemons(self):
         """내부 옵저버 데몬(Daemons) 구동"""

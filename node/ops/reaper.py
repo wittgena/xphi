@@ -57,7 +57,7 @@ class SystemOps:
 
     async def _discover_active_pids(self, wait_time: float = 2.0) -> Set[str]:
         """@flow: PubSub Ping-Pong을 통해 현재 살아있는 활성 프로세스들의 PID를 수집"""
-        self.log.info(f"🦇 Broadcasting system:ping to locate [{self.tag}] nodes...")
+        self.log.info(f"Broadcasting system:ping to locate [{self.tag}] nodes...")
         pubsub = self.redis.pubsub()
         await pubsub.subscribe("system:echo")
         await self.redis.publish("system:ping", json.dumps({"ts": asyncio.get_running_loop().time(), "source": f"ops_{self.tag}"}))
@@ -78,7 +78,7 @@ class SystemOps:
                             continue
                     await asyncio.sleep(0.05)
         except asyncio.TimeoutError:
-            self.log.info(f"🦇 Echo collection complete. Found {len(active_pids)} active processes.")
+            self.log.info(f"Echo collection complete. Found {len(active_pids)} active processes.")
         finally:
             await pubsub.unsubscribe("system:echo")
             
@@ -93,7 +93,7 @@ class SystemOps:
         )
         await proc.wait()
         if proc.returncode == 0:
-            self.log.warning(f" 💀 [Killed] PID {pid} cleanly terminated with {signal_flag}")
+            self.log.warning(f" [Killed] PID {pid} cleanly terminated with {signal_flag}")
 
     async def surgical_strike(self):
         """@action: 활성 노드만 정확히 식별하여 타격"""
@@ -104,7 +104,7 @@ class SystemOps:
 
     async def scorched_earth(self):
         """@action: Process Tree 추적을 통한 고아/좀비 프로세스 완벽 청소"""
-        self.log.warning(f"🔥 Initiating Scorched Earth for [{self.tag}]...")
+        self.log.warning(f"Initiating Scorched Earth for [{self.tag}]...")
         
         my_pid = os.getpid()
         killed_count = 0
@@ -122,7 +122,7 @@ class SystemOps:
                             try:
                                 p.kill()  
                                 killed_count += 1
-                                self.log.info(f"   [Phase 1] 💀 Terminated PID {p.pid} (Command: {' '.join(p.cmdline()[:2])}...)")
+                                self.log.info(f"   [Phase 1] Terminated PID {p.pid} (Command: {' '.join(p.cmdline()[:2])}...)")
                             except (psutil.NoSuchProcess, psutil.AccessDenied):
                                 pass
                 except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
@@ -149,7 +149,7 @@ class SystemOps:
 
     async def nuke_redis_state(self):
         """@action: 현재 사용 중인 Redis의 모든 잔여물 완벽 삭제"""
-        self.log.warning(f"🧨 NUKING REDIS STATE: Executing FLUSHDB...")
+        self.log.warning(f"NUKING REDIS STATE: Executing FLUSHDB...")
         try:
             await self.redis.flushdb(asynchronous=True)
             self.log.info(f"   └─ Redis database perfectly wiped clean.")
@@ -157,7 +157,7 @@ class SystemOps:
             self.log.error(f"   └─ Redis FLUSHDB failed: {e}")
 
     async def nuke_flare(self, target_port: int = 8787):
-        self.log.warning(f"☄️  Initiating Tactical Flare Nuke on Port {target_port}...")
+        self.log.warning(f"  Initiating Tactical Flare Nuke on Port {target_port}...")
         pids = await self.get_pids_from_port(target_port)
         
         if not pids:
@@ -183,10 +183,10 @@ class SystemOps:
             if "affinity list:" in output:
                 affinity = output.split(":")[-1].strip()
                 if "," not in affinity and "-" not in affinity:
-                    self.log.warning(f"   [PASS] ⚡ PID {pid} tightly bound to Core {affinity}")
+                    self.log.warning(f"   [PASS] PID {pid} tightly bound to Core {affinity}")
                     return True
                 else:
-                    self.log.error(f"   [FAIL] ⚠️ Floating CPU detected for PID {pid}. Affinity: {affinity}")
+                    self.log.error(f"   [FAIL] Floating CPU detected for PID {pid}. Affinity: {affinity}")
             return False
         except Exception:
             return False
@@ -195,7 +195,8 @@ class SystemOps:
         try:
             proc = await asyncio.create_subprocess_exec(
                 "strace", "-c", "-p", pid,
-                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
             )
             await asyncio.sleep(duration)
             proc.send_signal(signal.SIGINT)
@@ -203,23 +204,23 @@ class SystemOps:
             
             output = stderr.decode()
             if "epoll_wait" in output or "epoll_pwait" in output:
-                self.log.warning(f"   [PASS] 🚀 High-Performance epoll I/O Verified on PID {pid}")
+                self.log.warning(f"   [PASS] High-Performance epoll I/O Verified on PID {pid}")
                 return True
             else:
-                self.log.error(f"   [FAIL] 🐌 Legacy I/O or no active epoll captured on PID {pid}")
+                self.log.error(f"   [FAIL] Legacy I/O or no active epoll captured on PID {pid}")
                 return False
         except Exception:
             return False
 
     async def _audit_node(self, pid: str):
-        self.log.info(f" 🔍 [Audit] Profiling Architecture Compliance for PID: {pid}")
+        self.log.info(f" [Audit] Profiling Architecture Compliance for PID: {pid}")
         pin_valid = await self._verify_cpu_pinning(pid)
         io_valid = await self._verify_syscall_multiplexing(pid, duration=3)
         
         if pin_valid and io_valid:
-            self.log.info(f" 🎯 [SUCCESS] Node {pid} perfectly aligns with KernelReactor Specs.")
+            self.log.info(f" [SUCCESS] Node {pid} perfectly aligns with KernelReactor Specs.")
         else:
-            self.log.error(f" ❌ [VIOLATION] Node {pid} failed compliance checks.")
+            self.log.error(f" [VIOLATION] Node {pid} failed compliance checks.")
 
     async def audit_system(self):
         pids = await self._discover_active_pids()

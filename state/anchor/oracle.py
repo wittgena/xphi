@@ -181,7 +181,7 @@ class AnchorOracle:
             output = json.loads(res.output)
             is_valid = output.get("is_valid", False)
             if not is_valid and "recovered_missing" in output:
-                log.warning(f"[AnchorOracle] ⚠️ Parity fractured but recovered via XOR at {current_hash[:8]}")
+                log.warning(f"[AnchorOracle] Parity fractured but recovered via XOR at {current_hash[:8]}")
                 is_valid = True
 
             if not is_valid:

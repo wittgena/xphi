@@ -73,7 +73,7 @@ class RuntimeAnchor(IPhaseAtor):
         self._stop_event = asyncio.Event()
 
     def _global_task_error(self, task: asyncio.Task[Any], exc: BaseException) -> None:
-        self.log.crit(f"⚠️ Critical fault in Master Task [{task.get_name()}]: {exc}")
+        self.log.crit(f"Critical fault in Master Task [{task.get_name()}]: {exc}")
         self.log.warn(f"[{task.get_name()}] has been isolated. NodeRuntime continues operating.")
 
     @property

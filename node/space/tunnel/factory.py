@@ -84,9 +84,9 @@ class UniversalFacade:
                 if data_str:
                     res = await self.wasm_broker.invoke("compute_fingerprint", data_str)
                     if res.success:
-                        log.debug(f"🧾 [Audit] Message {message_id} proven. Fingerprint: {res.output}")
+                        log.debug(f"[Audit] Message {message_id} proven. Fingerprint: {res.output}")
                     else:
-                        log.warning(f"⚠️ [Audit] Failed to prove message {message_id}: {res.error}")
+                        log.warning(f"[Audit] Failed to prove message {message_id}: {res.error}")
         except Exception as e:
             log.error(f"[Audit] Background provenance task failed for message {message_id}: {e}", exc_info=True)
 
