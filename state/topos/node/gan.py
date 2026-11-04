@@ -47,7 +47,7 @@ class GanNode:
                 try:
                     await self._dispatch_message(message)
                 except Exception as e:
-                    log.error(f"[{self.name}] 💥 Unhandled exception during '{message.name}' {e}", exc_info=True)
+                    log.error(f"[{self.name}] Unhandled exception during '{message.name}' {e}", exc_info=True)
                     if self.parent:
                         error_msg = Message(
                             name="node_error", 

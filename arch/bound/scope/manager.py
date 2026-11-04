@@ -199,7 +199,7 @@ class SurfaceManager:
         try:
             surface_class = get_surface_class(surface_type)
         except (ImportError, AttributeError, ValueError) as e:
-            log.warning(f"🚨 Failed to load '{surface_type}' Surface: {e}. Fallback to default 'local' environment.")
+            log.warning(f"Failed to load '{surface_type}' Surface: {e}. Fallback to default 'local' environment.")
             surface_class = get_surface_class("local")
             
         self.impl = surface_class(config)
@@ -229,7 +229,7 @@ async def managed_scope(**surface_kwargs):
             await manager.up()
             yield manager 
         except Exception as e:
-            log.error(f"🚨 [managed_scope] pipeline exception: {type(e).__name__} - {e}")
+            log.error(f"[managed_scope] pipeline exception: {type(e).__name__} - {e}")
             raise
         finally:
             log.info("[managed_scope] Triggering safe teardown sequence for infrastructure resources.")

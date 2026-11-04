@@ -34,12 +34,12 @@ def find_current_self(start: Path | None = None) -> Path:
 
     start = start.resolve()
     
-    # 1. DEV 모드 탐색 (상위로 올라가며 anchor 찾기)
+    # DEV 모드 탐색 (상위로 올라가며 anchor 찾기)
     for parent in [start] + list(start.parents):
         if (parent / "anchor").is_dir() or (parent / ".anchor").is_dir():
             return parent
 
-    # 2. USER 모드 판별: site-packages 내에서 실행 중이라면
+    # USER 모드 판별: site-packages 내에서 실행 중이라면
     # 파편화를 막기 위해 무조건 홈 디렉터리를 기준점(self)으로 반환
     if any(part in ["site-packages", "dist-packages"] for part in Path(__file__).parts):
         return Path.home()
@@ -48,7 +48,6 @@ def find_current_self(start: Path | None = None) -> Path:
 
 @lru_cache(maxsize=1)
 def _get_around_context() -> tuple[str, dict]:
-    """@delegate: SSOT constants resolution via 'around' module."""
     try:
         import bind.around as around_mod
     except ImportError:
@@ -63,7 +62,6 @@ def _get_around_context() -> tuple[str, dict]:
 
 @lru_cache(maxsize=1)
 def resolve_identity(start: Path | None = None) -> tuple[int, int]:
-    """@extract: Topological identifiers (Manifold, Vertex) from bound state."""
     self_root = find_current_self(start)
     bound = load_bound(self_root)
     identity = bound.get("identity", {})
@@ -72,7 +70,6 @@ def resolve_identity(start: Path | None = None) -> tuple[int, int]:
     return manifold_id, vertex_id
 
 def get_invoker(path: Path):
-    """@extract: Invoker FQN from path relative to topological root."""
     try:
         self_root = find_current_self()
         rel = path.relative_to(self_root).with_suffix("")
@@ -298,9 +295,9 @@ def run_test():
         for name in paths.keys():
             try:
                 resolved = resolve_path(name)
-                log.info(f" ✔ {name} → {resolved}")
+                log.info(f" {name} → {resolved}")
             except Exception as e:
-                log.info(f" ✘ {name} → ERROR: {e}")
+                log.info(f" {name} → ERROR: {e}")
 
         log.info("\n## @channel.resolution.test")
         channels = bound.get("channels", {})
@@ -310,30 +307,26 @@ def run_test():
         for name in tested:
             try:
                 resolved = resolve_channel(name)
-                log.info(f" ✔ {name} -> {resolved}")
+                log.info(f" {name} -> {resolved}")
             except Exception as e:
-                log.info(f" ✘ {name} -> ERROR: {e}")
+                log.info(f" {name} -> ERROR: {e}")
 
-        namespace_tests = [
-            "psi:test_signal", "delta:new_branch", "execution:done",
-            "xor:score", "loop:trigger"
-        ]
-
+        namespace_tests = ["psi:test_signal", "delta:new_branch", "execution:done", "xor:score", "loop:trigger"]
         for name in namespace_tests:
             try:
                 resolved = resolve_channel(name)
-                log.info(f" ✔ {name} → {resolved}")
+                log.info(f" {name} → {resolved}")
             except Exception as e:
-                log.info(f" ✘ {name} → ERROR: {e}")
+                log.info(f" {name} → ERROR: {e}")
 
         invalid_tests = ["unknown:test", "badformat", "psi"]
         log.info("\n## @invalid.channel.test")
         for name in invalid_tests:
             try:
                 resolved = resolve_channel(name)
-                log.info(f" ✘ {name} → SHOULD FAIL but returned {resolved}")
+                log.info(f" {name} → SHOULD FAIL but returned {resolved}")
             except Exception as e:
-                log.info(f" ✔ {name} → correctly rejected ({e})")
+                log.info(f" {name} → correctly rejected ({e})")
 
         log.info("\n## @xphi.pattern")
         pattern = resolve_pattern()

@@ -89,13 +89,13 @@ class NetworkTransport:
     async def _enqueue_parsed_payload(self, raw_text: str) -> None:
         """
         단일 JSON(Pretty-printed 포함), NDJSON(줄바꿈 구분 다중 JSON),
-        또는 SSE(data: ...) 포맷을 판별하여 개별 JSON 단위로 큐에 적재합니다.
+        또는 SSE(data: ...) 포맷을 판별하여 개별 JSON 단위로 큐에 적재
         """
         stripped = raw_text.strip()
         if not stripped:
             return
 
-        # 1. 전체 텍스트가 단일 유효 JSON 객체/배열인 경우
+        # 전체 텍스트가 단일 유효 JSON 객체/배열인 경우
         try:
             _loads_obj(stripped)
             await self._response_queue.put(stripped)
@@ -103,7 +103,7 @@ class NetworkTransport:
         except Exception:
             pass
 
-        # 2. SSE(Server-Sent Events) 또는 NDJSON 멀티 프레임인 경우 라인별 파싱
+        # SSE(Server-Sent Events) 또는 NDJSON 멀티 프레임인 경우 라인별 파싱
         for line in stripped.splitlines():
             clean_line = line.strip()
             if not clean_line or clean_line.startswith(":"):

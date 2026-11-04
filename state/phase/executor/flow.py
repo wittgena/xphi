@@ -128,7 +128,7 @@ class FlowExecutor(BaseExecutor):
                         }
                         await tunnel.publish(response_channel, json.dumps(finalize_payload))
             except TimeoutError:
-                self.log.error(f"⚠️ [SUPERVISOR KILLED] Flow task '{command}' exceeded {timeout_seconds}s limit.")
+                self.log.error(f"[SUPERVISOR KILLED] Flow task '{command}' exceeded {timeout_seconds}s limit.")
                 if process and process.returncode is None:
                     try:
                         process.terminate()

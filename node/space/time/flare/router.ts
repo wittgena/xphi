@@ -15,8 +15,8 @@ function readCString(memory: WebAssembly.Memory, ptr: number): string {
     return new TextDecoder().decode(memView.subarray(ptr, endPtr));
 }
 
-async function executePureWasm(vmTarget: string, payload: any): Promise {
-    console.log(`[WASM] ⚙️ Initializing WASM module for target: ${vmTarget}`); 
+async function executePureWasm(vmTarget: string, payload: any): Promise<string> {
+    console.log(`[WASM] Initializing Wasm module for target: ${vmTarget}`); 
     let targetModule = fsmModule;
     if (vmTarget === "PHASE") targetModule = phaseModule;
 
@@ -29,10 +29,10 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
     
     // [ABI Format] DVM requires Null-Terminator, PHASE relies on explicit length
     const payloadBytes = new TextEncoder().encode(vmTarget === "PHASE" ? payloadStr : payloadStr + '\0');
-    console.log(`[WASM] 📦 Payload size: ${payloadBytes.length} bytes`); 
+    console.log(`[WASM] Payload size: ${payloadBytes.length} bytes`); 
     
     const codePtr = exports.alloc(payloadBytes.length);
-    console.log(`[WASM] 💾 Allocated memory ptr: ${codePtr}`); 
+    console.log(`[WASM] Allocated memory ptr: ${codePtr}`); 
     new Uint8Array(memory.buffer).set(payloadBytes, codePtr);
 
     try {
@@ -42,17 +42,17 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
                 throw new Error("WASM Trap: phase.wasm does not export 'invoke_wasm'");
             }
             
-            console.log(`[WASM] 🚀 Calling invoke_wasm(ptr: ${codePtr}, len:${payloadBytes.length})`); 
+            console.log(`[WASM] Calling invoke_wasm(ptr: ${codePtr}, len: ${payloadBytes.length})`); 
             const t0 = Date.now(); 
             
             // Invoke WASM function (Returns 64-bit integer)
             const resPacked = BigInt(exports.invoke_wasm(codePtr, payloadBytes.length));
-            console.log(`[WASM] ⏱️ invoke_wasm returned in ${Date.now() - t0}ms. Packed res:${resPacked}`); 
+            console.log(`[WASM] invoke_wasm returned in ${Date.now() - t0}ms | Packed res: ${resPacked}`); 
             
             // Decode Upper 32-bit (Pointer) and Lower 32-bit (Length)
             const resPtr = Number(resPacked >> 32n);
             const resLen = Number(resPacked & 0xFFFFFFFFn);
-            console.log(`[WASM] 🔍 Decoded resPtr: ${resPtr}, resLen:${resLen}`); 
+            console.log(`[WASM] Decoded resPtr: ${resPtr}, resLen: ${resLen}`); 
             
             if (resPtr === 0) throw new Error("WASM Execution Trap: Returned Null Pointer from PHASE");
 
@@ -62,7 +62,7 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
             
             // Deallocate memory
             if (exports.dealloc) {
-                console.log(`[WASM] 🧹 Deallocating output memory (ptr: ${resPtr}, len:${resLen})`); 
+                console.log(`[WASM] Deallocating output memory (ptr: ${resPtr}, len: ${resLen})`); 
                 exports.dealloc(resPtr, resLen);
             }
             return resultStr;
@@ -73,10 +73,10 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
                 throw new Error(`WASM Trap: ${vmTarget} does not export 'execute_router'`);
             }
 
-            console.log(`[WASM] 🚀 Calling execute_router(ptr: ${codePtr})`); 
+            console.log(`[WASM] Calling execute_router(ptr: ${codePtr})`); 
             const t0 = Date.now(); 
             const resPtr = exports.execute_router(codePtr);
-            console.log(`[WASM] ⏱️ execute_router returned in ${Date.now() - t0}ms. resPtr:${resPtr}`); 
+            console.log(`[WASM] execute_router returned in ${Date.now() - t0}ms | resPtr: ${resPtr}`); 
             
             if (resPtr === 0) throw new Error("WASM Execution Trap: Returned Null Pointer from DVM");
 
@@ -86,14 +86,14 @@ async function executePureWasm(vmTarget: string, payload: any): Promise {
     } finally {
         // [Security] Reclaim input payload memory under all circumstances
         if (exports.dealloc) {
-            console.log(`[WASM] 🧹 Deallocating input memory (ptr: ${codePtr}, len:${payloadBytes.length})`); 
+            console.log(`[WASM] Deallocating input memory (ptr: ${codePtr}, len: ${payloadBytes.length})`); 
             exports.dealloc(codePtr, payloadBytes.length);
         }
     }
 }
 
 export default {
-    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise {
+    async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
         const fetchStart = Date.now(); 
         if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
 
@@ -102,7 +102,7 @@ export default {
             const reqId = input.id || "unknown"; 
             const vmTarget = (input.params?.vm_target || "PYTHON").toUpperCase();
             
-            console.log(`[Router] 📥 Received Request ID: ${reqId} | Target:${vmTarget}`); 
+            console.log(`[Router] [RECV] Request ID: ${reqId} | Target: ${vmTarget}`); 
 
             // Handle WASM natively
             if (vmTarget === "DVM" || vmTarget === "PHASE") {
@@ -111,7 +111,7 @@ export default {
                     // [Core] Pass-through payload without modification (Already formatted by tunnel.flare)
                     resultStr = await executePureWasm(vmTarget, input.params?.payload);
                 } catch (err: any) {
-                    console.error(`[Router] 🚨 WASM Trap/Panic caught for ID: ${reqId}`, err.message); 
+                    console.error(`[Router] WASM Trap/Panic caught for ID: ${reqId}`, err.message); 
                     return new Response(JSON.stringify({ 
                         jsonrpc: "2.0", 
                         error: { message: `WASM Trap/Panic: ${err.message}` }, 
@@ -126,7 +126,7 @@ export default {
                 if (!resultStr || resultStr.trim() === "") {
                     isSuccess = false;
                     errorMessage = "WASM Execution blocked: Unregistered API or Silent Trap";
-                    console.log(`[Router] ⚠️ Empty WASM result for ID: ${reqId}`); 
+                    console.log(`[Router] Empty WASM result for ID: ${reqId}`); 
                 } else {
                     try {
                         wasmParsed = JSON.parse(resultStr);
@@ -138,7 +138,7 @@ export default {
                             } else {
                                 errorMessage = rawErr || wasmParsed.revert_reason || "WASM Logic Execution Failed";
                             }
-                            console.log(`[Router] ⚠️ WASM returned logical error for ID: ${reqId} | Msg:${errorMessage}`);
+                            console.log(`[Router] [INTERCEPT] Wasm boundary rejected payload for ID: ${reqId}`);
                         } else {
                             isSuccess = true;
                         }
@@ -149,7 +149,7 @@ export default {
                             lowerRes.includes("panic")) {
                             isSuccess = false;
                             errorMessage = `WASM Execution Error: ${resultStr}`;
-                            console.log(`[Router] ⚠️ WASM plain text error matched for ID: ${reqId}`);
+                            console.log(`[Router] [INTERCEPT] Wasm plain-text rejection matched for ID: ${reqId}`);
                         } else {
                             isSuccess = true;
                         }
@@ -157,7 +157,7 @@ export default {
                 }
 
                 const headers = { "Content-Type": "application/json" };
-                console.log(`[Router] 📤 Sending WASM Response for ID: ${reqId} | Success:${isSuccess} | Elapsed: ${Date.now() - fetchStart}ms`);
+                console.log(`[Router] [DONE] Sending Wasm response for ID: ${reqId} | Success: ${isSuccess} | Elapsed: ${Date.now() - fetchStart}ms`);
                 if (isSuccess) {
                     return new Response(JSON.stringify({ 
                         jsonrpc: "2.0", 
@@ -175,7 +175,7 @@ export default {
 
             // Transformed: Proxy to Python Engine + WASM Hashing Coordinator
             if (input.method === "execute" || vmTarget === "PYTHON" || input.params?.method_func === "execute_code") {
-                console.log(`[Router] 🐍 Proxying Request ID: ${reqId} to PYTHON_ENGINE...`);
+                console.log(`[Router] [PROXY] Forwarding Request ID: ${reqId} to PYTHON_ENGINE...`);
                 const tProxyStart = Date.now();
                 
                 const proxyRequest = new Request("http://internal-python/execute", {
@@ -185,13 +185,13 @@ export default {
                 });
                 
                 const pythonResponse = await env.PYTHON_ENGINE.fetch(proxyRequest);
-                console.log(`[Router] ✅ PYTHON_ENGINE responded for ID: ${reqId} in${Date.now() - tProxyStart}ms | HTTP ${pythonResponse.status}`);
+                console.log(`[Router] [PROXY] PYTHON_ENGINE responded for ID: ${reqId} in ${Date.now() - tProxyStart}ms | HTTP ${pythonResponse.status}`);
                 const responseText = await pythonResponse.text();
                 let pyParsed: any = {};
                 try {
                     pyParsed = JSON.parse(responseText);
                 } catch (e) {
-                    console.error(`[Router] ⚠️ Failed to parse Python response for ID: ${reqId}`);
+                    console.error(`[Router] Failed to parse Python response for ID: ${reqId}`);
                 }
 
                 // 성공(result) 또는 에러(error) Payload에서 Metrics 데이터 추출
@@ -217,7 +217,7 @@ export default {
                 // phase.wasm 호출하여 Canonical Hash 씰링(Sealing)
                 let executionHash = "HASH_GENERATION_FAILED";
                 try {
-                    console.log(`[Router] 🔐 Sealing Execution Hash at Edge for ID: ${reqId}...`);
+                    console.log(`[Router] [SEAL] Computing execution fingerprint via phase.wasm for ID: ${reqId}...`);
                     const wasmResStr = await executePureWasm("PHASE", hashPayload);
                     const wasmRes = JSON.parse(wasmResStr);
                     
@@ -225,12 +225,12 @@ export default {
                         executionHash = typeof wasmRes.data === 'string' 
                             ? JSON.parse(wasmRes.data).fingerprint 
                             : wasmRes.data.fingerprint;
-                        console.log(`[Router] 🔗 Canonical Hash Sealed: ${executionHash}`);
+                        console.log(`[Router] [SEAL] Canonical Hash Sealed: ${executionHash}`);
                     } else {
-                        console.error(`[Router] ⚠️ WASM Hash Generation Rejected. Error: ${wasmRes.error}`);
+                        console.error(`[Router] WASM Hash Generation Rejected. Reason: ${wasmRes.error}`);
                     }
                 } catch (e) {
-                    console.error(`[Router] 🚨 Hash computation failed for ID: ${reqId}`, e);
+                    console.error(`[Router] Hash computation failed for ID: ${reqId}`, e);
                 }
                 const finalHeaders = new Headers(pythonResponse.headers);
                 finalHeaders.set("X-XPHI-Canonical-Hash", executionHash);
@@ -240,14 +240,14 @@ export default {
                 });
             }
 
-            console.warn(`[Router] ❌ Unsupported method/target for ID: ${reqId} | Target:${vmTarget}`);
+            console.warn(`[Router] Unsupported method/target for ID: ${reqId} | Target: ${vmTarget}`);
             return new Response(JSON.stringify({ 
                 jsonrpc: "2.0", 
                 error: { message: `Method or Target not supported: ${vmTarget}` },
                 id: input.id 
             }), { status: 400, headers: { "Content-Type": "application/json" } });
         } catch (e: any) {
-            console.error(`[Router] 🚨 Internal Router Fault:`, e);
+            console.error(`[Router] Internal Router Fault:`, e);
             return new Response(JSON.stringify({ 
                 jsonrpc: "2.0",
                 error: { message: `Router Internal Error: ${e.message}` } 

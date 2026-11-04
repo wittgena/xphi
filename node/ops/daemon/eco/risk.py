@@ -20,9 +20,6 @@ from xphi.watcher.plane.emitter import get_emitter
 
 log = get_emitter("daemon.risk")
 
-# =========================================================================
-# @phase.1: Core Risk Data Structures
-# =========================================================================
 @dataclass(frozen=True)
 class RiskAssessment:
     is_safe: bool
@@ -30,10 +27,6 @@ class RiskAssessment:
     net_yield: float
     reason: str
 
-
-# =========================================================================
-# @phase.2: Trajectory Monitoring and Alert Subsystem
-# =========================================================================
 class _LocalBrokerAdapter:
     def __init__(self, original_broker: WasmBroker):
         self._original = original_broker
@@ -45,7 +38,6 @@ class _LocalBrokerAdapter:
         if 'method' in kwargs and 'target_func' not in kwargs:
             kwargs['target_func'] = kwargs.pop('method')
         return await self._original.invoke(*args, **kwargs)
-
 
 class DormantTrajectorySentinel:
     def __init__(self, broker: WasmBroker):
@@ -59,26 +51,21 @@ class DormantTrajectorySentinel:
         
         while True:
             try:
-                # 1. 비동기 동역학 엔진 호출
-                eval_result = await self.receptor.engine.execute_flow_async(
-                    symbol, target_arns, current_interval, int(time.time())
-                )
+                # 비동기 동역학 엔진 호출
+                eval_result = await self.receptor.engine.execute_flow_async(symbol, target_arns, current_interval, int(time.time()))
                 
-                # 2. 통계적 Z-Score 대신 구조적 텐션(Tension) 및 발작 여부 추출
                 phase_name = eval_result.dynamics.tension_phase
                 tension = eval_result.dynamics.system_tension
                 is_spiking = eval_result.dynamics.is_spiking
 
-                # 3. Phase에 따른 주기 조정 및 볼트 트리거
+                # Phase에 따른 주기 조정 및 볼트 트리거
                 if phase_name == TensionPhase.NORMAL.name:
                     current_interval = base_interval  
-                    
                 elif phase_name == TensionPhase.PRE_HEATING.name:
-                    self.alert_emitter.info(f"[{symbol}] ⚠️ Pre-heating engaged. Tension: {tension:.2f}. Preparing resources.")
+                    self.alert_emitter.info(f"[{symbol}] Pre-heating engaged. Tension: {tension:.2f}. Preparing resources.")
                     current_interval = int(base_interval / 6)  
-                    
                 elif phase_name == TensionPhase.RUPTURE.name or is_spiking:
-                    self.alert_emitter.critical(f"[{symbol}] 🚨 RUPTURE DETECTED. Tension: {tension:.2f} | Spiking: {is_spiking}. Initiating Capture.")
+                    self.alert_emitter.critical(f"[{symbol}] RUPTURE DETECTED. Tension: {tension:.2f} | Spiking: {is_spiking}. Initiating Capture.")
                     
                     try:
                         if asyncio.iscoroutinefunction(self._trigger_awakening):
@@ -91,7 +78,6 @@ class DormantTrajectorySentinel:
                     # 캡처 완료 후 쿨다운
                     await asyncio.sleep(base_interval * 24) 
                     current_interval = base_interval
-                    
             except asyncio.CancelledError:
                 raise
             except Exception as e:
@@ -106,10 +92,6 @@ class DormantTrajectorySentinel:
         """ResourceVault에 의해 오버라이드 됨"""
         pass
 
-
-# =========================================================================
-# @phase.3: Dynamic Risk and Execution Handlers
-# =========================================================================
 class DynamicRiskManager:
     def __init__(self, policy: RiskPolicy):
         self.policy = policy
@@ -125,12 +107,10 @@ class DynamicRiskManager:
         confidence_multiplier = min(1.0, (tension - self.policy.tension_preheat_threshold) / 5.0)
         allocated_pct = self.policy.max_allocation_pct * max(0.0, confidence_multiplier)
         executable_size = tvl * max(0.01, allocated_pct)
-
         log.info(
             f"[RiskEngine] Effective Yield: {effective_yield*100:.4f}% (Dynamic Friction: {dynamic_friction_rate*100:.4f}% deducted) | "
-            f"Sys-Tension: {tension:.2f} -> Allocation: {allocated_pct*100:.1f}% | Passed: {'✔️' if is_safe else '❌'}"
+            f"Sys-Tension: {tension:.2f} -> Allocation: {allocated_pct*100:.1f}% | Passed: {'OK' if is_safe else 'FAIL'}"
         )
-
         return RiskAssessment(
             is_safe=is_safe,
             executable_size=executable_size, 
@@ -140,8 +120,7 @@ class DynamicRiskManager:
 
 class SmartExecutionRouter:
     async def execute_routing(self, source_arn: str, target_arn: str, size: float) -> bool:
-        log.info(f"[Actuator] ⚡ Executing State Routing: {source_arn} -> {target_arn} | Volume: {size:,.2f}")
-        # 실제 체인 상호작용 또는 CEX API 라우팅 대기 모의
+        log.info(f"[Actuator] Executing State Routing: {source_arn} -> {target_arn} | Volume: {size:,.2f}")
         await asyncio.sleep(0.2) 
         return True
 
@@ -174,10 +153,8 @@ class ResourceVault:
         
         # 비동기 봉인(Seal) 호출
         receipt = await self.sentinel.receptor.fetch_and_seal_async(symbol, target_arns, interval_sec)
-        
         target_intent = receipt.observation.intent
         proof_hash = receipt.attestation.canonical_root
-        
         risk_report = await self.risk.verify_execution_safety(target_intent, self.tvl, tension)
         if not risk_report.is_safe:
             self.log.warning(f"[Vault] Action aborted by Risk Manager: {risk_report.reason}")

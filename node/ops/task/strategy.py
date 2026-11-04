@@ -112,7 +112,7 @@ class ExecutionStrategy:
 
     def run_python_sandbox(self, job_policy: QuotaPolicy, safe_payload: Any, context: dict, job_id: str, log) -> dict:
         if self._is_request_expired(context):
-            log.warning(f"[{job_id[:8]}] 🗑️ Dropping expired zombie request before acquiring Python Sandbox.")
+            log.warning(f"[{job_id[:8]}] Dropping expired zombie request before acquiring Python Sandbox.")
             return {"success": False, "output": "", "error": "Request expired (TTL Exceeded)."}
 
         py_sandbox = None
@@ -150,7 +150,7 @@ class ExecutionStrategy:
             }
             
             total_ms = t_wait_ms + t_exec_ms
-            log.info(f"[{job_id[:8]}] [Perf] ⚡(Cached) Wait: {t_wait_ms:.2f}ms | Exec: {t_exec_ms:.2f}ms | Total: {total_ms:.2f}ms")
+            log.info(f"[{job_id[:8]}] [Perf] (Cached) Wait: {t_wait_ms:.2f}ms | Exec: {t_exec_ms:.2f}ms | Total: {total_ms:.2f}ms")
             log.info(f"[{job_id[:8]}] Sandbox Metrics: {metrics}")
             
             return {

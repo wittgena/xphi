@@ -50,7 +50,7 @@ class TracerSource(FileSystemEventHandler):
             return
 
         self.last_trigger = time.time()
-        log.info(f"\n✨ [SourceTracer] Physical mutation detected → {event.src_path}")
+        log.info(f"\n[SourceTracer] Physical mutation detected → {event.src_path}")
 
         module_fqn = self._resolve_fqn(event.src_path)
         payload = {"signal_id": "unknown_mutation", "value": 0.0}

@@ -70,7 +70,7 @@ class PricingVault:
 
         safe_price = await self.risk.calculate_and_verify_price(telemetry)
         await self.tunnel.set(f"eco:price_tag:{target_id}", safe_price)
-        log.info(f"⚖️ [Pricing Enforcer] Updated Fuel Fee for {target_id} -> ${safe_price:.4f}")
+        log.info(f"[Pricing Enforcer] Updated Fuel Fee for {target_id} -> ${safe_price:.4f}")
 
 @contract.daemon("dynamic_pricing")
 class DynamicPricingDaemon(AbstractDaemon):

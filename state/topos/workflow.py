@@ -57,7 +57,7 @@ class WorkflowMeta(type):
                 try:
                     result_msg = await _orig(self, msg_obj, *args, **kwargs)
                 except Exception as e:
-                    log.error(f"[Workflow] 💥 Exception in '{_method_name}' {e}", exc_info=True)
+                    log.error(f"[Workflow] Exception in '{_method_name}' {e}", exc_info=True)
                     return ErrorMessage(msg=str(e))
 
                 if not isinstance(result_msg, WorkflowMessage):

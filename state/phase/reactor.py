@@ -73,7 +73,7 @@ class PhaseReactor:
                 meta[k] = str(v)
 
         # 3. 로깅 메시지 조합
-        log_msg = f"💥 {msg}"
+        log_msg = f"{msg}"
         if meta:
             # 딕셔너리를 예쁘게 줄바꿈하여 출력 (가독성 극대화)
             meta_str = " | ".join(f"{k}: {v}" for k, v in meta.items())

@@ -73,10 +73,10 @@ class WorkerRuntimeBootstrap:
 
         matched_tags = self.rule_engine.execute(line)
         if "worker-ready" in matched_tags and not self.ready_event.is_set():
-            log_flow.info("[WorkerNode] 🟢 Worker Readiness condition met. Engine is active.")
+            log_flow.info("[WorkerNode] Worker Readiness condition met. Engine is active.")
             self.ready_event.set()
         elif "worker-fatal" in matched_tags:
-            log_flow.crit(f"[WorkerNode] 🚨 Fatal Worker Rupture detected: {line}")
+            log_flow.crit(f"[WorkerNode] Fatal Worker Rupture detected: {line}")
             self.boundary.collapse()
 
     async def ensure(self):
