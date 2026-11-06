@@ -14,27 +14,41 @@ class EdgeState(str, Enum):
     ERROR = "error"
 
 class EdgeHeader(str, Enum):
+    # Compute & Execution Proof
+    CANONICAL_HASH = "X-XPHI-Canonical-Hash"
     STATE = "X-Edge-State"
-    CONTENT_HASH = "X-Content-Hash"
-    FINGERPRINT = "X-Kernel-Fingerprint"
     ERROR_DETAIL = "X-Error-Detail"
 
+    # Node Identity & Transport Attestation
+    CONTENT_HASH = "X-Dphi-Content-Hash"
+    SIGNATURE = "X-Dphi-Signature"
+    TIMESTAMP = "X-Dphi-Timestamp"
+    SIGNER = "X-Dphi-Signer"
+    ROOT_SIGNATURE = "X-Dphi-Root-Signature"
+
+    # Control Plane, FSM & Metering Context
+    TENANT = "X-Fiber-Tenant"
+    CHECKPOINT = "X-Fiber-Checkpoint"
+    STREAM = "X-Fiber-Stream"
+    HITL_TICKET = "X-Fiber-HITL-Ticket"
+    FUEL_RECEIPT = "X-Fiber-Fuel-Receipt"
+
 class IntentValidationRequest(BaseModel):
-    requester_id: str = Field(..., description="요청 에이전트 식별자")
-    responder_id: str = Field(..., description="응답(수행) 에이전트 식별자")
-    action: str = Field(..., description="수행할 작업 명칭")
-    max_fuel_budget: int = Field(..., ge=0, le=4294967295, description="연산에 허용된 최대 Fuel (u32)")
-    signature: Optional[str] = None 
+    requester_id: str = Field(..., description="Requester agent ID")
+    responder_id: str = Field(..., description="Responder agent ID")
+    action: str = Field(..., description="Target action name")
+    max_fuel_budget: int = Field(..., ge=0, le=4294967295, description="Max fuel budget (u32)")
+    signature: Optional[str] = None
     sig_algo: str = "ECDSA_SECP256K1"
 
 class ExecuteComputeRequest(BaseModel):
-    code: str = Field(..., description="WASM 샌드박스에서 실행할 Python 스크립트")
-    variables: Dict[str, Any] = Field(default_factory=dict, description="스크립트에 주입할 변수 컨텍스트")
+    code: str = Field(..., description="Python script to execute in WASM sandbox")
+    variables: Dict[str, Any] = Field(default_factory=dict, description="Injected variable context")
 
 class ProofGenerationRequest(BaseModel):
-    execution_hash: str = Field(..., description="실행 결과의 결정론적 해시")
-    fuel_consumed: int = Field(..., ge=0, le=4294967295, description="소모된 Fuel (u32)")
-    verification_seed: str = Field(..., description="증명 생성을 위한 랜덤 시드")
+    execution_hash: str = Field(..., description="Deterministic execution hash")
+    fuel_consumed: int = Field(..., ge=0, le=4294967295, description="Consumed fuel (u32)")
+    verification_seed: str = Field(..., description="Random verification seed")
 
 class IntentValidationResponse(BaseModel):
     status: EdgeState
@@ -49,48 +63,46 @@ class ProofGenerationResponse(BaseModel):
     zk_receipt: Dict[str, Any]
 
 class TradeIngressRequest(BaseModel):
-    client_id: str = Field(..., description="client 식별자")
-    action: str = Field(..., description="거래 액션 (예: buy, sell, swap)")
+    client_id: str = Field(..., description="Client ID")
+    action: str = Field(..., description="Trade action (e.g., buy, sell, swap)")
 
 class TradeIngressResponse(BaseModel):
     status: EdgeState
-    session: Dict[str, Any] = Field(..., description="발급된 세션 정보")
+    session: Dict[str, Any] = Field(..., description="Issued session info")
 
 class ClearingReceiptRequest(BaseModel):
-    entangled_state: Dict[str, Any] = Field(default_factory=dict, description="매칭되어 얽힌(Entangled) 상태 데이터")
-    signatures: List[str] = Field(default_factory=list, description="참여자들의 서명 리스트")
-    cost_metrics: Dict[str, Any] = Field(default_factory=dict, description="정산 비용 및 가스 메트릭 정보")
+    entangled_state: Dict[str, Any] = Field(default_factory=dict, description="Matched entangled state data")
+    signatures: List[str] = Field(default_factory=list, description="Participant signatures")
+    cost_metrics: Dict[str, Any] = Field(default_factory=dict, description="Settlement cost and gas metrics")
 
 class ClearingReceiptResponse(BaseModel):
     status: EdgeState
-    rollup_payload: Dict[str, Any] = Field(..., description="EVM/Rollup 전송용 외부 페이로드")
+    rollup_payload: Dict[str, Any] = Field(..., description="External payload for EVM/Rollup")
 
 class EpochInitPayload(BaseModel):
-    ts: int = Field(..., description="인입 밀리초 타임스탬프")
-    topo: int = Field(..., description="Sequencer가 발급한 위상(Topology) ID")
-    press: int = Field(..., description="Allocator가 할당한 연산 한도(Fuel)")
-    rupture: bool = Field(..., description="네트워크 균열(장애) 여부")
-    injected_intent: TradeIngressRequest = Field(..., description="사용자가 주입한 원본 인텐트")
+    ts: int = Field(..., description="Ingress timestamp (ms)")
+    topo: int = Field(..., description="Sequencer topology ID")
+    press: int = Field(..., description="Allocated fuel limit")
+    rupture: bool = Field(..., description="Network rupture flag")
+    injected_intent: TradeIngressRequest = Field(..., description="Injected raw intent")
 
 class ParityTripletSchema(BaseModel):
-    topos_id: str = Field(..., description="위상 식별자")
+    topos_id: str = Field(..., description="Topology ID")
     phase_id: int = Field(ge=0, le=4294967295, description="Rust u32 constraint")
     nexus_id: int = Field(ge=0, le=4294967295, description="Rust u32 constraint")
 
 class AnchorProposalRequest(BaseModel):
-    receptor_id: str = Field(..., description="수용자 에이전트 식별자")
-    proposed_parity: ParityTripletSchema = Field(..., description="제안된 패리티 삼중항")
-    parent_nexus_id: int = Field(default=0, ge=0, le=4294967295, description="부모 넥서스 ID")
-
-    self_parent_state: str = Field(..., description="부모 상태(Parent State)의 해시값")
-
-    repos: Dict[str, str] = Field(default_factory=dict, description="상태 저장소 맵")
-    signers: List[str] = Field(default_factory=list, description="서명자 목록")
-    signatures: List[str] = Field(default_factory=list, description="암호학적 서명 목록")
-    timestamp: float = Field(..., description="제안 타임스탬프")
+    receptor_id: str = Field(..., description="Receptor agent ID")
+    proposed_parity: ParityTripletSchema = Field(..., description="Proposed parity triplet")
+    parent_nexus_id: int = Field(default=0, ge=0, le=4294967295, description="Parent nexus ID")
+    self_parent_state: str = Field(..., description="Parent state hash")
+    repos: Dict[str, str] = Field(default_factory=dict, description="State repository map")
+    signers: List[str] = Field(default_factory=list, description="Signer list")
+    signatures: List[str] = Field(default_factory=list, description="Cryptographic signature list")
+    timestamp: float = Field(..., description="Proposal timestamp")
 
 class AnchorSealResponse(BaseModel):
-    status: EdgeState = Field(..., description="합의 상태 영수증")
-    nexus_id: int = Field(..., description="확정된 Nexus ID")
-    commit_hash: str = Field(..., description="커밋 결정론적 해시")
-    receipt: Dict[str, Any] = Field(default_factory=dict, description="봉인된 세부 영수증 데이터")
+    status: EdgeState = Field(..., description="Consensus status receipt")
+    nexus_id: int = Field(..., description="Finalized nexus ID")
+    commit_hash: str = Field(..., description="Deterministic commit hash")
+    receipt: Dict[str, Any] = Field(default_factory=dict, description="Sealed receipt details")

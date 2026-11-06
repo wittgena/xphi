@@ -5,9 +5,10 @@ import json
 import uuid
 import asyncio
 from enum import Enum
-from typing import Optional, Any, Mapping, Union, Dict
+from typing import Optional, Any, Mapping, Union, Dict, Tuple
 from contextlib import suppress
 
+from xphi.arch.contract.config.env import config as env_config
 from xphi.node.space.tunnel.factory import TunnelFactory
 from xphi.arch.contract.interpreter import ExecutionResult, ExecutionError
 from xphi.node.runtime.wasm.method import WasmMethod
@@ -43,13 +44,46 @@ class ResultKey:
 
 class WasmBroker:
     _shared_instance: Optional["WasmBroker"] = None
+    _shared_plane: str = "local"
+
+    @classmethod
+    def _resolve_plane_and_factory(cls, explicit_factory=None) -> Tuple[str, Any]:
+        if explicit_factory is not None:
+            return getattr(explicit_factory, "__name__", "custom"), explicit_factory
+
+        raw_plane = str(env_config.get("XPHI_WASM_PLANE", os.getenv("XPHI_WASM_PLANE", "local"))).strip()
+        plane_lower = raw_plane.lower()
+
+        if not plane_lower or plane_lower == "local":
+            return "local", TunnelFactory
+
+        if plane_lower.startswith("flare") or plane_lower.startswith(("http://", "https://")):
+            try:
+                from xphi.watcher.plane.flare.tunnel import FlareTunnelFactory
+                return raw_plane, FlareTunnelFactory
+            except ImportError as e:
+                log.error(f"[Broker] Failed to import FlareTunnelFactory ({e}). Falling back to local TunnelFactory.")
+                return "local", TunnelFactory
+
+        log.warning(f"[Broker] Unknown XPHI_WASM_PLANE='{raw_plane}', falling back to local TunnelFactory.")
+        return "local", TunnelFactory
 
     @classmethod
     def get_shared(cls, **kwargs) -> "WasmBroker":
-        if cls._shared_instance is None:
+        target_plane, resolved_factory = cls._resolve_plane_and_factory(kwargs.get("tunnel_factory"))
+
+        if cls._shared_instance is None or cls._shared_plane != target_plane:
+            if cls._shared_instance is not None:
+                prev_task = getattr(cls._shared_instance, "_listener_task", None)
+                if prev_task and not prev_task.done():
+                    prev_task.cancel()
+
             if "timeout" not in kwargs:
                 kwargs["timeout"] = float(os.getenv("XPHI_WASM_TIMEOUT", "30.0"))
+            kwargs["tunnel_factory"] = resolved_factory
             cls._shared_instance = cls(**kwargs)
+            cls._shared_plane = target_plane
+
         return cls._shared_instance
 
     def __init__(
@@ -64,7 +98,8 @@ class WasmBroker:
         self.control_channel = BrokerChannel.CONTROL_REQ
         self.timeout = timeout
         self.target_auditor = target_auditor
-        self.tunnel_factory = tunnel_factory or TunnelFactory
+        
+        self._plane_key, self.tunnel_factory = self._resolve_plane_and_factory(tunnel_factory)
         
         self.broker_id = uuid.uuid4().hex[:8]
         self.response_channel = BrokerChannel.broker_res(self.broker_id)
@@ -85,14 +120,15 @@ class WasmBroker:
         try:
             await asyncio.wait_for(self._listener_ready.wait(), timeout=5.0)
         except asyncio.TimeoutError:
-            log.error("[Broker] Listener failed to start within 5s. (Redis Connection Error?)")
+            log.error(f"[Broker] Listener failed to start within 5s. (Plane: {self._plane_key})")
             if self._listener_task and not self._listener_task.done():
                 self._listener_task.cancel()
             self._listener_task = None
             self._listener_ready.clear()
-            raise RuntimeError("Broker Failed to connect to Redis Pub/Sub")
+            raise RuntimeError(f"Broker Failed to connect to Pub/Sub (Plane: {self._plane_key})")
 
     async def _listen_responses(self):
+        pubsub = None
         try:
             self._listener_client = await self.tunnel_factory.get_isolated()
             pubsub = self._listener_client.pubsub()
@@ -118,9 +154,10 @@ class WasmBroker:
             log.error(f"[Broker] Listener crashed unexpectedly: {e}")
         finally:
             self._listener_ready.clear()
-            with suppress(Exception):
-                await pubsub.unsubscribe(self.response_channel)
-                await pubsub.close()
+            if pubsub is not None:
+                with suppress(Exception):
+                    await pubsub.unsubscribe(self.response_channel)
+                    await pubsub.close()
                 
             if self._listener_client:
                 with suppress(Exception):
@@ -270,6 +307,7 @@ class WasmBroker:
                 await task
         if WasmBroker._shared_instance is self:
             WasmBroker._shared_instance = None
+            WasmBroker._shared_plane = "local"
 
     def __del__(self):
         task = getattr(self, '_listener_task', None)
