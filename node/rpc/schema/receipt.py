@@ -32,6 +32,7 @@ class EdgeHeader(str, Enum):
     STREAM = "X-Fiber-Stream"
     HITL_TICKET = "X-Fiber-HITL-Ticket"
     FUEL_RECEIPT = "X-Fiber-Fuel-Receipt"
+    EDGE_TOKEN = "X-Fiber-Edge-Token"
 
 class IntentValidationRequest(BaseModel):
     requester_id: str = Field(..., description="Requester agent ID")

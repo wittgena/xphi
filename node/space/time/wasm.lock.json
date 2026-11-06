@@ -4,10 +4,10 @@
     "gateway.wasm": "df0a7d343d45a54eb89afda419a5ac74301d7262829c86f8446e4c000f2c8205",
     "phase.wasm": "ea68b61ca31fb9d14d1604ce27e739ee656f6d6b6538923c57b7eeccfb269f7f"
   },
-  "chain_hash": "e7627fa0ce0d3f69b162a10d2e13fc19fbf8210960828863c8532d63ffe45506",
-  "nexus_id": 3426752519,
+  "chain_hash": "efc126c5e47de92a97f11bb02ad69161eacfecabcbd18e6ad247cf3bf178c212",
+  "nexus_id": 230692871,
   "parent_nexus_id": 0,
   "prev_chain_hash": "genesis",
-  "timestamp": 1793963067191,
+  "timestamp": 1793964039217,
   "wasm_root": "8b235baa150dd8af15e7a8435818fffe21e77a812796a2c6d8c4b12a05a8923d"
 }
