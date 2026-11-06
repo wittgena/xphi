@@ -77,3 +77,6 @@ STATE_STORE_URL = _get_string("STATE_STORE_URL", _default_state_url)
 ## COMPAT & VCR
 FIBER_COMPAT_RULES_PATH = _get_string("FIBER_COMPAT_RULES_PATH", "")
 VCR_INCLUDE_RAW = _get_string("VCR_INCLUDE_RAW", "false")
+
+## WASM PLANE
+XPHI_WASM_PLANE = _get_string("XPHI_WASM_PLANE", "local")
