@@ -38,8 +38,8 @@ DEFAULT_BOUND_SKELETON = {
   },
   "paths": {
     "anchor": ":anchor:",
-    "abc": ":phase:/abc",
     "fiber": "fiber",
+    "abc": "fiber/dev/abc",
     "compats": ":anchor:/compats",
     "registry": ":anchor:/registry",
     "adb": ":anchor:/adb",
