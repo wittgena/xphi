@@ -1,4 +1,5 @@
-# xphi.arch.contract.config.attestation
+# xphi.arch.contract.config.notary
+## @lineage: xphi.arch.contract.config.attestation
 import os
 from typing import List
 from pydantic import BaseModel, Field
